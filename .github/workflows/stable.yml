@@ -13,7 +13,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
-          java-version: 11
+          java-version: 14
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -51,7 +51,6 @@ jobs:
       - name: Sign artifacts
         run: |
           echo "${{ secrets.GPG_SIGNING_PASSPHRASE }}" | gpg --quiet --batch --yes --pinentry-mode loopback --clearsign --passphrase-fd 0 airsonic-main/target/artifacts-checksums.sha;
-          #echo "${{ secrets.GPG_SIGNING_PASSPHRASE }}" | gpg --quiet --batch --yes --pinentry-mode loopback --detach-sign --armor --passphrase-fd 0 airsonic-main/target/airsonic.war;
       - name: Deploy to GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v1

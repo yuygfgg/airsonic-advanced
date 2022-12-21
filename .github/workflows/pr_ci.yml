@@ -2,7 +2,7 @@ name: 'PR CI (Maven)'
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 env:
   DEFAULT_MUSIC_FOLDER: /tmp/music

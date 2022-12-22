@@ -23,10 +23,8 @@ ENV AIRSONIC_PORT=4040 AIRSONIC_DIR=/var CONTEXT_PATH=/ UPNP_PORT=4041 PUID=0 PG
 WORKDIR $AIRSONIC_DIR
 
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:savoury1/ffmpeg5 && \
-    apt-get update && \
-    apt-get install -y ffmpeg \
+    apt-get install -y software-properties-common \
+                       ffmpeg \
                        x264 \
                        x265 \
                        lame \

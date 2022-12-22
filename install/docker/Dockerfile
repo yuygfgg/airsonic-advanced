@@ -24,7 +24,7 @@ WORKDIR $AIRSONIC_DIR
 
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:savoury1/ffmpeg4 && \
+    add-apt-repository -y ppa:savoury1/ffmpeg5 && \
     apt-get update && \
     apt-get install -y ffmpeg \
                        x264 \
@@ -33,7 +33,9 @@ RUN apt-get update && \
                        xmp \
                        bash \
                        ttf-dejavu \
-                       gosu
+                       gosu \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/local/bin/run.sh /usr/local/bin/run.sh
 COPY --from=builder /usr/local/bin/entry.sh /usr/local/bin/entry.sh

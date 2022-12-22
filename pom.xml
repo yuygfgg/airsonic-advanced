@@ -24,9 +24,9 @@
     <properties>
         <failOnDependencyWarning>true</failOnDependencyWarning>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
+        <java.version>14</java.version>
         <cxf.version>3.4.3</cxf.version>
-        <docker.container.repo>airsonicadvanced/airsonic-advanced</docker.container.repo>
+        <docker.container.repo>ghcr.io/kagemomiji/airsonic-advanced</docker.container.repo>
     </properties>
 
     <repositories>
@@ -53,9 +53,9 @@
     </pluginRepositories>
 
     <scm>
-        <connection>scm:git:git://github.com/airsonic-advanced/airsonic-advanced.git</connection>
-        <developerConnection>scm:git:git@github.com:airsonic-advanced/airsonic-advanced.git</developerConnection>
-        <url>https://github.com/airsonic-advanced/airsonic-advanced.git</url>
+        <connection>scm:git:git://github.com/kagemomiji/airsonic-advanced.git</connection>
+        <developerConnection>scm:git:git@github.com:kagemomiji/airsonic-advanced.git</developerConnection>
+        <url>https://github.com/kagemomiji/airsonic-advanced.git</url>
     </scm>
 
     <modules>

@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -154,7 +155,7 @@ public class MediaScannerServiceTestCase {
         Path musicFile = artistDir.resolve(fileName);
         Files.copy(Paths.get(Resources.getResource("MEDIAS/piano.mp3").toURI()), musicFile);
 
-        MusicFolder musicFolder = new MusicFolder(1, temporaryFolder.getRoot().toPath(), "Music", Type.MEDIA, true, Instant.now());
+        MusicFolder musicFolder = new MusicFolder(1, temporaryFolder.getRoot().toPath(), "Music", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         cleanupId = ScanningTestUtils.before(Arrays.asList(musicFolder), mediaFolderService, mediaScannerService);
         MediaFile mediaFile = mediaFileService.getMediaFile(musicFile);
         assertEquals(mediaFile.getRelativePath(), temporaryFolder.getRoot().toPath().relativize(musicFile));
@@ -173,7 +174,7 @@ public class MediaScannerServiceTestCase {
 
         // Add the "Music3" folder to the database
         Path musicFolderFile = MusicFolderTestData.resolveMusic3FolderPath();
-        MusicFolder musicFolder = new MusicFolder(1, musicFolderFile, "Music3", Type.MEDIA, true, Instant.now());
+        MusicFolder musicFolder = new MusicFolder(1, musicFolderFile, "Music3", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         cleanupId = ScanningTestUtils.before(Arrays.asList(musicFolder), mediaFolderService, mediaScannerService);
 
         // Retrieve the "Music3" folder from the database to make

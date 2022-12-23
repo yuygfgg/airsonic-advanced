@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -95,7 +96,7 @@ public class PodcastDaoTestCase extends DaoTestCaseBean2 {
     public void testCreateEpisode() {
         int channelId = createChannel();
         PodcastEpisode episode = new PodcastEpisode(null, channelId, UUID.randomUUID().toString(), "http://bar", null, "title", "description",
-                Instant.now(), "12:34", null, null, PodcastStatus.NEW, null);
+                Instant.now().truncatedTo(ChronoUnit.MICROS), "12:34", null, null, PodcastStatus.NEW, null);
         podcastDao.createEpisode(episode);
 
         PodcastEpisode newEpisode = podcastDao.getEpisodes(channelId).get(0);
@@ -109,7 +110,7 @@ public class PodcastDaoTestCase extends DaoTestCaseBean2 {
 
         int channelId = createChannel();
         PodcastEpisode episode = new PodcastEpisode(null, channelId, UUID.randomUUID().toString(), "http://bar", null, "title", "description",
-                Instant.now(), "12:34", 3276213L, 2341234L, PodcastStatus.NEW, "error");
+                Instant.now().truncatedTo(ChronoUnit.MICROS), "12:34", 3276213L, 2341234L, PodcastStatus.NEW, "error");
         podcastDao.createEpisode(episode);
 
         int episodeId = podcastDao.getEpisodes(channelId).get(0).getId();
@@ -153,7 +154,7 @@ public class PodcastDaoTestCase extends DaoTestCaseBean2 {
         episode.setUrl("http://bar");
         episode.setTitle("Title");
         episode.setDescription("Description");
-        episode.setPublishDate(Instant.now());
+        episode.setPublishDate(Instant.now().truncatedTo(ChronoUnit.MICROS));
         episode.setDuration("1:20");
         episode.setBytesTotal(87628374612L);
         episode.setBytesDownloaded(9086L);

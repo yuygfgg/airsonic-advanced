@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,7 +41,7 @@ public class PlayerDaoTestCase extends DaoTestCaseBean2 {
         player.setAutoControlEnabled(false);
         player.setTechnology(PlayerTechnology.EXTERNAL_WITH_PLAYLIST);
         player.setClientId("android");
-        player.setLastSeen(Instant.now());
+        player.setLastSeen(Instant.now().truncatedTo(ChronoUnit.MICROS));
         player.setTranscodeScheme(TranscodeScheme.MAX_160);
 
         playerDao.createPlayer(player);
@@ -128,7 +129,7 @@ public class PlayerDaoTestCase extends DaoTestCaseBean2 {
         player.setIpAddress("ipaddress");
         player.setDynamicIp(true);
         player.setAutoControlEnabled(false);
-        player.setLastSeen(Instant.now());
+        player.setLastSeen(Instant.now().truncatedTo(ChronoUnit.MICROS));
         player.setTranscodeScheme(TranscodeScheme.MAX_160);
 
         playerDao.updatePlayer(player);

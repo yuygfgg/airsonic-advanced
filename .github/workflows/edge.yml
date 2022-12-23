@@ -4,6 +4,7 @@ on:
   push:
     branches: [ main ]
 
+
 env:
   DEFAULT_MUSIC_FOLDER: /tmp/music
   EXCLUDED_TEST_GROUPS:
@@ -17,7 +18,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
-          java-version: 14
+          java-version: 17
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:

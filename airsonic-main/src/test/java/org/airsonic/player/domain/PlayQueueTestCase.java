@@ -29,6 +29,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -293,7 +294,7 @@ public class PlayQueueTestCase {
     }
 
     private PlayQueue createPlaylist(int index, String... songs) {
-        PlayQueue playQueue = new PlayQueue(i -> new MusicFolder(i, temporaryFolder.getRoot().toPath(), "meh", Type.MEDIA, true, Instant.now()));
+        PlayQueue playQueue = new PlayQueue(i -> new MusicFolder(i, temporaryFolder.getRoot().toPath(), "meh", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
         for (String song : songs) {
             playQueue.addFiles(true, new TestMediaFile(song));
         }

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -44,13 +45,13 @@ public class SearchServiceSpecialPathTestCase extends AbstractAirsonicHomeTest {
             musicFolders = new ArrayList<>();
 
             Path musicDir = MusicFolderTestData.resolveBaseMediaPath().resolve("Search").resolve("SpecialPath").resolve("accessible");
-            musicFolders.add(new MusicFolder(1, musicDir, "accessible", Type.MEDIA, true, Instant.now()));
+            musicFolders.add(new MusicFolder(1, musicDir, "accessible", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
 
             Path music2Dir = MusicFolderTestData.resolveBaseMediaPath().resolve("Search").resolve("SpecialPath").resolve("accessible's");
-            musicFolders.add(new MusicFolder(2, music2Dir, "accessible's", Type.MEDIA, true, Instant.now()));
+            musicFolders.add(new MusicFolder(2, music2Dir, "accessible's", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
 
             Path music3Dir = MusicFolderTestData.resolveBaseMediaPath().resolve("Search").resolve("SpecialPath").resolve("accessible+s");
-            musicFolders.add(new MusicFolder(3, music3Dir, "accessible+s", Type.MEDIA, true, Instant.now()));
+            musicFolders.add(new MusicFolder(3, music3Dir, "accessible+s", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
         }
         return musicFolders;
     }

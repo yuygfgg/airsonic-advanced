@@ -24,7 +24,7 @@
     <properties>
         <failOnDependencyWarning>true</failOnDependencyWarning>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <cxf.version>3.4.3</cxf.version>
         <docker.container.repo>ghcr.io/kagemomiji/airsonic-advanced</docker.container.repo>
     </properties>
@@ -264,6 +264,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <id>analyze</id>

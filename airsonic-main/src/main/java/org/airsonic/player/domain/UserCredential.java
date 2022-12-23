@@ -1,6 +1,7 @@
 package org.airsonic.player.domain;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 public class UserCredential {
@@ -31,7 +32,7 @@ public class UserCredential {
     public UserCredential(String username, String appUsername, String credential, String encoder, App app,
             String comment, Instant expiration) {
         this(username, appUsername, credential, encoder, app, comment, expiration, null, null);
-        Instant now = Instant.now();
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
         setCreated(now);
         setUpdated(now);
     }

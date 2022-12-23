@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -37,7 +38,7 @@ public class SearchServiceSpecialGenreTestCase extends AbstractAirsonicHomeTest 
         if (isEmpty(musicFolders)) {
             musicFolders = new ArrayList<>();
             Path musicDir = MusicFolderTestData.resolveBaseMediaPath().resolve("Search").resolve("SpecialGenre");
-            musicFolders.add(new MusicFolder(1, musicDir, "accessible", Type.MEDIA, true, Instant.now()));
+            musicFolders.add(new MusicFolder(1, musicDir, "accessible", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
         }
         return musicFolders;
     }

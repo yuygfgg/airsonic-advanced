@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -26,7 +27,7 @@ public class InternetRadioDaoTestCase extends DaoTestCaseBean2 {
 
     @Test
     public void testCreateInternetRadio() {
-        InternetRadio radio = new InternetRadio("name", "streamUrl", "homePageUrl", true, Instant.now());
+        InternetRadio radio = new InternetRadio("name", "streamUrl", "homePageUrl", true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         internetRadioDao.createInternetRadio(radio);
 
         InternetRadio newRadio = internetRadioDao.getAllInternetRadios().get(0);
@@ -35,7 +36,7 @@ public class InternetRadioDaoTestCase extends DaoTestCaseBean2 {
 
     @Test
     public void testUpdateInternetRadio() {
-        InternetRadio radio = new InternetRadio("name", "streamUrl", "homePageUrl", true, Instant.now());
+        InternetRadio radio = new InternetRadio("name", "streamUrl", "homePageUrl", true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         internetRadioDao.createInternetRadio(radio);
         radio = internetRadioDao.getAllInternetRadios().get(0);
 
@@ -54,10 +55,10 @@ public class InternetRadioDaoTestCase extends DaoTestCaseBean2 {
     public void testDeleteInternetRadio() {
         assertEquals("Wrong number of radios.", 0, internetRadioDao.getAllInternetRadios().size());
 
-        internetRadioDao.createInternetRadio(new InternetRadio("name", "streamUrl", "homePageUrl", true, Instant.now()));
+        internetRadioDao.createInternetRadio(new InternetRadio("name", "streamUrl", "homePageUrl", true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
         assertEquals("Wrong number of radios.", 1, internetRadioDao.getAllInternetRadios().size());
 
-        internetRadioDao.createInternetRadio(new InternetRadio("name", "streamUrl", "homePageUrl", true, Instant.now()));
+        internetRadioDao.createInternetRadio(new InternetRadio("name", "streamUrl", "homePageUrl", true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
         assertEquals("Wrong number of radios.", 2, internetRadioDao.getAllInternetRadios().size());
 
         internetRadioDao.deleteInternetRadio(internetRadioDao.getAllInternetRadios().get(0).getId());

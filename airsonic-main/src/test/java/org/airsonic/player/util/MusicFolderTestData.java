@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,11 +38,11 @@ public class MusicFolderTestData {
     public static List<MusicFolder> getTestMusicFolders() {
         List<MusicFolder> liste = new ArrayList<>();
         Path musicDir = resolveMusicFolderPath();
-        MusicFolder musicFolder = new MusicFolder(1, musicDir, "Music", Type.MEDIA, true, Instant.now());
+        MusicFolder musicFolder = new MusicFolder(1, musicDir, "Music", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         liste.add(musicFolder);
 
         Path music2Dir = resolveMusic2FolderPath();
-        MusicFolder musicFolder2 = new MusicFolder(2, music2Dir, "Music2", Type.MEDIA, true, Instant.now());
+        MusicFolder musicFolder2 = new MusicFolder(2, music2Dir, "Music2", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         liste.add(musicFolder2);
         return liste;
     }

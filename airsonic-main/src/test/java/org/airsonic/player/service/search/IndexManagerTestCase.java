@@ -38,6 +38,7 @@ import org.springframework.core.io.ResourceLoader;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -60,7 +61,7 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
         if (isEmpty(musicFolders)) {
             musicFolders = new ArrayList<>();
             Path musicDir = MusicFolderTestData.resolveMusicFolderPath();
-            musicFolders.add(new MusicFolder(1, musicDir, "Music", Type.MEDIA, true, Instant.now()));
+            musicFolders.add(new MusicFolder(1, musicDir, "Music", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
         }
         return musicFolders;
     }
@@ -166,7 +167,7 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
         candidates = artistDao.getExpungeCandidates();
         assertEquals(0, candidates.size());
 
-        artistDao.markNonPresent(Instant.now());
+        artistDao.markNonPresent(Instant.now().truncatedTo(ChronoUnit.MICROS));
 
         candidates = artistDao.getExpungeCandidates();
         assertEquals(4, candidates.size());
@@ -179,7 +180,7 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
         candidates = albumDao.getExpungeCandidates();
         assertEquals(0, candidates.size());
 
-        albumDao.markNonPresent(Instant.now());
+        albumDao.markNonPresent(Instant.now().truncatedTo(ChronoUnit.MICROS));
 
         candidates = albumDao.getExpungeCandidates();
         assertEquals(4, candidates.size());

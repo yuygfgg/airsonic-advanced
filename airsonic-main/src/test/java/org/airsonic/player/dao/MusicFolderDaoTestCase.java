@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,11 +49,11 @@ public class MusicFolderDaoTestCase extends DaoTestCaseBean2 {
 
     @Test
     public void testCreateMusicFolder() {
-        MusicFolder musicFolder = new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now());
+        MusicFolder musicFolder = new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         musicFolderDao.createMusicFolder(musicFolder);
 
         // no duplicates
-        musicFolderDao.createMusicFolder(new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now()));
+        musicFolderDao.createMusicFolder(new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
 
         assertThat(musicFolderDao.getAllMusicFolders()).usingElementComparatorIgnoringFields("id")
                 .containsExactly(musicFolder);
@@ -60,7 +61,7 @@ public class MusicFolderDaoTestCase extends DaoTestCaseBean2 {
 
     @Test
     public void testUpdateMusicFolder() {
-        MusicFolder musicFolder = new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now());
+        MusicFolder musicFolder = new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         musicFolderDao.createMusicFolder(musicFolder);
         musicFolder = musicFolderDao.getAllMusicFolders().get(0);
 
@@ -77,7 +78,7 @@ public class MusicFolderDaoTestCase extends DaoTestCaseBean2 {
     public void testDeleteMusicFolder() {
         assertThat(musicFolderDao.getAllMusicFolders()).hasSize(0);
 
-        musicFolderDao.createMusicFolder(new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now()));
+        musicFolderDao.createMusicFolder(new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
 
         List<MusicFolder> musicFolders = musicFolderDao.getAllMusicFolders();
         assertThat(musicFolders).hasSize(1);

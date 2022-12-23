@@ -658,7 +658,6 @@
                 <groupId>dev.aspectj</groupId>
                 <artifactId>aspectj-maven-plugin</artifactId>
                 <version>1.13.1</version>
-                <type>maven-plugin</type>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>

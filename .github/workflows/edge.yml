@@ -3,8 +3,6 @@ name: 'Edge Deploy CI (Maven)'
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 
 env:

@@ -7,6 +7,7 @@ on:
       - "**.md"
       - "*.txt"
       - ".github/**" 
+      - "!.github/workflows/pr_ci.yml"
 
 env:
   DEFAULT_MUSIC_FOLDER: /tmp/music

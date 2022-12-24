@@ -3,7 +3,7 @@ name: 'PR CI (Maven)'
 on:
   pull_request:
     branches: [ main ]
-    ignore-paths:
+    paths-ignore:
       - "**.md"
       - "*.txt"
       - ".github/**" 

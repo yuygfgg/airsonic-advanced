@@ -3,7 +3,7 @@ name: 'Edge Deploy CI (Maven)'
 on:
   push:
     branches: [ main ]
-    ignore-paths:
+    paths-ignore:
       - "**.md"
       - "*.txt"
       - ".github/**" 

@@ -3,6 +3,10 @@ name: 'PR CI (Maven)'
 on:
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - "**.md"
+      - "*.txt"
+      - ".github/**" 
 
 env:
   DEFAULT_MUSIC_FOLDER: /tmp/music

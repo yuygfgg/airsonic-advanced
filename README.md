@@ -102,12 +102,12 @@ The following is an incomplete list of features that are enhanced from Airsonic:
     - MariaDB
   - Uses failsafe for integration testing instead of cucumber
 - Build and deployment
-  - An updated Docker image with JRE 14 base layer.
+  - An updated Docker image with JRE 17 base layer.
     - Add support for XMP to support playing MOD files out of the box
   - Multiplatform builds, including for ARM v7 and ARM64
   - A more advanced build pipeline including automatic releases and deploys at merge
     - Allows people to grab the newest build without compiling from source as soon as features/enhancements are merged, instead of waiting for the next stable build (which may be months away)
-  - Available on GHCR as well as Docker Hub
+  - Available on GHCR 
 - Stepbacks
   - The Java Jukebox has been removed, due to the third-party library not being kept up to date with modern JVMs. See [PR #636](https://github.com/airsonic-advanced/airsonic-advanced/pull/636).
 
@@ -137,7 +137,7 @@ Airsonic-Advanced is run similarly to (and in lieu of) vanilla Airsonic.
 Read the [compatibility notes](#compatibility-notes).
 
 ### Docker
-Docker releases are at [DockerHub](https://hub.docker.com/r/airsonicadvanced/airsonic-advanced) and [GHCR](https://ghcr.io/kagemomiji/airsonic-advanced). Docker releases are recently multiplatform, which means ARMv7 and ARM64 are also released to Dockerhub. However, automated testing for those archs is not currently done in the CI/CD pipeline (only Linux platform is tested).
+[GHCR](https://ghcr.io/kagemomiji/airsonic-advanced). Docker releases are recently multiplatform, which means ARMv7 and ARM64 are also released to Dockerhub. However, automated testing for those archs is not currently done in the CI/CD pipeline (only Linux platform is tested).
 
 Please note that for Docker images, the volume mounting points have changed and are different from Airsonic. Airsonic mount points are at `/airsonic/*` inside the container. Airsonic-Advanced tries to use the same volume locations as the default war image at `/var/*` in order to remain consistent if people want to switch between the containers and non-containers.
   - `Music:/airsonic/music` -> `Music:/var/music`
@@ -197,6 +197,10 @@ Other properties are obsolete and have been removed:
 
 First migration to 11.x will create a backup DB next to the DB folder. It will be marked as `db.backup.<timestamp>`. Use this folder as the DB if a revert to an older major version is needed (11.0 -> 10.6.0).
 
+> **Warning**  
+If you use HSQLDB for 10.6.0, DB migration must fails.
+First upgrade to 11.0.0-SNAPSHOT.20221224143241 then upgrade to latest release.
+
 History
 -----
 
@@ -214,6 +218,8 @@ Airsonic's goal is to provide a full-featured, stable, self-hosted media server
 based on the Subsonic codebase that is free, open source, and community driven.
 
 Around November 2019, Airsonic-Advanced was forked off the base Airsonic fork due to differences in pace and review of development. Several key features of the framework were outdated, and attempts to upgrade them occasionally took upto a year. Airsonic-Advanced tries a modern implementation and bleeding edge approach to development, and is thus usually ahead of the base fork in dependencies and features.
+
+December 2022, this repository forked from Airsonic-Advanced.
 
 Pull Requests are always welcome. All Pull Requests are reviewed before being merged to ensure we continue to meet our goals.
 

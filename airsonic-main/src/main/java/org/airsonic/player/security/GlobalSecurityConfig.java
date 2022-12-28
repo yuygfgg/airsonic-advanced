@@ -15,13 +15,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.event.AbstractAuthenticationFailureEvent;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -52,7 +53,7 @@ import static org.airsonic.player.security.MultipleCredsMatchingAuthenticationPr
 
 @Configuration
 @Order(SecurityProperties.BASIC_AUTH_ORDER - 2)
-@EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
+@EnableMethodSecurity(securedEnabled = true)
 public class GlobalSecurityConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(GlobalSecurityConfig.class);
@@ -108,6 +109,7 @@ public class GlobalSecurityConfig {
     @Autowired
     SettingsService settingsService;
 
+    @Lazy
     @Autowired
     MultipleCredsMatchingAuthenticationProvider multipleCredsProvider;
 

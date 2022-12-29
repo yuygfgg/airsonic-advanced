@@ -32,6 +32,11 @@
             <artifactId>airsonic-sonos-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.33</version>
+        </dependency>
 
         <!-- Metrics
              Metrics is a cool framework used here

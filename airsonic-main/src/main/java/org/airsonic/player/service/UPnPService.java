@@ -38,9 +38,9 @@ import org.jupnp.support.model.dlna.DLNAProfiles;
 import org.jupnp.support.model.dlna.DLNAProtocolInfo;
 import org.jupnp.transport.TransportConfiguration;
 import org.jupnp.transport.TransportConfigurationProvider;
+import org.jupnp.transport.impl.jetty.StreamClientConfigurationImpl;
 import org.jupnp.transport.spi.NetworkAddressFactory;
 import org.jupnp.transport.spi.StreamClient;
-import org.jupnp.transport.spi.StreamClientConfiguration;
 import org.jupnp.transport.spi.StreamServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,6 +130,7 @@ public class UPnPService {
 
     private synchronized void createService() {
         upnpService = new UpnpServiceImpl(new ApacheUpnpServiceConfiguration(settingsService.getUPnpPort()));
+        upnpService.startup();
 
         // Asynch search for other devices (most importantly UPnP-enabled routers for port-mapping)
         upnpService.getControlPoint().search();
@@ -243,8 +244,6 @@ public class UPnPService {
      */
     public static class ApacheUpnpServiceConfiguration extends DefaultUpnpServiceConfiguration {
 
-        private StreamClientConfiguration configuration;
-
         @SuppressWarnings("rawtypes")
         final private TransportConfiguration transportConfiguration;
 
@@ -255,7 +254,7 @@ public class UPnPService {
 
         @Override
         public StreamClient<?> createStreamClient() {
-            return transportConfiguration.createStreamClient(getDefaultExecutorService(), configuration);
+            return transportConfiguration.createStreamClient(getDefaultExecutorService(), new StreamClientConfigurationImpl(getDefaultExecutorService()));
         }
 
         @Override

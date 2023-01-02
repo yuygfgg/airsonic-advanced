@@ -56,12 +56,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <exclusions>
+<!--            <exclusions>
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-tomcat</artifactId>
                 </exclusion>
             </exclusions>
+-->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -525,7 +526,7 @@
         </dependency>
 
         <!-- Embedded tomcat -->
-        <!--<dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-tomcat</artifactId>
             <scope>${tomcat.server.scope}</scope>
@@ -535,7 +536,6 @@
             <artifactId>tomcat-embed-jasper</artifactId>
             <scope>${tomcat.server.scope}</scope>
         </dependency>
-        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-json</artifactId>

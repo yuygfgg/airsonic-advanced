@@ -27,6 +27,7 @@ import org.jupnp.UpnpService;
 import org.jupnp.UpnpServiceImpl;
 import org.jupnp.binding.annotations.AnnotationLocalServiceBinder;
 import org.jupnp.model.DefaultServiceManager;
+import org.jupnp.model.message.header.STAllHeader;
 import org.jupnp.model.meta.*;
 import org.jupnp.model.types.DLNADoc;
 import org.jupnp.model.types.DeviceType;
@@ -133,7 +134,7 @@ public class UPnPService {
         upnpService.startup();
 
         // Asynch search for other devices (most importantly UPnP-enabled routers for port-mapping)
-        upnpService.getControlPoint().search();
+        upnpService.getControlPoint().search(new STAllHeader());
 
     }
 

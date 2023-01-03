@@ -22,26 +22,27 @@ package org.airsonic.player.service;
 import org.airsonic.player.service.upnp.CustomContentDirectory;
 import org.airsonic.player.service.upnp.MSMediaReceiverRegistrarService;
 import org.airsonic.player.util.FileUtil;
-import org.jupnp.DefaultUpnpServiceConfiguration;
-import org.jupnp.UpnpService;
-import org.jupnp.UpnpServiceImpl;
-import org.jupnp.binding.annotations.AnnotationLocalServiceBinder;
-import org.jupnp.model.DefaultServiceManager;
-import org.jupnp.model.meta.*;
-import org.jupnp.model.types.DLNADoc;
-import org.jupnp.model.types.DeviceType;
-import org.jupnp.model.types.UDADeviceType;
-import org.jupnp.model.types.UDN;
-import org.jupnp.support.connectionmanager.ConnectionManagerService;
-import org.jupnp.support.model.ProtocolInfos;
-import org.jupnp.support.model.dlna.DLNAProfiles;
-import org.jupnp.support.model.dlna.DLNAProtocolInfo;
-import org.jupnp.transport.TransportConfiguration;
-import org.jupnp.transport.TransportConfigurationProvider;
-import org.jupnp.transport.spi.NetworkAddressFactory;
-import org.jupnp.transport.spi.StreamClient;
-import org.jupnp.transport.spi.StreamClientConfiguration;
-import org.jupnp.transport.spi.StreamServer;
+import org.fourthline.cling.DefaultUpnpServiceConfiguration;
+import org.fourthline.cling.UpnpService;
+import org.fourthline.cling.UpnpServiceImpl;
+import org.fourthline.cling.binding.annotations.AnnotationLocalServiceBinder;
+import org.fourthline.cling.model.DefaultServiceManager;
+import org.fourthline.cling.model.meta.*;
+import org.fourthline.cling.model.types.DLNADoc;
+import org.fourthline.cling.model.types.DeviceType;
+import org.fourthline.cling.model.types.UDADeviceType;
+import org.fourthline.cling.model.types.UDN;
+import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
+import org.fourthline.cling.support.model.ProtocolInfos;
+import org.fourthline.cling.support.model.dlna.DLNAProfiles;
+import org.fourthline.cling.support.model.dlna.DLNAProtocolInfo;
+import org.fourthline.cling.transport.impl.apache.StreamClientConfigurationImpl;
+import org.fourthline.cling.transport.impl.apache.StreamClientImpl;
+import org.fourthline.cling.transport.impl.apache.StreamServerConfigurationImpl;
+import org.fourthline.cling.transport.impl.apache.StreamServerImpl;
+import org.fourthline.cling.transport.spi.NetworkAddressFactory;
+import org.fourthline.cling.transport.spi.StreamClient;
+import org.fourthline.cling.transport.spi.StreamServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -171,8 +172,7 @@ public class UPnPService {
         Icon icon = new Icon("image/png", 512, 512, 32, "logo-512", in);
         FileUtil.closeQuietly(in);
 
-        @SuppressWarnings("unchecked")
-        LocalService<CustomContentDirectory> contentDirectoryservice = (LocalService<CustomContentDirectory>)new AnnotationLocalServiceBinder().read(CustomContentDirectory.class);
+        LocalService<CustomContentDirectory> contentDirectoryservice = new AnnotationLocalServiceBinder().read(CustomContentDirectory.class);
         contentDirectoryservice.setManager(new DefaultServiceManager<CustomContentDirectory>(contentDirectoryservice) {
 
             @Override
@@ -193,7 +193,6 @@ public class UPnPService {
             }
         }
 
-        @SuppressWarnings("unchecked")
         LocalService<ConnectionManagerService> connetionManagerService = new AnnotationLocalServiceBinder().read(ConnectionManagerService.class);
         connetionManagerService.setManager(new DefaultServiceManager<ConnectionManagerService>(connetionManagerService) {
             @Override
@@ -203,14 +202,12 @@ public class UPnPService {
         });
 
         // For compatibility with Microsoft
-        @SuppressWarnings("unchecked")
         LocalService<MSMediaReceiverRegistrarService> receiverService = new AnnotationLocalServiceBinder().read(MSMediaReceiverRegistrarService.class);
         receiverService.setManager(new DefaultServiceManager<>(receiverService, MSMediaReceiverRegistrarService.class));
 
         return new LocalDevice(identity, type, details, new Icon[]{icon}, new LocalService[]{contentDirectoryservice, connetionManagerService, receiverService});
     }
 
-    @SuppressWarnings("rawtypes")
     public List<String> getSonosControllerHosts() {
         ensureServiceStarted();
         List<String> result = new ArrayList<String>();
@@ -242,25 +239,18 @@ public class UPnPService {
      *
      */
     public static class ApacheUpnpServiceConfiguration extends DefaultUpnpServiceConfiguration {
-
-        private StreamClientConfiguration configuration;
-
-        @SuppressWarnings("rawtypes")
-        final private TransportConfiguration transportConfiguration;
-
         public ApacheUpnpServiceConfiguration(int streamListenPort) {
             super(streamListenPort);
-            transportConfiguration = TransportConfigurationProvider.getDefaultTransportConfiguration();
         }
 
         @Override
         public StreamClient<?> createStreamClient() {
-            return transportConfiguration.createStreamClient(getDefaultExecutorService(), configuration);
+            return new StreamClientImpl(new StreamClientConfigurationImpl(getSyncProtocolExecutorService()));
         }
 
         @Override
         public StreamServer<?> createStreamServer(NetworkAddressFactory networkAddressFactory) {
-            return transportConfiguration.createStreamServer(networkAddressFactory.getStreamListenPort());
+            return new StreamServerImpl(new StreamServerConfigurationImpl(networkAddressFactory.getStreamListenPort()));
         }
     }
 }

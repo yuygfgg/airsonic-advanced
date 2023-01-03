@@ -304,6 +304,7 @@
                                 <ignoredUnusedDeclaredDependency>jakarta.annotation:jakarta.annotation-api</ignoredUnusedDeclaredDependency>
 				                <ignoredUnusedDeclaredDependency>org.springframework:spring-aspects</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.yaml:snakeyaml</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.eclipse.jetty:*</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>

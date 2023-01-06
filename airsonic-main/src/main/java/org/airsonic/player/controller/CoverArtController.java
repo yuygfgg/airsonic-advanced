@@ -128,7 +128,7 @@ public class CoverArtController {
         LOG.trace("handleRequest - {}", coverArtRequest);
 
         // check modified by last modified
-        if((new ServletWebRequest(request, response)).checkNotModified(getLastModifiedMiili(coverArtRequest))) return;
+        // if((new ServletWebRequest(request, response)).checkNotModified(getLastModifiedMiili(coverArtRequest))) return;
 
         // Send fallback image if no ID is given. (No need to cache it, since it will be cached in browser.)
         if (coverArtRequest == null) {

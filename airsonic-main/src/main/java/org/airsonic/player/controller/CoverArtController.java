@@ -39,7 +39,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.context.request.ServletWebRequest;
+//import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.annotation.PostConstruct;
 import javax.imageio.IIOImage;
@@ -105,25 +105,27 @@ public class CoverArtController {
 
     /**
      * get last modified time epoch millisecond
-     * 
+     *
      * @param coverArtRequest target coverArtRequest
      * @return last modified time in epoch milliseconds. if coverArtRequest id null, then return -1L
      */
+    /*
     private long getLastModifiedMiili(CoverArtRequest coverArtRequest) {
         if (coverArtRequest == null) {
             return -1L;
         }
         return coverArtRequest.lastModified().toEpochMilli();
     }
+    */
 
     @GetMapping
     public void handleRequest(
             @RequestParam(required = false) String id,
             @RequestParam(required = false) Integer size,
             @RequestParam(defaultValue = "60") int offset,
-            HttpServletRequest request, 
+            HttpServletRequest request,
             HttpServletResponse response) throws Exception {
-        
+
         CoverArtRequest coverArtRequest = createCoverArtRequest(id, offset);
         LOG.trace("handleRequest - {}", coverArtRequest);
 

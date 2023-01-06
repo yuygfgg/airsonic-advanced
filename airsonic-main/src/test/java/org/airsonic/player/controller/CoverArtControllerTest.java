@@ -24,11 +24,11 @@ import org.airsonic.player.dao.PlaylistDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.CoverArt;
+import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.domain.MediaFile;
+import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.Playlist;
 import org.airsonic.player.domain.PodcastChannel;
-import org.airsonic.player.domain.CoverArt.EntityType;
-import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.service.CoverArtService;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.PodcastService;
@@ -49,6 +49,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import javax.imageio.ImageIO;
+
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -56,15 +62,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-
-import javax.imageio.ImageIO;
-
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * @author Y.Tory
@@ -120,8 +119,8 @@ public class CoverArtControllerTest {
         byte[] actual = mvc.perform(get("/coverArt"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
-        
-        try(ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             // load default_cover.jpg image
             InputStream in = coverArtController.getClass().getResourceAsStream("default_cover.jpg");
             BufferedImage image = ImageIO.read(in);
@@ -132,7 +131,7 @@ public class CoverArtControllerTest {
 
             // assertion
             assertArrayEquals(expected, actual);
-        } 
+        }
     }
 
     @Test
@@ -144,22 +143,22 @@ public class CoverArtControllerTest {
                 .param("size", "30"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
-        
-        try(ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             // load default_cover.jpg image
             InputStream in = coverArtController.getClass().getResourceAsStream("default_cover.jpg");
             BufferedImage image = ImageIO.read(in);
 
             // scale expected image
             BufferedImage thumbImage = CoverArtController.scale(image, 30, 30);
-            
+
             // create expected response body
             ImageIO.write(thumbImage, "jpeg", out);
             byte[] expected = out.toByteArray();
 
             // assertion
             assertArrayEquals(expected, actual);
-        } 
+        }
     }
 
     /** get cover art by id of media which type is album */
@@ -172,25 +171,25 @@ public class CoverArtControllerTest {
         MediaFile mockedMediaFile = new MediaFile();
         mockedMediaFile.setId(MEDIA_ID);
         mockedMediaFile.setMediaType(MediaType.ALBUM);
-        
+
         // set up mocked cover art
-        CoverArt mockedCoverArt = new CoverArt(1, EntityType.ALBUM, IMAGE_RESOURCE.getFile().getAbsolutePath() , null, false);
-        
+        CoverArt mockedCoverArt = new CoverArt(1, EntityType.ALBUM, IMAGE_RESOURCE.getFile().getAbsolutePath(), null, false);
+
         // set up mock bean
         when(mediaFileService.getMediaFile(anyInt())).thenReturn(mockedMediaFile);
         when(coverArtService.get(any(), anyInt())).thenReturn(mockedCoverArt);
         when(coverArtService.getFullPath(any())).thenReturn(IMAGE_RESOURCE.getFile().toPath());
 
-        // prepare expected 
+        // prepare expected
         byte[] expected = IMAGE_RESOURCE.getInputStream().readAllBytes();
-        
+
         // execution
         byte[] actual = mvc.perform(get("/coverArt")
                 .param("id", MEDIA_ID.toString()))
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andReturn().getResponse().getContentAsByteArray();
-        
+
         // assertion
         assertArrayEquals(expected, actual);
         verify(coverArtService).get(eq(EntityType.MEDIA_FILE), eq(MEDIA_ID));
@@ -201,11 +200,11 @@ public class CoverArtControllerTest {
     @Test
     @WithMockUser(username = AIRSONIC_USER, password = AIRSONIC_PASSWORD)
     public void getCoverArtWithAlbumIdTest() throws Exception {
-        
+
         final int ALBUM_ID = 100;
 
         // set up mocked cover art
-        CoverArt mockedCoverArt = new CoverArt(1, EntityType.ALBUM, IMAGE_RESOURCE.getFile().getAbsolutePath() , null, false);
+        CoverArt mockedCoverArt = new CoverArt(1, EntityType.ALBUM, IMAGE_RESOURCE.getFile().getAbsolutePath(),null, false);
 
         // set up mocked album
         Album mockedAlbum = new Album();
@@ -215,8 +214,8 @@ public class CoverArtControllerTest {
         when(albumDao.getAlbum(anyInt())).thenReturn(mockedAlbum);
         when(coverArtService.get(any(), anyInt())).thenReturn(mockedCoverArt);
         when(coverArtService.getFullPath(any())).thenReturn(IMAGE_RESOURCE.getFile().toPath());
-        
-        // prepare expected 
+
+        // prepare expected
         byte[] expected = IMAGE_RESOURCE.getInputStream().readAllBytes();
 
         // execution
@@ -224,7 +223,7 @@ public class CoverArtControllerTest {
                 .param("id", String.format("al-%d", ALBUM_ID)))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
-        
+
         // assertion
         assertArrayEquals(expected, actual);
         verify(albumDao).getAlbum(eq(ALBUM_ID));
@@ -246,8 +245,8 @@ public class CoverArtControllerTest {
         when(artistDao.getArtist(anyInt())).thenReturn(mockedArtist);
         when(coverArtService.get(any(), anyInt())).thenReturn(mockedCoverArt);
         when(coverArtService.getFullPath(any())).thenReturn(IMAGE_RESOURCE.getFile().toPath());
-        
-        // prepare expected 
+
+        // prepare expected
         byte[] expected = IMAGE_RESOURCE.getInputStream().readAllBytes();
 
         // execution
@@ -256,7 +255,7 @@ public class CoverArtControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
         byte[] actual = result.getResponse().getContentAsByteArray();
-        
+
         // assertion
         assertArrayEquals(expected, actual);
         verify(coverArtService).get(eq(EntityType.ARTIST), eq(ARTIST_ID));
@@ -275,8 +274,8 @@ public class CoverArtControllerTest {
 
         // set up mock
         when(playlistDao.getPlaylist(anyInt())).thenReturn(mockedPlaylist);
-        
-        // prepare expected 
+
+        // prepare expected
         byte[] expected = PLAYLIST_RESOURCE.getInputStream().readAllBytes();
 
         // execution
@@ -285,7 +284,7 @@ public class CoverArtControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
         byte[] actual = result.getResponse().getContentAsByteArray();
-        
+
         // assertion
         assertArrayEquals(expected, actual);
     }
@@ -298,13 +297,13 @@ public class CoverArtControllerTest {
 
         // set up mocked playlist
         final Integer PODCAST_ID = 100;
-        PodcastChannel mockedPodcast = 
-            new PodcastChannel(PODCAST_ID, "http://example.com", "podcast", "description" , "http://example.com", null, "errorMessage", null);
+        PodcastChannel mockedPodcast =
+            new PodcastChannel(PODCAST_ID, "http://example.com", "podcast", "description", "http://example.com", null, "errorMessage", null);
 
         // set up mock
         when(podcastService.getChannel(anyInt())).thenReturn(mockedPodcast);
-        
-        // prepare expected 
+
+        // prepare expected
         byte[] expected = PODCAST_RESOURCE.getInputStream().readAllBytes();
 
         // execution
@@ -313,11 +312,10 @@ public class CoverArtControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
         byte[] actual = result.getResponse().getContentAsByteArray();
-        
+
         // assertion
         assertArrayEquals(expected, actual);
     }
 
 
 }
-    

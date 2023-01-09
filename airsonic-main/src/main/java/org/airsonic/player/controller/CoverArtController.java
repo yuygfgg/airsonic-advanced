@@ -36,10 +36,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.ServletRequestUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.servlet.mvc.LastModified;
+import org.springframework.web.bind.annotation.RequestParam;
+//import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.annotation.PostConstruct;
 import javax.imageio.IIOImage;
@@ -69,7 +69,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping({"/coverArt", "/ext/coverArt"})
-public class CoverArtController implements LastModified {
+public class CoverArtController {
 
     public static final String ALBUM_COVERART_PREFIX = "al-";
     public static final String ARTIST_COVERART_PREFIX = "ar-";
@@ -103,21 +103,34 @@ public class CoverArtController implements LastModified {
         semaphore = new Semaphore(settingsService.getCoverArtConcurrency());
     }
 
-    @Override
-    public long getLastModified(HttpServletRequest request) {
-        CoverArtRequest coverArtRequest = createCoverArtRequest(request);
+    /**
+     * get last modified time epoch millisecond
+     *
+     * @param coverArtRequest target coverArtRequest
+     * @return last modified time in epoch milliseconds. if coverArtRequest id null, then return -1L
+     */
+    /*
+    private long getLastModifiedMiili(CoverArtRequest coverArtRequest) {
         if (coverArtRequest == null) {
             return -1L;
         }
         return coverArtRequest.lastModified().toEpochMilli();
     }
+    */
 
     @GetMapping
-    public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public void handleRequest(
+            @RequestParam(required = false) String id,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(defaultValue = "60") int offset,
+            HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
 
-        CoverArtRequest coverArtRequest = createCoverArtRequest(request);
+        CoverArtRequest coverArtRequest = createCoverArtRequest(id, offset);
         LOG.trace("handleRequest - {}", coverArtRequest);
-        Integer size = ServletRequestUtils.getIntParameter(request, "size");
+
+        // check modified by last modified
+        // if((new ServletWebRequest(request, response)).checkNotModified(getLastModifiedMiili(coverArtRequest))) return;
 
         // Send fallback image if no ID is given. (No need to cache it, since it will be cached in browser.)
         if (coverArtRequest == null) {
@@ -146,8 +159,7 @@ public class CoverArtController implements LastModified {
 
     }
 
-    private CoverArtRequest createCoverArtRequest(HttpServletRequest request) {
-        String id = request.getParameter("id");
+    private CoverArtRequest createCoverArtRequest(String id, int offset) {
         if (id == null) {
             return null;
         }
@@ -162,9 +174,9 @@ public class CoverArtController implements LastModified {
             return createPlaylistCoverArtRequest(Integer.valueOf(id.replace(PLAYLIST_COVERART_PREFIX, "")));
         }
         if (id.startsWith(PODCAST_COVERART_PREFIX)) {
-            return createPodcastCoverArtRequest(Integer.valueOf(id.replace(PODCAST_COVERART_PREFIX, "")), request);
+            return createPodcastCoverArtRequest(Integer.valueOf(id.replace(PODCAST_COVERART_PREFIX, "")), offset);
         }
-        return createMediaFileCoverArtRequest(Integer.valueOf(id), request);
+        return createMediaFileCoverArtRequest(Integer.valueOf(id), offset);
     }
 
     private CoverArtRequest createAlbumCoverArtRequest(int id) {
@@ -182,7 +194,7 @@ public class CoverArtController implements LastModified {
         return playlist == null ? null : new PlaylistCoverArtRequest(playlist);
     }
 
-    private CoverArtRequest createPodcastCoverArtRequest(int id, HttpServletRequest request) {
+    private CoverArtRequest createPodcastCoverArtRequest(int id, int offset) {
         PodcastChannel channel = podcastService.getChannel(id);
         if (channel == null) {
             return null;
@@ -190,16 +202,15 @@ public class CoverArtController implements LastModified {
         if (channel.getMediaFileId() == null) {
             return new PodcastCoverArtRequest(channel);
         }
-        return createMediaFileCoverArtRequest(channel.getMediaFileId(), request);
+        return createMediaFileCoverArtRequest(channel.getMediaFileId(), offset);
     }
 
-    private CoverArtRequest createMediaFileCoverArtRequest(int id, HttpServletRequest request) {
+    private CoverArtRequest createMediaFileCoverArtRequest(int id, int offset) {
         MediaFile mediaFile = mediaFileService.getMediaFile(id);
         if (mediaFile == null) {
             return null;
         }
         if (mediaFile.isVideo()) {
-            int offset = ServletRequestUtils.getIntParameter(request, "offset", 60);
             return new VideoCoverArtRequest(mediaFile, offset);
         }
 

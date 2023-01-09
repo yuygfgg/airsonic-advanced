@@ -55,7 +55,7 @@ public class MusicFolderDaoTestCase extends DaoTestCaseBean2 {
         // no duplicates
         musicFolderDao.createMusicFolder(new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
 
-        assertThat(musicFolderDao.getAllMusicFolders()).usingElementComparatorIgnoringFields("id")
+        assertThat(musicFolderDao.getAllMusicFolders()).usingRecursiveFieldByFieldElementComparatorIgnoringFields("id")
                 .containsExactly(musicFolder);
     }
 
@@ -71,7 +71,7 @@ public class MusicFolderDaoTestCase extends DaoTestCaseBean2 {
         musicFolder.setChanged(Instant.ofEpochMilli(234234L));
         musicFolderDao.updateMusicFolder(musicFolder);
 
-        assertThat(musicFolderDao.getAllMusicFolders()).element(0).isEqualToComparingFieldByField(musicFolder);
+        assertThat(musicFolderDao.getAllMusicFolders()).element(0).usingRecursiveComparison().isEqualTo(musicFolder);
     }
 
     @Test

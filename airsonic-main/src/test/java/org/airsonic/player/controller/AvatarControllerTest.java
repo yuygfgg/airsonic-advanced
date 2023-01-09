@@ -126,6 +126,11 @@ public class AvatarControllerTest {
 
         final Integer AVATAR_ID = 1;
 
+        // set up mock
+        when(settingsService.getSystemAvatar(anyInt())).thenReturn(mockedAvatar);
+        when(mockedAvatar.getMimeType()).thenReturn("img/png");
+        when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","Engineer.png"));
+
         // id = 1 is engineer avatar
         byte[] actual = mvc.perform(get("/avatar")
                 .param("id", AVATAR_ID.toString()))
@@ -144,6 +149,11 @@ public class AvatarControllerTest {
     @WithMockUser(username = AIRSONIC_USER, password = AIRSONIC_PASSWORD)
     public void getAvatarByIdPriorToUsernameTest() throws Exception {
         final Integer AVATAR_ID = 1;
+
+        // set up mock
+        when(settingsService.getSystemAvatar(anyInt())).thenReturn(mockedAvatar);
+        when(mockedAvatar.getMimeType()).thenReturn("img/png");
+        when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","Engineer.png"));
 
         // id = 1 is engineer avatar
         MvcResult result = mvc.perform(get("/avatar")
@@ -173,6 +183,9 @@ public class AvatarControllerTest {
         when(settingsService.getUserSettings(anyString())).thenReturn(mockedUserSettings);
         when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.SYSTEM);
         when(mockedUserSettings.getSystemAvatarId()).thenReturn(AVATAR_ID);
+        when(settingsService.getSystemAvatar(anyInt())).thenReturn(mockedAvatar);
+        when(mockedAvatar.getMimeType()).thenReturn("img/png");
+        when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","Engineer.png"));
 
         // id = 1 is engineer avatar
         MvcResult result = mvc.perform(get("/avatar")

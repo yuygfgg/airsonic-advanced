@@ -1959,7 +1959,10 @@ public class SubsonicRESTController {
     @RequestMapping("/getAvatar")
     public void getAvatar(HttpServletRequest request, HttpServletResponse response) throws Exception {
         request = wrapRequest(request);
-        avatarController.handleRequest(request, response);
+        Integer id = ServletRequestUtils.getIntParameter(request, "id");
+        String username = ServletRequestUtils.getStringParameter(request, "username");
+        boolean forceCustom = ServletRequestUtils.getBooleanParameter(request, "forceCustom", false);
+        avatarController.handleRequest(id, username, forceCustom, response);
     }
 
     @RequestMapping("/changePassword")

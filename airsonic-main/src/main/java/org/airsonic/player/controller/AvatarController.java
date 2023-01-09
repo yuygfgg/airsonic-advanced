@@ -28,12 +28,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.ServletRequestUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.servlet.mvc.LastModified;
+import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -43,19 +41,17 @@ import javax.servlet.http.HttpServletResponse;
  */
 @Controller
 @RequestMapping("/avatar")
-public class AvatarController implements LastModified {
+public class AvatarController {
 
     @Autowired
     private SettingsService settingsService;
     @Autowired
     private ResourceLoader loader;
 
-    @Override
-    public long getLastModified(HttpServletRequest request) {
-        Avatar avatar = getAvatar(request);
+    /**
+    private long getLastModified(Avatar avatar, String username) {
         long result = avatar == null ? -1L : avatar.getCreatedDate().toEpochMilli();
 
-        String username = request.getParameter("username");
         if (username != null) {
             UserSettings userSettings = settingsService.getUserSettings(username);
             result = Math.max(result, userSettings.getChanged().toEpochMilli());
@@ -63,10 +59,16 @@ public class AvatarController implements LastModified {
 
         return result;
     }
+    */
 
     @GetMapping
-    public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        Avatar avatar = getAvatar(request);
+    public void handleRequest(
+            @RequestParam(required = false) Integer id,
+            @RequestParam(required = false) String username,
+            @RequestParam(defaultValue = "false") boolean forceCustom,
+            HttpServletResponse response) throws Exception {
+
+        Avatar avatar = getAvatar(id, username, forceCustom);
 
         if (avatar == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -81,15 +83,12 @@ public class AvatarController implements LastModified {
         IOUtils.copy(res.getInputStream(), response.getOutputStream());
     }
 
-    private Avatar getAvatar(HttpServletRequest request) {
-        String id = request.getParameter("id");
-        boolean forceCustom = ServletRequestUtils.getBooleanParameter(request, "forceCustom", false);
+    private Avatar getAvatar(Integer id, String username, boolean forceCustom) {
 
         if (id != null) {
-            return settingsService.getSystemAvatar(Integer.parseInt(id));
+            return settingsService.getSystemAvatar(id);
         }
 
-        String username = request.getParameter("username");
         if (username == null) {
             return null;
         }

@@ -157,6 +157,6 @@ public class PlayerDaoTestCase extends DaoTestCaseBean2 {
     }
 
     private void assertPlayerEquals(Player expected, Player actual) {
-        assertThat(expected).isEqualToComparingFieldByField(actual);
+        assertThat(expected).usingRecursiveComparison().isEqualTo(actual);
     }
 }

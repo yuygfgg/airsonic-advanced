@@ -1,7 +1,6 @@
 package org.airsonic.player.service;
 
 import com.google.common.collect.Lists;
-
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.PlaylistDao;
 import org.airsonic.player.domain.MediaFile;

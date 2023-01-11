@@ -23,7 +23,12 @@ import org.airsonic.player.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
@@ -31,7 +36,9 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Vector;
+
 
 /**
  * Servlet filter which decodes HTTP request parameters.  If a parameter name ends with
@@ -79,14 +86,13 @@ public class ParameterDecodingFilter implements Filter {
         }
 
         @Override
-        public Map getParameterMap() {
-            Map map = super.getParameterMap();
+        public Map<String, String[]> getParameterMap() {
+            Map<String, String[]> map = super.getParameterMap();
             Map<String, String[]> result = new HashMap<String, String[]>();
 
-            for (Object o : map.entrySet()) {
-                Map.Entry entry = (Map.Entry) o;
-                String name = (String) entry.getKey();
-                String[] values = (String[]) entry.getValue();
+            for (Entry<String, String[]> entry : map.entrySet()) {
+                String name = entry.getKey();
+                String[] values = entry.getValue();
 
                 if (name.endsWith(PARAM_SUFFIX)) {
                     result.put(name.replace(PARAM_SUFFIX, ""), decode(values));
@@ -98,11 +104,12 @@ public class ParameterDecodingFilter implements Filter {
         }
 
         @Override
-        public Enumeration getParameterNames() {
-            Enumeration e = super.getParameterNames();
+        public Enumeration<String> getParameterNames() {
+
+            Enumeration<String> e = super.getParameterNames();
             Vector<String> v = new Vector<String>();
             while (e.hasMoreElements()) {
-                String name = (String) e.nextElement();
+                String name = e.nextElement();
                 if (name.endsWith(PARAM_SUFFIX)) {
                     name = name.replace(PARAM_SUFFIX, "");
                 }

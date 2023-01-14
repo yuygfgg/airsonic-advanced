@@ -184,7 +184,7 @@ public class PlaylistServiceTestImport {
         assertEquals(3, mediaFiles.size());
     }
 
-    private class PersistPlayList implements Answer {
+    private class PersistPlayList implements Answer<Object> {
         private final int id;
         public PersistPlayList(int id) {
             this.id = id;
@@ -198,10 +198,10 @@ public class PlaylistServiceTestImport {
         }
     }
 
-    private class MediaFileHasEverything implements Answer {
+    private class MediaFileHasEverything implements Answer<MediaFile> {
 
         @Override
-        public Object answer(InvocationOnMock invocationOnMock) {
+        public MediaFile answer(InvocationOnMock invocationOnMock) {
             File file = invocationOnMock.getArgument(0);
             MediaFile mediaFile = new MediaFile();
             mediaFile.setPath(file.getPath());

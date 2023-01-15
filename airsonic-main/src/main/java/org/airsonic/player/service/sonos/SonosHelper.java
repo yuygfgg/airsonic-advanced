@@ -14,6 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
  *
+ *  Copyright 2023 (C) Y.Tory
  *  Copyright 2015 (C) Sindre Mehus
  */
 
@@ -396,6 +397,8 @@ public class SonosHelper {
             case ALPHABETICAL:
                 albums = mediaFileService.getAlphabeticalAlbums(offset, count, true, musicFolders);
                 total = mediaFileService.getAlbumCount(musicFolders);
+                break;
+            default:
                 break;
         }
         return new AlbumList(albums, total);

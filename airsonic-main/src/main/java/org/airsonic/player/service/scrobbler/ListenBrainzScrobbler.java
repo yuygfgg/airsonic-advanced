@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -22,7 +23,6 @@ package org.airsonic.player.service.scrobbler;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.util.Util;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -49,10 +49,6 @@ public class ListenBrainzScrobbler {
 
     private RegistrationThread thread;
     private final LinkedBlockingQueue<RegistrationData> queue = new LinkedBlockingQueue<RegistrationData>();
-    private final RequestConfig requestConfig = RequestConfig.custom()
-            .setConnectTimeout(15000)
-            .setSocketTimeout(15000)
-            .build();
 
     /**
      * Registers the given media file at listenbrainz.org. This method returns
@@ -219,6 +215,7 @@ public class ListenBrainzScrobbler {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class RegistrationData {
         private String url;
         private String token;

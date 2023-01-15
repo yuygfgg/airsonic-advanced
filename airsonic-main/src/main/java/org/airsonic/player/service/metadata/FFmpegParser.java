@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -24,7 +25,6 @@ import com.google.common.collect.ImmutableList;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.service.MediaFolderService;
 import org.airsonic.player.service.SettingsService;
-import org.airsonic.player.service.TranscodingService;
 import org.airsonic.player.util.Util;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -60,8 +60,6 @@ public class FFmpegParser extends MetaDataParser {
     };
 
     @Autowired
-    private TranscodingService transcodingService;
-    @Autowired
     private MediaFolderService mediaFolderService;
 
     /**
@@ -87,7 +85,8 @@ public class FFmpegParser extends MetaDataParser {
 
             Process process = Runtime.getRuntime().exec(command.toArray(new String[0]));
             JsonNode result = null;
-            try (InputStream in = process.getInputStream(); BufferedInputStream bin = new BufferedInputStream(in);) {
+            try (InputStream in = process.getInputStream();
+                BufferedInputStream bin = new BufferedInputStream(in); ) {
                 result = Util.getObjectMapper().readTree(bin);
             }
 
@@ -177,10 +176,6 @@ public class FFmpegParser extends MetaDataParser {
     @Override
     public boolean isApplicable(Path path) {
         return Files.isRegularFile(path);
-    }
-
-    public void setTranscodingService(TranscodingService transcodingService) {
-        this.transcodingService = transcodingService;
     }
 
     @Override

@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -23,7 +24,6 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.metadata.JaudiotaggerParser;
 import org.airsonic.player.service.metadata.MetaDataParser;
-import org.airsonic.player.service.metadata.MetaDataParserFactory;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -49,8 +49,6 @@ import java.util.Map;
 @RequestMapping("/editTags")
 public class EditTagsController {
 
-    @Autowired
-    private MetaDataParserFactory metaDataParserFactory;
     @Autowired
     private MediaFileService mediaFileService;
 

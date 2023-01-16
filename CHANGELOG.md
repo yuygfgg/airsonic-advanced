@@ -3,6 +3,19 @@
 # kagemomiji/airsonic-advanced
 # -->
 
+## v11.0.2 - 16 Jan 2023
+
+** Treat code warning and deprecated functions**
+
+Chores:
+- Treat deprecated jdbcTemplate methods
+- Treat deprecated Assertion methods
+- Treat deprecated ObjectMapper methods
+- Remove deprecated LastModified annotation
+- Change GUI link to this repository
+- And some code warning fixed
+
+
 ## v11.0.1 - 30 Dec 2022
 
 **Security update and modify CI for this repository**

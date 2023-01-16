@@ -74,8 +74,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - run: mkdir install/docker/target
-      - run: cp airsonic-main/target/airsonic.war install/docker/target/airsonic-main.war
+      - run: mkdir -p install/docker/target/dependency
+      - run: cp airsonic-main/target/airsonic.war install/docker/target/dependency/airsonic-main.war
       - name: Build and push multiplatform images to Dockerhub
         uses: docker/build-push-action@v3
         with:

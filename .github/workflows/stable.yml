@@ -75,7 +75,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - run: mkdir install/docker/target
-      - run: copy airsonic-main/target/airsonic.war install/docker/target/airsonic-main.war
+      - run: cp airsonic-main/target/airsonic.war install/docker/target/airsonic-main.war
       - name: Build and push multiplatform images to Dockerhub
         uses: docker/build-push-action@v3
         with:

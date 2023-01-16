@@ -7,6 +7,15 @@
 
 **Security update and modify CI for this repository**
 
+Changes:
+- Docker base image to eclipse-temurin:17.0.5
+- Change base Java version to 17
+- Change support DB version
+  - HSQLDB: 2.7.1
+  - PostgreSQL: 13.3, 14.1
+  - MySQL: 8.0
+  - MariaDB: 10.5
+
 Security:
 - Upgrade springboot to 2.6.14 for CVE
 - Upgrade hsqldb to 2.7.1 for CVE

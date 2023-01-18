@@ -27,4 +27,5 @@
     <include file="delete-first-player.xml" relativeToChangelogFile="true"/>
     <include file="explicit-fk-indices.xml" relativeToChangelogFile="true"/>
     <include file="podcast-episode-indices.xml" relativeToChangelogFile="true"/>
+    <include file="cue-support.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

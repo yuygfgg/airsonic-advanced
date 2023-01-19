@@ -9,7 +9,7 @@
             </not>
         </preConditions>
         <addColumn tableName="media_file">
-            <column name="start_position" afterColumn="type" type="double" defaultValueNumeric="-1.0">
+            <column name="start_position" type="double" defaultValueNumeric="-1.0">
                 <constraints nullable="false" />
             </column>
         </addColumn>
@@ -40,7 +40,7 @@
             </not>
         </preConditions>
         <addColumn tableName="media_file">
-            <column name="index_path" afterColumn="parent_path" type="${varchar_type}" />
+            <column name="index_path" type="${varchar_type}" />
         </addColumn>
         <rollback>
             <dropColumn tableName="media_file" columnName="index_path"></dropColumn>

@@ -14,7 +14,10 @@
             </column>
         </addColumn>
     </changeSet>
-    <changeSet id="dropuniqueindexfolderpath_001" author="yetangitu">
+    <changeSet id="dropuniqueindexfolderpath_001" author="kagemomiji">
+        <preConditions onFail="MARK_RAN">
+           <indexExists tableName="media_file" indexName="idx_media_file_folder_path" />
+        </preConditions>
         <dropIndex tableName="media_file" indexName="idx_media_file_folder_path" />
         <rollback>
             <createIndex tableName="media_file" unique="true" indexName="idx_media_file_folder_path">

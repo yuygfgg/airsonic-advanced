@@ -14,6 +14,19 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet id="drop-music-folder-media-file-fk-with-update" author="kagemomiji">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sqlCheck expectedResult="0">
+                    select count(*) from information_schema.table_constraints tc, information_schema.key_column_usage kcu WHERE kcu.constraint_name=tc.constraint_name AND lower(tc.table_name)='media_file' and lower(tc.constraint_type)='foreign key' and lower(kcu.column_name)='folder_id'
+                </sqlCheck>
+            </not>
+        </preConditions>
+            <dropForeignKeyConstraint baseTableName="media_file" constraintName="mfi_mfo_id_fk"/>
+        <rollback>
+            <addForeignKeyConstraint baseTableName="media_file" baseColumnNames="folder_id" constraintName="mfi_mfo_id_fk" referencedTableName="music_folder" referencedColumnNames="id" onDelete="CASCADE" onUpdate="CASCADE" />
+        </rollback>
+    </changeSet>
     <changeSet id="dropuniqueindexfolderpath_001" author="kagemomiji">
         <preConditions onFail="MARK_RAN">
            <indexExists tableName="media_file" indexName="idx_media_file_folder_path" />
@@ -24,6 +37,17 @@
                 <column name="folder_id"></column>
                 <column name="path"></column>
             </createIndex>
+        </rollback>
+    </changeSet>
+    <changeSet id="revert-music-folder-media-file-fk-with-update" author="kagemomiji">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from information_schema.table_constraints tc, information_schema.key_column_usage kcu WHERE kcu.constraint_name=tc.constraint_name AND lower(tc.table_name)='media_file' and lower(tc.constraint_type)='foreign key' and lower(kcu.column_name)='folder_id'
+            </sqlCheck>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="media_file" baseColumnNames="folder_id" constraintName="mfi_mfo_id_fk" referencedTableName="music_folder" referencedColumnNames="id" onDelete="CASCADE" onUpdate="CASCADE" />
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="media_file" constraintName="mfi_mfo_id_fk"/>
         </rollback>
     </changeSet>
     <changeSet id="adduniqueindexstartposition_001" author="yetangitu">

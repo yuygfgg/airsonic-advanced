@@ -2,8 +2,7 @@ name: 'Build docker image on PR'
 
 on:
   pull_request:
-    branches: 
-      - main
+    branches: [main]
     paths-ignore:
       - "**.md"
       - "*.txt"
@@ -19,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       github.event.pull_request.head.repo.fork == false || 
-      (github.event.pull_request.head_repo.fork == true && contains(github.event.pull_request.labels.*.name, 'safe to test'))
+      (github.event.pull_request.head.repo.fork == true && contains(github.event.pull_request.labels.*.name, 'safe to test'))
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK

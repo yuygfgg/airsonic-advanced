@@ -4,6 +4,11 @@ on:
   pull_request:
     branches: 
       - main
+    paths-ignore:
+      - "**.md"
+      - "*.txt"
+      - ".github/**" 
+      - "!.github/workflows/pr_build_docker.yml"
   pull_request_target:
     types: 
       - labeled

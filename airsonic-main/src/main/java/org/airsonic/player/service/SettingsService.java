@@ -712,7 +712,7 @@ public class SettingsService {
         if (cachedPlayableFileTypes == null
             || cachedMusicFileTypes == null
             || cachedVideoFileTypes == null) {
-            cachedPlayableFileTypes = splitLowerString(getMusicFileTypes().join(" ", getVideoFileTypes()), " ");
+            cachedPlayableFileTypes = splitLowerString(String.join(" ", getMusicFileTypes(), getVideoFileTypes()), " ");
         }
         return cachedPlayableFileTypes;
     }

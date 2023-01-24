@@ -58,6 +58,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -184,8 +185,8 @@ public class MediaFileService {
     private boolean needsUpdate(MediaFile mediaFile, MusicFolder folder, boolean minimizeDiskAccess) {
         return !(minimizeDiskAccess || (mediaFile.getVersion() >= MediaFileDao.VERSION
                 && !settingsService.getFullScan()
-                && mediaFile.getChanged().compareTo(FileUtil.lastModified(mediaFile.getFullPath(folder.getPath()))) > -1
-                && (mediaFile.hasIndex() ? mediaFile.getChanged().compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath()))) > -1 : true)));
+                && mediaFile.getChanged().compareTo(FileUtil.lastModified(mediaFile.getFullPath(folder.getPath())).truncatedTo(ChronoUnit.MICROS)) > -1
+                && (mediaFile.hasIndex() ? mediaFile.getChanged().compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath())).truncatedTo(ChronoUnit.MICROS)) > -1 : true)));
     }
 
     private MediaFile checkLastModified(MediaFile mediaFile, MusicFolder folder, boolean minimizeDiskAccess) {
@@ -231,7 +232,7 @@ public class MediaFileService {
      * @param includeFiles       Whether files should be included in the result.
      * @param includeDirectories Whether directories should be included in the result.
      * @param sort               Whether to sort files in the same directory.
-     * @param minimizeDiskAccess Whether to refrain from checking for new or changed files
+         * @param minimizeDiskAccess Whether to refrain from checking for new or changed files
      * @return All children media files.
      */
     public List<MediaFile> getChildrenOf(MediaFile parent, boolean includeFiles, boolean includeDirectories, boolean sort, boolean minimizeDiskAccess) {

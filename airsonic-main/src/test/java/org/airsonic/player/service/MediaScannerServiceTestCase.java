@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A unit test class to test the MediaScannerService.
@@ -216,5 +218,67 @@ public class MediaScannerServiceTestCase {
         Assert.assertEquals(Paths.get(album.getPath()).resolve("01 - Aria.flac").toString(), file.getPath());
         Assert.assertEquals("0820752d-1043-4572-ab36-2df3b5cc15fa", file.getMusicBrainzReleaseId());
         Assert.assertEquals("831586f4-56f9-4785-ac91-447ae20af633", file.getMusicBrainzRecordingId());
+        assertEquals(-1.0d, file.getStartPosition(), 0.0d);
+    }
+
+    @Test
+    public void testMusicCue() {
+
+        // Add the "cue" folder to the database
+        Path musicFolderFile = MusicFolderTestData.resolveMusicCueFolderPath();
+        MusicFolder musicFolder = new MusicFolder(1, musicFolderFile, "Cue", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        cleanupId = ScanningTestUtils.before(Arrays.asList(musicFolder), mediaFolderService, mediaScannerService);
+
+        // Retrieve the "Cue" folder from the database to make
+        // sure that we don't accidentally operate on other folders
+        // from previous tests.
+        musicFolder = musicFolderDao.getMusicFolderForPath(musicFolder.getPath().toString());
+        List<MusicFolder> folders = new ArrayList<>();
+        folders.add(musicFolder);
+
+        // Test that the artist is correctly imported
+        List<Artist> allArtists = artistDao.getAlphabetialArtists(0, Integer.MAX_VALUE, folders);
+        assertEquals(1, allArtists.size());
+        Artist artist = allArtists.get(0);
+        assertEquals("TestArtist", artist.getName());
+        assertEquals(1, artist.getAlbumCount());
+
+
+        // Test that the album is correctly imported
+        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, folders);
+        assertEquals(1, allAlbums.size());
+        Album album = allAlbums.get(0);
+        assertEquals("AirsonicTest", album.getName());
+        assertEquals("TestArtist", album.getArtist());
+        assertEquals(2, album.getSongCount());
+
+        // Test that the music file is correctly imported
+        List<MediaFile> albumFiles = mediaFileDao.getChildrenOf(allAlbums.get(0).getPath(), allAlbums.get(0).getFolderId(), false);
+        Assert.assertEquals(3, albumFiles.size());
+        MediaFile file = albumFiles.get(0);
+        assertEquals("airsonic-test", file.getTitle());
+        assertEquals("wav", file.getFormat());
+        assertNull(file.getAlbumName());
+        assertNull(file.getArtist());
+        assertNull(file.getAlbumArtist());
+        assertNull(file.getTrackNumber());
+        assertNull(file.getYear());
+        assertEquals(album.getPath(), file.getParentPath());
+        assertEquals(Paths.get(album.getPath()).resolve("airsonic-test.wav").toString(), file.getPath());
+        assertTrue(file.getIndexPath().contains("airsonic-test.cue"));
+        assertEquals(-1.0d, file.getStartPosition(), 0.0d);
+
+        MediaFile track1 = albumFiles.get(1);
+        assertEquals("Handel", track1.getTitle());
+        assertEquals("wav", track1.getFormat());
+        assertEquals(track1.getAlbumName(), "AirsonicTest");
+        assertEquals("Beecham", track1.getArtist());
+        assertEquals("TestArtist", track1.getAlbumArtist());
+        assertEquals(1L, (long)track1.getTrackNumber());
+        assertNull(track1.getYear());
+        assertEquals(album.getPath(), track1.getParentPath());
+        assertEquals(Paths.get(album.getPath()).resolve("airsonic-test.wav").toString(), track1.getPath());
+        assertNull(track1.getIndexPath());
+        assertEquals(0.0d, track1.getStartPosition(), 0.0d);
     }
 }

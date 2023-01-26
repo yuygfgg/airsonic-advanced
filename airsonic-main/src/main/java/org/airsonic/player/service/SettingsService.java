@@ -241,7 +241,7 @@ public class SettingsService {
     private static final String DEFAULT_SONOS_LINK_METHOD = SonosServiceRegistration.AuthenticationType.APPLICATION_LINK.name();
     private static final String DEFAULT_EXPORT_PLAYLIST_FORMAT = "m3u";
     private static final boolean DEFAULT_IGNORE_SYMLINKS = false;
-    private static final boolean DEFAULT_HIDE_INDEXED_FILES = false;
+    private static final boolean DEFAULT_HIDE_INDEXED_FILES = true;
     private static final String DEFAULT_EXCLUDE_PATTERN_STRING = null;
     private static final String DEFAULT_PREFERRED_NONDECODABLE_PASSWORD_ENCODER = "bcrypt";
     private static final String DEFAULT_PREFERRED_DECODABLE_PASSWORD_ENCODER = "encrypted-AES-GCM";

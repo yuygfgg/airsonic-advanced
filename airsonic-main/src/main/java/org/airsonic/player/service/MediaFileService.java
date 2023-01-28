@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory, Yetangitu
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -186,7 +187,9 @@ public class MediaFileService {
         return !(minimizeDiskAccess || (mediaFile.getVersion() >= MediaFileDao.VERSION
                 && !settingsService.getFullScan()
                 && mediaFile.getChanged().compareTo(FileUtil.lastModified(mediaFile.getFullPath(folder.getPath())).truncatedTo(ChronoUnit.MICROS)) > -1
-                && (mediaFile.hasIndex() ? mediaFile.getChanged().compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath())).truncatedTo(ChronoUnit.MICROS)) > -1 : true)));
+                && (mediaFile.hasIndex() ? mediaFile.getChanged().compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath())).truncatedTo(ChronoUnit.MICROS)) > -1 : true)
+                && mediaFile.getStartPosition() > MediaFile.NOT_INDEXED //ignore virtual tracks from cue sheets
+                ));
     }
 
     private MediaFile checkLastModified(MediaFile mediaFile, MusicFolder folder, boolean minimizeDiskAccess) {
@@ -195,8 +198,35 @@ public class MediaFileService {
             return mediaFile;
         }
         LOG.debug("Updating database file from disk (id {}, path {} in folder {} ({}))", mediaFile.getId(), mediaFile.getPath(), folder.getId(), folder.getName());
-        mediaFile = createMediaFile(mediaFile.getRelativePath(), folder, mediaFile);
-        updateMediaFile(mediaFile);
+        if (mediaFile.hasIndex()) {
+            if (!Files.exists(mediaFile.getFullPath(folder.getPath()))) {
+                // Delete children and base file that no longer exist on disk.
+                mediaFileDao.deleteMediaFile(mediaFile.getPath(), mediaFile.getFolderId());
+                mediaFile.setPresent(false);
+                mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
+            } else if (!Files.exists(mediaFile.getFullIndexPath(folder.getPath()))) {
+                // Delete children that no longer exist on disk
+                mediaFileDao.deleteMediaFile(mediaFile.getPath(), mediaFile.getFolderId());
+                mediaFile.setPresent(true);
+                mediaFile.setIndexPath(null);
+                MediaFile parent = mediaFileDao.getMediaFile(mediaFile.getParentPath(), mediaFile.getFolderId());
+                mediaFile.setChildrenLastUpdated(Objects.isNull(parent) ? Instant.ofEpochMilli(1) : parent.getChanged());
+                updateMediaFile(mediaFile);
+            } else {
+                // update media file
+                Instant mediaChanged = FileUtil.lastModified(mediaFile.getFullPath(folder.getPath()));
+                Instant cueChanged = FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath()));
+                mediaFile.setChanged(mediaChanged.compareTo(cueChanged) >= 0 ? mediaChanged : cueChanged);
+                updateMediaFile(mediaFile);
+                // update cue tracks
+                Map<Pair<String, Double>, MediaFile> storedChildrenMap = mediaFileDao.getMediaFilesByRelativePathAndFolderId(mediaFile.getPath(), mediaFile.getFolderId()).parallelStream()
+                    .filter(i -> i.getStartPosition() > MediaFile.NOT_INDEXED).collect(Collectors.toConcurrentMap(i -> Pair.of(i.getPath(), i.getStartPosition()), i -> i));
+                createIndexedTracks(mediaFile, folder, storedChildrenMap);
+            }
+        } else {
+            mediaFile = createMediaFile(mediaFile.getRelativePath(), folder, mediaFile);
+            updateMediaFile(mediaFile);
+        }
         return mediaFile;
     }
 
@@ -470,9 +500,13 @@ public class MediaFileService {
             List<MediaFile> indexedTracks = cueFiles.stream().parallel()
                 .flatMap(c -> {
                     MediaFile base = bareFiles.remove(FilenameUtils.getBaseName(c));
+                    String indexPath = folder.getPath().relativize(Paths.get(c)).toString();
                     if (base != null) {
-                        if (!c.equals(base.getIndexPath())) {
-                            base.setIndexPath(c); // update indexPath in mediaFile
+                        if (!indexPath.equals(base.getIndexPath())) {
+                            base.setIndexPath(indexPath); // update indexPath in mediaFile
+                            Instant mediaChanged = FileUtil.lastModified(base.getFullPath(folder.getPath()));
+                            Instant cueChanged = FileUtil.lastModified(base.getFullIndexPath(folder.getPath()));
+                            base.setChanged(mediaChanged.compareTo(cueChanged) >= 0 ? mediaChanged : cueChanged);
                             updateMediaFile(base);
                         }
                         List<MediaFile> tracks = createIndexedTracks(base, folder, storedChildrenMap);

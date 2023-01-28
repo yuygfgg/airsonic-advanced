@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory, Yetangitu
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -76,6 +77,17 @@ public class MediaFileDao extends AbstractDao {
 
     public List<MediaFile> getMediaFilesByRelativePath(String path) {
         return query("select " + QUERY_COLUMNS + " from media_file where path=?", rowMapper, path);
+    }
+
+    /**
+     * Returns the list of media file that has same path in the folder whose id is given folderId
+     *
+     * @param path The path of media file
+     * @param folderId The id of the folder which contains the media file
+     * @return The list of media files
+     */
+    public List<MediaFile> getMediaFilesByRelativePathAndFolderId(String path, int folderId) {
+        return query("select " + QUERY_COLUMNS + " from media_file where path=? and folder_id=?", rowMapper, path, folderId);
     }
 
     /**

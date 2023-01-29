@@ -42,6 +42,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -98,6 +99,7 @@ public class SettingsServiceTestCase {
         assertEquals("Wrong default LDAP search filter.", "(sAMAccountName={0})", settingsService.getLdapSearchFilter());
         assertEquals("Wrong default LDAP auto-shadowing.", false, settingsService.isLdapAutoShadowing());
         assertEquals("30m", settingsService.getSessionDuration());
+        assertEquals("Wrong default hideIndexedFile.", true, settingsService.getHideIndexedFiles());
     }
 
     @Test
@@ -124,6 +126,7 @@ public class SettingsServiceTestCase {
         settingsService.setLdapManagerPassword("secret");
         settingsService.setLdapSearchFilter("newLdapSearchFilter");
         settingsService.setLdapAutoShadowing(true);
+        settingsService.setHideIndexedFiles(false);
 
         verifySettings(settingsService);
 
@@ -160,6 +163,7 @@ public class SettingsServiceTestCase {
         assertEquals("Wrong LDAP manager password.", "secret", settingsService.getLdapManagerPassword());
         assertEquals("Wrong LDAP search filter.", "newLdapSearchFilter", settingsService.getLdapSearchFilter());
         assertTrue("Wrong LDAP auto-shadowing.", settingsService.isLdapAutoShadowing());
+        assertFalse("Wrong default hideIndexedFile.", settingsService.getHideIndexedFiles());
     }
 
     @Test

@@ -35,6 +35,10 @@ public class MusicFolderTestData {
         return resolveBaseMediaPath().resolve("Music3");
     }
 
+    public static Path resolveMusicCueFolderPath() {
+        return resolveBaseMediaPath().resolve("cue");
+    }
+
     public static List<MusicFolder> getTestMusicFolders() {
         List<MusicFolder> liste = new ArrayList<>();
         Path musicDir = resolveMusicFolderPath();

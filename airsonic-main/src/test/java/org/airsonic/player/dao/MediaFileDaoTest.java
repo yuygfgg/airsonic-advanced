@@ -21,11 +21,16 @@ package org.airsonic.player.dao;
 
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
+import org.airsonic.player.domain.MusicFolder;
+import org.airsonic.player.domain.MusicFolder.Type;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -40,19 +45,32 @@ public class MediaFileDaoTest extends DaoTestCaseBean2 {
     @Autowired
     MediaFileDao mediaFileDao;
 
+    @Autowired
+    MusicFolderDao musicFolderDao;
+
     @Before
     public void setUp() {
         getJdbcTemplate().execute("delete from media_file");
+        getJdbcTemplate().execute("delete from music_folder");
+        MusicFolder musicFolder = new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        musicFolderDao.createMusicFolder(musicFolder);
+    }
+
+    @AfterAll
+    public void cleanUp() {
+        getJdbcTemplate().execute("delete from media_file");
+        getJdbcTemplate().execute("delete from music_folder");
     }
 
     @Test
     public void testGetMediaFilesByRelativePathAndFolderId() {
         //prepare
+        MusicFolder folder = musicFolderDao.getAllMusicFolders().get(0);
         MediaFile baseFile = new MediaFile();
-        baseFile.setFolderId(0);
-        baseFile.setPath("/test.wav");
+        baseFile.setFolderId(folder.getId());
+        baseFile.setPath("test.wav");
         baseFile.setMediaType(MediaType.MUSIC);
-        baseFile.setIndexPath("/test.cue");
+        baseFile.setIndexPath("test.cue");
         baseFile.setStartPosition(MediaFile.NOT_INDEXED);
         baseFile.setCreated(Instant.now());
         baseFile.setChanged(Instant.now());
@@ -62,13 +80,13 @@ public class MediaFileDaoTest extends DaoTestCaseBean2 {
         mediaFileDao.createOrUpdateMediaFile(baseFile, file -> {});
 
         // assert
-        List<MediaFile> registeredTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("/test.wav", 0);
+        List<MediaFile> registeredTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("test.wav", folder.getId());
         assertEquals(1, registeredTracks.size());
 
         // update
         MediaFile mediaFile = new MediaFile();
-        mediaFile.setFolderId(0);
-        mediaFile.setPath("/test.wav");
+        mediaFile.setFolderId(folder.getId());
+        mediaFile.setPath("test.wav");
         mediaFile.setMediaType(MediaType.MUSIC);
         mediaFile.setStartPosition(10.0);
         mediaFile.setCreated(Instant.now());
@@ -77,16 +95,15 @@ public class MediaFileDaoTest extends DaoTestCaseBean2 {
         mediaFile.setChildrenLastUpdated(Instant.now());
         mediaFileDao.createOrUpdateMediaFile(mediaFile, file -> {});
 
-
         // assertion
-        registeredTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("/test.wav", 0);
+        registeredTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("test.wav", folder.getId());
         assertEquals(2, registeredTracks.size());
-        registeredTracks.forEach(t -> assertEquals("/test.wav",t.getPath()));
+        registeredTracks.forEach(t -> assertEquals("test.wav",t.getPath()));
 
-        List<MediaFile> wrongFolderTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("/test.wav", 1);
+        List<MediaFile> wrongFolderTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("test.wav", folder.getId() + 1);
         assertEquals(0, wrongFolderTracks.size());
 
-        List<MediaFile> wrongPathTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("/wrong.wav", 0);
+        List<MediaFile> wrongPathTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("wrong.wav", folder.getId());
         assertEquals(0, wrongPathTracks.size());
     }
 

@@ -135,10 +135,14 @@ public class MediaFileService {
         return getMediaFile(Paths.get(relativePath), mediaFolderService.getMusicFolderById(folderId), minimizeDiskAccess);
     }
 
-    @Cacheable(cacheNames = "mediaFilePathCache", key = "#relativePath.toString().concat('-').concat(#folder.id)", condition = "#root.target.memoryCacheEnabled", unless = "#result == null")
     public MediaFile getMediaFile(Path relativePath, MusicFolder folder, boolean minimizeDiskAccess) {
+        return getMediaFile(relativePath, folder, MediaFile.NOT_INDEXED, minimizeDiskAccess);
+    }
+
+    @Cacheable(cacheNames = "mediaFilePathCache", key = "#relativePath.toString().concat('-').concat(#folder.id).concat('-').concat(#startPosition.toString())", condition = "#root.target.memoryCacheEnabled", unless = "#result == null")
+    public MediaFile getMediaFile(Path relativePath, MusicFolder folder, Double startPosition, boolean minimizeDiskAccess) {
         // Look in database.
-        MediaFile result = mediaFileDao.getMediaFile(relativePath.toString(), folder.getId());
+        MediaFile result = mediaFileDao.getMediaFile(relativePath.toString(), folder.getId(), startPosition);
         if (result != null) {
             result = checkLastModified(result, folder, minimizeDiskAccess);
             return result;
@@ -148,6 +152,9 @@ public class MediaFileService {
             return null;
         }
 
+        if (startPosition > MediaFile.NOT_INDEXED) {
+            return null;
+        }
         // Not found in database, must read from disk.
         result = createMediaFile(relativePath, folder, null);
 
@@ -188,7 +195,7 @@ public class MediaFileService {
                 && !settingsService.getFullScan()
                 && mediaFile.getChanged().compareTo(FileUtil.lastModified(mediaFile.getFullPath(folder.getPath())).truncatedTo(ChronoUnit.MICROS)) > -1
                 && (mediaFile.hasIndex() ? mediaFile.getChanged().compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath())).truncatedTo(ChronoUnit.MICROS)) > -1 : true)
-                && mediaFile.getStartPosition() > MediaFile.NOT_INDEXED //ignore virtual tracks from cue sheets
+                && mediaFile.isIndexedTrack() //ignore virtual tracks from cue sheets
                 ));
     }
 
@@ -209,8 +216,7 @@ public class MediaFileService {
                 mediaFileDao.deleteMediaFile(mediaFile.getPath(), mediaFile.getFolderId());
                 mediaFile.setPresent(true);
                 mediaFile.setIndexPath(null);
-                MediaFile parent = mediaFileDao.getMediaFile(mediaFile.getParentPath(), mediaFile.getFolderId());
-                mediaFile.setChildrenLastUpdated(Objects.isNull(parent) ? Instant.ofEpochMilli(1) : parent.getChanged());
+                mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
                 updateMediaFile(mediaFile);
             } else {
                 // update media file

@@ -21,6 +21,8 @@ jobs:
       (github.repository != github.event.pull_request.head.repo.full_name && contains(github.event.pull_request.labels.*.name, 'safe to test'))
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:

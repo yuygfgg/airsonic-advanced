@@ -63,6 +63,33 @@ body:
       description: the Java version you are using to run Airsonic
     validations:
       required: true
+  - type: dropdown
+    id: db
+    attributes:
+      label: Database
+      description: What database are you use?
+      options:
+        - PostgreSQL 13.x
+        - PostgreSAL 14.x
+        - MariaDB 8.x
+        - Mysql 10.x
+        - Other
+      multiple: true
+    validations:
+      required: true
+  - type: input
+    id: db-detail
+    attributes:
+      label: DB Detail
+      description: If you choose `Other`, please input your DB information.
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Configuration paramter
+      description: Pleasse copy and paset your configuration. **Don't write your secret parameter!** 
+    validations:
+      required: true
+      
   - type: input
     id: proxy-server
     attributes:
@@ -115,4 +142,4 @@ body:
     attributes:
       label: Relevant log output
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
-      render: console
+      render: console     

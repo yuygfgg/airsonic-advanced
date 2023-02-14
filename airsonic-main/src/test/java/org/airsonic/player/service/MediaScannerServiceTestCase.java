@@ -281,4 +281,25 @@ public class MediaScannerServiceTestCase {
         assertNull(track1.getIndexPath());
         assertEquals(0.0d, track1.getStartPosition(), 0.0d);
     }
+
+    @Test
+    public void testMusicWithCommaFolder() {
+
+        // Add the "Music4" folder to the database
+        Path musicFolderFile = MusicFolderTestData.resolveMusic4FolderPath();
+        MusicFolder musicFolder = new MusicFolder(1, musicFolderFile, "Music4", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        cleanupId = ScanningTestUtils.before(Arrays.asList(musicFolder), mediaFolderService, mediaScannerService);
+
+        // Retrieve the "Music4" folder from the database to make
+        // sure that we don't accidentally operate on other folders
+        // from previous tests.
+        musicFolder = musicFolderDao.getMusicFolderForPath(musicFolder.getPath().toString());
+        List<MusicFolder> folders = new ArrayList<>();
+        folders.add(musicFolder);
+
+        List<MediaFile> listeMusicChildren = mediaFileDao.getChildrenOf("", musicFolder.getId(), false);
+        Assert.assertEquals(2, listeMusicChildren.size());
+    }
+
+
 }

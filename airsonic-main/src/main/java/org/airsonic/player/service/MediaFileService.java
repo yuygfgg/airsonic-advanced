@@ -500,12 +500,12 @@ public class MediaFileService {
 
                         return media;
                     })
-                    .collect(Collectors.toConcurrentMap(m -> FilenameUtils.getBaseName(m.getPath()), m -> m));
+                    .collect(Collectors.toConcurrentMap(m -> m.isDirectory() ? FilenameUtils.getName(m.getPath()).concat("_d") : FilenameUtils.getBaseName(m.getPath()).concat("_f"), m -> m));
 
             // collect indexed tracks, if any
             List<MediaFile> indexedTracks = cueFiles.stream().parallel()
                 .flatMap(c -> {
-                    MediaFile base = bareFiles.remove(FilenameUtils.getBaseName(c));
+                    MediaFile base = bareFiles.remove(FilenameUtils.getBaseName(c).concat("_f"));
                     String indexPath = folder.getPath().relativize(Paths.get(c)).toString();
                     if (base != null) {
                         if (!indexPath.equals(base.getIndexPath())) {

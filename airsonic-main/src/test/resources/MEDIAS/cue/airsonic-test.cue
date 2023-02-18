@@ -1,4 +1,4 @@
-FILE "airsonic-test.cue" MOTOROLA
+FILE "airsonic-test.wav" MOTOROLA
 PERFORMER "TestArtist"
 TITLE "AirsonicTest"
 REM DATE 2023

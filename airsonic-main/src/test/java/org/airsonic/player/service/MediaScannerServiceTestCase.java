@@ -283,7 +283,7 @@ public class MediaScannerServiceTestCase {
     }
 
     @Test
-    public void testMusicWithCommaFolder() {
+    public void testMusicWithCommmaFolderAndDuplicateBasenameAudio() {
 
         // Add the "Music4" folder to the database
         Path musicFolderFile = MusicFolderTestData.resolveMusic4FolderPath();
@@ -297,8 +297,13 @@ public class MediaScannerServiceTestCase {
         List<MusicFolder> folders = new ArrayList<>();
         folders.add(musicFolder);
 
-        List<MediaFile> listeMusicChildren = mediaFileDao.getChildrenOf("", musicFolder.getId(), false);
-        Assert.assertEquals(2, listeMusicChildren.size());
+        List<MediaFile> listMusicChildren = mediaFileDao.getChildrenOf("", musicFolder.getId(), false);
+        Assert.assertEquals(2, listMusicChildren.size());
+
+        List<MediaFile> listDuplicateBaseNameFiles = mediaFileDao.getChildrenOf("a", musicFolder.getId(), false);
+        Assert.assertEquals(2, listDuplicateBaseNameFiles.size());
+
+
     }
 
 

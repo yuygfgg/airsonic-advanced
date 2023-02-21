@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -109,6 +110,8 @@ public class IndexManager {
 
     private Map<IndexType, IndexWriter> writers = new ConcurrentHashMap<>();
 
+    private AtomicInteger indexingThreadCount = new AtomicInteger();
+
     public void index(Album album) {
         Term primarykey = documentFactory.createPrimarykey(album);
         Document document = documentFactory.createAlbumId3Document(album);
@@ -148,6 +151,8 @@ public class IndexManager {
     }
 
     public final void startIndexing() {
+        // count indexing thread
+        indexingThreadCount.incrementAndGet();
         EnumSet.allOf(IndexType.class).parallelStream().forEach(x -> {
             try {
                 writers.put(x, createIndexWriter(x));
@@ -216,7 +221,8 @@ public class IndexManager {
      * Called at the end of the Scan flow.
      */
     public void stopIndexing(MediaLibraryStatistics statistics) {
-        EnumSet.allOf(IndexType.class).parallelStream().forEach(indexType -> stopIndexing(indexType, statistics));
+        if (indexingThreadCount.decrementAndGet() <= 0)
+            EnumSet.allOf(IndexType.class).parallelStream().forEach(indexType -> stopIndexing(indexType, statistics));
     }
 
     /**
@@ -390,6 +396,13 @@ public class IndexManager {
                 LOG.warn("Failed to create index directory :  (index version {}). ", INDEX_VERSION, e);
             }
         }
+    }
+
+    /**
+     * reset indexing thread count
+     */
+    public void resetIndexingThreadCount() {
+        indexingThreadCount.set(0);
     }
 
 }

@@ -809,7 +809,11 @@ public class MediaFileService {
             }
             return children;
         } catch (IOException e) {
-            return Collections.emptyList();
+            LOG.warn("Not found: {}", base.getFullIndexPath(folder.getPath()));
+            return new ArrayList<MediaFile>();
+        } catch (IndexOutOfBoundsException e) {
+            LOG.warn("Invalid CUE sheet: {}", base.getFullIndexPath(folder.getPath()));
+            return new ArrayList<MediaFile>();
         }
     }
 

@@ -19,7 +19,6 @@
  */
 package org.airsonic.player.service.metadata;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
@@ -35,7 +34,6 @@ public class MetaDataParserFactory {
 
     private List<MetaDataParser> parsers;
 
-    @Autowired
     public MetaDataParserFactory(List<MetaDataParser> parsers) {
         this.parsers = parsers;
     }

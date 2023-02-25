@@ -510,12 +510,17 @@ public class MediaFileService {
 
                         return media;
                     })
-                    .collect(Collectors.toConcurrentMap(m -> m.isDirectory() ? FilenameUtils.getName(m.getPath()).concat("_d") : FilenameUtils.getBaseName(m.getPath()).concat("_f"), m -> m));
+                    .collect(Collectors.toConcurrentMap(m -> FilenameUtils.getName(m.getPath()), m -> m));
 
             // collect indexed tracks, if any
             List<MediaFile> indexedTracks = cueFiles.stream().parallel()
                 .flatMap(c -> {
-                    MediaFile base = bareFiles.remove(FilenameUtils.getBaseName(c).concat("_f"));
+                    MediaFile base = null;
+                    CueSheet cueSheet = getCueSheet(Paths.get(c));
+                    if (Objects.nonNull(cueSheet) && cueSheet.getFileData().size() > 0) {
+                        String filePath = cueSheet.getFileData().get(0).getFile();
+                        base = bareFiles.remove(FilenameUtils.getName(filePath));
+                    }
                     String indexPath = folder.getPath().relativize(Paths.get(c)).toString();
                     if (base != null) {
                         if (!indexPath.equals(base.getIndexPath())) {
@@ -737,6 +742,8 @@ public class MediaFileService {
             if (cueSheet != null) {
                 String format = StringUtils.trimToNull(StringUtils.lowerCase(FilenameUtils.getExtension(audioFile.toString())));
                 String basePath = base.getPath();
+                String file = cueSheet.getFileData().get(0).getFile();
+                LOG.info(file);
                 String parentPath = base.getParentPath();
                 String performer = cueSheet.getPerformer();
                 String albumName = cueSheet.getTitle();
@@ -812,7 +819,11 @@ public class MediaFileService {
             }
             return children;
         } catch (IOException e) {
-            return Collections.emptyList();
+            LOG.warn("Not found: {}", base.getFullIndexPath(folder.getPath()));
+            return new ArrayList<MediaFile>();
+        } catch (IndexOutOfBoundsException e) {
+            LOG.warn("Invalid CUE sheet: {}", base.getFullIndexPath(folder.getPath()));
+            return new ArrayList<MediaFile>();
         }
     }
 
@@ -852,37 +863,47 @@ public class MediaFileService {
     }
 
     /**
+     * get Cue sheet from cue file absolute path
+     *
+     * @param cueFile absolute path of cue or embedded flac file
+     * @return if parse success return cue sheet, otherwise null
+     */
+    private CueSheet getCueSheet(Path cueFile) {
+        try {
+            switch (FilenameUtils.getExtension(cueFile.toString()).toLowerCase()) {
+                case "cue":
+                    Charset cs = Charset.forName("UTF-8"); // default to UTF-8
+                    // attempt to detect encoding for cueFile, fallback to UTF-8
+                    int THRESHOLD = 35; // 0-100, the higher the more certain the guess
+                    CharsetDetector cd = new CharsetDetector();
+                    try (FileInputStream fis = new FileInputStream(cueFile.toFile());
+                        BufferedInputStream bis = new BufferedInputStream(fis);) {
+                        cd.setText(bis);
+                        CharsetMatch cm = cd.detect();
+                        if (cm != null && cm.getConfidence() > THRESHOLD) {
+                            cs = Charset.forName(cm.getName());
+                        }
+                    } catch (IOException e) {
+                        LOG.warn("Defaulting to UTF-8 for cuesheet {}", cueFile);
+                    }
+                    return CueParser.parse(cueFile, cs);
+                case "flac":
+                    return FLACReader.getCueSheet(cueFile);
+
+                default:
+                    return null;
+            }
+        } catch (IOException e) {
+            LOG.warn("Error getting cuesheet for {} ", cueFile);
+            return null;
+        }
+    }
+
+    /**
      * Returns a parsed CueSheet for the given mediaFile
      */
     private CueSheet getCueSheet(MediaFile media, MusicFolder folder) {
-        try {
-            // is this an embedded cuesheet (currently only supports FLAC+CUE)?
-            if (Objects.equals(media.getIndexPath(), media.getPath())) {
-                return FLACReader.getCueSheet(media.getFullPath(folder.getPath()));
-            } else {
-                Charset cs = Charset.forName("UTF-8"); // default to UTF-8
-                Path indexPath = media.getFullIndexPath(folder.getPath());
-
-                // attempt to detect encoding for cueFile, fallback to UTF-8
-                int THRESHOLD = 35; // 0-100, the higher the more certain the guess
-                CharsetDetector cd = new CharsetDetector();
-                try (FileInputStream fis = new FileInputStream(indexPath.toFile());
-                     BufferedInputStream bis = new BufferedInputStream(fis);) {
-                    cd.setText(bis);
-                    CharsetMatch cm = cd.detect();
-                    if (cm != null && cm.getConfidence() > THRESHOLD) {
-                        cs = Charset.forName(cm.getName());
-                    }
-                } catch (IOException e) {
-                    LOG.warn("Defaulting to UTF-8 for cuesheet {}", indexPath);
-                }
-
-                return CueParser.parse(indexPath, cs);
-            }
-        } catch (IOException e) {
-            LOG.warn("Error getting cuesheet for {} {}", media, folder);
-            return null;
-        }
+        return getCueSheet(media.getFullIndexPath(folder.getPath()));
     }
 
     /**

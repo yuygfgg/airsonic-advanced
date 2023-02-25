@@ -287,6 +287,7 @@
                                 <ignoredUsedUndeclaredDependency>org.aspectj:aspectjweaver</ignoredUsedUndeclaredDependency>
                                 <ignoredUsedUndeclaredDependency>org.glassfish:jakarta.el</ignoredUsedUndeclaredDependency>
                                 <ignoredUsedUndeclaredDependency>org.junit.jupiter:junit-jupiter-api:*</ignoredUsedUndeclaredDependency>
+                                <ignoredUsedUndeclaredDependency>org.mockito:mockito-junit-jupiter:*</ignoredUsedUndeclaredDependency>
                             </ignoredUsedUndeclaredDependencies>
                             <ignoredUnusedDeclaredDependencies>
                                 <ignoredUnusedDeclaredDependency>com.google.code.findbugs:jsr305:*</ignoredUnusedDeclaredDependency>

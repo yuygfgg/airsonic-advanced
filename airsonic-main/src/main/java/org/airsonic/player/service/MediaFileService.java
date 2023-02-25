@@ -556,11 +556,11 @@ public class MediaFileService {
 
             return result;
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.warn("Could not retrieve and update all the children for {} in folder {}. Will skip", parent.getPath(), folder.getId(), e);
 
             return null;
-        }
+        } 
     }
 
     /**

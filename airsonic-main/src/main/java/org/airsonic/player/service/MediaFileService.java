@@ -560,7 +560,7 @@ public class MediaFileService {
             LOG.warn("Could not retrieve and update all the children for {} in folder {}. Will skip", parent.getPath(), folder.getId(), e);
 
             return null;
-        } 
+        }
     }
 
     /**

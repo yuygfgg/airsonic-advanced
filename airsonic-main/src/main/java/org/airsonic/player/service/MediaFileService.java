@@ -219,15 +219,20 @@ public class MediaFileService {
                 mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
                 updateMediaFile(mediaFile);
             } else {
-                // update media file
+            // update media file
                 Instant mediaChanged = FileUtil.lastModified(mediaFile.getFullPath(folder.getPath()));
                 Instant cueChanged = FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath()));
-                mediaFile.setChanged(mediaChanged.compareTo(cueChanged) >= 0 ? mediaChanged : cueChanged);
-                updateMediaFile(mediaFile);
                 // update cue tracks
                 Map<Pair<String, Double>, MediaFile> storedChildrenMap = mediaFileDao.getMediaFilesByRelativePathAndFolderId(mediaFile.getPath(), mediaFile.getFolderId()).parallelStream()
                     .filter(i -> i.getStartPosition() > MediaFile.NOT_INDEXED).collect(Collectors.toConcurrentMap(i -> Pair.of(i.getPath(), i.getStartPosition()), i -> i));
-                createIndexedTracks(mediaFile, folder, storedChildrenMap);
+                try {
+                    createIndexedTracks(mediaFile, folder, storedChildrenMap);
+                    // update media file
+                    mediaFile.setChanged(mediaChanged.compareTo(cueChanged) >= 0 ? mediaChanged : cueChanged);
+                    updateMediaFile(mediaFile);
+                } catch (Exception e) {
+                    LOG.error("create indexed tracks error: {}", mediaFile.getFullPath(folder.getPath()), e);
+                }
             }
         } else {
             mediaFile = createMediaFile(mediaFile.getRelativePath(), folder, mediaFile);
@@ -280,24 +285,29 @@ public class MediaFileService {
         Stream<MediaFile> resultStream = null;
 
         // Make sure children are stored and up-to-date in the database.
-        if (!minimizeDiskAccess) {
-            resultStream = Optional.ofNullable(updateChildren(parent)).map(x -> x.parallelStream()).orElse(null);
+        try {
+            if (!minimizeDiskAccess) {
+                resultStream = Optional.ofNullable(updateChildren(parent)).map(x -> x.parallelStream()).orElse(null);
+            }
+
+            if (resultStream == null) {
+                MusicFolder folder = mediaFolderService.getMusicFolderById(parent.getFolderId());
+                resultStream = mediaFileDao.getChildrenOf(parent.getPath(), parent.getFolderId(), true).parallelStream()
+                        .map(x -> checkLastModified(x, folder, minimizeDiskAccess))
+                        .filter(x -> includeMediaFile(x, folder));
+            }
+
+            resultStream = resultStream.filter(x -> (includeDirectories && x.isDirectory()) || (includeFiles && x.isFile()));
+
+            if (sort) {
+                resultStream = resultStream.sorted(new MediaFileComparator(settingsService.isSortAlbumsByYear()));
+            }
+
+            return resultStream.collect(Collectors.toList());
+        } catch (Exception e) {
+            LOG.error("get children of {} failed", parent.getPath(), e);
+            return Collections.emptyList();
         }
-
-        if (resultStream == null) {
-            MusicFolder folder = mediaFolderService.getMusicFolderById(parent.getFolderId());
-            resultStream = mediaFileDao.getChildrenOf(parent.getPath(), parent.getFolderId(), true).parallelStream()
-                    .map(x -> checkLastModified(x, folder, minimizeDiskAccess))
-                    .filter(x -> includeMediaFile(x, folder));
-        }
-
-        resultStream = resultStream.filter(x -> (includeDirectories && x.isDirectory()) || (includeFiles && x.isFile()));
-
-        if (sort) {
-            resultStream = resultStream.sorted(new MediaFileComparator(settingsService.isSortAlbumsByYear()));
-        }
-
-        return resultStream.collect(Collectors.toList());
     }
 
     /**
@@ -551,7 +561,7 @@ public class MediaFileService {
 
             return result;
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.warn("Could not retrieve and update all the children for {} in folder {}. Will skip", parent.getPath(), folder.getId(), e);
 
             return null;

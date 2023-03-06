@@ -52,7 +52,7 @@
                 <c:import url="playButtons.jsp">
                     <c:param name="id" value="${match.value}"/>
                     <c:param name="playEnabled" value="${command.user.streamRole and not command.partyModeEnabled}"/>
-                    <c:param name="addEnabled" value="${command.user.streamRole and (not command.partyModeEnabled or not match.directory)}"/>
+                    <c:param name="addEnabled" value="${command.user.streamRole and not command.partyModeEnabled}"/>
                     <c:param name="asTable" value="true"/>
                 </c:import>
                 <td class="truncate"><a href="${mainUrl}">${fn:escapeXml(match.key)}</a></td>
@@ -80,7 +80,7 @@
                 <c:import url="playButtons.jsp">
                     <c:param name="id" value="${match.value}"/>
                     <c:param name="playEnabled" value="${command.user.streamRole and not command.partyModeEnabled}"/>
-                    <c:param name="addEnabled" value="${command.user.streamRole and (not command.partyModeEnabled or not match.directory)}"/>
+                    <c:param name="addEnabled" value="${command.user.streamRole and not command.partyModeEnabled}"/>
                     <c:param name="asTable" value="true"/>
                 </c:import>
 

@@ -2,6 +2,18 @@
 # CHANGELOG.md
 # kagemomiji/airsonic-advanced
 # -->
+## v11.1.0 - 17 Feb 2023
+
+Changes:
+- :bulb: Support CUE-indexed tracks
+- Bump up spring boot version to v2.7.x
+- Fix problem IndexWriter at search library
+- Fix problem search gives Whitelabel Error Page
+- Replace MySQL connector to `mysql-connector-j`
+
+Chrores:
+- Treat deprecated WebSecurityConfigurerAdapter
+- Modify issue templates
 
 ## v11.0.2 - 16 Jan 2023
 

@@ -36,7 +36,8 @@ body:
       description: What version of our software are you running?
       options:
         - 11.0.2 (Stable)
-        - Edge
+        - 11.1.0 (Stable)
+        - 11.1.x (Edge)
     validations:
       required: true
   - type: input
@@ -70,7 +71,7 @@ body:
       description: What database are you use?
       options:
         - PostgreSQL 13.x
-        - PostgreSAL 14.x
+        - PostgreSQL 14.x
         - MariaDB 8.x
         - Mysql 10.x
         - Other

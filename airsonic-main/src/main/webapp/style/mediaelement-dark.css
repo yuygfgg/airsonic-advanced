@@ -9,3 +9,8 @@
 .mejs__controls:not([style*="display: none"]) {
   background: transparent;
 }
+
+mejs-qualities-button>button,.mejs__qualities-button>button {
+    line-height: normal;
+    overflow: visible;
+}

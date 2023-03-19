@@ -136,7 +136,6 @@ Object.assign(MediaElementPlayer.prototype, {
 					mejs.Utils.addClass(this.closest('.' + player.options.classPrefix + 'playlist-selector-list-item'), player.options.classPrefix + 'playlist-selected');
 					player.currentPlaylistItem = this.getAttribute('data-playlist-index');
 					player.setSrc(this.value);
-					player.playlistLayer.dispatchEvent(new CustomEvent('newplaylistsrc', { detail: player.playlist[player.currentPlaylistItem] }));
 					player.load();
 					player.play();
 
@@ -326,12 +325,11 @@ Object.assign(MediaElementPlayer.prototype, {
 			}
 		}
 
-		t.listItems = [];
-
-		/*if (t.playlist.length < 2) {
+		if (t.playlist.length < 2) {
 			return;
-		}*/
+		}
 
+		t.listItems = [];
 		for (var _i4 = 0, _total5 = t.playlist.length; _i4 < _total5; _i4++) {
 			var element = t.playlist[_i4],
 			    item = document.createElement('li'),

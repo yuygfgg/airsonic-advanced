@@ -66,7 +66,8 @@ declare class AudioStreamController extends BaseStreamController implements Netw
     private waitingData;
     private mainDetails;
     private bufferFlushed;
-    constructor(hls: Hls, fragmentTracker: FragmentTracker);
+    private cachedTrackLoadedData;
+    constructor(hls: Hls, fragmentTracker: FragmentTracker, keyLoader: KeyLoader);
     protected onHandlerDestroying(): void;
     private _registerListeners;
     private _unregisterListeners;
@@ -74,9 +75,10 @@ declare class AudioStreamController extends BaseStreamController implements Netw
     startLoad(startPosition: number): void;
     doTick(): void;
     clearWaitingFragment(): void;
+    protected resetLoadingState(): void;
     protected onTickEnd(): void;
     private doTickIdle;
-    protected getMaxBufferLength(): number;
+    protected getMaxBufferLength(mainBufferLength?: number): number;
     onMediaDetaching(): void;
     onAudioTracksUpdated(event: Events.AUDIO_TRACKS_UPDATED, { audioTracks }: AudioTracksUpdatedData): void;
     onAudioTrackSwitching(event: Events.AUDIO_TRACK_SWITCHING, data: AudioTrackSwitchingData): void;
@@ -149,6 +151,7 @@ export declare interface BackBufferData {
 declare class BasePlaylistController implements NetworkComponentAPI {
     protected hls: Hls;
     protected timer: number;
+    protected requestScheduled: number;
     protected canLoad: boolean;
     protected retryCount: number;
     protected log: (msg: any) => void;
@@ -159,7 +162,7 @@ declare class BasePlaylistController implements NetworkComponentAPI {
     protected clearTimer(): void;
     startLoad(): void;
     stopLoad(): void;
-    protected switchParams(playlistUri: string, previous?: LevelDetails): HlsUrlParameters | undefined;
+    protected switchParams(playlistUri: string, previous: LevelDetails | undefined): HlsUrlParameters | undefined;
     protected loadPlaylist(hlsUrlParameters?: HlsUrlParameters): void;
     protected shouldLoadTrack(track: MediaPlaylist): boolean;
     protected playlistLoaded(index: number, data: LevelLoadedData | AudioTrackLoadedData | TrackLoadedData, previousDetails?: LevelDetails): void;
@@ -189,8 +192,8 @@ declare class BaseStreamController extends TaskLoop implements NetworkComponentA
     protected fragmentTracker: FragmentTracker;
     protected transmuxer: TransmuxerInterface | null;
     protected _state: string;
-    protected media?: any;
-    protected mediaBuffer?: any;
+    protected media: HTMLMediaElement | null;
+    protected mediaBuffer: Bufferable | null;
     protected config: HlsConfig;
     protected bitrateTest: boolean;
     protected lastCurrentTime: number;
@@ -201,6 +204,7 @@ declare class BaseStreamController extends TaskLoop implements NetworkComponentA
     protected retryDate: number;
     protected levels: Array<Level> | null;
     protected fragmentLoader: FragmentLoader;
+    protected keyLoader: KeyLoader;
     protected levelLastLoaded: number | null;
     protected startFragRequested: boolean;
     protected decrypter: Decrypter;
@@ -210,29 +214,31 @@ declare class BaseStreamController extends TaskLoop implements NetworkComponentA
     private readonly logPrefix;
     protected log: (msg: any) => void;
     protected warn: (msg: any) => void;
-    constructor(hls: Hls, fragmentTracker: FragmentTracker, logPrefix: string);
+    constructor(hls: Hls, fragmentTracker: FragmentTracker, keyLoader: KeyLoader, logPrefix: string);
     protected doTick(): void;
     protected onTickEnd(): void;
     startLoad(startPosition: number): void;
     stopLoad(): void;
-    protected _streamEnded(bufferInfo: any, levelDetails: any): boolean;
+    protected _streamEnded(bufferInfo: BufferInfo, levelDetails: LevelDetails): boolean;
+    protected getLevelDetails(): LevelDetails | undefined;
     protected onMediaAttached(event: Events.MEDIA_ATTACHED, data: MediaAttachingData): void;
     protected onMediaDetaching(): void;
     protected onMediaSeeking(): void;
     protected onMediaEnded(): void;
-    onKeyLoaded(event: Events.KEY_LOADED, data: KeyLoadedData): void;
+    protected onLevelSwitching(event: Events.LEVEL_SWITCHING, data: LevelSwitchingData): void;
     protected onHandlerDestroying(): void;
     protected onHandlerDestroyed(): void;
-    protected loadKey(frag: Fragment, details: LevelDetails): void;
     protected loadFragment(frag: Fragment, levelDetails: LevelDetails, targetBufferTime: number): void;
     private _loadFragForPlayback;
     protected flushMainBuffer(startOffset: number, endOffset: number, type?: SourceBufferName | null): void;
-    protected _loadInitSegment(frag: Fragment): void;
+    protected _loadInitSegment(frag: Fragment, details: LevelDetails): void;
     protected fragContextChanged(frag: Fragment | null): boolean;
     protected fragBufferedComplete(frag: Fragment, part: Part | null): void;
+    protected seekToStartPos(): void;
     protected _handleFragmentLoadComplete(fragLoadedEndData: PartsLoadedData): void;
-    protected _handleFragmentLoadProgress(frag: FragLoadedData): void;
-    protected _doFragLoad(frag: Fragment, details?: LevelDetails, targetBufferTime?: number | null, progressCallback?: FragmentLoadProgressCallback): Promise<PartsLoadedData | FragLoadedData | null>;
+    protected _handleFragmentLoadProgress(frag: PartsLoadedData | FragLoadedData): void;
+    protected _doFragLoad(frag: Fragment, details: LevelDetails, targetBufferTime?: number | null, progressCallback?: FragmentLoadProgressCallback): Promise<PartsLoadedData | FragLoadedData | null>;
+    private throwIfFragContextChanged;
     private doFragPartsLoad;
     private handleFragLoadError;
     protected _handleTransmuxerFlush(chunkMeta: ChunkMetadata): void;
@@ -243,22 +249,18 @@ declare class BaseStreamController extends TaskLoop implements NetworkComponentA
     } | null;
     protected bufferFragmentData(data: RemuxedTrack, frag: Fragment, part: Part | null, chunkMeta: ChunkMetadata): void;
     protected flushBufferGap(frag: Fragment): void;
-    protected getFwdBufferInfo(bufferable: Bufferable, type: PlaylistLevelType): {
-        len: number;
-        start: number;
-        end: number;
-        nextStart?: number;
-    } | null;
+    protected getFwdBufferInfo(bufferable: Bufferable | null, type: PlaylistLevelType): BufferInfo | null;
     protected getMaxBufferLength(levelBitrate?: number): number;
     protected reduceMaxBufferLength(threshold?: number): boolean;
     protected getNextFragment(pos: number, levelDetails: LevelDetails): Fragment | null;
+    mapToInitFragWhenRequired(frag: Fragment | null): typeof frag;
     getNextPart(partList: Part[], frag: Fragment, targetBufferTime: number): number;
     private loadedEndOfParts;
     protected getInitialLiveFragment(levelDetails: LevelDetails, fragments: Array<Fragment>): Fragment | null;
     protected getFragmentAtPosition(bufferEnd: number, end: number, levelDetails: LevelDetails): Fragment | null;
     protected synchronizeToLiveEdge(levelDetails: LevelDetails): void;
     protected alignPlaylists(details: LevelDetails, previousDetails?: LevelDetails): number;
-    protected waitForCdnTuneIn(details: LevelDetails): boolean;
+    protected waitForCdnTuneIn(details: LevelDetails): boolean | 0;
     protected setStartPosition(details: LevelDetails, sliding: number): void;
     protected getLoadPosition(): number;
     private handleFragLoadAborted;
@@ -266,7 +268,7 @@ declare class BaseStreamController extends TaskLoop implements NetworkComponentA
     protected onFragmentOrKeyLoadError(filterType: PlaylistLevelType, data: ErrorData): void;
     protected afterBufferFlushed(media: Bufferable, bufferType: SourceBufferName, playlistType: PlaylistLevelType): void;
     protected resetLoadingState(): void;
-    protected resetLiveStartWhenNotLoaded(level: number): boolean;
+    protected resetStartWhenNotLoaded(level: number): void;
     private updateLevelTiming;
     protected resetTransmuxer(): void;
     set state(nextState: string);
@@ -310,6 +312,7 @@ declare class BufferController implements ComponentAPI {
     private _bufferCodecEventsTotal;
     media: HTMLMediaElement | null;
     mediaSource: MediaSource | null;
+    private lastMpegAudioChunk;
     appendError: number;
     tracks: TrackSet;
     pendingTracks: TrackSet;
@@ -345,6 +348,7 @@ declare class BufferController implements ComponentAPI {
     private _onMediaSourceOpen;
     private _onMediaSourceClose;
     private _onMediaSourceEnded;
+    private _onMediaEmptied;
     private _onSBUpdateStart;
     private _onSBUpdateEnd;
     private _onSBUpdateError;
@@ -382,6 +386,13 @@ export declare interface BufferFlushingData {
     type: SourceBufferName | null;
 }
 
+declare type BufferInfo = {
+    len: number;
+    start: number;
+    end: number;
+    nextStart?: number;
+};
+
 declare class CapLevelController implements ComponentAPI {
     autoLevelCapping: number;
     firstLevel: number;
@@ -414,7 +425,7 @@ declare class CapLevelController implements ComponentAPI {
     };
     get mediaWidth(): number;
     get mediaHeight(): number;
-    static get contentScaleFactor(): number;
+    get contentScaleFactor(): number;
     static isLevelAllowed(level: number, restrictedLevels?: Array<number>): boolean;
     static getMaxLevelByMediaSize(levels: Array<Level>, width: number, height: number): number;
 }
@@ -464,7 +475,7 @@ declare class CaptionScreen {
 declare class CaptionsLogger {
     time: number | null;
     verboseLevel: VerboseLevel;
-    log(severity: VerboseLevel, msg: string): void;
+    log(severity: VerboseLevel, msg: string | (() => string)): void;
 }
 
 export declare class ChunkMetadata {
@@ -481,6 +492,343 @@ export declare class ChunkMetadata {
     constructor(level: number, sn: number, id: number, size?: number, part?: number, partial?: boolean);
 }
 
+/**
+ * CMCD
+ */
+declare interface CMCD {
+    /**
+     * Encoded bitrate
+     *
+     * The encoded bitrate of the audio or video object being requested. This may not be known precisely by the player; however,
+     * it MAY be estimated based upon playlist/manifest declarations. If the playlist declares both peak and average bitrate values,
+     * the peak value should be transmitted.
+     *
+     * Integer kbps
+     */
+    br?: number;
+    /**
+     * Object duration
+     *
+     * The playback duration in milliseconds of the object being requested. If a partial segment is being requested, then this value
+     * MUST indicate the playback duration of that part and not that of its parent segment. This value can be an approximation of the
+     * estimated duration if the explicit value is not known.
+     *
+     * Integer milliseconds
+     */
+    d?: number;
+    /**
+     * Object type
+     *
+     * The media type of the current object being requested:
+     * - `m` = text file, such as a manifest or playlist
+     * - `a` = audio only
+     * - `v` = video only
+     * - `av` = muxed audio and video
+     * - `i` = init segment
+     * - `c` = caption or subtitle
+     * - `tt` = ISOBMFF timed text track
+     * - `k` = cryptographic key, license or certificate.
+     * - `o` = other
+     *
+     * If the object type being requested is unknown, then this key MUST NOT be used.
+     */
+    ot?: CMCDObjectType;
+    /**
+     * Top bitrate
+     *
+     * The highest bitrate rendition in the manifest or playlist that the client is allowed to play, given current codec, licensing and
+     * sizing constraints.
+     *
+     * Integer Kbps
+     */
+    tb?: number;
+    /**
+     * Buffer length
+     *
+     * The buffer length associated with the media object being requested. This value MUST be rounded to the nearest 100 ms. This key SHOULD only be
+     * sent with an object type of ‘a’, ‘v’ or ‘av’.
+     *
+     * Integer milliseconds
+     */
+    bl?: number;
+    /**
+     * Deadline
+     *
+     * Deadline from the request time until the first sample of this Segment/Object needs to be available in order to not create a buffer underrun or
+     * any other playback problems. This value MUST be rounded to the nearest 100ms. For a playback rate of 1, this may be equivalent to the player’s
+     * remaining buffer length.
+     *
+     * Integer milliseconds
+     */
+    dl?: number;
+    /**
+     * Measured mtp CMCD throughput
+     *
+     * The throughput between client and server, as measured by the client and MUST be rounded to the nearest 100 kbps. This value, however derived,
+     * SHOULD be the value that the client is using to make its next Adaptive Bitrate switching decision. If the client is connected to multiple
+     * servers concurrently, it must take care to report only the throughput measured against the receiving server. If the client has multiple concurrent
+     * connections to the server, then the intent is that this value communicates the aggregate throughput the client sees across all those connections.
+     *
+     * Integer kbps
+     */
+    mtp?: number;
+    /**
+     * Next object request
+     *
+     * Relative path of the next object to be requested. This can be used to trigger pre-fetching by the CDN. This MUST be a path relative to the current
+     * request. This string MUST be URLEncoded. The client SHOULD NOT depend upon any pre-fetch action being taken - it is merely a request for such a
+     * pre-fetch to take place.
+     *
+     * String
+     */
+    nor?: string;
+    /**
+     * Next range request
+     *
+     * If the next request will be a partial object request, then this string denotes the byte range to be requested. If the ‘nor’ field is not set, then the
+     * object is assumed to match the object currently being requested. The client SHOULD NOT depend upon any pre-fetch action being taken – it is merely a
+     * request for such a pre-fetch to take place. Formatting is similar to the HTTP Range header, except that the unit MUST be ‘byte’, the ‘Range:’ prefix is
+     * NOT required and specifying multiple ranges is NOT allowed. Valid combinations are:
+     *
+     * - `"\<range-start\>-"`
+     * - `"\<range-start\>-\<range-end\>"`
+     * - `"-\<suffix-length\>"`
+     *
+     * String
+     */
+    nrr?: string;
+    /**
+     * Startup
+     *
+     * Key is included without a value if the object is needed urgently due to startup, seeking or recovery after a buffer-empty event. The media SHOULD not be
+     * rendering when this request is made. This key MUST not be sent if it is FALSE.
+     *
+     * Boolean
+     */
+    su?: boolean;
+    /**
+     * Content ID
+     *
+     * A unique string identifying the current content. Maximum length is 64 characters. This value is consistent across multiple different
+     * sessions and devices and is defined and updated at the discretion of the service provider.
+     *
+     * String
+     */
+    cid?: string;
+    /**
+     * Playback rate
+     *
+     * `1` if real-time, `2` if double speed, `0` if not playing. SHOULD only be sent if not equal to `1`.
+     *
+     * Decimal
+     */
+    pr?: number;
+    /**
+     * Streaming format
+     *
+     * The streaming format that defines the current request.
+     *
+     * - `d` = MPEG DASH
+     * - `h` = HTTP Live Streaming (HLS)
+     * - `s` = Smooth Streaming
+     * - `o` = other
+     *
+     * If the streaming format being requested is unknown, then this key MUST NOT be used.
+     */
+    sf?: CMCDStreamingFormat;
+    /**
+     * Session ID
+     *
+     * A GUID identifying the current playback session. A playback session typically ties together segments belonging to a single media asset.
+     * Maximum length is 64 characters. It is RECOMMENDED to conform to the UUID specification.
+     *
+     * String
+     */
+    sid?: string;
+    /**
+     * Stream type
+     * - `v` = all segments are available – e.g., VOD
+     * - `l` = segments become available over time – e.g., LIVE
+     */
+    st?: CMCDStreamType;
+    /**
+     * CMCD version
+     *
+     * The version of this specification used for interpreting the defined key names and values. If this key is omitted, the client and server MUST
+     * interpret the values as being defined by version 1. Client SHOULD omit this field if the version is 1.
+     *
+     * Integer
+     */
+    v?: number;
+    /**
+     * Buffer starvation
+     *
+     * Key is included without a value if the buffer was starved at some point between the prior request and this object request,
+     * resulting in the player being in a rebuffering state and the video or audio playback being stalled. This key MUST NOT be
+     * sent if the buffer was not starved since the prior request.
+     *
+     * If the object type `ot` key is sent along with this key, then the `bs` key refers to the buffer associated with the particular
+     * object type. If no object type is communicated, then the buffer state applies to the current session.
+     *
+     * Boolean
+     */
+    bs?: boolean;
+    /**
+     * Requested maximum throughput
+     *
+     * The requested maximum throughput that the client considers sufficient for delivery of the asset. Values MUST be rounded to the
+     * nearest 100kbps. For example, a client would indicate that the current segment, encoded at 2Mbps, is to be delivered at no more
+     * than 10Mbps, by using rtp=10000.
+     *
+     * Note: This can benefit clients by preventing buffer saturation through over-delivery and can also deliver a community benefit
+     * through fair-share delivery. The concept is that each client receives the throughput necessary for great performance, but no more.
+     * The CDN may not support the rtp feature.
+     *
+     * Integer kbps
+     */
+    rtp?: number;
+}
+
+/**
+ * Controller to deal with Common Media Client Data (CMCD)
+ * @see https://cdn.cta.tech/cta/media/media/resources/standards/pdfs/cta-5004-final.pdf
+ */
+declare class CMCDController implements ComponentAPI {
+    private hls;
+    private config;
+    private media?;
+    private sid?;
+    private cid?;
+    private useHeaders;
+    private initialized;
+    private starved;
+    private buffering;
+    private audioBuffer?;
+    private videoBuffer?;
+    constructor(hls: Hls);
+    private registerListeners;
+    private unregisterListeners;
+    destroy(): void;
+    private onMediaAttached;
+    private onMediaDetached;
+    private onBufferCreated;
+    private onWaiting;
+    private onPlaying;
+    /**
+     * Create baseline CMCD data
+     */
+    private createData;
+    /**
+     * Apply CMCD data to a request.
+     */
+    private apply;
+    /**
+     * Apply CMCD data to a manifest request.
+     */
+    private applyPlaylistData;
+    /**
+     * Apply CMCD data to a segment request
+     */
+    private applyFragmentData;
+    /**
+     * The CMCD object type.
+     */
+    private getObjectType;
+    /**
+     * Get the highest bitrate.
+     */
+    private getTopBandwidth;
+    /**
+     * Get the buffer length for a media type in milliseconds
+     */
+    private getBufferLength;
+    /**
+     * Create a playlist loader
+     */
+    private createPlaylistLoader;
+    /**
+     * Create a playlist loader
+     */
+    private createFragmentLoader;
+    /**
+     * Generate a random v4 UUI
+     *
+     * @returns {string}
+     */
+    static uuid(): string;
+    /**
+     * Serialize a CMCD data object according to the rules defined in the
+     * section 3.2 of
+     * [CTA-5004](https://cdn.cta.tech/cta/media/media/resources/standards/pdfs/cta-5004-final.pdf).
+     */
+    static serialize(data: CMCD): string;
+    /**
+     * Convert a CMCD data object to request headers according to the rules
+     * defined in the section 2.1 and 3.2 of
+     * [CTA-5004](https://cdn.cta.tech/cta/media/media/resources/standards/pdfs/cta-5004-final.pdf).
+     */
+    static toHeaders(data: CMCD): Partial<CMCDHeaders>;
+    /**
+     * Convert a CMCD data object to query args according to the rules
+     * defined in the section 2.2 and 3.2 of
+     * [CTA-5004](https://cdn.cta.tech/cta/media/media/resources/standards/pdfs/cta-5004-final.pdf).
+     */
+    static toQuery(data: CMCD): string;
+    /**
+     * Append query args to a uri.
+     */
+    static appendQueryToUri(uri: any, query: any): any;
+}
+
+export declare type CMCDControllerConfig = {
+    sessionId?: string;
+    contentId?: string;
+    useHeaders?: boolean;
+};
+
+/**
+ * CMCD Headers
+ */
+declare interface CMCDHeaders {
+    'CMCD-Object': string;
+    'CMCD-Request': string;
+    'CMCD-Session': string;
+    'CMCD-Status': string;
+}
+
+/**
+ * CMCD Object Type
+ */
+declare enum CMCDObjectType {
+    MANIFEST = "m",
+    AUDIO = "a",
+    VIDEO = "v",
+    MUXED = "av",
+    INIT = "i",
+    CAPTION = "c",
+    TIMED_TEXT = "tt",
+    KEY = "k",
+    OTHER = "o"
+}
+
+/**
+ * CMCD Streaming Format
+ */
+declare enum CMCDStreamingFormat {
+    DASH = "d",
+    HLS = "h",
+    SMOOTH = "s",
+    OTHER = "o"
+}
+
+/**
+ * CMCD Streaming Type
+ */
+declare enum CMCDStreamType {
+    VOD = "v",
+    LIVE = "l"
+}
+
 declare interface ComponentAPI {
     destroy(): void;
 }
@@ -495,10 +843,37 @@ export declare interface CuesParsedData {
     track: string;
 }
 
+export declare class DateRange {
+    attr: AttrList;
+    private _startDate;
+    private _endDate?;
+    private _badValueForSameId?;
+    constructor(dateRangeAttr: AttrList, dateRangeWithSameId?: DateRange);
+    get id(): string;
+    get class(): string;
+    get startDate(): Date;
+    get endDate(): Date | null;
+    get duration(): number | null;
+    get plannedDuration(): number | null;
+    get endOnNext(): boolean;
+    get isValid(): boolean;
+}
+
+declare interface DecryptData {
+    uri: string;
+    method: string;
+    keyFormat: string;
+    keyFormatVersions: number[];
+    iv: Uint8Array | null;
+    key: Uint8Array | null;
+    keyId: Uint8Array | null;
+    pssh: Uint8Array | null;
+    encrypted: boolean;
+    isCommonEncryption: boolean;
+}
+
 declare class Decrypter {
     private logEnabled;
-    private observer;
-    private config;
     private removePKCS7Padding;
     private subtle;
     private softwareDecrypter;
@@ -507,14 +882,15 @@ declare class Decrypter {
     private remainderData;
     private currentIV;
     private currentResult;
-    constructor(observer: HlsEventEmitter, config: HlsConfig, { removePKCS7Padding }?: {
+    private useSoftware;
+    constructor(config: HlsConfig, { removePKCS7Padding }?: {
         removePKCS7Padding?: boolean | undefined;
     });
     destroy(): void;
     isSync(): boolean;
-    flush(): Uint8Array | void;
+    flush(): Uint8Array | null;
     reset(): void;
-    decrypt(data: Uint8Array | ArrayBuffer, key: ArrayBuffer, iv: ArrayBuffer, callback: (decryptedData: ArrayBuffer) => void): void;
+    decrypt(data: Uint8Array | ArrayBuffer, key: ArrayBuffer, iv: ArrayBuffer): Promise<ArrayBuffer>;
     softwareDecrypt(data: Uint8Array, key: ArrayBuffer, iv: ArrayBuffer): ArrayBuffer | null;
     webCryptoDecrypt(data: Uint8Array, key: ArrayBuffer, iv: ArrayBuffer): Promise<ArrayBuffer>;
     private onWebCryptoError;
@@ -522,10 +898,27 @@ declare class Decrypter {
     private logOnce;
 }
 
+declare type DRMSystemConfiguration = {
+    licenseUrl: string;
+    serverCertificateUrl?: string;
+    generateRequest?: (this: Hls, initDataType: string, initData: ArrayBuffer | null, keyContext: MediaKeySessionContext) => {
+        initDataType: string;
+        initData: ArrayBuffer | null;
+    } | undefined | never;
+};
+
 export declare type DRMSystemOptions = {
     audioRobustness?: string;
     videoRobustness?: string;
+    audioEncryptionScheme?: string | null;
+    videoEncryptionScheme?: string | null;
+    persistentState?: MediaKeysRequirement;
+    distinctiveIdentifier?: MediaKeysRequirement;
+    sessionTypes?: string[];
+    sessionType?: string;
 };
+
+declare type DRMSystemsConfiguration = Partial<Record<KeySystems, DRMSystemConfiguration>>;
 
 export declare interface ElementaryStreamInfo {
     startPTS: number;
@@ -551,123 +944,64 @@ export declare enum ElementaryStreamTypes {
  * @constructor
  */
 declare class EMEController implements ComponentAPI {
-    private hls;
-    private _widevineLicenseUrl?;
-    private _licenseXhrSetup?;
-    private _licenseResponseCallback?;
-    private _emeEnabled;
-    private _requestMediaKeySystemAccess;
-    private _drmSystemOptions;
-    private _config;
-    private _mediaKeysList;
-    private _media;
-    private _hasSetMediaKeys;
+    static CDMCleanupPromise: Promise<void> | void;
+    private readonly hls;
+    private readonly config;
+    private media;
+    private keyFormatPromise;
+    private keySystemAccessPromises;
     private _requestLicenseFailureCount;
-    private mediaKeysPromise;
-    private _onMediaEncrypted;
-    /**
-     * @constructs
-     * @param {Hls} hls Our Hls.js instance
-     */
+    private mediaKeySessions;
+    private keyIdToKeySessionPromise;
+    private setMediaKeysQueue;
+    private onMediaEncrypted;
+    private onWaitingForKey;
+    private debug;
+    private log;
+    private warn;
+    private error;
     constructor(hls: Hls);
     destroy(): void;
-    private _registerListeners;
-    private _unregisterListeners;
-    /**
-     * @param {string} keySystem Identifier for the key-system, see `KeySystems` enum
-     * @returns {string} License server URL for key-system (if any configured, otherwise causes error)
-     * @throws if a unsupported keysystem is passed
-     */
-    getLicenseServerUrl(keySystem: KeySystems): string;
-    /**
-     * Requests access object and adds it to our list upon success
-     * @private
-     * @param {string} keySystem System ID (see `KeySystems`)
-     * @param {Array<string>} audioCodecs List of required audio codecs to support
-     * @param {Array<string>} videoCodecs List of required video codecs to support
-     * @throws When a unsupported KeySystem is passed
-     */
-    private _attemptKeySystemAccess;
-    get requestMediaKeySystemAccess(): MediaKeyFunc;
-    /**
-     * Handles obtaining access to a key-system
-     * @private
-     * @param {string} keySystem
-     * @param {MediaKeySystemAccess} mediaKeySystemAccess https://developer.mozilla.org/en-US/docs/Web/API/MediaKeySystemAccess
-     */
-    private _onMediaKeySystemAccessObtained;
-    /**
-     * Handles key-creation (represents access to CDM). We are going to create key-sessions upon this
-     * for all existing keys where no session exists yet.
-     *
-     * @private
-     */
-    private _onMediaKeysCreated;
-    /**
-     * @private
-     * @param {*} keySession
-     */
-    private _onNewMediaKeySession;
-    /**
-     * @private
-     * @param {MediaKeySession} keySession
-     * @param {ArrayBuffer} message
-     */
-    private _onKeySessionMessage;
-    /**
-     * @private
-     * @param e {MediaEncryptedEvent}
-     */
-    private onMediaEncrypted;
-    /**
-     * @private
-     */
-    private _attemptSetMediaKeys;
-    /**
-     * @private
-     */
-    private _generateRequestWithPreferredKeySession;
-    /**
-     * @private
-     * @param {string} url License server URL
-     * @param {ArrayBuffer} keyMessage Message data issued by key-system
-     * @param {function} callback Called when XHR has succeeded
-     * @returns {XMLHttpRequest} Unsent (but opened state) XHR object
-     * @throws if XMLHttpRequest construction failed
-     */
-    private _createLicenseXhr;
-    /**
-     * @private
-     * @param {XMLHttpRequest} xhr
-     * @param {string} url License server URL
-     * @param {ArrayBuffer} keyMessage Message data issued by key-system
-     * @param {function} callback Called when XHR has succeeded
-     */
-    private _onLicenseRequestReadyStageChange;
-    /**
-     * @private
-     * @param {MediaKeysListItem} keysListItem
-     * @param {ArrayBuffer} keyMessage
-     * @returns {ArrayBuffer} Challenge data posted to license server
-     * @throws if KeySystem is unsupported
-     */
-    private _generateLicenseRequestChallenge;
-    /**
-     * @private
-     * @param keyMessage
-     * @param callback
-     */
-    private _requestLicense;
-    onMediaAttached(event: Events.MEDIA_ATTACHED, data: MediaAttachedData): void;
-    onMediaDetached(): void;
-    onManifestParsed(event: Events.MANIFEST_PARSED, data: ManifestParsedData): void;
+    private registerListeners;
+    private unregisterListeners;
+    private getLicenseServerUrl;
+    private getServerCertificateUrl;
+    private attemptKeySystemAccess;
+    private requestMediaKeySystemAccess;
+    private getMediaKeysPromise;
+    private createMediaKeySessionContext;
+    private renewKeySession;
+    private getKeyIdString;
+    private updateKeySession;
+    selectKeySystemFormat(frag: Fragment): Promise<KeySystemFormats>;
+    private getKeyFormatPromise;
+    loadKey(data: KeyLoadedData): Promise<MediaKeySessionContext>;
+    private throwIfDestroyed;
+    private handleError;
+    private getKeySystemForKeyPromise;
+    private getKeySystemSelectionPromise;
+    private _onMediaEncrypted;
+    private _onWaitingForKey;
+    private attemptSetMediaKeys;
+    private generateRequestWithPreferredKeySession;
+    private onKeyStatusChange;
+    private fetchServerCertificate;
+    private setMediaKeysServerCertificate;
+    private renewLicense;
+    private setupLicenseXHR;
+    private requestLicense;
+    private onMediaAttached;
+    private onMediaDetached;
+    private onManifestLoaded;
+    private removeSession;
 }
 
 export declare type EMEControllerConfig = {
-    licenseXhrSetup?: (xhr: XMLHttpRequest, url: string) => void;
-    licenseResponseCallback?: (xhr: XMLHttpRequest, url: string) => ArrayBuffer;
+    licenseXhrSetup?: (this: Hls, xhr: XMLHttpRequest, url: string, keyContext: MediaKeySessionContext, licenseChallenge: Uint8Array) => void | Uint8Array | Promise<Uint8Array | void>;
+    licenseResponseCallback?: (this: Hls, xhr: XMLHttpRequest, url: string, keyContext: MediaKeySessionContext) => ArrayBuffer;
     emeEnabled: boolean;
     widevineLicenseUrl?: string;
+    drmSystems: DRMSystemsConfiguration;
     drmSystemOptions: DRMSystemOptions;
     requestMediaKeySystemAccessFunc: MediaKeyFunc | null;
 };
@@ -678,6 +1012,7 @@ export declare interface ErrorData {
     fatal: boolean;
     buffer?: number;
     bytes?: number;
+    chunkMeta?: ChunkMetadata;
     context?: PlaylistLoaderContext;
     error?: Error;
     event?: keyof HlsListeners | 'demuxerWorker';
@@ -704,8 +1039,13 @@ export declare enum ErrorDetails {
     KEY_SYSTEM_NO_KEYS = "keySystemNoKeys",
     KEY_SYSTEM_NO_ACCESS = "keySystemNoAccess",
     KEY_SYSTEM_NO_SESSION = "keySystemNoSession",
+    KEY_SYSTEM_NO_CONFIGURED_LICENSE = "keySystemNoConfiguredLicense",
     KEY_SYSTEM_LICENSE_REQUEST_FAILED = "keySystemLicenseRequestFailed",
-    KEY_SYSTEM_NO_INIT_DATA = "keySystemNoInitData",
+    KEY_SYSTEM_SERVER_CERTIFICATE_REQUEST_FAILED = "keySystemServerCertificateRequestFailed",
+    KEY_SYSTEM_SERVER_CERTIFICATE_UPDATE_FAILED = "keySystemServerCertificateUpdateFailed",
+    KEY_SYSTEM_SESSION_UPDATE_FAILED = "keySystemSessionUpdateFailed",
+    KEY_SYSTEM_STATUS_OUTPUT_RESTRICTED = "keySystemStatusOutputRestricted",
+    KEY_SYSTEM_STATUS_INTERNAL_ERROR = "keySystemStatusInternalError",
     MANIFEST_LOAD_ERROR = "manifestLoadError",
     MANIFEST_LOAD_TIMEOUT = "manifestLoadTimeOut",
     MANIFEST_PARSING_ERROR = "manifestParsingError",
@@ -823,6 +1163,7 @@ declare class EwmaBandWidthEstimator {
 
 declare type ExtendedSourceBuffer = SourceBuffer & {
     ended?: boolean;
+    ending?: boolean;
     changeType?: (type: string) => void;
 };
 
@@ -895,6 +1236,19 @@ export declare interface FragLoadEmergencyAbortedData {
     stats: LoaderStats;
 }
 
+declare interface FragLoadFailResult {
+    type: string;
+    details: string;
+    fatal: boolean;
+    frag: Fragment;
+    part?: Part;
+    response?: {
+        code: number;
+        text: string;
+    };
+    networkDetails: any;
+}
+
 export declare interface FragLoadingData {
     frag: Fragment;
     part?: Part;
@@ -908,9 +1262,12 @@ export declare class Fragment extends BaseSegment {
     tagList: Array<string[]>;
     duration: number;
     sn: number | 'initSegment';
-    levelkey?: LevelKey;
+    levelkeys?: {
+        [key: string]: LevelKey;
+    };
     readonly type: PlaylistLevelType;
     loader: Loader<FragmentLoaderContext> | null;
+    keyLoader: Loader<KeyLoaderContext> | null;
     level: number;
     cc: number;
     startPTS?: number;
@@ -928,24 +1285,14 @@ export declare class Fragment extends BaseSegment {
     bitrateTest: boolean;
     title: string | null;
     initSegment: Fragment | null;
+    endList?: boolean;
     constructor(type: PlaylistLevelType, baseurl: string);
     get decryptdata(): LevelKey | null;
     get end(): number;
     get endProgramDateTime(): number | null;
     get encrypted(): boolean;
-    /**
-     * Utility method for parseLevelPlaylist to create an initialization vector for a given segment
-     * @param {number} segmentNumber - segment number to generate IV with
-     * @returns {Uint8Array}
-     */
-    createInitializationVector(segmentNumber: number): Uint8Array;
-    /**
-     * Utility method for parseLevelPlaylist to get a fragment's decryption data from the currently parsed encryption key data
-     * @param levelkey - a playlist's encryption info
-     * @param segmentNumber - the fragment's segment number
-     * @returns {LevelKey} - an object to be applied as a fragment's decryptdata
-     */
-    setDecryptDataFromLevelKey(levelkey: LevelKey, segmentNumber: number): LevelKey;
+    setKeyFormat(keyFormat: KeySystemFormats): void;
+    abortRequests(): void;
     setElementaryStreamInfo(type: ElementaryStreamTypes, startPTS: number, endPTS: number, startDTS: number, endDTS: number, partial?: boolean): void;
     clearElementaryStreamInfo(): void;
 }
@@ -964,25 +1311,27 @@ declare class FragmentLoader {
 }
 
 export declare type FragmentLoaderConfig = {
-    fLoader?: {
-        new (confg: HlsConfig): Loader<FragmentLoaderContext>;
-    };
+    fLoader?: FragmentLoaderConstructor;
     fragLoadingTimeOut: number;
     fragLoadingMaxRetry: number;
     fragLoadingRetryDelay: number;
     fragLoadingMaxRetryTimeout: number;
 };
 
+export declare interface FragmentLoaderConstructor {
+    new (confg: HlsConfig): Loader<FragmentLoaderContext>;
+}
+
 export declare interface FragmentLoaderContext extends LoaderContext {
     frag: Fragment;
     part: Part | null;
+    resetIV?: boolean;
 }
 
-declare type FragmentLoadProgressCallback = (result: FragLoadedData) => void;
+declare type FragmentLoadProgressCallback = (result: FragLoadedData | PartsLoadedData) => void;
 
 declare enum FragmentState {
     NOT_LOADED = "NOT_LOADED",
-    BACKTRACKED = "BACKTRACKED",
     APPENDING = "APPENDING",
     PARTIAL = "PARTIAL",
     OK = "OK"
@@ -991,6 +1340,7 @@ declare enum FragmentState {
 declare class FragmentTracker implements ComponentAPI {
     private activeFragment;
     private activeParts;
+    private endListFragments;
     private fragments;
     private timeRanges;
     private bufferPadding;
@@ -1027,9 +1377,8 @@ declare class FragmentTracker implements ComponentAPI {
      * Gets the partial fragment for a certain time
      */
     getPartialFragment(time: number): Fragment | null;
+    isEndListAppended(type: PlaylistLevelType): boolean;
     getState(fragment: Fragment): FragmentState;
-    backtrack(frag: Fragment, data?: FragLoadedData): FragLoadedData | null;
-    getBacktrackData(fragment: Fragment): FragLoadedData | null;
     private isTimeBuffered;
     private onFragLoaded;
     private onBufferAppended;
@@ -1051,14 +1400,20 @@ export declare interface FragParsingInitSegmentData {
 export declare interface FragParsingMetadataData {
     id: string;
     frag: Fragment;
+    details: LevelDetails;
     samples: MetadataSample[];
 }
 
 export declare interface FragParsingUserdataData {
     id: string;
     frag: Fragment;
+    details: LevelDetails;
     samples: UserdataSample[];
 }
+
+export declare type HdcpLevel = typeof HdcpLevels[number];
+
+export declare const HdcpLevels: readonly ["NONE", "TYPE-0", "TYPE-1", "TYPE-2", null];
 
 /**
  * @module Hls
@@ -1073,6 +1428,7 @@ declare class Hls implements HlsEventEmitter {
     private networkControllers;
     private _emitter;
     private _autoLevelCapping;
+    private _maxHdcpLevel;
     private abrController;
     private bufferController;
     private capLevelController;
@@ -1082,6 +1438,7 @@ declare class Hls implements HlsEventEmitter {
     private audioTrackController;
     private subtitleTrackController;
     private emeController;
+    private cmcdController;
     private _media;
     private url;
     static get version(): string;
@@ -1101,7 +1458,7 @@ declare class Hls implements HlsEventEmitter {
      * @param {HlsConfig} config
      */
     constructor(userConfig?: Partial<HlsConfig>);
-    createController(ControllerClass: any, fragmentTracker: any, components: any): any;
+    createController(ControllerClass: any, components: any): any;
     on<E extends keyof HlsListeners, Context = undefined>(event: E, listener: HlsListeners[E], context?: Context): void;
     once<E extends keyof HlsListeners, Context = undefined>(event: E, listener: HlsListeners[E], context?: Context): void;
     removeAllListeners<E extends keyof HlsListeners>(event?: E | undefined): void;
@@ -1257,6 +1614,8 @@ declare class Hls implements HlsEventEmitter {
      * @type {number}
      */
     set autoLevelCapping(newLevel: number);
+    get maxHdcpLevel(): HdcpLevel;
+    set maxHdcpLevel(value: HdcpLevel);
     /**
      * True when automatic level selection enabled
      * @type {boolean}
@@ -1286,11 +1645,17 @@ declare class Hls implements HlsEventEmitter {
      * this setter is used to force next auto level.
      * this is useful to force a switch down in auto mode:
      * in case of load error on level N, hls.js can set nextAutoLevel to N-1 for example)
-     * forced value is valid for one fragment. upon succesful frag loading at forced level,
+     * forced value is valid for one fragment. upon successful frag loading at forced level,
      * this value will be resetted to -1 by ABR controller.
      * @type {number}
      */
     set nextAutoLevel(nextLevel: number);
+    /**
+     * get the datetime value relative to media.currentTime for the active level Program Date Time if present
+     * @type {Date}
+     */
+    get playingDate(): Date | null;
+    get mainForwardBufferInfo(): BufferInfo | null;
     /**
      * @type {AudioTrack[]}
      */
@@ -1386,6 +1751,7 @@ export declare type HlsConfig = {
     enableWorker: boolean;
     enableSoftwareAES: boolean;
     minAutoBitrate: number;
+    ignoreDevicePixelRatio: boolean;
     loader: {
         new (confg: HlsConfig): Loader<LoaderContext>;
     };
@@ -1397,13 +1763,15 @@ export declare type HlsConfig = {
     subtitleTrackController?: typeof SubtitleTrackController;
     timelineController?: typeof TimelineController;
     emeController?: typeof EMEController;
+    cmcd?: CMCDControllerConfig;
+    cmcdController?: typeof CMCDController;
     abrController: typeof AbrController;
     bufferController: typeof BufferController;
     capLevelController: typeof CapLevelController;
     fpsController: typeof FPSController;
     progressive: boolean;
     lowLatencyMode: boolean;
-} & ABRControllerConfig & BufferControllerConfig & CapLevelControllerConfig & EMEControllerConfig & FPSControllerConfig & FragmentLoaderConfig & LevelControllerConfig & MP4RemuxerConfig & PlaylistLoaderConfig & StreamControllerConfig & LatencyControllerConfig & TimelineControllerConfig & TSDemuxerConfig;
+} & ABRControllerConfig & BufferControllerConfig & CapLevelControllerConfig & EMEControllerConfig & FPSControllerConfig & FragmentLoaderConfig & LevelControllerConfig & MP4RemuxerConfig & PlaylistLoaderConfig & StreamControllerConfig & LatencyControllerConfig & MetadataControllerConfig & TimelineControllerConfig & TSDemuxerConfig;
 
 export declare interface HlsEventEmitter {
     on<E extends keyof HlsListeners, Context = undefined>(event: E, listener: HlsListeners[E], context?: Context): void;
@@ -1523,18 +1891,59 @@ declare interface InitSegmentData {
 
 export declare interface KeyLoadedData {
     frag: Fragment;
+    keyInfo: KeyLoaderInfo;
+}
+
+declare class KeyLoader implements ComponentAPI {
+    private readonly config;
+    keyUriToKeyInfo: {
+        [keyuri: string]: KeyLoaderInfo;
+    };
+    emeController: EMEController | null;
+    constructor(config: HlsConfig);
+    abort(): void;
+    detach(): void;
+    destroy(): void;
+    createKeyLoadError(frag: Fragment, details?: ErrorDetails, networkDetails?: any, message?: string): LoadError;
+    loadClear(loadingFrag: Fragment, encryptedFragments: Fragment[]): void | Promise<void>;
+    load(frag: Fragment): Promise<KeyLoadedData>;
+    loadInternal(frag: Fragment, keySystemFormat?: KeySystemFormats): Promise<KeyLoadedData>;
+    loadKeyEME(keyInfo: KeyLoaderInfo, frag: Fragment): Promise<KeyLoadedData>;
+    loadKeyHTTP(keyInfo: KeyLoaderInfo, frag: Fragment): Promise<KeyLoadedData>;
+    private resetLoader;
+}
+
+declare interface KeyLoaderContext extends LoaderContext {
+    keyInfo: KeyLoaderInfo;
+    frag: Fragment;
+}
+
+declare interface KeyLoaderInfo {
+    decryptdata: LevelKey;
+    keyLoadPromise: Promise<KeyLoadedData> | null;
+    loader: Loader<KeyLoaderContext> | null;
+    mediaKeySessionContext: MediaKeySessionContext | null;
 }
 
 export declare interface KeyLoadingData {
     frag: Fragment;
 }
 
+export declare enum KeySystemFormats {
+    CLEARKEY = "org.w3.clearkey",
+    FAIRPLAY = "com.apple.streamingkeydelivery",
+    PLAYREADY = "com.microsoft.playready",
+    WIDEVINE = "urn:uuid:edef8ba9-79d6-4ace-a3c8-27dcd51d21ed"
+}
+
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/API/Navigator/requestMediaKeySystemAccess
  */
 export declare enum KeySystems {
-    WIDEVINE = "com.widevine.alpha",
-    PLAYREADY = "com.microsoft.playready"
+    CLEARKEY = "org.w3.clearkey",
+    FAIRPLAY = "com.apple.fps",
+    PLAYREADY = "com.microsoft.playready",
+    WIDEVINE = "com.widevine.alpha"
 }
 
 export declare type LatencyControllerConfig = {
@@ -1576,23 +1985,29 @@ export declare class Level {
 }
 
 export declare interface LevelAttributes extends AttrList {
+    'ALLOWED-CPC'?: string;
     AUDIO?: string;
     AUTOSELECT?: string;
     'AVERAGE-BANDWIDTH'?: string;
     BANDWIDTH?: string;
     BYTERANGE?: string;
     'CLOSED-CAPTIONS'?: string;
+    CHARACTERISTICS?: string;
     CODECS?: string;
     DEFAULT?: string;
     FORCED?: string;
     'FRAME-RATE'?: string;
+    'HDCP-LEVEL'?: string;
     LANGUAGE?: string;
     NAME?: string;
+    'PATHWAY-ID'?: string;
     'PROGRAM-ID'?: string;
     RESOLUTION?: string;
+    SCORE?: string;
     SUBTITLES?: string;
     TYPE?: string;
     URI?: string;
+    'VIDEO-RANGE'?: string;
 }
 
 export declare type LevelControllerConfig = {
@@ -1608,6 +2023,7 @@ export declare class LevelDetails {
     fragments: Fragment[];
     fragmentHint?: Fragment;
     partList: Part[] | null;
+    dateRanges: Record<string, DateRange>;
     live: boolean;
     ageHeader: number;
     advancedDateTime?: number;
@@ -1615,7 +2031,6 @@ export declare class LevelDetails {
     advanced: boolean;
     availabilityDelay?: number;
     misses: number;
-    needSidxRanges: boolean;
     startCC: number;
     startSN: number;
     startTimeOffset: number | null;
@@ -1641,6 +2056,7 @@ export declare class LevelDetails {
     driftEndTime: number;
     driftStart: number;
     driftEnd: number;
+    encryptedFragments: Fragment[];
     constructor(baseUrl: any);
     reloaded(previous: LevelDetails | undefined): void;
     get hasProgramDateTime(): boolean;
@@ -1654,18 +2070,21 @@ export declare class LevelDetails {
     get lastPartSn(): number;
 }
 
-export declare class LevelKey {
-    private _uri;
-    method: string | null;
-    keyFormat: string | null;
-    keyFormatVersions: string | null;
-    keyID: string | null;
-    key: Uint8Array | null;
+export declare class LevelKey implements DecryptData {
+    readonly uri: string;
+    readonly method: string;
+    readonly keyFormat: string;
+    readonly keyFormatVersions: number[];
+    readonly encrypted: boolean;
+    readonly isCommonEncryption: boolean;
     iv: Uint8Array | null;
-    static fromURL(baseUrl: string, relativeUrl: string): LevelKey;
-    static fromURI(uri: string): LevelKey;
-    private constructor();
-    get uri(): string | null;
+    key: Uint8Array | null;
+    keyId: Uint8Array | null;
+    pssh: Uint8Array | null;
+    static clearKeyUriToKeyIdMap(): void;
+    constructor(method: string, uri: string, format: string, formatversions?: number[], iv?: Uint8Array | null);
+    isSupported(): boolean;
+    getDecryptData(sn: number | 'initSegment'): LevelKey | null;
 }
 
 export declare interface LevelLoadedData {
@@ -1770,6 +2189,7 @@ export declare interface LoaderConfiguration {
 export declare interface LoaderContext {
     url: string;
     responseType: string;
+    headers?: Record<string, string>;
     rangeStart?: number;
     rangeEnd?: number;
     progressData?: boolean;
@@ -1791,6 +2211,11 @@ export declare type LoaderOnTimeout<T extends LoaderContext> = (stats: LoaderSta
 export declare interface LoaderResponse {
     url: string;
     data: string | ArrayBuffer;
+}
+
+declare class LoadError extends Error {
+    readonly data: FragLoadFailResult;
+    constructor(data: FragLoadFailResult, ...params: any[]);
 }
 
 export declare interface LoaderStats {
@@ -1825,6 +2250,7 @@ export declare interface ManifestLoadedData {
     levels: LevelParsed[];
     networkDetails: any;
     sessionData: Record<string, AttrList> | null;
+    sessionKeys: LevelKey[] | null;
     stats: LoaderStats;
     subtitles?: MediaPlaylist[];
     url: string;
@@ -1838,6 +2264,8 @@ export declare interface ManifestParsedData {
     levels: Level[];
     audioTracks: MediaPlaylist[];
     subtitleTracks: MediaPlaylist[];
+    sessionData: Record<string, AttrList> | null;
+    sessionKeys: LevelKey[] | null;
     firstLevel: number;
     stats: LoaderStats;
     audio: boolean;
@@ -1855,6 +2283,15 @@ export declare interface MediaAttachingData {
 
 export declare type MediaKeyFunc = (keySystem: KeySystems, supportedConfigurations: MediaKeySystemConfiguration[]) => Promise<MediaKeySystemAccess>;
 
+declare interface MediaKeySessionContext {
+    keySystem: KeySystems;
+    mediaKeys: MediaKeys;
+    decryptdata: LevelKey;
+    mediaKeysSession: MediaKeySession;
+    keyStatus: MediaKeyStatus;
+    licenseXhr?: XMLHttpRequest;
+}
+
 export declare interface MediaPlaylist extends LevelParsed {
     autoselect: boolean;
     default: boolean;
@@ -1869,11 +2306,25 @@ export declare interface MediaPlaylist extends LevelParsed {
 
 export declare type MediaPlaylistType = MainPlaylistType | SubtitlePlaylistType;
 
+export declare type MetadataControllerConfig = {
+    enableDateRangeMetadataCues: boolean;
+    enableEmsgMetadataCues: boolean;
+    enableID3MetadataCues: boolean;
+};
+
 export declare interface MetadataSample {
     pts: number;
     dts: number;
+    duration: number;
     len?: number;
     data: Uint8Array;
+    type: MetadataSchema;
+}
+
+export declare enum MetadataSchema {
+    audioId3 = "org.id3",
+    dateRange = "com.apple.quicktime.HLS",
+    emsg = "https://aomedia.org/emsg/ID3"
 }
 
 export declare type MP4RemuxerConfig = {
@@ -1965,9 +2416,7 @@ export declare enum PlaylistLevelType {
 }
 
 export declare type PlaylistLoaderConfig = {
-    pLoader?: {
-        new (confg: HlsConfig): Loader<PlaylistLoaderContext>;
-    };
+    pLoader?: PlaylistLoaderConstructor;
     manifestLoadingTimeOut: number;
     manifestLoadingMaxRetry: number;
     manifestLoadingRetryDelay: number;
@@ -1978,13 +2427,16 @@ export declare type PlaylistLoaderConfig = {
     levelLoadingMaxRetryTimeout: number;
 };
 
+export declare interface PlaylistLoaderConstructor {
+    new (confg: HlsConfig): Loader<PlaylistLoaderContext>;
+}
+
 export declare interface PlaylistLoaderContext extends LoaderContext {
     loader?: Loader<PlaylistLoaderContext>;
     type: PlaylistContextType;
     level: number | null;
     id: number | null;
     groupId: string | null;
-    isSidxRequest?: boolean;
     levelDetails?: LevelDetails;
     deliveryDirectives: HlsUrlParameters | null;
 }
@@ -2005,6 +2457,7 @@ declare interface RemuxedTrack {
     hasVideo: boolean;
     independent?: boolean;
     firstKeyFrame?: number;
+    firstKeyFramePTS?: number;
     nb: number;
     transferredData1?: ArrayBuffer;
     transferredData2?: ArrayBuffer;
@@ -2073,11 +2526,11 @@ declare class StreamController extends BaseStreamController implements NetworkCo
     private onvplaying;
     private onvseeked;
     private fragLastKbps;
-    private stalled;
     private couldBacktrack;
+    private backtrackFragment;
     private audioCodecSwitch;
     private videoBuffer;
-    constructor(hls: Hls, fragmentTracker: FragmentTracker);
+    constructor(hls: Hls, fragmentTracker: FragmentTracker, keyLoader: KeyLoader);
     private _registerListeners;
     protected _unregisterListeners(): void;
     protected onHandlerDestroying(): void;
@@ -2121,16 +2574,18 @@ declare class StreamController extends BaseStreamController implements NetworkCo
     swapAudioCodec(): void;
     /**
      * Seeks to the set startPosition if not equal to the mediaElement's current time.
-     * @private
      */
-    private seekToStartPos;
+    protected seekToStartPos(): void;
     private _getAudioCodec;
     private _loadBitrateTestFrag;
     private _handleTransmuxComplete;
     private _bufferInitSegment;
+    getMainFwdBufferInfo(): BufferInfo | null;
     private backtrack;
     private checkFragmentChanged;
     get nextLevel(): number;
+    get currentFrag(): Fragment | null;
+    get currentProgramDateTime(): Date | null;
     get currentLevel(): number;
     get nextBufferedFrag(): Fragment | null;
     get forceStartLoad(): boolean;
@@ -2187,23 +2642,25 @@ declare class SubtitleStreamController extends BaseStreamController implements N
     private currentTrackId;
     private tracksBuffered;
     private mainDetails;
-    constructor(hls: Hls, fragmentTracker: FragmentTracker);
+    constructor(hls: Hls, fragmentTracker: FragmentTracker, keyLoader: KeyLoader);
     protected onHandlerDestroying(): void;
     private _registerListeners;
     private _unregisterListeners;
-    startLoad(): void;
+    startLoad(startPosition: number): void;
     onManifestLoading(): void;
     onLevelLoaded(event: Events.LEVEL_LOADED, data: LevelLoadedData): void;
     onSubtitleFragProcessed(event: Events.SUBTITLE_FRAG_PROCESSED, data: SubtitleFragProcessed): void;
     onBufferFlushing(event: Events.BUFFER_FLUSHING, data: BufferFlushingData): void;
+    onFragBuffered(event: Events.FRAG_BUFFERED, data: FragBufferedData): void;
     onError(event: Events.ERROR, data: ErrorData): void;
     onSubtitleTracksUpdated(event: Events.SUBTITLE_TRACKS_UPDATED, { subtitleTracks }: SubtitleTracksUpdatedData): void;
     onSubtitleTrackSwitch(event: Events.SUBTITLE_TRACK_SWITCH, data: TrackSwitchedData): void;
     onSubtitleTrackLoaded(event: Events.SUBTITLE_TRACK_LOADED, data: TrackLoadedData): void;
     _handleFragmentLoadComplete(fragLoadedData: FragLoadedData): void;
     doTick(): void;
+    protected getMaxBufferLength(mainBufferLength?: number): number;
     protected loadFragment(frag: Fragment, levelDetails: LevelDetails, targetBufferTime: number): void;
-    get mediaBufferTimeRanges(): TimeRange[];
+    get mediaBufferTimeRanges(): Bufferable;
 }
 
 declare class SubtitleTrackController extends BasePlaylistController {
@@ -2218,9 +2675,11 @@ declare class SubtitleTrackController extends BasePlaylistController {
     private asyncPollTrackChange;
     private useTextTrackPolling;
     private subtitlePollingInterval;
-    subtitleDisplay: boolean;
+    private _subtitleDisplay;
     constructor(hls: Hls);
     destroy(): void;
+    get subtitleDisplay(): boolean;
+    set subtitleDisplay(value: boolean);
     private registerListeners;
     private unregisterListeners;
     protected onMediaAttached(event: Events.MEDIA_ATTACHED, data: MediaAttachedData): void;
@@ -2357,6 +2816,7 @@ declare class TimelineController implements ComponentAPI {
     private cea608Parser1;
     private cea608Parser2;
     private lastSn;
+    private lastPartIndex;
     private prevCC;
     private vttCCs;
     private captionsProperties;
@@ -2374,7 +2834,9 @@ declare class TimelineController implements ComponentAPI {
     private onManifestLoading;
     private _cleanTracks;
     private onSubtitleTracksUpdated;
+    private _captionsOrSubtitlesFromCharacteristics;
     private onManifestLoaded;
+    private closedCaptionsForLevel;
     private onFragLoading;
     private onFragLoaded;
     private _parseIMSC1;
@@ -2390,9 +2852,9 @@ declare class TimelineController implements ComponentAPI {
 
 export declare type TimelineControllerConfig = {
     cueHandler: CuesInterface;
-    enableCEA708Captions: boolean;
     enableWebVTT: boolean;
     enableIMSC1: boolean;
+    enableCEA708Captions: boolean;
     captionsTextTrack1Label: string;
     captionsTextTrack1LanguageCode: string;
     captionsTextTrack2Label: string;
@@ -2403,11 +2865,6 @@ export declare type TimelineControllerConfig = {
     captionsTextTrack4LanguageCode: string;
     renderTextTracksNatively: boolean;
 };
-
-declare interface TimeRange {
-    start: number;
-    end: number;
-}
 
 export declare interface Track {
     id: 'audio' | 'main';
@@ -2451,6 +2908,7 @@ declare class TransmuxerInterface {
     private observer;
     private frag;
     private part;
+    private useWorker;
     private worker;
     private onwmsg?;
     private transmuxer;
@@ -2460,6 +2918,7 @@ declare class TransmuxerInterface {
     destroy(): void;
     push(data: ArrayBuffer, initSegmentData: Uint8Array | undefined, audioCodec: string | undefined, videoCodec: string | undefined, frag: Fragment, part: Part | null, duration: number, accurateTimeOffset: boolean, chunkMeta: ChunkMetadata, defaultInitPTS?: number): void;
     flush(chunkMeta: ChunkMetadata): void;
+    private transmuxerError;
     private handleFlushResult;
     private onWorkerMessage;
     private configureTransmuxer;
@@ -2477,7 +2936,12 @@ export declare type TSDemuxerConfig = {
 
 export declare interface UserdataSample {
     pts: number;
-    bytes: Uint8Array;
+    bytes?: Uint8Array;
+    type?: number;
+    payloadType?: number;
+    uuid?: string;
+    userData?: string;
+    userDataBytes?: Uint8Array;
 }
 
 declare enum VerboseLevel {

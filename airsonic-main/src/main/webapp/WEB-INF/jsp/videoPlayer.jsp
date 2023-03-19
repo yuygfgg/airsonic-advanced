@@ -90,10 +90,10 @@
                 castAppID: "4FBFE470",
                 features: ["speed", "quality", "chromecast"],
                 hls: {
-                    path: "<c:url value='/script/mediaelement/renderers/hls-1.0.10/hls.min.js'/>"
+                    path: "<c:url value='/script/mediaelement/renderers/hls-1.3.4/hls.min.js'/>"
                 },
                 dash: {
-                    path: "<c:url value='/script/mediaelement/renderers/dash.all-4.0.1.min.js'/>"
+                    path: "<c:url value='/script/mediaelement/renderers/dash.all-4.6.0.min.js'/>"
                 },
                 defaultSpeed: "1.00",
                 speeds: ["8.00", "2.00", "1.50", "1.25", "1.00", "0.75", "0.5"],

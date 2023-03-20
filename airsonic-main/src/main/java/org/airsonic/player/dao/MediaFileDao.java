@@ -634,7 +634,7 @@ public class MediaFileDao extends AbstractDao {
         }
 
         query += " where media_file.present and media_file.type = 'MUSIC'";
-        query += " and media_file.index_path is null;"; // exclude indexed files
+        query += " and media_file.index_path is null"; // exclude indexed files
 
         if (!criteria.getMusicFolders().isEmpty()) {
             query += " and media_file.folder_id in (:folders)";

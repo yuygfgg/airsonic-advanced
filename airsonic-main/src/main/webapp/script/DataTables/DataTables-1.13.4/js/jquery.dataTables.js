@@ -8398,7 +8398,7 @@
 			api
 				.rows( $.map(loaded.childRows, function (id){
       				// 
-    	  			return id.replace(/:/g, '\\\\:');
+    	  			return id.replace(/\\/g, "\\\\").replace(/:/g, '\\:');
 				}) )
 				.every( function () {
 					_fnCallbackFire( context, null, 'requestChild', [ this ] )

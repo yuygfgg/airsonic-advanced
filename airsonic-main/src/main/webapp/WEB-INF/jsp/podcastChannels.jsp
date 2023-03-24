@@ -55,9 +55,15 @@
                 emptyTable: "<fmt:message key="podcastreceiver.empty"/>"
             },
             stripeClasses: ["bgcolor2", "bgcolor1"],
-            columnDefs: [{ targets: "_all", orderable: true }],
+
+            columnDefs: [
+                    { orderable: false , targets: [0, 1, 2, 9 ] }
+            ],
             columns: [
-                { data: "seq", className: "detail fit" },
+                { data: "id",
+                  className: "detail fit centeralign",
+                  title: "<fmt:message key='podcastreceiver.id'/>"
+                },
                 { data: null,
                   searchable: false,
                   name: "podcastcheckbox",
@@ -70,10 +76,6 @@
                   name: "play",
                   className: "fit not-draggable centeralign",
                   defaultContent: "<img class='playSong' src=\"<spring:theme code='playImage'/>\" style='height:18px;' alt=\"<fmt:message key='common.play'/>\" title=\"<fmt:message key='common.play'/>\">"
-                },
-                { data: "id",
-                  className: "detail fit centeralign",
-                  title: "<fmt:message key='podcastreceiver.id'/>"
                 },
                 { data: "title",
                   className: "detail fit songTitle",
@@ -177,9 +179,14 @@
                 callback({data: newestPodcasts});
             },
             stripeClasses: ["bgcolor2", "bgcolor1"],
-            columnDefs: [{ targets: "_all", orderable: true }],
+            columnDefs: [
+               { orderable: false , targets: [ 0, 1, 2, 3, 4 ] }
+            ],
             columns: [
-                { data: "seq", className: "detail fit" },
+                { data: "id",
+                  className: "detail fit centeralign",
+                  title: "<fmt:message key='podcastreceiver.id'/>"
+                },
                 { data: null,
                   searchable: false,
                   name: "newestpodcastcheckbox",
@@ -207,10 +214,6 @@
                   name: "addNext",
                   className: "fit not-draggable centeralign",
                   defaultContent: "<img class='addSongNext' src=\"<spring:theme code='addNextImage'/>\" style='height:18px;' alt=\"<fmt:message key='main.addnext'/>\" title=\"<fmt:message key='main.addnext'/>\">"
-                },
-                { data: "id",
-                  className: "detail fit centeralign",
-                  title: "<fmt:message key='podcastreceiver.id'/>"
                 },
                 { data: "title",
                   className: "detail fit songTitle",
@@ -318,7 +321,6 @@
             stripeClasses: ["bgcolor2", "bgcolor1"],
             columnDefs: [{ targets: "_all", orderable: true }],
             columns: [
-                { data: "seq", className: "detail fit" },
                 { data: null,
                   searchable: false,
                   name: "podcastindexcheckbox",

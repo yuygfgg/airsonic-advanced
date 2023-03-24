@@ -112,6 +112,10 @@ a.dt-button:active:not(.disabled):hover:not(.disabled) {
     text-shadow: none;
 }
 
+table.dataTable thead th {
+    text-align: center !important;
+}
+
 .dataTables_wrapper .dataTables_processing {
     background: none;
 }

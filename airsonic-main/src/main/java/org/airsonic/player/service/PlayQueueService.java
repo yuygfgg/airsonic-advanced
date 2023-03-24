@@ -164,7 +164,7 @@ public class PlayQueueService {
             boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
             if (queueFollowingSongs) {
                 MediaFile dir = mediaFileService.getParentOf(file);
-                songs = mediaFileService.getVisibleChildrenOf(dir, false, true);
+                songs = mediaFileService.getChildrenOf(dir, true, false, true);
                 if (!songs.isEmpty()) {
                     int index = songs.indexOf(file);
                     songs = songs.subList(index, songs.size());

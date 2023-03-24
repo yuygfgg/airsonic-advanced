@@ -49,7 +49,9 @@
                     callback({data: Object.values(bookmarks)});
                 },
                 stripeClasses: ["bgcolor2", "bgcolor1"],
-                columnDefs: [{ targets: "_all", orderable: true }],
+                columnDefs: [
+                    { orderable: false , targets: [ 1, 2, 3, 4, 5, 13 ] }
+                ],
                 columns: [
                     { data: "id", className: "detail fit", visible: true },
                     { data: null,
@@ -243,6 +245,16 @@
 	        });
         }
 
+        function onPlay(index) {
+            var data = bookmarksTable.row(index).data().mediaFileEntry;
+            if (data.entryType == 'VIDEO') {
+                var urlBase = "<c:url value='/videoPlayer.view'/>";
+                var url = urlBase + "?id=" + data.id;
+                top.main.location = url;
+            } else {
+                top.playQueue.onPlay(data.id);
+            }
+        }
         function onAdd(index) {
             top.playQueue.onAdd(bookmarksTable.row(index).data().mediaFileEntry.id);
             $().toastmessage('showSuccessToast', '<fmt:message key="main.addlast.toast"/>');
@@ -269,6 +281,7 @@
             }
         }
         function onRemoveBookmark(index) {
+            console.log(bookmarksTable.row(index).data());
             top.StompClient.send("/app/bookmarks/delete", bookmarksTable.row(index).data().mediaFileEntry.id);
         }
         function deleteBookmarksCallback(mediaFileId) {

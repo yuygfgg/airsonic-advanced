@@ -4,24 +4,23 @@
  *
  * To rebuild or modify this file with the latest versions of the included
  * software please visit:
- *   https://datatables.net/download/#dt/dt-1.11.4/b-2.2.2/cr-1.5.5/fh-3.2.1/rr-1.2.8/sl-1.3.4
+ *   https://datatables.net/download/#dt/dt-1.13.4/b-2.3.6/cr-1.6.2/fh-3.3.2/rr-1.3.3/sl-1.6.2
  *
  * Included libraries:
- *   DataTables 1.11.4, Buttons 2.2.2, ColReorder 1.5.5, FixedHeader 3.2.1, RowReorder 1.2.8, Select 1.3.4
+ *   DataTables 1.13.4, Buttons 2.3.6, ColReorder 1.6.2, FixedHeader 3.3.2, RowReorder 1.3.3, Select 1.6.2
  */
 
-/*! DataTables 1.11.4
- * ©2008-2021 SpryMedia Ltd - datatables.net/license
+/*! DataTables 1.13.4
+ * ©2008-2023 SpryMedia Ltd - datatables.net/license
  */
 
 /**
  * @summary     DataTables
  * @description Paginate, search and order HTML tables
- * @version     1.11.4
- * @file        jquery.dataTables.js
+ * @version     1.13.4
  * @author      SpryMedia Ltd
  * @contact     www.datatables.net
- * @copyright   Copyright 2008-2021 SpryMedia Ltd.
+ * @copyright   SpryMedia Ltd.
  *
  * This source file is free software, available under the following license:
  *   MIT license - http://datatables.net/license
@@ -47,21 +46,28 @@
 	}
 	else if ( typeof exports === 'object' ) {
 		// CommonJS
-		module.exports = function (root, $) {
-			if ( ! root ) {
-				// CommonJS environments without a window global must pass a
-				// root. This will give an error otherwise
-				root = window;
-			}
+		// jQuery's factory checks for a global window - if it isn't present then it
+		// returns a factory function that expects the window object
+		var jq = require('jquery');
 
-			if ( ! $ ) {
-				$ = typeof window !== 'undefined' ? // jQuery's factory checks for a global window
-					require('jquery') :
-					require('jquery')( root );
-			}
+		if (typeof window !== 'undefined') {
+			module.exports = function (root, $) {
+				if ( ! root ) {
+					// CommonJS environments without a window global must pass a
+					// root. This will give an error otherwise
+					root = window;
+				}
 
-			return factory( $, root, root.document );
-		};
+				if ( ! $ ) {
+					$ = jq( root );
+				}
+
+				return factory( $, root, root.document );
+			};
+		}
+		else {
+			return factory( jq, window, window.document );
+		}
 	}
 	else {
 		// Browser
@@ -71,40 +77,15 @@
 (function( $, window, document, undefined ) {
 	"use strict";
 
-	/**
-	 * DataTables is a plug-in for the jQuery Javascript library. It is a highly
-	 * flexible tool, based upon the foundations of progressive enhancement,
-	 * which will add advanced interaction controls to any HTML table. For a
-	 * full list of features please refer to
-	 * [DataTables.net](href="http://datatables.net).
-	 *
-	 * Note that the `DataTable` object is not a global variable but is aliased
-	 * to `jQuery.fn.DataTable` and `jQuery.fn.dataTable` through which it may
-	 * be  accessed.
-	 *
-	 *  @class
-	 *  @param {object} [init={}] Configuration object for DataTables. Options
-	 *    are defined by {@link DataTable.defaults}
-	 *  @requires jQuery 1.7+
-	 *
-	 *  @example
-	 *    // Basic initialisation
-	 *    $(document).ready( function {
-	 *      $('#example').dataTable();
-	 *    } );
-	 *
-	 *  @example
-	 *    // Initialisation with configuration options - in this case, disable
-	 *    // pagination and sorting.
-	 *    $(document).ready( function {
-	 *      $('#example').dataTable( {
-	 *        "paginate": false,
-	 *        "sort": false
-	 *      } );
-	 *    } );
-	 */
+	
 	var DataTable = function ( selector, options )
 	{
+		// Check if called with a window or jQuery object for DOM less applications
+		// This is for backwards compatibility
+		if (DataTable.factory(selector, options)) {
+			return DataTable;
+		}
+	
 		// When creating with `new`, create a new DataTable, returning the API instance
 		if (this instanceof DataTable) {
 			return $(selector).DataTable(options);
@@ -113,7 +94,7 @@
 			// Argument switching
 			options = selector;
 		}
-
+	
 		/**
 		 * Perform a jQuery selector action on the table's TR elements (from the tbody) and
 		 * return the resulting jQuery object.
@@ -869,24 +850,24 @@
 		 */
 		this.fnVersionCheck = _ext.fnVersionCheck;
 		
-
+	
 		var _that = this;
 		var emptyInit = options === undefined;
 		var len = this.length;
-
+	
 		if ( emptyInit ) {
 			options = {};
 		}
-
+	
 		this.oApi = this.internal = _ext.internal;
-
+	
 		// Extend with old style plug-in API methods
 		for ( var fn in DataTable.ext.internal ) {
 			if ( fn ) {
 				this[fn] = _fnExternApiFunc(fn);
 			}
 		}
-
+	
 		this.each(function() {
 			// For each initialisation we want to give it a clean initialisation
 			// object that can be bashed around
@@ -894,7 +875,7 @@
 			var oInit = len > 1 ? // optimisation for single table case
 				_fnExtend( o, options, true ) :
 				options;
-
+	
 			/*global oInit,_that,emptyInit*/
 			var i=0, iLen, j, jLen, k, kLen;
 			var sId = this.getAttribute( 'id' );
@@ -1108,7 +1089,7 @@
 					success: function ( json ) {
 						_fnCamelToHungarian( defaults.oLanguage, json );
 						_fnLanguageCompat( json );
-						$.extend( true, oLanguage, json );
+						$.extend( true, oLanguage, json, oSettings.oInit.oLanguage );
 			
 						_fnCallbackFire( oSettings, null, 'i18n', [oSettings]);
 						_fnInitialise( oSettings );
@@ -1194,6 +1175,10 @@
 				$( rowOne[0] ).children('th, td').each( function (i, cell) {
 					var col = oSettings.aoColumns[i];
 			
+					if (! col) {
+						_fnLog( oSettings, 0, 'Incorrect column count', 18 );
+					}
+			
 					if ( col.mData === i ) {
 						var sort = a( cell, 'sort' ) || a( cell, 'order' );
 						var filter = a( cell, 'filter' ) || a( cell, 'search' );
@@ -1205,6 +1190,7 @@
 								type:   sort !== null   ? i+'.@data-'+sort   : undefined,
 								filter: filter !== null ? i+'.@data-'+filter : undefined
 							};
+							col._isArrayHost = true;
 			
 							_fnColumnOptions( oSettings, i );
 						}
@@ -1337,7 +1323,7 @@
 		_that = null;
 		return this;
 	};
-
+	
 	
 	/*
 	 * It is useful to have variables which are scoped locally so only the
@@ -1410,7 +1396,12 @@
 	
 	
 	var _isNumber = function ( d, decimalPoint, formatted ) {
-		var strType = typeof d === 'string';
+		let type = typeof d;
+		var strType = type === 'string';
+	
+		if ( type === 'number' || type === 'bigint') {
+			return true;
+		}
 	
 		// If empty return immediately so there must be a number if it is a
 		// formatted string (this stops the string "k", or "kr", etc being detected
@@ -2341,8 +2332,16 @@
 				th.addClass( oOptions.sClass );
 			}
 	
+			var origClass = oCol.sClass;
+	
 			$.extend( oCol, oOptions );
 			_fnMap( oCol, oOptions, "sWidth", "sWidthOrig" );
+	
+			// Merge class from previously defined classes with this one, rather than just
+			// overwriting it in the extend above
+			if (origClass !== oCol.sClass) {
+				oCol.sClass = origClass + ' ' + oCol.sClass;
+			}
 	
 			/* iDataSort to be applied (backwards compatibility), but aDataSort will take
 			 * priority if defined
@@ -2380,7 +2379,7 @@
 	
 		// Indicate if DataTables should read DOM data as an object or array
 		// Used in _fnGetRowElements
-		if ( typeof mDataSrc !== 'number' ) {
+		if ( typeof mDataSrc !== 'number' && ! oCol._isArrayHost ) {
 			oSettings._rowReadObject = true;
 		}
 	
@@ -2616,9 +2615,11 @@
 				def = aoColDefs[i];
 	
 				/* Each definition can target multiple columns, as it is an array */
-				var aTargets = def.targets !== undefined ?
-					def.targets :
-					def.aTargets;
+				var aTargets = def.target !== undefined
+					? def.target
+					: def.targets !== undefined
+						? def.targets
+						: def.aTargets;
 	
 				if ( ! Array.isArray( aTargets ) )
 				{
@@ -3188,6 +3189,11 @@
 				create = nTrIn ? false : true;
 	
 				nTd = create ? document.createElement( oCol.sCellType ) : anTds[i];
+	
+				if (! nTd) {
+					_fnLog( oSettings, 0, 'Incorrect column count', 18 );
+				}
+	
 				nTd._DT_CellIndex = {
 					row: iRow,
 					column: i
@@ -3338,10 +3344,16 @@
 	
 			for ( i=0, ien=cells.length ; i<ien ; i++ ) {
 				column = columns[i];
-				column.nTf = cells[i].cell;
 	
-				if ( column.sClass ) {
-					$(column.nTf).addClass( column.sClass );
+				if (column) {
+					column.nTf = cells[i].cell;
+		
+					if ( column.sClass ) {
+						$(column.nTf).addClass( column.sClass );
+					}
+				}
+				else {
+					_fnLog( oSettings, 0, 'Incorrect column count', 18 );
 				}
 			}
 		}
@@ -5101,6 +5113,10 @@
 				_fnDraw( settings );
 			}
 		}
+		else {
+			// No change event - paging was called, but no change
+			_fnCallbackFire( settings, null, 'page-nc', [settings] );
+		}
 	
 		return changed;
 	}
@@ -5117,9 +5133,11 @@
 	{
 		return $('<div/>', {
 				'id': ! settings.aanFeatures.r ? settings.sTableId+'_processing' : null,
-				'class': settings.oClasses.sProcessing
+				'class': settings.oClasses.sProcessing,
+				'role': 'status'
 			} )
 			.html( settings.oLanguage.sProcessing )
+			.append('<div><div></div><div></div><div></div><div></div></div>')
 			.insertBefore( settings.nTable )[0];
 	}
 	
@@ -5369,6 +5387,7 @@
 			footerCopy = footer.clone().prependTo( table );
 			footerTrgEls = footer.find('tr'); // the original tfoot is in its own table and must be sized
 			footerSrcEls = footerCopy.find('tr');
+			footerCopy.find('[id]').removeAttr('id');
 		}
 	
 		// Clone the current header and footer elements and then place it into the inner table
@@ -5376,6 +5395,7 @@
 		headerTrgEls = header.find('tr'); // original header is in its own table
 		headerSrcEls = headerCopy.find('tr');
 		headerCopy.find('th, td').removeAttr('tabindex');
+		headerCopy.find('[id]').removeAttr('id');
 	
 	
 		/*
@@ -5449,7 +5469,7 @@
 			nToSize.style.width = headerWidths[i];
 		}, headerTrgEls );
 	
-		$(headerSrcEls).height(0);
+		$(headerSrcEls).css('height', 0);
 	
 		/* Same again with the footer if we have one */
 		if ( footer )
@@ -6502,6 +6522,17 @@
 		// Store the saved state so it might be accessed at any time
 		settings.oLoadedState = $.extend( true, {}, s );
 	
+		// Page Length
+		if ( s.length !== undefined ) {
+			// If already initialised just set the value directly so that the select element is also updated
+			if (api) {
+				api.page.len(s.length)
+			}
+			else {
+				settings._iDisplayLength   = s.length;
+			}
+		}
+	
 		// Restore key features - todo - for 1.11 this needs to be done by
 		// subscribed events
 		if ( s.start !== undefined ) {
@@ -6510,12 +6541,8 @@
 				settings.iInitDisplayStart = s.start;
 			}
 			else {
-				_fnPageChange(settings, s.start/s.length);
-	
+				_fnPageChange(settings, s.start/settings._iDisplayLength);
 			}
-		}
-		if ( s.length !== undefined ) {
-			settings._iDisplayLength   = s.length;
 		}
 	
 		// Order
@@ -6782,8 +6809,15 @@
 	
 		if ( eventName !== null ) {
 			var e = $.Event( eventName+'.dt' );
+			var table = $(settings.nTable);
 	
-			$(settings.nTable).trigger( e, args );
+			table.trigger( e, args );
+	
+			// If not yet attached to the document, trigger the event
+			// on the body directly to sort of simulate the bubble
+			if (table.parents('body').length === 0) {
+				$('body').trigger( e, args );
+			}
 	
 			ret.push( e.result );
 		}
@@ -6857,7 +6891,7 @@
 		return 'dom';
 	}
 	
-
+	
 	
 	
 	/**
@@ -7249,8 +7283,10 @@
 	
 		pluck: function ( prop )
 		{
+			var fn = DataTable.util.get(prop);
+	
 			return this.map( function ( el ) {
-				return el[ prop ];
+				return fn(el);
 			} );
 		},
 	
@@ -8344,22 +8380,42 @@
 	
 	$(document).on('plugin-init.dt', function (e, context) {
 		var api = new _Api( context );
-		api.on( 'stateSaveParams', function ( e, settings, data ) {
-			var indexes = api.rows().iterator( 'row', function ( settings, idx ) {
-				return settings.aoData[idx]._detailsShow ? idx : undefined;
-			});
+		var namespace = 'on-plugin-init';
+		var stateSaveParamsEvent = 'stateSaveParams.' + namespace;
+		var destroyEvent = 'destroy. ' + namespace;
 	
-			data.childRows = api.rows( indexes ).ids( true ).toArray();
-		})
+		api.on( stateSaveParamsEvent, function ( e, settings, d ) {
+			// This could be more compact with the API, but it is a lot faster as a simple
+			// internal loop
+			var idFn = settings.rowIdFn;
+			var data = settings.aoData;
+			var ids = [];
+	
+			for (var i=0 ; i<data.length ; i++) {
+				if (data[i]._detailsShow) {
+					ids.push( '#' + idFn(data[i]._aData) );
+				}
+			}
+	
+			d.childRows = ids;
+		});
+	
+		api.on( destroyEvent, function () {
+			api.off(stateSaveParamsEvent + ' ' + destroyEvent);
+		});
 	
 		var loaded = api.state.loaded();
 	
 		if ( loaded && loaded.childRows ) {
-			api.rows( loaded.childRows ).every( function () {
-				_fnCallbackFire( context, null, 'requestChild', [ this ] )
-			})
+			api
+				.rows( $.map(loaded.childRows, function (id){
+					return id.replace(/:/g, '\\:')
+				}) )
+				.every( function () {
+					_fnCallbackFire( context, null, 'requestChild', [ this ] )
+				});
 		}
-	})
+	});
 	
 	var __details_add = function ( ctx, row, data, klass )
 	{
@@ -8406,6 +8462,15 @@
 	};
 	
 	
+	// Make state saving of child row details async to allow them to be batch processed
+	var __details_state = DataTable.util.throttle(
+		function (ctx) {
+			_fnSaveState( ctx[0] )
+		},
+		500
+	);
+	
+	
 	var __details_remove = function ( api, idx )
 	{
 		var ctx = api.context;
@@ -8419,7 +8484,7 @@
 				row._detailsShow = undefined;
 				row._details = undefined;
 				$( row.nTr ).removeClass( 'dt-hasChild' );
-				_fnSaveState( ctx[0] );
+				__details_state( ctx );
 			}
 		}
 	};
@@ -8446,7 +8511,7 @@
 				_fnCallbackFire( ctx[0], null, 'childRow', [ show, api.row( api[0] ) ] )
 	
 				__details_events( ctx[0] );
-				_fnSaveState( ctx[0] );
+				__details_state( ctx );
 			}
 		}
 	};
@@ -8457,7 +8522,7 @@
 		var api = new _Api( settings );
 		var namespace = '.dt.DT_details';
 		var drawEvent = 'draw'+namespace;
-		var colvisEvent = 'column-visibility'+namespace;
+		var colvisEvent = 'column-sizing'+namespace;
 		var destroyEvent = 'destroy'+namespace;
 		var data = settings.aoData;
 	
@@ -9318,6 +9383,48 @@
 	
 	
 	/**
+	 * Set the jQuery or window object to be used by DataTables
+	 *
+	 * @param {*} module Library / container object
+	 * @param {string} type Library or container type `lib` or `win`.
+	 */
+	DataTable.use = function (module, type) {
+		if (type === 'lib' || module.fn) {
+			$ = module;
+		}
+		else if (type == 'win' || module.document) {
+			window = module;
+			document = module.document;
+		}
+	}
+	
+	/**
+	 * CommonJS factory function pass through. This will check if the arguments
+	 * given are a window object or a jQuery object. If so they are set
+	 * accordingly.
+	 * @param {*} root Window
+	 * @param {*} jq jQUery
+	 * @returns {boolean} Indicator
+	 */
+	DataTable.factory = function (root, jq) {
+		var is = false;
+	
+		// Test if the first parameter is a window object
+		if (root && root.document) {
+			window = root;
+			document = root.document;
+		}
+	
+		// Test if the second parameter is a jQuery object
+		if (jq && jq.fn && jq.fn.jquery) {
+			$ = jq;
+			is = true;
+		}
+	
+		return is;
+	}
+	
+	/**
 	 * Provide a common method for plug-ins to check the version of DataTables being
 	 * used, in order to ensure compatibility.
 	 *
@@ -9509,7 +9616,6 @@
 		remove = remove || false;
 	
 		return this.iterator( 'table', function ( settings ) {
-			var orig      = settings.nTableWrapper.parentNode;
 			var classes   = settings.oClasses;
 			var table     = settings.nTable;
 			var tbody     = settings.nTBody;
@@ -9563,6 +9669,8 @@
 			// Add the TR elements back into the table in their original order
 			jqTbody.children().detach();
 			jqTbody.append( rows );
+	
+			var orig = settings.nTableWrapper.parentNode;
 	
 			// Remove the DataTables generated nodes, events and classes
 			var removedMethod = remove ? 'remove' : 'detach';
@@ -9648,7 +9756,7 @@
 		}
 	
 		return resolved.replace( '%d', plural ); // nb: plural might be undefined,
-	} );
+	} );	
 	/**
 	 * Version string for plug-ins to check compatibility. Allowed format is
 	 * `a.b.c-d` where: a:int, b:int, c:int, d:string(dev|beta|alpha). `d` is used
@@ -9657,8 +9765,8 @@
 	 *  @type string
 	 *  @default Version number
 	 */
-	DataTable.version = "1.11.4";
-
+	DataTable.version = "1.13.4";
+	
 	/**
 	 * Private data store, containing all of the settings objects that are
 	 * created for the tables on a given page.
@@ -9672,7 +9780,7 @@
 	 *  @private
 	 */
 	DataTable.settings = [];
-
+	
 	/**
 	 * Object models container, for the various models that DataTables has
 	 * available to it. These models define the objects that are used to hold
@@ -11862,7 +11970,6 @@
 			 * Text which is displayed when the table is processing a user action
 			 * (usually a sort command or similar).
 			 *  @type string
-			 *  @default Processing...
 			 *
 			 *  @dtopt Language
 			 *  @name DataTable.defaults.language.processing
@@ -11876,7 +11983,7 @@
 			 *      } );
 			 *    } );
 			 */
-			"sProcessing": "Processing...",
+			"sProcessing": "",
 	
 	
 			/**
@@ -14030,7 +14137,7 @@
 		 */
 		"rowId": null
 	};
-
+	
 	/**
 	 * Extension object for DataTables that is used to provide all extension
 	 * options.
@@ -14082,7 +14189,7 @@
 		 *
 		 *  @type string
 		 */
-		build:"dt/dt-1.11.4/b-2.2.2/cr-1.5.5/fh-3.2.1/rr-1.2.8/sl-1.3.4",
+		build:"dt/dt-1.13.4/b-2.3.6/cr-1.6.2/fh-3.3.2/rr-1.3.3/sl-1.6.2",
 	
 	
 		/**
@@ -14720,7 +14827,7 @@
 				var classes = settings.oClasses;
 				var lang = settings.oLanguage.oPaginate;
 				var aria = settings.oLanguage.oAria.paginate || {};
-				var btnDisplay, btnClass, counter=0;
+				var btnDisplay, btnClass;
 	
 				var attach = function( container, buttons ) {
 					var i, ien, node, button, tabIndex;
@@ -14791,11 +14898,18 @@
 							}
 	
 							if ( btnDisplay !== null ) {
-								node = $('<a>', {
+								var tag = settings.oInit.pagingTag || 'a';
+								var disabled = btnClass.indexOf(disabledClass) !== -1;
+			
+	
+								node = $('<'+tag+'>', {
 										'class': classes.sPageButton+' '+btnClass,
 										'aria-controls': settings.sTableId,
+										'aria-disabled': disabled ? 'true' : null,
 										'aria-label': aria[ button ],
-										'data-dt-idx': counter,
+										'aria-role': 'link',
+										'aria-current': btnClass === classes.sPageButtonActive ? 'page' : null,
+										'data-dt-idx': button,
 										'tabindex': tabIndex,
 										'id': idx === 0 && typeof button === 'string' ?
 											settings.sTableId +'_'+ button :
@@ -14807,8 +14921,6 @@
 								_fnBindAction(
 									node, {action: button}, clickHandler
 								);
-	
-								counter++;
 							}
 						}
 					}
@@ -14927,6 +15039,12 @@
 	var __numericReplace = function ( d, decimalPlace, re1, re2 ) {
 		if ( d !== 0 && (!d || d === '-') ) {
 			return -Infinity;
+		}
+		
+		let type = typeof d;
+	
+		if (type === 'number' || type === 'bigint') {
+			return d;
 		}
 	
 		// If a decimal place other than `.` is used, it needs to be given to the
@@ -15128,6 +15246,213 @@
 			d;
 	};
 	
+	// Common logic for moment, luxon or a date action
+	function __mld( dt, momentFn, luxonFn, dateFn, arg1 ) {
+		if (window.moment) {
+			return dt[momentFn]( arg1 );
+		}
+		else if (window.luxon) {
+			return dt[luxonFn]( arg1 );
+		}
+		
+		return dateFn ? dt[dateFn]( arg1 ) : dt;
+	}
+	
+	
+	var __mlWarning = false;
+	function __mldObj (d, format, locale) {
+		var dt;
+	
+		if (window.moment) {
+			dt = window.moment.utc( d, format, locale, true );
+	
+			if (! dt.isValid()) {
+				return null;
+			}
+		}
+		else if (window.luxon) {
+			dt = format && typeof d === 'string'
+				? window.luxon.DateTime.fromFormat( d, format )
+				: window.luxon.DateTime.fromISO( d );
+	
+			if (! dt.isValid) {
+				return null;
+			}
+	
+			dt.setLocale(locale);
+		}
+		else if (! format) {
+			// No format given, must be ISO
+			dt = new Date(d);
+		}
+		else {
+			if (! __mlWarning) {
+				alert('DataTables warning: Formatted date without Moment.js or Luxon - https://datatables.net/tn/17');
+			}
+	
+			__mlWarning = true;
+		}
+	
+		return dt;
+	}
+	
+	// Wrapper for date, datetime and time which all operate the same way with the exception of
+	// the output string for auto locale support
+	function __mlHelper (localeString) {
+		return function ( from, to, locale, def ) {
+			// Luxon and Moment support
+			// Argument shifting
+			if ( arguments.length === 0 ) {
+				locale = 'en';
+				to = null; // means toLocaleString
+				from = null; // means iso8601
+			}
+			else if ( arguments.length === 1 ) {
+				locale = 'en';
+				to = from;
+				from = null;
+			}
+			else if ( arguments.length === 2 ) {
+				locale = to;
+				to = from;
+				from = null;
+			}
+	
+			var typeName = 'datetime-' + to;
+	
+			// Add type detection and sorting specific to this date format - we need to be able to identify
+			// date type columns as such, rather than as numbers in extensions. Hence the need for this.
+			if (! DataTable.ext.type.order[typeName]) {
+				// The renderer will give the value to type detect as the type!
+				DataTable.ext.type.detect.unshift(function (d) {
+					return d === typeName ? typeName : false;
+				});
+	
+				// The renderer gives us Moment, Luxon or Date obects for the sorting, all of which have a
+				// `valueOf` which gives milliseconds epoch
+				DataTable.ext.type.order[typeName + '-asc'] = function (a, b) {
+					var x = a.valueOf();
+					var y = b.valueOf();
+	
+					return x === y
+						? 0
+						: x < y
+							? -1
+							: 1;
+				}
+	
+				DataTable.ext.type.order[typeName + '-desc'] = function (a, b) {
+					var x = a.valueOf();
+					var y = b.valueOf();
+	
+					return x === y
+						? 0
+						: x > y
+							? -1
+							: 1;
+				}
+			}
+		
+			return function ( d, type ) {
+				// Allow for a default value
+				if (d === null || d === undefined) {
+					if (def === '--now') {
+						// We treat everything as UTC further down, so no changes are
+						// made, as such need to get the local date / time as if it were
+						// UTC
+						var local = new Date();
+						d = new Date( Date.UTC(
+							local.getFullYear(), local.getMonth(), local.getDate(),
+							local.getHours(), local.getMinutes(), local.getSeconds()
+						) );
+					}
+					else {
+						d = '';
+					}
+				}
+	
+				if (type === 'type') {
+					// Typing uses the type name for fast matching
+					return typeName;
+				}
+	
+				if (d === '') {
+					return type !== 'sort'
+						? ''
+						: __mldObj('0000-01-01 00:00:00', null, locale);
+				}
+	
+				// Shortcut. If `from` and `to` are the same, we are using the renderer to
+				// format for ordering, not display - its already in the display format.
+				if ( to !== null && from === to && type !== 'sort' && type !== 'type' && ! (d instanceof Date) ) {
+					return d;
+				}
+	
+				var dt = __mldObj(d, from, locale);
+	
+				if (dt === null) {
+					return d;
+				}
+	
+				if (type === 'sort') {
+					return dt;
+				}
+				
+				var formatted = to === null
+					? __mld(dt, 'toDate', 'toJSDate', '')[localeString]()
+					: __mld(dt, 'format', 'toFormat', 'toISOString', to);
+	
+				// XSS protection
+				return type === 'display' ?
+					__htmlEscapeEntities( formatted ) :
+					formatted;
+			};
+		}
+	}
+	
+	// Based on locale, determine standard number formatting
+	// Fallback for legacy browsers is US English
+	var __thousands = ',';
+	var __decimal = '.';
+	
+	if (Intl) {
+		try {
+			var num = new Intl.NumberFormat().formatToParts(100000.1);
+		
+			for (var i=0 ; i<num.length ; i++) {
+				if (num[i].type === 'group') {
+					__thousands = num[i].value;
+				}
+				else if (num[i].type === 'decimal') {
+					__decimal = num[i].value;
+				}
+			}
+		}
+		catch (e) {
+			// noop
+		}
+	}
+	
+	// Formatted date time detection - use by declaring the formats you are going to use
+	DataTable.datetime = function ( format, locale ) {
+		var typeName = 'datetime-detect-' + format;
+	
+		if (! locale) {
+			locale = 'en';
+		}
+	
+		if (! DataTable.ext.type.order[typeName]) {
+			DataTable.ext.type.detect.unshift(function (d) {
+				var dt = __mldObj(d, format, locale);
+				return d === '' || dt ? typeName : false;
+			});
+	
+			DataTable.ext.type.order[typeName + '-pre'] = function (d) {
+				return __mldObj(d, format, locale) || 0;
+			}
+		}
+	}
+	
 	/**
 	 * Helpers for `columns.render`.
 	 *
@@ -15155,10 +15480,26 @@
 	 * @namespace
 	 */
 	DataTable.render = {
+		date: __mlHelper('toLocaleDateString'),
+		datetime: __mlHelper('toLocaleString'),
+		time: __mlHelper('toLocaleTimeString'),
 		number: function ( thousands, decimal, precision, prefix, postfix ) {
+			// Auto locale detection
+			if (thousands === null || thousands === undefined) {
+				thousands = __thousands;
+			}
+	
+			if (decimal === null || decimal === undefined) {
+				decimal = __decimal;
+			}
+	
 			return {
 				display: function ( d ) {
 					if ( typeof d !== 'number' && typeof d !== 'string' ) {
+						return d;
+					}
+	
+					if (d === '' || d === null) {
 						return d;
 					}
 	
@@ -15330,23 +15671,23 @@
 		                                // added to prevent errors
 	} );
 	
-
+	
 	// jQuery access
 	$.fn.dataTable = DataTable;
-
+	
 	// Provide access to the host jQuery object (circular reference)
 	DataTable.$ = $;
-
+	
 	// Legacy aliases
 	$.fn.dataTableSettings = DataTable.settings;
 	$.fn.dataTableExt = DataTable.ext;
-
+	
 	// With a capital `D` we return a DataTables API instance rather than a
 	// jQuery object
 	$.fn.DataTable = function ( opts ) {
 		return $(this).dataTable( opts ).api();
 	};
-
+	
 	// All properties that are available to $.fn.dataTable should also be
 	// available on $.fn.DataTable
 	$.each( DataTable, function ( prop, val ) {
@@ -15370,34 +15711,52 @@
 	}
 	else if ( typeof exports === 'object' ) {
 		// CommonJS
-		module.exports = function (root, $) {
-			if ( ! root ) {
-				root = window;
+		var jq = require('jquery');
+		var cjsRequires = function (root, $) {
+			if ( ! $.fn.dataTable ) {
+				require('datatables.net')(root, $);
 			}
-
-			if ( ! $ || ! $.fn.dataTable ) {
-				// Require DataTables, which attaches to jQuery, including
-				// jQuery if needed and have a $ property so we can access the
-				// jQuery object that is used
-				$ = require('datatables.net')(root, $).$;
-			}
-
-			return factory( $, root, root.document );
 		};
+
+		if (typeof window !== 'undefined') {
+			module.exports = function (root, $) {
+				if ( ! root ) {
+					// CommonJS environments without a window global must pass a
+					// root. This will give an error otherwise
+					root = window;
+				}
+
+				if ( ! $ ) {
+					$ = jq( root );
+				}
+
+				cjsRequires( root, $ );
+				return factory( $, root, root.document );
+			};
+		}
+		else {
+			cjsRequires( window, jq );
+			module.exports = factory( jq, window, window.document );
+		}
 	}
 	else {
 		// Browser
 		factory( jQuery, window, document );
 	}
 }(function( $, window, document, undefined ) {
+'use strict';
+var DataTable = $.fn.dataTable;
 
-return $.fn.dataTable;
 
+
+
+
+return DataTable;
 }));
 
 
-/*! Buttons for DataTables 2.2.2
- * ©2016-2022 SpryMedia Ltd - datatables.net/license
+/*! Buttons for DataTables 2.3.6
+ * ©2016-2023 SpryMedia Ltd - datatables.net/license
  */
 
 (function( factory ){
@@ -15409,17 +15768,33 @@ return $.fn.dataTable;
 	}
 	else if ( typeof exports === 'object' ) {
 		// CommonJS
-		module.exports = function (root, $) {
-			if ( ! root ) {
-				root = window;
+		var jq = require('jquery');
+		var cjsRequires = function (root, $) {
+			if ( ! $.fn.dataTable ) {
+				require('datatables.net')(root, $);
 			}
-
-			if ( ! $ || ! $.fn.dataTable ) {
-				$ = require('datatables.net')(root, $).$;
-			}
-
-			return factory( $, root, root.document );
 		};
+
+		if (typeof window !== 'undefined') {
+			module.exports = function (root, $) {
+				if ( ! root ) {
+					// CommonJS environments without a window global must pass a
+					// root. This will give an error otherwise
+					root = window;
+				}
+
+				if ( ! $ ) {
+					$ = jq( root );
+				}
+
+				cjsRequires( root, $ );
+				return factory( $, root, root.document );
+			};
+		}
+		else {
+			cjsRequires( window, jq );
+			module.exports = factory( jq, window, window.document );
+		}
 	}
 	else {
 		// Browser
@@ -15428,6 +15803,7 @@ return $.fn.dataTable;
 }(function( $, window, document, undefined ) {
 'use strict';
 var DataTable = $.fn.dataTable;
+
 
 
 // Used for namespacing events added to the document by each instance, so they
@@ -15627,7 +16003,16 @@ $.extend( Buttons.prototype, {
 			for (i=button.buttons.length-1; i>=0; i--) {
 				this.remove(button.buttons[i].node);
 			}
-	
+
+			// If the collection has prefix and / or postfix buttons we need to add them in
+			if (button.conf.prefixButtons) {
+				newButtons.unshift.apply(newButtons, button.conf.prefixButtons);
+			}
+
+			if (button.conf.postfixButtons) {
+				newButtons.push.apply(newButtons, button.conf.postfixButtons);
+			}
+
 			for (i=0; i<newButtons.length; i++) {
 				var newBtn = newButtons[i];
 
@@ -15637,7 +16022,7 @@ $.extend( Buttons.prototype, {
 					newBtn !== undefined && newBtn.config !== undefined && newBtn.config.split !== undefined,
 					true,
 					newBtn.parentConf !== undefined && newBtn.parentConf.split !== undefined,
-					i,
+					null,
 					newBtn.parentConf
 				);
 			}
@@ -15665,7 +16050,7 @@ $.extend( Buttons.prototype, {
 
 		$(button.node)
 			.addClass( this.c.dom.button.disabled )
-			.attr('disabled', true);
+			.prop('disabled', true);
 
 		return this;
 	},
@@ -15720,7 +16105,7 @@ $.extend( Buttons.prototype, {
 		var button = this._nodeToButton( node );
 		$(button.node)
 			.removeClass( this.c.dom.button.disabled )
-			.removeAttr('disabled');
+			.prop('disabled', false);
 
 		return this;
 	},
@@ -16262,7 +16647,7 @@ $.extend( Buttons.prototype, {
 				className: this.c.dom.splitDropdown.className,
 				closeButton: false,
 				attr: {
-					'aria-haspopup': true,
+					'aria-haspopup': 'dialog',
 					'aria-expanded': false
 				},
 				align: this.c.dom.splitDropdown.align,
@@ -16273,7 +16658,7 @@ $.extend( Buttons.prototype, {
 			this._addKey(dropButtonConfig);
 
 			var splitAction = function ( e, dt, button, config ) {
-				_dtButtons.split.action.call( dt.button($('div.dt-btn-split-wrapper')[0] ), e, dt, button, config );
+				_dtButtons.split.action.call( dt.button(splitDiv), e, dt, button, config );
 	
 				$(dt.table().node()).triggerHandler( 'buttons-action.dt', [
 					dt.button( button ), dt, button, config 
@@ -16548,38 +16933,34 @@ $.extend( Buttons.prototype, {
 				conf.className = originalClassName+' '+conf.className;
 			}
 
-			// Buttons to be added to a collection  -gives the ability to define
-			// if buttons should be added to the start or end of a collection
-			var postfixButtons = conf.postfixButtons;
-			if ( postfixButtons ) {
-				if ( ! conf.buttons ) {
-					conf.buttons = [];
-				}
-
-				for ( i=0, ien=postfixButtons.length ; i<ien ; i++ ) {
-					conf.buttons.push( postfixButtons[i] );
-				}
-
-				conf.postfixButtons = null;
-			}
-
-			var prefixButtons = conf.prefixButtons;
-			if ( prefixButtons ) {
-				if ( ! conf.buttons ) {
-					conf.buttons = [];
-				}
-
-				for ( i=0, ien=prefixButtons.length ; i<ien ; i++ ) {
-					conf.buttons.splice( i, 0, prefixButtons[i] );
-				}
-
-				conf.prefixButtons = null;
-			}
-
 			// Although we want the `conf` object to overwrite almost all of
 			// the properties of the object being extended, the `extend`
 			// property should come from the object being extended
 			conf.extend = objArray.extend;
+		}
+
+		// Buttons to be added to a collection  -gives the ability to define
+		// if buttons should be added to the start or end of a collection
+		var postfixButtons = conf.postfixButtons;
+		if ( postfixButtons ) {
+			if ( ! conf.buttons ) {
+				conf.buttons = [];
+			}
+
+			for ( i=0, ien=postfixButtons.length ; i<ien ; i++ ) {
+				conf.buttons.push( postfixButtons[i] );
+			}
+		}
+
+		var prefixButtons = conf.prefixButtons;
+		if ( prefixButtons ) {
+			if ( ! conf.buttons ) {
+				conf.buttons = [];
+			}
+
+			for ( i=0, ien=prefixButtons.length ; i<ien ; i++ ) {
+				conf.buttons.splice( i, 0, prefixButtons[i] );
+			}
 		}
 
 		return conf;
@@ -16624,7 +17005,7 @@ $.extend( Buttons.prototype, {
 				}
 			);
 
-			$(dt.buttons( '[aria-haspopup="true"][aria-expanded="true"]' ).nodes())
+			$(dt.buttons( '[aria-haspopup="dialog"][aria-expanded="true"]' ).nodes())
 				.attr('aria-expanded', 'false');
 
 			$('div.dt-button-background').off( 'click.dtb-collection' );
@@ -16641,7 +17022,7 @@ $.extend( Buttons.prototype, {
 			return;
 		}
 
-		var existingExpanded = $(dt.buttons( '[aria-haspopup="true"][aria-expanded="true"]' ).nodes());
+		var existingExpanded = $(dt.buttons( '[aria-haspopup="dialog"][aria-expanded="true"]' ).nodes());
 		if ( existingExpanded.length ) {
 			// Reuse the current position if the button that was triggered is inside an existing collection
 			if (hostNode.closest('div.dt-button-collection').length) {
@@ -16670,7 +17051,11 @@ $.extend( Buttons.prototype, {
 			.addClass(options.collectionLayout)
 			.addClass(options.splitAlignClass)
 			.addClass(mod)
-			.css('display', 'none');
+			.css('display', 'none')
+			.attr({
+				'aria-modal': true,
+				role: 'dialog'
+			});
 
 		content = $(content)
 			.addClass(options.contentClassName)
@@ -16857,6 +17242,34 @@ $.extend( Buttons.prototype, {
 				.on( 'keyup.dtb-collection', function (e) {
 					if ( e.keyCode === 27 ) {
 						close();
+					}
+				} )
+				.on( 'keydown.dtb-collection', function (e) {
+					// Focus trap for tab key
+					var elements = $('a, button', content);
+					var active = document.activeElement;
+
+					if (e.keyCode !== 9) { // tab
+						return;
+					}
+
+					if (elements.index(active) === -1) {
+						// If current focus is not inside the popover
+						elements.first().focus();
+						e.preventDefault();
+					}
+					else if (e.shiftKey) {
+						// Reverse tabbing order when shift key is pressed
+						if (active === elements[0]) {
+							elements.last().focus();
+							e.preventDefault();
+						}
+					}
+					else {
+						if (active === elements.last()[0]) {
+							elements.first().focus();
+							e.preventDefault();
+						}
 					}
 				} );
 		}, 0);
@@ -17203,7 +17616,7 @@ Buttons.defaults = {
  * @type {string}
  * @static
  */
-Buttons.version = '2.2.2';
+Buttons.version = '2.3.6';
 
 
 $.extend( _dtButtons, {
@@ -17223,9 +17636,15 @@ $.extend( _dtButtons, {
 			else {
 				this.popover(config._collection, config);
 			}
+
+			// When activated using a key - auto focus on the
+			// first item in the popover
+			if (e.type === 'keypress') {
+				$('a, button', config._collection).eq(0).focus();
+			}
 		},
 		attr: {
-			'aria-haspopup': true
+			'aria-haspopup': 'dialog'
 		}
 		// Also the popover options, defined in Buttons.popover
 	},
@@ -17242,7 +17661,7 @@ $.extend( _dtButtons, {
 			this.popover(config._collection, config);
 		},
 		attr: {
-			'aria-haspopup': true
+			'aria-haspopup': 'dialog'
 		}
 		// Also the popover options, defined in Buttons.popover
 	},
@@ -17663,7 +18082,7 @@ var _filename = function ( config )
 	}
 
 	if ( filename.indexOf( '*' ) !== -1 ) {
-		filename = filename.replace( '*', $('head > title').text() ).trim();
+		filename = filename.replace(/*/g, $('head > title').text() ).trim();
 	}
 
 	// Strip characters which the OS will object to
@@ -17705,7 +18124,7 @@ var _title = function ( config )
 
 	return title === null ?
 		null : title.indexOf( '*' ) !== -1 ?
-			title.replace( '*', $('head > title').text() || 'Exported data' ) :
+			title.replace(/*/g, $('head > title').text() || 'Exported data' ) :
 			title;
 };
 
@@ -17872,13 +18291,64 @@ if ( DataTable.ext.features ) {
 }
 
 
-return Buttons;
+return DataTable;
 }));
 
 
 /*! DataTables styling wrapper for Buttons
  * ©2018 SpryMedia Ltd - datatables.net/license
  */
+
+(function( factory ){
+	if ( typeof define === 'function' && define.amd ) {
+		// AMD
+		define( ['jquery', 'datatables.net-dt', 'datatables.net-buttons'], function ( $ ) {
+			return factory( $, window, document );
+		} );
+	}
+	else if ( typeof exports === 'object' ) {
+		// CommonJS
+		var jq = require('jquery');
+		var cjsRequires = function (root, $) {
+			if ( ! $.fn.dataTable ) {
+				require('datatables.net-dt')(root, $);
+			}
+
+			if ( ! $.fn.dataTable.Buttons ) {
+				require('datatables.net-buttons')(root, $);
+			}
+		};
+
+		if (typeof window !== 'undefined') {
+			module.exports = function (root, $) {
+				if ( ! root ) {
+					// CommonJS environments without a window global must pass a
+					// root. This will give an error otherwise
+					root = window;
+				}
+
+				if ( ! $ ) {
+					$ = jq( root );
+				}
+
+				cjsRequires( root, $ );
+				return factory( $, root, root.document );
+			};
+		}
+		else {
+			cjsRequires( window, jq );
+			module.exports = factory( jq, window, window.document );
+		}
+	}
+	else {
+		// Browser
+		factory( jQuery, window, document );
+	}
+}(function( $, window, document, undefined ) {
+'use strict';
+var DataTable = $.fn.dataTable;
+
+
 
 (function( factory ){
 	if ( typeof define === 'function' && define.amd ) {
@@ -17915,18 +18385,68 @@ return $.fn.dataTable;
 
 }));
 
-/*! ColReorder 1.5.5
- * ©2010-2021 SpryMedia Ltd - datatables.net/license
+return DataTable;
+}));
+
+
+/*! ColReorder 1.6.2
+ * © SpryMedia Ltd - datatables.net/license
  */
+
+(function( factory ){
+	if ( typeof define === 'function' && define.amd ) {
+		// AMD
+		define( ['jquery', 'datatables.net'], function ( $ ) {
+			return factory( $, window, document );
+		} );
+	}
+	else if ( typeof exports === 'object' ) {
+		// CommonJS
+		var jq = require('jquery');
+		var cjsRequires = function (root, $) {
+			if ( ! $.fn.dataTable ) {
+				require('datatables.net')(root, $);
+			}
+		};
+
+		if (typeof window !== 'undefined') {
+			module.exports = function (root, $) {
+				if ( ! root ) {
+					// CommonJS environments without a window global must pass a
+					// root. This will give an error otherwise
+					root = window;
+				}
+
+				if ( ! $ ) {
+					$ = jq( root );
+				}
+
+				cjsRequires( root, $ );
+				return factory( $, root, root.document );
+			};
+		}
+		else {
+			cjsRequires( window, jq );
+			module.exports = factory( jq, window, window.document );
+		}
+	}
+	else {
+		// Browser
+		factory( jQuery, window, document );
+	}
+}(function( $, window, document, undefined ) {
+'use strict';
+var DataTable = $.fn.dataTable;
+
+
 
 /**
  * @summary     ColReorder
  * @description Provide the ability to reorder columns in a DataTable
- * @version     1.5.5
- * @file        dataTables.colReorder.js
- * @author      SpryMedia Ltd (www.sprymedia.co.uk)
- * @contact     www.sprymedia.co.uk/contact
- * @copyright   Copyright 2010-2021 SpryMedia Ltd.
+ * @version     1.6.2
+ * @author      SpryMedia Ltd
+ * @contact     datatables.net
+ * @copyright   SpryMedia Ltd.
  *
  * This source file is free software, available under the following license:
  *   MIT license - http://datatables.net/license/mit
@@ -17937,35 +18457,6 @@ return $.fn.dataTable;
  *
  * For details please refer to: http://www.datatables.net
  */
-(function( factory ){
-	if ( typeof define === 'function' && define.amd ) {
-		// AMD
-		define( ['jquery', 'datatables.net'], function ( $ ) {
-			return factory( $, window, document );
-		} );
-	}
-	else if ( typeof exports === 'object' ) {
-		// CommonJS
-		module.exports = function (root, $) {
-			if ( ! root ) {
-				root = window;
-			}
-
-			if ( ! $ || ! $.fn.dataTable ) {
-				$ = require('datatables.net')(root, $).$;
-			}
-
-			return factory( $, root, root.document );
-		};
-	}
-	else {
-		// Browser
-		factory( jQuery, window, document );
-	}
-}(function( $, window, document, undefined ) {
-'use strict';
-var DataTable = $.fn.dataTable;
-
 
 /**
  * Switch the key value pairing of an index array to be value key (i.e. the old value is now the
@@ -18224,10 +18715,8 @@ $.fn.dataTableExt.oApi.fnColReorder = function ( oSettings, iFrom, iTo, drop, in
 			}
 		}
 
-		// For DOM sourced data, the invalidate will reread the cell into
-		// the data array, but for data sources as an array, they need to
-		// be flipped
-		if ( data.src !== 'dom' && Array.isArray( data._aData ) ) {
+		// Swap around array sourced data (object based is left as is)
+		if ( Array.isArray( data._aData ) ) {
 			fnArraySwitch( data._aData, iFrom, iTo );
 		}
 	}
@@ -18248,7 +18737,9 @@ $.fn.dataTableExt.oApi.fnColReorder = function ( oSettings, iFrom, iTo, drop, in
 
 	if ( invalidateRows || invalidateRows === undefined )
 	{
-		$.fn.dataTable.Api( oSettings ).rows().invalidate();
+		// Always read from the data object rather than reading back from the DOM
+		// since it could have been changed by a renderer
+		$.fn.dataTable.Api( oSettings ).rows().invalidate('data');
 	}
 
 	/*
@@ -18431,7 +18922,7 @@ $.extend( ColReorder.prototype, {
 	fnEnable: function ( flag )
 	{
 		if ( flag === false ) {
-			return fnDisable();
+			return this.fnDisable();
 		}
 
 		this.s.enable = true;
@@ -18688,6 +19179,9 @@ $.extend( ColReorder.prototype, {
 
 		// Destroy clean up
 		$(table).on( 'destroy.dt.colReorder', function () {
+			// Restore table to original order from when it was loaded
+			that.fnReset();
+
 			$(table).off( 'destroy.dt.colReorder draw.dt.colReorder' );
 
 			$.each( that.s.dt.aoColumns, function (i, column) {
@@ -18741,7 +19235,7 @@ $.extend( ColReorder.prototype, {
 			return;
 		}
 
-		$.fn.dataTable.Api( this.s.dt ).rows().invalidate();
+		$.fn.dataTable.Api( this.s.dt ).rows().invalidate('data');
 
 		/* When scrolling we need to recalculate the column sizes to allow for the shift */
 		if ( this.s.dt.oScroll.sX !== "" || this.s.dt.oScroll.sY !== "" )
@@ -19298,7 +19792,7 @@ ColReorder.defaults = {
  *  @type      String
  *  @default   As code
  */
-ColReorder.version = "1.5.5";
+ColReorder.version = "1.6.2";
 
 
 
@@ -19411,32 +19905,12 @@ $.fn.dataTable.Api.register( 'colReorder.disable()', function() {
 } );
 
 
-return ColReorder;
+return DataTable;
 }));
 
 
-/*! FixedHeader 3.2.1
- * ©2009-2021 SpryMedia Ltd - datatables.net/license
- */
-
-/**
- * @summary     FixedHeader
- * @description Fix a table's header or footer, so it is always visible while
- *              scrolling
- * @version     3.2.1
- * @file        dataTables.fixedHeader.js
- * @author      SpryMedia Ltd (www.sprymedia.co.uk)
- * @contact     www.sprymedia.co.uk/contact
- * @copyright   Copyright 2009-2021 SpryMedia Ltd.
- *
- * This source file is free software, available under the following license:
- *   MIT license - http://datatables.net/license/mit
- *
- * This source file is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE. See the license files for details.
- *
- * For details please refer to: http://www.datatables.net
+/*! FixedHeader 3.3.2
+ * © SpryMedia Ltd - datatables.net/license
  */
 
 (function( factory ){
@@ -19448,17 +19922,33 @@ return ColReorder;
 	}
 	else if ( typeof exports === 'object' ) {
 		// CommonJS
-		module.exports = function (root, $) {
-			if ( ! root ) {
-				root = window;
+		var jq = require('jquery');
+		var cjsRequires = function (root, $) {
+			if ( ! $.fn.dataTable ) {
+				require('datatables.net')(root, $);
 			}
-
-			if ( ! $ || ! $.fn.dataTable ) {
-				$ = require('datatables.net')(root, $).$;
-			}
-
-			return factory( $, root, root.document );
 		};
+
+		if (typeof window !== 'undefined') {
+			module.exports = function (root, $) {
+				if ( ! root ) {
+					// CommonJS environments without a window global must pass a
+					// root. This will give an error otherwise
+					root = window;
+				}
+
+				if ( ! $ ) {
+					$ = jq( root );
+				}
+
+				cjsRequires( root, $ );
+				return factory( $, root, root.document );
+			};
+		}
+		else {
+			cjsRequires( window, jq );
+			module.exports = factory( jq, window, window.document );
+		}
 	}
 	else {
 		// Browser
@@ -19468,6 +19958,26 @@ return ColReorder;
 'use strict';
 var DataTable = $.fn.dataTable;
 
+
+
+/**
+ * @summary     FixedHeader
+ * @description Fix a table's header or footer, so it is always visible while
+ *              scrolling
+ * @version     3.3.2
+ * @author      SpryMedia Ltd (www.sprymedia.co.uk)
+ * @contact     www.sprymedia.co.uk
+ * @copyright   SpryMedia Ltd.
+ *
+ * This source file is free software, available under the following license:
+ *   MIT license - http://datatables.net/license/mit
+ *
+ * This source file is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the license files for details.
+ *
+ * For details please refer to: http://www.datatables.net
+ */
 
 var _instCounter = 0;
 
@@ -19558,14 +20068,30 @@ $.extend( FixedHeader.prototype, {
 	 * Kill off FH and any events
 	 */
 	destroy: function () {
+		var dom = this.dom;
+
 		this.s.dt.off( '.dtfc' );
 		$(window).off( this.s.namespace );
+
+		// Remove clones of FC blockers
+		if (dom.header.rightBlocker) {
+			dom.header.rightBlocker.remove();
+		}
+		if (dom.header.leftBlocker) {
+			dom.header.leftBlocker.remove();
+		}
+		if (dom.footer.rightBlocker) {
+			dom.footer.rightBlocker.remove();
+		}
+		if (dom.footer.leftBlocker) {
+			dom.footer.leftBlocker.remove();
+		}
 
 		if ( this.c.header ) {
 			this._modeChange( 'in-place', 'header', true );
 		}
 
-		if ( this.c.footer && this.dom.tfoot.length ) {
+		if ( this.c.footer && dom.tfoot.length ) {
 			this._modeChange( 'in-place', 'footer', true );
 		}
 	},
@@ -19629,6 +20155,10 @@ $.extend( FixedHeader.prototype, {
 	 */
 	update: function (force)
 	{
+		if (! this.s.enable) {
+			return;
+		}
+
 		var table = this.s.dt.table().node();
 
 		if ( $(table).is(':visible') ) {
@@ -19717,6 +20247,7 @@ $.extend( FixedHeader.prototype, {
 	 */
 	_clone: function ( item, force )
 	{
+		var that = this;
 		var dt = this.s.dt;
 		var itemDom = this.dom[ item ];
 		var itemElement = item === 'header' ?
@@ -19734,6 +20265,9 @@ $.extend( FixedHeader.prototype, {
 			itemDom.floating.removeClass( 'fixedHeader-floating fixedHeader-locked' );
 		}
 		else {
+			var docScrollLeft = $(document).scrollLeft();
+			var docScrollTop = $(document).scrollTop();
+
 			if ( itemDom.floating ) {
 				if(itemDom.placeholder !== null) {
 					itemDom.placeholder.remove();
@@ -19782,14 +20316,16 @@ $.extend( FixedHeader.prototype, {
 
 			this._stickyPosition(itemDom.floating, '-');
 
-			var scrollLeftUpdate = () => {
+			var scrollLeftUpdate = function () {
 				var scrollLeft = scrollBody.scrollLeft()
-				this.s.scrollLeft = {footer: scrollLeft, header: scrollLeft};
-				itemDom.floatingParent.scrollLeft(this.s.scrollLeft.header);
+				that.s.scrollLeft = {footer: scrollLeft, header: scrollLeft};
+				itemDom.floatingParent.scrollLeft(that.s.scrollLeft.header);
 			}
 
 			scrollLeftUpdate();
-			scrollBody.scroll(scrollLeftUpdate)
+			scrollBody
+				.off('scroll.dtfh')
+				.on('scroll.dtfh', scrollLeftUpdate);
 
 			// Insert a fake thead/tfoot into the DataTable to stop it jumping around
 			itemDom.placeholder = itemElement.clone( false );
@@ -19801,6 +20337,13 @@ $.extend( FixedHeader.prototype, {
 
 			// Clone widths
 			this._matchWidths( itemDom.placeholder, itemDom.floating );
+
+			// The above action will remove the table header, potentially causing the table to
+			// collapse to a smaller size, before it is then re-inserted (append). The result
+			// can be that the document, if scrolling, can "jump".
+			$(document)
+				.scrollTop(docScrollTop)
+				.scrollLeft(docScrollLeft);
 		}
 	},
 
@@ -19809,7 +20352,7 @@ $.extend( FixedHeader.prototype, {
 	 * @param {JQuery<HTMLElement>} el 
 	 * @param {string} sign 
 	 */
-	_stickyPosition(el, sign) {
+	_stickyPosition: function(el, sign) {
 		if (this._scrollEnabled()) {
 			var that = this
 			var rtl = $(that.s.dt.table().node()).css('direction') === 'rtl';
@@ -20136,6 +20679,10 @@ $.extend( FixedHeader.prototype, {
 	 */
 	_scroll: function ( forceChange )
 	{
+		if (this.s.dt.settings()[0].bDestroying) {
+			return;
+		}
+
 		// ScrollBody details
 		var scrollEnabled = this._scrollEnabled();
 		var scrollBody = $(this.s.dt.table().node()).parent();
@@ -20174,7 +20721,7 @@ $.extend( FixedHeader.prototype, {
 				// The scrolling plus the header offset plus the height of the header is lower than the top of the body
 				windowTop + this.c.headerOffset + position.theadHeight > bodyTop &&
 				// And the scrolling at the top plus the header offset is above the bottom of the body
-				windowTop + this.c.headerOffset < bodyBottom
+				windowTop + this.c.headerOffset + position.theadHeight < bodyBottom
 			) {
 				headerMode = 'in';
 				var scrollBody = $($(this.s.dt.table().node()).parent());
@@ -20238,12 +20785,12 @@ $.extend( FixedHeader.prototype, {
 
 			this._horizontal( 'footer', windowLeft );
 			
-			var getOffsetHeight = (el) => {
+			var getOffsetHeight = function (el) {
 				return {
 					offset: el.offset(),
 					height: el.outerHeight()
-				}
-			}
+				};
+			};
 		
 			header = this.dom.header.floating ? getOffsetHeight(this.dom.header.floating) : getOffsetHeight(this.dom.thead);
 			footer = this.dom.footer.floating ? getOffsetHeight(this.dom.footer.floating) : getOffsetHeight(this.dom.tfoot);
@@ -20300,18 +20847,27 @@ $.extend( FixedHeader.prototype, {
 		// Cloning these is cleaner than creating as our own as it will keep consistency with fixedColumns automatically
 		// ASSUMING that the class remains the same
 		if (this.s.dt.settings()[0]._fixedColumns !== undefined) {
-			var adjustBlocker = (side, end, el) => {
+			var adjustBlocker = function (side, end, el) {
 				if (el === undefined) {
-					let blocker = $('div.dtfc-'+side+'-'+end+'-blocker');
+					var blocker = $('div.dtfc-'+side+'-'+end+'-blocker');
+
 					el = blocker.length === 0 ?
 						null :
-						blocker.clone().appendTo('body').css('z-index', 1);
+						blocker.clone().css('z-index', 1);
 				}
+
 				if(el !== null) {
-					el.css({
-						top: end === 'top' ? header.offset.top : footer.offset.top,
-						left: side === 'right' ? bodyLeft + bodyWidth - el.width() : bodyLeft
-					});
+					if (headerMode === 'in' || headerMode === 'below') {
+						el
+							.appendTo('body')
+							.css({
+								top: end === 'top' ? header.offset.top : footer.offset.top,
+								left: side === 'right' ? bodyLeft + bodyWidth - el.width() : bodyLeft
+							});
+					}
+					else {
+						el.detach();
+					}
 				}
 
 				return el;
@@ -20344,7 +20900,7 @@ $.extend( FixedHeader.prototype, {
  * @type {String}
  * @static
  */
-FixedHeader.version = "3.2.1";
+FixedHeader.version = "3.3.2";
 
 /**
  * Defaults
@@ -20454,31 +21010,12 @@ $.each( ['header', 'footer'], function ( i, el ) {
 } );
 
 
-return FixedHeader;
+return DataTable;
 }));
 
 
-/*! RowReorder 1.2.8
- * 2015-2020 SpryMedia Ltd - datatables.net/license
- */
-
-/**
- * @summary     RowReorder
- * @description Row reordering extension for DataTables
- * @version     1.2.8
- * @file        dataTables.rowReorder.js
- * @author      SpryMedia Ltd (www.sprymedia.co.uk)
- * @contact     www.sprymedia.co.uk/contact
- * @copyright   Copyright 2015-2020 SpryMedia Ltd.
- *
- * This source file is free software, available under the following license:
- *   MIT license - http://datatables.net/license/mit
- *
- * This source file is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE. See the license files for details.
- *
- * For details please refer to: http://www.datatables.net
+/*! RowReorder 1.3.3
+ * © SpryMedia Ltd - datatables.net/license
  */
 
 (function( factory ){
@@ -20490,17 +21027,33 @@ return FixedHeader;
 	}
 	else if ( typeof exports === 'object' ) {
 		// CommonJS
-		module.exports = function (root, $) {
-			if ( ! root ) {
-				root = window;
+		var jq = require('jquery');
+		var cjsRequires = function (root, $) {
+			if ( ! $.fn.dataTable ) {
+				require('datatables.net')(root, $);
 			}
-
-			if ( ! $ || ! $.fn.dataTable ) {
-				$ = require('datatables.net')(root, $).$;
-			}
-
-			return factory( $, root, root.document );
 		};
+
+		if (typeof window !== 'undefined') {
+			module.exports = function (root, $) {
+				if ( ! root ) {
+					// CommonJS environments without a window global must pass a
+					// root. This will give an error otherwise
+					root = window;
+				}
+
+				if ( ! $ ) {
+					$ = jq( root );
+				}
+
+				cjsRequires( root, $ );
+				return factory( $, root, root.document );
+			};
+		}
+		else {
+			cjsRequires( window, jq );
+			module.exports = factory( jq, window, window.document );
+		}
 	}
 	else {
 		// Browser
@@ -20510,6 +21063,26 @@ return FixedHeader;
 'use strict';
 var DataTable = $.fn.dataTable;
 
+
+
+/**
+ * @summary     RowReorder
+ * @description Row reordering extension for DataTables
+ * @version     1.3.3
+ * @file        dataTables.rowReorder.js
+ * @author      SpryMedia Ltd
+ * @contact     datatables.net
+ * @copyright   Copyright 2015-2023 SpryMedia Ltd.
+ *
+ * This source file is free software, available under the following license:
+ *   MIT license - http://datatables.net/license/mit
+ *
+ * This source file is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the license files for details.
+ *
+ * For details please refer to: http://www.datatables.net
+ */
 
 /**
  * RowReorder provides the ability in DataTables to click and drag rows to
@@ -20591,6 +21164,7 @@ var RowReorder = function ( dt, opts ) {
 	this.dom = {
 		/** @type {jQuery} Cloned row being moved around */
 		clone: null,
+		cloneParent: null,
 
 		/** @type {jQuery} DataTables scrolling container */
 		dtScroll: $('div.dataTables_scrollBody', this.s.dt.table().container())
@@ -20726,6 +21300,9 @@ $.extend( RowReorder.prototype, {
 		// to reduce reflows
 		var tableWidth = target.outerWidth();
 		var tableHeight = target.outerHeight();
+		var scrollBody = $($(this.s.dt.table().node()).parent());
+		var scrollWidth = scrollBody.width();
+		var scrollLeft = scrollBody.scrollLeft();
 		var sizes = target.children().map( function () {
 			return $(this).width();
 		} );
@@ -20737,10 +21314,17 @@ $.extend( RowReorder.prototype, {
 				this.style.width = sizes[i]+'px';
 			} );
 
+		var cloneParent = $('<div>')
+			.addClass('dt-rowReorder-float-parent')
+			.width(scrollWidth)
+			.append(clone)
+			.appendTo( 'body' )
+			.scrollLeft(scrollLeft);
+
 		// Insert into the document to have it floating around
-		clone.appendTo( 'body' );
 
 		this.dom.clone = clone;
+		this.dom.cloneParent = cloneParent;
 		this.s.domCloneOuterHeight = clone.outerHeight();
 	},
 
@@ -20767,7 +21351,7 @@ $.extend( RowReorder.prototype, {
 			left = start.offsetLeft + snap;
 		}
 		else {
-			left = leftDiff + start.offsetLeft;
+			left = leftDiff + start.offsetLeft + this.dom.cloneParent.scrollLeft();
 		}
 
 		if(top < 0) {
@@ -20777,7 +21361,7 @@ $.extend( RowReorder.prototype, {
 			top = this.s.documentOuterHeight - this.s.domCloneOuterHeight;
 		}
 
-		this.dom.clone.css( {
+		this.dom.cloneParent.css( {
 			top: top,
 			left: left
 		} );
@@ -20939,7 +21523,9 @@ $.extend( RowReorder.prototype, {
 		var dataSrc = this.c.dataSrc;
 
 		this.dom.clone.remove();
+		this.dom.cloneParent.remove();
 		this.dom.clone = null;
+		this.dom.cloneParent = null;
 
 		this.dom.target.removeClass( 'dt-rowReorder-moving' );
 		//this.dom.target = null;
@@ -21122,8 +21708,8 @@ $.extend( RowReorder.prototype, {
 					$(document).scrollTop(top + scroll.windowVert);
 
 					if ( top !== $(document).scrollTop() ) {
-						var move = parseFloat(that.dom.clone.css("top"));
-						that.dom.clone.css("top", move + scroll.windowVert);					
+						var move = parseFloat(that.dom.cloneParent.css("top"));
+						that.dom.cloneParent.css("top", move + scroll.windowVert);					
 					}
 				}
 
@@ -21250,7 +21836,7 @@ Api.register( 'rowReorder.disable()', function () {
  * @name RowReorder.version
  * @static
  */
-RowReorder.version = '1.2.8';
+RowReorder.version = '1.3.3';
 
 
 $.fn.dataTable.RowReorder = RowReorder;
@@ -21276,33 +21862,14 @@ $(document).on( 'init.dt.dtr', function (e, settings, json) {
 } );
 
 
-return RowReorder;
+return DataTable;
 }));
 
 
-/*! Select for DataTables 1.3.4
- * 2015-2021 SpryMedia Ltd - datatables.net/license/mit
+/*! Select for DataTables 1.6.2
+ * © SpryMedia Ltd - datatables.net/license/mit
  */
 
-/**
- * @summary     Select for DataTables
- * @description A collection of API methods, events and buttons for DataTables
- *   that provides selection options of the items in a DataTable
- * @version     1.3.4
- * @file        dataTables.select.js
- * @author      SpryMedia Ltd (www.sprymedia.co.uk)
- * @contact     datatables.net/forums
- * @copyright   Copyright 2015-2021 SpryMedia Ltd.
- *
- * This source file is free software, available under the following license:
- *   MIT license - http://datatables.net/license/mit
- *
- * This source file is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE. See the license files for details.
- *
- * For details please refer to: http://www.datatables.net/extensions/select
- */
 (function( factory ){
 	if ( typeof define === 'function' && define.amd ) {
 		// AMD
@@ -21312,17 +21879,33 @@ return RowReorder;
 	}
 	else if ( typeof exports === 'object' ) {
 		// CommonJS
-		module.exports = function (root, $) {
-			if ( ! root ) {
-				root = window;
+		var jq = require('jquery');
+		var cjsRequires = function (root, $) {
+			if ( ! $.fn.dataTable ) {
+				require('datatables.net')(root, $);
 			}
-
-			if ( ! $ || ! $.fn.dataTable ) {
-				$ = require('datatables.net')(root, $).$;
-			}
-
-			return factory( $, root, root.document );
 		};
+
+		if (typeof window !== 'undefined') {
+			module.exports = function (root, $) {
+				if ( ! root ) {
+					// CommonJS environments without a window global must pass a
+					// root. This will give an error otherwise
+					root = window;
+				}
+
+				if ( ! $ ) {
+					$ = jq( root );
+				}
+
+				cjsRequires( root, $ );
+				return factory( $, root, root.document );
+			};
+		}
+		else {
+			cjsRequires( window, jq );
+			module.exports = factory( jq, window, window.document );
+		}
 	}
 	else {
 		// Browser
@@ -21333,10 +21916,11 @@ return RowReorder;
 var DataTable = $.fn.dataTable;
 
 
+
 // Version information for debugger
 DataTable.select = {};
 
-DataTable.select.version = '1.3.4';
+DataTable.select.version = '1.6.2';
 
 DataTable.select.init = function ( dt ) {
 	var ctx = dt.settings()[0];
@@ -21351,25 +21935,37 @@ DataTable.select.init = function ( dt ) {
 		if(data === null || data.select === undefined) {
 			return;
 		}
-		dt.rows().deselect();
-		dt.columns().deselect();
-		dt.cells().deselect();
+
+		// Clear any currently selected rows, before restoring state
+		// None will be selected on first initialisation
+		if (dt.rows({selected: true}).any()) {
+			dt.rows().deselect();
+		}
 		if (data.select.rows !== undefined) {
 			dt.rows(data.select.rows).select();
 		}
+
+		if (dt.columns({selected: true}).any()) {
+			dt.columns().deselect();
+		}
 		if (data.select.columns !== undefined) {
 			dt.columns(data.select.columns).select();
+		}
+
+		if (dt.cells({selected: true}).any()) {
+			dt.cells().deselect();
 		}
 		if (data.select.cells !== undefined) {
 			for(var i = 0; i < data.select.cells.length; i++) {
 				dt.cell(data.select.cells[i].row, data.select.cells[i].column).select();
 			}
 		}
+
 		dt.state.save();
 	}
 	
-	dt.one('init', function() {
-		dt.on('stateSaveParams', function(e, settings, data) {
+	dt
+		.on('stateSaveParams', function(e, settings, data) {
 			data.select = {};
 			data.select.rows = dt.rows({selected:true}).ids(true).toArray();
 			data.select.columns = dt.columns({selected:true})[0];
@@ -21377,10 +21973,10 @@ DataTable.select.init = function ( dt ) {
 				return {row: dt.row(coords.row).id(true), column: coords.column}
 			});
 		})
-		
-		selectAndSave(undefined, undefined, savedSelected)
-		dt.on('stateLoaded stateLoadParams', selectAndSave)
-	})
+		.on('stateLoadParams', selectAndSave)
+		.one('init', function() {
+			selectAndSave(undefined, undefined, savedSelected);
+		});
 
 	var init = ctx.oInit.select;
 	var defaults = DataTable.defaults.select;
@@ -21760,6 +22356,13 @@ function enableMouseSelection ( dt )
 				return;
 			}
 
+			var event = $.Event('select-blur.dt');
+			eventTrigger( dt, event, [ e.target, e ] );
+
+			if ( event.isDefaultPrevented() ) {
+				return;
+			}
+
 			clear( ctx, true );
 		}
 	} );
@@ -21927,7 +22530,8 @@ function init ( ctx ) {
 
 	// Clean up and release
 	api.on( 'destroy.dtSelect', function () {
-		api.rows({selected: true}).deselect();
+		// Remove class directly rather than calling deselect - which would trigger events
+		$(api.rows({selected: true}).nodes()).removeClass(api.settings()[0]._select.className);
 
 		disableMouseSelection( api );
 		api.off( '.dtSelect' );
@@ -22262,6 +22866,21 @@ apiRegisterPlural( 'rows().select()', 'row().select()', function ( select ) {
 	return this;
 } );
 
+apiRegister( 'row().selected()', function () {
+	var ctx = this.context[0];
+
+	if (
+		ctx &&
+		this.length &&
+		ctx.aoData[this[0]] &&
+		ctx.aoData[this[0]]._select_selected
+	) {
+		return true;
+	}
+
+	return false;
+} );
+
 apiRegisterPlural( 'columns().select()', 'column().select()', function ( select ) {
 	var api = this;
 
@@ -22287,6 +22906,21 @@ apiRegisterPlural( 'columns().select()', 'column().select()', function ( select 
 	} );
 
 	return this;
+} );
+
+apiRegister( 'column().selected()', function () {
+	var ctx = this.context[0];
+
+	if (
+		ctx &&
+		this.length &&
+		ctx.aoColumns[this[0]] &&
+		ctx.aoColumns[this[0]]._select_selected
+	) {
+		return true;
+	}
+
+	return false;
 } );
 
 apiRegisterPlural( 'cells().select()', 'cell().select()', function ( select ) {
@@ -22317,6 +22951,20 @@ apiRegisterPlural( 'cells().select()', 'cell().select()', function ( select ) {
 	} );
 
 	return this;
+} );
+
+apiRegister( 'cell().selected()', function () {
+	var ctx = this.context[0];
+
+	if (ctx && this.length) {
+		var row = ctx.aoData[this[0][0].row];
+
+		if (row && row._selected_cells && row._selected_cells[this[0][0].column]) {
+			return true;
+		}
+	}
+
+	return false;
 } );
 
 
@@ -22502,6 +23150,44 @@ $.extend( DataTable.ext.buttons, {
 		destroy: function ( dt, node, config ) {
 			dt.off( config._eventNamespace );
 		}
+	},
+	showSelected: {
+		text: i18n( 'showSelected', 'Show only selected' ),
+		className: 'buttons-show-selected',
+		action: function (e, dt, node, conf) {
+			// Works by having a filtering function which will reduce to the selected
+			// items only. So we can re-reference the function it gets stored in the
+			// `conf` object
+			if (conf._filter) {
+				var idx = DataTable.ext.search.indexOf(conf._filter);
+
+				if (idx !== -1) {
+					DataTable.ext.search.splice(idx, 1);
+					conf._filter = null;
+				}
+
+				this.active(false);
+			}
+			else {
+				var fn = function (s, data, idx) {
+					// Need to be sure we are operating on our table!
+					if (s !== dt.settings()[0]) {
+						return true;
+					}
+
+					let row = s.aoData[idx];
+
+					return row._select_selected;
+				}
+
+				conf._filter = fn;
+				DataTable.ext.search.push(fn);
+
+				this.active(true);
+			}
+
+			dt.draw();
+		}
 	}
 } );
 
@@ -22525,6 +23211,7 @@ $.each( [ 'Row', 'Column', 'Cell' ], function ( i, item ) {
 } );
 
 
+$.fn.DataTable.select = DataTable.select;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Initialisation
@@ -22543,7 +23230,5 @@ $(document).on( 'preInit.dt.dtSelect', function (e, ctx) {
 } );
 
 
-return DataTable.select;
+return DataTable;
 }));
-
-

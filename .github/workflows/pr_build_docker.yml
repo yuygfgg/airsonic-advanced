@@ -10,7 +10,7 @@ on:
       - "!.github/workflows/pr_build_docker.yml"
 
 permissions:
-  package: write
+  packages: write
 
 jobs:
   deploy:

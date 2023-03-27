@@ -1,21 +1,15 @@
-name: 'Build docker image on PR'
+name: 'Build docker image on PR from fork'
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [main]
-    paths-ignore:
-      - "**.md"
-      - "*.txt"
-      - ".github/**" 
-      - "!.github/workflows/pr_build_docker.yml"
-
-permissions:
-  package: write
+    types: 
+      - labeled
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.repository == github.event.pull_request.head.repo.full_name 
+    if: github.repository != github.event.pull_request.head.repo.full_name && contains(github.event.pull_request.labels.*.name, 'safe to test')
     steps:
       - uses: actions/checkout@v3
         with:

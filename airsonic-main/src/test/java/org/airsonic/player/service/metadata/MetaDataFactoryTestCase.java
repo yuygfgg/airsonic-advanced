@@ -28,12 +28,16 @@ public class MetaDataFactoryTestCase {
     private static Path someMp3;
     private static Path someFlv;
     private static Path someJunk;
+    private static Path someMpc;
+    private static Path someMpPlus;
 
     @BeforeClass
     public static void createTestFiles() throws IOException {
         someMp3 = temporaryFolder.newFile("some.mp3").toPath();
         someFlv = temporaryFolder.newFile("some.flv").toPath();
         someJunk = temporaryFolder.newFile("some.junk").toPath();
+        someMpc = temporaryFolder.newFile("some.mpc").toPath();
+        someMpPlus = temporaryFolder.newFile("some.mp+").toPath();
     }
 
     @Autowired
@@ -46,7 +50,8 @@ public class MetaDataFactoryTestCase {
     public void testorder() {
         MetaDataParser parser;
 
-        settingsService.setVideoFileTypes("mp3 flv");
+        settingsService.setVideoFileTypes("flv");
+        settingsService.setMusicFileTypes("mp3 mpc mp+");
 
         parser = metaDataParserFactory.getParser(someMp3);
         assertThat(parser, instanceOf(JaudiotaggerParser.class));
@@ -55,6 +60,12 @@ public class MetaDataFactoryTestCase {
         assertThat(parser, instanceOf(FFmpegParser.class));
 
         parser = metaDataParserFactory.getParser(someJunk);
+        assertThat(parser, instanceOf(FFmpegParser.class));
+
+        parser = metaDataParserFactory.getParser(someMpc);
+        assertThat(parser, instanceOf(FFmpegParser.class));
+
+        parser = metaDataParserFactory.getParser(someMpPlus);
         assertThat(parser, instanceOf(FFmpegParser.class));
     }
 

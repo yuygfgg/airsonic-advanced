@@ -43,6 +43,10 @@ public class MusicFolderTestData {
         return resolveBaseMediaPath().resolve("cue");
     }
 
+    public static Path resolveMusicMpcFolderPath() {
+        return resolveBaseMediaPath().resolve("mpc");
+    }
+
     public static List<MusicFolder> getTestMusicFolders() {
         List<MusicFolder> liste = new ArrayList<>();
         Path musicDir = resolveMusicFolderPath();

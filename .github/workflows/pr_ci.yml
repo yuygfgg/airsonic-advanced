@@ -32,6 +32,9 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-m2-
+      - name: Setup ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v2
+        id: setup-ffmpeg
       - run: mkdir -p ${DEFAULT_MUSIC_FOLDER}
       - run: ${{ matrix.cfg.run }}
         if: matrix.cfg.executeManualcommand

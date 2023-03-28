@@ -306,5 +306,28 @@ public class MediaScannerServiceTestCase {
 
     }
 
+    @Test
+    public void testMpcAudioTest() {
+
+        // Add the "MusicMpc" folder to the database
+        Path musicFolderFile = MusicFolderTestData.resolveMusicMpcFolderPath();
+        MusicFolder musicFolder = new MusicFolder(1, musicFolderFile, "mpc", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        cleanupId = ScanningTestUtils.before(Arrays.asList(musicFolder), mediaFolderService, mediaScannerService);
+
+        // Retrieve the "Music4" folder from the database to make
+        // sure that we don't accidentally operate on other folders
+        // from previous tests.
+        musicFolder = musicFolderDao.getMusicFolderForPath(musicFolder.getPath().toString());
+        List<MusicFolder> folders = new ArrayList<>();
+        folders.add(musicFolder);
+
+        List<MediaFile> listMusicChildren = mediaFileDao.getChildrenOf("", musicFolder.getId(), false);
+        Assert.assertEquals(1, listMusicChildren.size());
+
+        assertTrue(listMusicChildren.get(0).getDuration() > 0.0);
+    }
+
+
+
 
 }

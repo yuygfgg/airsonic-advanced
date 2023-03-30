@@ -34,6 +34,7 @@ import org.springframework.web.servlet.view.RedirectView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -67,7 +68,7 @@ public class NowPlayingController {
                     return mediaFileService.getMediaFile(s.getExternalFile());
                 })
                 .map(mediaFileService::getParentOf)
-                .filter(dir -> !mediaFileService.isRoot(dir))
+                .filter(dir -> Objects.nonNull(dir) && !mediaFileService.isRoot(dir))
                 .map(dir -> "main.view?id=" + dir.getId())
                 .orElse("home.view");
 

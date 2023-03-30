@@ -648,7 +648,7 @@ public class SubsonicRESTController {
         Directory directory = new Directory();
         directory.setId(String.valueOf(id));
         try {
-            if (!mediaFileService.isRoot(parent)) {
+            if (Objects.nonNull(parent) && !mediaFileService.isRoot(parent)) {
                 directory.setParent(String.valueOf(parent.getId()));
             }
         } catch (SecurityException x) {
@@ -1249,7 +1249,7 @@ public class SubsonicRESTController {
         MediaFile parent = mediaFileService.getParentOf(mediaFile);
         child.setId(String.valueOf(mediaFile.getId()));
         try {
-            if (!mediaFileService.isRoot(parent)) {
+            if (Objects.nonNull(parent) && !mediaFileService.isRoot(parent)) {
                 child.setParent(String.valueOf(parent.getId()));
             }
         } catch (SecurityException x) {

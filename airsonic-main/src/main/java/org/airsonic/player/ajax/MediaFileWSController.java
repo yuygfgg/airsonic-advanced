@@ -183,11 +183,16 @@ public class MediaFileWSController {
         return result;
     }
 
+    /**
+     * Returns all sibling albums of the given directory.
+     * @param dir The directory.if null, an empty list is returned.
+     * @return  A list of sibling albums. Never null.
+     */
     private List<MediaFile> getSiblingAlbums(MediaFile dir) {
         List<MediaFile> result = new ArrayList<>();
 
         MediaFile parent = mediaFileService.getParentOf(dir);
-        if (!mediaFileService.isRoot(parent)) {
+        if (Objects.nonNull(parent) && !mediaFileService.isRoot(parent)) {
             List<MediaFile> siblings = mediaFileService.getChildrenOf(parent, false, true, true);
             result.addAll(siblings.stream().filter(sibling -> sibling.isAlbum() && !sibling.equals(dir))
                     .collect(Collectors.toList()));

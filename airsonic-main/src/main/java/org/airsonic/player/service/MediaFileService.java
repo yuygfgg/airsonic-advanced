@@ -314,6 +314,8 @@ public class MediaFileService {
     /**
      * Returns whether the given file is the root of a media folder.
      *
+     * @param mediaFile The file in question. Must not be {@code null}.
+     * @return Whether the given file is the root of a media folder.
      * @see MusicFolder
      */
     public boolean isRoot(MediaFile mediaFile) {
@@ -1032,7 +1034,7 @@ public class MediaFileService {
         updateMediaFile(file);
 
         MediaFile parent = getParentOf(file);
-        if (!isRoot(parent)) {
+        if (Objects.nonNull(parent) && !isRoot(parent)) {
             parent.setLastPlayed(now);
             parent.setPlayCount(parent.getPlayCount() + 1);
             updateMediaFile(parent);

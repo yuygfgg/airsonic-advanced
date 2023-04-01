@@ -187,12 +187,6 @@ $.extend( DataTable.ext.buttons, {
 				title = dt.column(idx).header().innerHTML;
 			}
 
-			function escapeHTML(text) {
-			  var replacements = { "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;", "'": "&#39;" };
-			  return text.replace(/[<>&"']/g, function(character) {
-			    return replacements[character];
-			  });
-			}
 
 			title = title
 				.replace(/\n/g," ")        // remove new lines

@@ -17,6 +17,7 @@
         <tomcat.server.scope>provided</tomcat.server.scope>
         <!-- For fixing import/export due to https://github.com/liquibase/liquibase/issues/1598 -->
         <liquibase.version>4.18.0</liquibase.version>
+        <lombok.version>1.18.26</lombok.version>
     </properties>
 
     <dependencies>
@@ -598,6 +599,20 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- lombok dependencies -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>javax</groupId>
+          <artifactId>javaee-api</artifactId>
+          <version>8.0.1</version>
+          <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -687,29 +702,52 @@
                 <artifactId>checksum-maven-plugin</artifactId>
             </plugin>
             <plugin>
-                <!-- Change to non-snapshot version once it is released (change groupId) -->
-                <groupId>dev.aspectj</groupId>
+                <groupId>org.codehaus.mojo</groupId>
                 <artifactId>aspectj-maven-plugin</artifactId>
-                <version>1.13.1</version>
+                <version>1.14.0</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <proc>none</proc>
                     <complianceLevel>${java.version}</complianceLevel>
                     <showWeaveInfo>true</showWeaveInfo>
-                     <aspectLibraries>
-                         <aspectLibrary>
-                             <groupId>org.springframework</groupId>
-                             <artifactId>spring-aspects</artifactId>
-                         </aspectLibrary>
-                     </aspectLibraries>
+                    <excludes>
+                        <exclude>**/*.java</exclude>
+                    </excludes>
+
+                    <aspectLibraries>
+                        <aspectLibrary>
+                            <groupId>org.springframework</groupId>
+                            <artifactId>spring-aspects</artifactId>
+                        </aspectLibrary>
+                    </aspectLibraries>
                 </configuration>
                 <executions>
                     <execution>
+                        <id>default-compile</id>
+                        <phase>process-classes</phase>
                         <goals>
+                            <!-- use this goal to weave all your main classes -->
                             <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <weaveDirectories>
+                                <weaveDirectory>${project.build.directory}/classes</weaveDirectory>
+                            </weaveDirectories>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <!-- use this goal to weave all your test classes -->
                             <goal>test-compile</goal>
                         </goals>
+                        <configuration>
+                            <weaveDirectories>
+                                <weaveDirectory>${project.build.directory}/test-classes</weaveDirectory>
+                            </weaveDirectories>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

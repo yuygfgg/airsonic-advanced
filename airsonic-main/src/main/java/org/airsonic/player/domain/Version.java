@@ -14,11 +14,13 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
@@ -33,7 +35,9 @@ import java.util.Map;
  * @author Sindre Mehus
  * @version $Revision: 1.3 $ $Date: 2006/01/20 21:25:16 $
  */
+@Getter
 public class Version implements Comparable<Version> {
+    //A string of the format "1.27", "1.27.2" or "1.27.beta3".
     private final DefaultArtifactVersion internalVersion;
     private String commit;
     private Boolean preview;
@@ -98,29 +102,6 @@ public class Version implements Comparable<Version> {
         return internalVersion.toString();
     }
 
-    public String getCommit() {
-        return commit;
-    }
-
-    public Boolean getPreview() {
-        return preview;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public Instant getPublishDate() {
-        return publishDate;
-    }
-
-    public Instant getReleaseCreateDate() {
-        return releaseCreateDate;
-    }
-
-    public List<Map<String, Object>> getArtifacts() {
-        return artifacts;
-    }
 
     /**
      * Compares this object with the specified object for order.

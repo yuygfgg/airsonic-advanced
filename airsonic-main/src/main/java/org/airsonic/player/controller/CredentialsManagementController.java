@@ -138,7 +138,7 @@ public class CredentialsManagementController {
         UserCredential uc = new UserCredential(user.getName(), cc.getUsername(), cc.getCredential(), cc.getEncoder(), cc.getApp(), "Created by user", cc.getExpirationInstant());
 
         // set airsonic account username if username not required
-        if (!uc.getApp().getUsernameRequired()) {
+        if (!uc.getApp().isUsernameRequired()) {
             uc.setAppUsername(user.getName());
         }
 

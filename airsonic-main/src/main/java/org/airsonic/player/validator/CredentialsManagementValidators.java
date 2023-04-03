@@ -93,7 +93,7 @@ public class CredentialsManagementValidators {
             }
 
             boolean valid = true;
-            if (!creds.getApp().getNonDecodableEncodersAllowed()) {
+            if (!creds.getApp().isNonDecodableEncodersAllowed()) {
                 valid = !GlobalSecurityConfig.NONLEGACY_NONDECODABLE_ENCODERS.contains(creds.getEncoder());
             }
 

@@ -161,7 +161,7 @@ public class PlayQueueService {
         List<MediaFile> songs;
 
         if (file.isFile()) {
-            boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
+            boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).isQueueFollowingSongs();
             if (queueFollowingSongs) {
                 MediaFile dir = mediaFileService.getParentOf(file);
                 songs = mediaFileService.getChildrenOf(dir, true, false, true);
@@ -198,7 +198,7 @@ public class PlayQueueService {
      * @param index Start playing at this index, or play whole playlist if {@code null}.
      */
     public void playPlaylist(Player player, int id, Integer index, String sessionId) {
-        boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
+        boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).isQueueFollowingSongs();
 
         List<MediaFile> files = playlistService.getFilesInPlaylist(id, true);
         if (!files.isEmpty() && index != null) {
@@ -218,7 +218,7 @@ public class PlayQueueService {
      * @param index Start playing at this index, or play all top songs if {@code null}.
      */
     public void playTopSong(Player player, int id, Integer index, String sessionId) {
-        boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
+        boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).isQueueFollowingSongs();
 
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(player.getUsername());
         List<MediaFile> files = lastFmService.getTopSongs(mediaFileService.getMediaFile(id), 50, musicFolders);
@@ -249,7 +249,7 @@ public class PlayQueueService {
     }
 
     public void playPodcastEpisode(Player player, int id, String sessionId) {
-        boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
+        boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).isQueueFollowingSongs();
 
         PodcastEpisode episode = podcastService.getEpisode(id, false);
         List<PodcastEpisode> allEpisodes = podcastService.getEpisodes(episode.getChannelId());

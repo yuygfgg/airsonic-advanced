@@ -14,10 +14,13 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
+
+import lombok.Getter;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,8 +32,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Genre {
 
+    @Getter
     private final String name;
+
     private final AtomicInteger songCount = new AtomicInteger(0);
+
     private final AtomicInteger albumCount = new AtomicInteger(0);
 
     public Genre(String name) {
@@ -41,10 +47,6 @@ public class Genre {
         this.name = name;
         this.songCount.set(songCount);
         this.albumCount.set(albumCount);
-    }
-
-    public String getName() {
-        return name;
     }
 
     public int getSongCount() {

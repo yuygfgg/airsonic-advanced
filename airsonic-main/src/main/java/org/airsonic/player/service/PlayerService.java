@@ -165,7 +165,7 @@ public class PlayerService {
             isUpdate = true;
         }
         if (!StringUtils.equals(request.getRemoteAddr(), player.getIpAddress()) &&
-                (player.getIpAddress() == null || isStreamRequest || (!isPlayerConnected(player) && player.getDynamicIp()))) {
+                (player.getIpAddress() == null || isStreamRequest || (!isPlayerConnected(player) && player.isDynamicIp()))) {
             player.setIpAddress(request.getRemoteAddr());
             isUpdate = true;
         }

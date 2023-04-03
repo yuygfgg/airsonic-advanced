@@ -19,6 +19,10 @@
 
 package org.airsonic.player.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.Instant;
 import java.util.List;
 
@@ -31,6 +35,9 @@ import java.util.List;
  * @author Sindre Mehus
  * @version $Id$
  */
+@AllArgsConstructor
+@Getter
+@Setter
 public class SavedPlayQueue {
 
     private Integer id;
@@ -41,70 +48,4 @@ public class SavedPlayQueue {
     private Instant changed;
     private String changedBy;
 
-    public SavedPlayQueue(Integer id, String username, List<Integer> mediaFileIds, Integer currentMediaFileId,
-                          Long positionMillis, Instant changed, String changedBy) {
-        this.id = id;
-        this.username = username;
-        this.mediaFileIds = mediaFileIds;
-        this.currentMediaFileId = currentMediaFileId;
-        this.positionMillis = positionMillis;
-        this.changed = changed;
-        this.changedBy = changedBy;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public List<Integer> getMediaFileIds() {
-        return mediaFileIds;
-    }
-
-    public void setMediaFileIds(List<Integer> mediaFileIds) {
-        this.mediaFileIds = mediaFileIds;
-    }
-
-    public Integer getCurrentMediaFileId() {
-        return currentMediaFileId;
-    }
-
-    public void setCurrentMediaFileId(Integer currentMediaFileId) {
-        this.currentMediaFileId = currentMediaFileId;
-    }
-
-    public Long getPositionMillis() {
-        return positionMillis;
-    }
-
-    public void setPositionMillis(Long positionMillis) {
-        this.positionMillis = positionMillis;
-    }
-
-    public Instant getChanged() {
-        return changed;
-    }
-
-    public void setChanged(Instant changed) {
-        this.changed = changed;
-    }
-
-    public String getChangedBy() {
-        return changedBy;
-    }
-
-    public void setChangedBy(String changedBy) {
-        this.changedBy = changedBy;
-    }
 }

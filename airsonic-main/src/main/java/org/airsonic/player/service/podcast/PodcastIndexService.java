@@ -41,7 +41,7 @@ public class PodcastIndexService {
     public List<PodcastIndexResponse.PodcastIndexResult> search(String username, String search) throws Exception {
         UserSettings userSettings = settingsService.getUserSettings(username);
 
-        if (!userSettings.getPodcastIndexEnabled() || StringUtils.isBlank(search)) {
+        if (!userSettings.isPodcastIndexEnabled() || StringUtils.isBlank(search)) {
             return Collections.emptyList();
         }
 

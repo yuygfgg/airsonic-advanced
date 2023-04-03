@@ -1,49 +1,38 @@
+/*
+ This file is part of Airsonic.
+
+ Airsonic is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ Airsonic is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
+
+ Copyright 2023 (C) Y.Tory
+ Copyright 2016 (C) Airsonic Authors
+ Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
+ */
 package org.airsonic.player.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+@AllArgsConstructor
+@Getter
+@Setter
 public class PodcastChannelRule {
+
+    // System generated ID
     private Integer id;
     private Integer checkInterval;
     private Integer retentionCount;
     private Integer downloadCount;
-
-    public PodcastChannelRule(Integer id, Integer checkInterval, Integer retentionCount, Integer downloadCount) {
-        super();
-        this.id = id;
-        this.checkInterval = checkInterval;
-        this.retentionCount = retentionCount;
-        this.downloadCount = downloadCount;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public Integer getCheckInterval() {
-        return checkInterval;
-    }
-
-    public void setCheckInterval(Integer checkInterval) {
-        this.checkInterval = checkInterval;
-    }
-
-    public Integer getRetentionCount() {
-        return retentionCount;
-    }
-
-    public void setRetentionCount(Integer retentionCount) {
-        this.retentionCount = retentionCount;
-    }
-
-    public Integer getDownloadCount() {
-        return downloadCount;
-    }
-
-    public void setDownloadCount(Integer downloadCount) {
-        this.downloadCount = downloadCount;
-    }
 
 }

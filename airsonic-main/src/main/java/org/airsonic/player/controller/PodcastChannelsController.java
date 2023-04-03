@@ -58,9 +58,9 @@ public class PodcastChannelsController {
         result.addObject("model", map);
 
         map.put("user", user);
-        map.put("viewAsList", userSettings.getViewAsList());
+        map.put("viewAsList", userSettings.isViewAsList());
         map.put("initialPaginationSize", userSettings.getPaginationSizePlaylist());
-        map.put("podcastIndexEnabled", userSettings.getPodcastIndexEnabled());
+        map.put("podcastIndexEnabled", userSettings.isPodcastIndexEnabled());
         return result;
     }
 }

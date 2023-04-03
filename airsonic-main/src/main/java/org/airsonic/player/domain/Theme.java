@@ -14,40 +14,28 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Contains the ID and name for a theme.
  *
  * @author Sindre Mehus
  */
+@RequiredArgsConstructor
+@Getter
 public class Theme {
     private final String id;
     private final String name;
     private final String parent;
 
-    public Theme(String id, String name, String parent) {
-        this.id = id;
-        this.name = name;
-        this.parent = parent;
-    }
-
     public Theme(String id, String name) {
         this(id, name, null);
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getParent() {
-        return parent;
     }
 }

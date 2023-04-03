@@ -1,9 +1,11 @@
 package org.airsonic.player.domain;
 
+import lombok.Getter;
 import org.springframework.util.Assert;
 
 import java.time.Instant;
 
+@Getter
 public class SonosLink {
     private final String username;
     private final String linkcode;
@@ -20,26 +22,6 @@ public class SonosLink {
         this.householdId = householdId;
         this.initiator = initiator;
         this.initiated = initiated;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getHouseholdId() {
-        return householdId;
-    }
-
-    public String getLinkcode() {
-        return linkcode;
-    }
-
-    public String getInitiator() {
-        return initiator;
-    }
-
-    public Instant getInitiated() {
-        return initiated;
     }
 
     @Override

@@ -57,8 +57,8 @@ public class PlayerDaoTestCase extends DaoTestCaseBean2 {
         playerDao.createPlayer(new Player());
         Player player = playerDao.getAllPlayers().get(0);
 
-        assertTrue("Player should have dynamic IP by default.", player.getDynamicIp());
-        assertTrue("Player should be auto-controlled by default.", player.getAutoControlEnabled());
+        assertTrue("Player should have dynamic IP by default.", player.isDynamicIp());
+        assertTrue("Player should be auto-controlled by default.", player.isAutoControlEnabled());
         assertNull("Player client ID should be null by default.", player.getClientId());
     }
 

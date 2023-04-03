@@ -184,7 +184,7 @@ public class PlaylistService {
 
     public void createPlaylist(Playlist playlist) {
         playlistDao.createPlaylist(playlist);
-        if (playlist.getShared()) {
+        if (playlist.isShared()) {
             runAsync(() -> brokerTemplate.convertAndSend("/topic/playlists/updated", playlist));
         } else {
             runAsync(() -> brokerTemplate.convertAndSendToUser(playlist.getUsername(), "/queue/playlists/updated", playlist));
@@ -201,7 +201,7 @@ public class PlaylistService {
     @CacheEvict(cacheNames = "playlistUsersCache", key = "#playlist.id")
     public void deletePlaylistUser(Playlist playlist, String username) {
         playlistDao.deletePlaylistUser(playlist.getId(), username);
-        if (!playlist.getShared()) {
+        if (!playlist.isShared()) {
             runAsync(() -> brokerTemplate.convertAndSendToUser(username, "/queue/playlists/deleted", playlist.getId()));
         }
     }
@@ -210,7 +210,7 @@ public class PlaylistService {
         if (username == null) {
             return false;
         }
-        if (username.equals(playlist.getUsername()) || playlist.getShared()) {
+        if (username.equals(playlist.getUsername()) || playlist.isShared()) {
             return true;
         }
         return getPlaylistUsers(playlist.getId()).contains(username);
@@ -240,10 +240,10 @@ public class PlaylistService {
         playlistDao.updatePlaylist(playlist);
         runAsync(() -> {
             BroadcastedPlaylist bp = new BroadcastedPlaylist(playlist, filesChangedBroadcastContext);
-            if (playlist.getShared()) {
+            if (playlist.isShared()) {
                 brokerTemplate.convertAndSend("/topic/playlists/updated", bp);
             } else {
-                if (oldPlaylist.getShared()) {
+                if (oldPlaylist.isShared()) {
                     brokerTemplate.convertAndSend("/topic/playlists/deleted", playlist.getId());
                 }
                 Stream.concat(Stream.of(playlist.getUsername()), getPlaylistUsers(playlist.getId()).stream())

@@ -37,7 +37,7 @@ public class CoverArtDao extends AbstractDao {
 
     public int update(CoverArt art) {
         return update("update cover_art set path=?, folder_id=?, overridden=?, updated=? where entity_id=? and entity_type=?",
-                art.getPath(), art.getFolderId(), art.getOverridden(), art.getUpdated(), art.getEntityId(), art.getEntityType().toString());
+                art.getPath(), art.getFolderId(), art.isOverridden(), art.getUpdated(), art.getEntityId(), art.getEntityType().toString());
     }
 
     public CoverArt get(EntityType type, int id) {

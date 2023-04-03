@@ -14,10 +14,15 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Instant;
 
@@ -27,33 +32,29 @@ import java.time.Instant;
  * @author Sindre Mehus
  * @version $Revision: 1.2 $ $Date: 2005/12/25 13:48:46 $
  */
+@AllArgsConstructor
+@Getter
+@Setter
 public class InternetRadio {
 
-    private Integer id;
+    // The system-generated ID.
+    private final Integer id;
+
+    // The user-defined name.
     private String name;
+
+    // The stream URL for the station.
     private String streamUrl;
+
+    // Th home page URL for the station.
     private String homepageUrl;
+
+    // Whether the station is enabled.
     private boolean isEnabled;
+
+    // When the corresponding database entry was last changed.
     private Instant changed;
 
-    /**
-     * Creates a new internet radio station.
-     *
-     * @param id          The system-generated ID.
-     * @param name        The user-defined name.
-     * @param streamUrl   The stream URL for the station.
-     * @param homepageUrl The home page URL for the station.
-     * @param isEnabled   Whether the station is enabled.
-     * @param changed     When the corresponding database entry was last changed.
-     */
-    public InternetRadio(Integer id, String name, String streamUrl, String homepageUrl, boolean isEnabled, Instant changed) {
-        this.id = id;
-        this.name = name;
-        this.streamUrl = streamUrl;
-        this.homepageUrl = homepageUrl;
-        this.isEnabled = isEnabled;
-        this.changed = changed;
-    }
 
     /**
      * Creates a new internet radio station.
@@ -66,104 +67,5 @@ public class InternetRadio {
      */
     public InternetRadio(String name, String streamUrl, String homepageUrl, boolean isEnabled, Instant changed) {
         this(null, name, streamUrl, homepageUrl, isEnabled, changed);
-    }
-
-    /**
-     * Returns the system-generated ID.
-     *
-     * @return The system-generated ID.
-     */
-    public Integer getId() {
-        return id;
-    }
-
-    /**
-     * Returns the user-defined name.
-     *
-     * @return The user-defined name.
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets the user-defined name.
-     *
-     * @param name The user-defined name.
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Returns the stream URL of the radio station.
-     *
-     * @return The stream URL of the radio station.
-     */
-    public String getStreamUrl() {
-        return streamUrl;
-    }
-
-    /**
-     * Sets the stream URL of the radio station.
-     *
-     * @param streamUrl The stream URL of the radio station.
-     */
-    public void setStreamUrl(String streamUrl) {
-        this.streamUrl = streamUrl;
-    }
-
-    /**
-     * Returns the homepage URL of the radio station.
-     *
-     * @return The homepage URL of the radio station.
-     */
-    public String getHomepageUrl() {
-        return homepageUrl;
-    }
-
-    /**
-     * Sets the home page URL of the radio station.
-     *
-     * @param homepageUrl The home page URL of the radio station.
-     */
-    public void setHomepageUrl(String homepageUrl) {
-        this.homepageUrl = homepageUrl;
-    }
-
-    /**
-     * Returns whether the radio station is enabled.
-     *
-     * @return Whether the radio station is enabled.
-     */
-    public boolean isEnabled() {
-        return isEnabled;
-    }
-
-    /**
-     * Sets whether the radio station is enabled.
-     *
-     * @param enabled Whether the radio station is enabled.
-     */
-    public void setEnabled(boolean enabled) {
-        isEnabled = enabled;
-    }
-
-    /**
-     * Returns when the corresponding database entry was last changed.
-     *
-     * @return When the corresponding database entry was last changed.
-     */
-    public Instant getChanged() {
-        return changed;
-    }
-
-    /**
-     * Sets when the corresponding database entry was last changed.
-     *
-     * @param changed When the corresponding database entry was last changed.
-     */
-    public void setChanged(Instant changed) {
-        this.changed = changed;
     }
 }

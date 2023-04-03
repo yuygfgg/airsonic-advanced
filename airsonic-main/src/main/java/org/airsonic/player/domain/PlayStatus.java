@@ -14,10 +14,14 @@
  *  You should have received a copy of the GNU General Public License
  *  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
  *
+ *  Copyright 2023 (C) Y.Tory
  *  Copyright 2015 (C) Sindre Mehus
  */
 
 package org.airsonic.player.domain;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -32,6 +36,8 @@ import java.util.UUID;
  * @author Sindre Mehus
  * @version $Id$
  */
+@RequiredArgsConstructor
+@Getter
 public class PlayStatus {
 
     private final UUID transferId;
@@ -41,31 +47,8 @@ public class PlayStatus {
 
     private final static long TTL_MILLIS = 6L * 60L * 60L * 1000L; // 6 hours
 
-    public PlayStatus(UUID transferId, MediaFile mediaFile, Player player, Instant time) {
-        this.transferId = transferId;
-        this.mediaFile = mediaFile;
-        this.player = player;
-        this.time = time;
-    }
-
     public PlayStatus(UUID transferId, MediaFile mediaFile, Player player, long millisSinceLastUpdate) {
         this(transferId, mediaFile, player, Instant.now().minusMillis(millisSinceLastUpdate));
-    }
-
-    public UUID getTransferId() {
-        return transferId;
-    }
-
-    public MediaFile getMediaFile() {
-        return mediaFile;
-    }
-
-    public Player getPlayer() {
-        return player;
-    }
-
-    public Instant getTime() {
-        return time;
     }
 
     public boolean isExpired() {

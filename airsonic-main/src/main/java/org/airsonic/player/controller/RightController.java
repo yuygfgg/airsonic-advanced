@@ -56,17 +56,17 @@ public class RightController {
         ModelAndView result = new ModelAndView("right");
 
         UserSettings userSettings = settingsService.getUserSettings(securityService.getCurrentUsername(request));
-        if (userSettings.getFinalVersionNotificationEnabled() && versionService.isNewFinalVersionAvailable()) {
+        if (userSettings.isFinalVersionNotificationEnabled() && versionService.isNewFinalVersionAvailable()) {
             map.put("newVersionAvailable", true);
             map.put("latestVersion", versionService.getLatestFinalVersion());
 
-        } else if (userSettings.getBetaVersionNotificationEnabled() && versionService.isNewBetaVersionAvailable()) {
+        } else if (userSettings.isBetaVersionNotificationEnabled() && versionService.isNewBetaVersionAvailable()) {
             map.put("newVersionAvailable", true);
             map.put("latestVersion", versionService.getLatestBetaVersion());
         }
 
         map.put("brand", settingsService.getBrand());
-        map.put("showNowPlaying", userSettings.getShowNowPlayingEnabled());
+        map.put("showNowPlaying", userSettings.isShowNowPlayingEnabled());
         map.put("user", securityService.getCurrentUser(request));
 
         result.addObject("model", map);

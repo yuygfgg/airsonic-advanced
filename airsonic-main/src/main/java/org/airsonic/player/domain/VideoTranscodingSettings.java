@@ -14,10 +14,13 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
+
+import lombok.Getter;
 
 /**
  * Parameters used when transcoding videos.
@@ -25,6 +28,7 @@ package org.airsonic.player.domain;
  * @author Sindre Mehus
  * @version $Id$
  */
+@Getter
 public class VideoTranscodingSettings {
 
     private final int width;
@@ -45,6 +49,7 @@ public class VideoTranscodingSettings {
         this.height = height;
         this.timeOffset = timeOffset;
         this.duration = duration;
+        this.audioTrackIndex = 1;
     }
 
     public VideoTranscodingSettings(int width, int height, int timeOffset, double duration, int audioTrackIndex,
@@ -54,38 +59,6 @@ public class VideoTranscodingSettings {
         this.hlsSegmentIndex = hlsSegmentIndex;
         this.hlsSegmentFilename = hlsSegmentFilename;
         this.outputFilename = outputFilename;
-    }
-
-    public int getWidth() {
-        return width;
-    }
-
-    public int getHeight() {
-        return height;
-    }
-
-    public int getTimeOffset() {
-        return timeOffset;
-    }
-
-    public double getDuration() {
-        return duration;
-    }
-
-    public int getAudioTrackIndex() {
-        return audioTrackIndex;
-    }
-
-    public int getHlsSegmentIndex() {
-        return hlsSegmentIndex;
-    }
-
-    public String getHlsSegmentFilename() {
-        return hlsSegmentFilename;
-    }
-
-    public String getOutputFilename() {
-        return outputFilename;
     }
 
 }

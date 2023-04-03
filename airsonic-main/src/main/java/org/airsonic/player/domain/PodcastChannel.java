@@ -14,10 +14,15 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * A Podcast channel. Each channel contain several episodes.
@@ -25,9 +30,12 @@ package org.airsonic.player.domain;
  * @author Sindre Mehus
  * @see PodcastEpisode
  */
+@AllArgsConstructor
+@Getter
+@Setter
 public class PodcastChannel {
 
-    private Integer id;
+    private final Integer id;
     private String url;
     private String title;
     private String description;
@@ -36,80 +44,9 @@ public class PodcastChannel {
     private String errorMessage;
     private Integer mediaFileId;
 
-    public PodcastChannel(Integer id, String url, String title, String description, String imageUrl,
-                          PodcastStatus status, String errorMessage, Integer mediaFileId) {
-        this.id = id;
-        this.url = url;
-        this.title = title;
-        this.description = description;
-        this.imageUrl = imageUrl;
-        this.status = status;
-        this.errorMessage = errorMessage;
-        this.mediaFileId = mediaFileId;
-    }
-
     public PodcastChannel(String url) {
+        this.id = null;
         this.url = url;
         status = PodcastStatus.NEW;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public PodcastStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(PodcastStatus status) {
-        this.status = status;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
-
-    public void setMediaFileId(Integer mediaFileId) {
-        this.mediaFileId = mediaFileId;
-    }
-
-    public Integer getMediaFileId() {
-        return mediaFileId;
     }
 }

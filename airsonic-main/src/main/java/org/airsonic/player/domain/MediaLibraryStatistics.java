@@ -14,12 +14,14 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -32,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Sindre Mehus
  * @version $Revision: 1.1 $ $Date: 2005/11/17 18:29:03 $
  */
+@NoArgsConstructor
 public class MediaLibraryStatistics {
     private Instant scanDate = Instant.now();
     private AtomicInteger artistCount = new AtomicInteger(0);
@@ -39,8 +42,6 @@ public class MediaLibraryStatistics {
     private AtomicInteger songCount = new AtomicInteger(0);
     private AtomicLong totalLengthInBytes = new AtomicLong(0);
     private AtomicDouble totalDurationInSeconds = new AtomicDouble(0);
-
-    public MediaLibraryStatistics() {}
 
     public void setScanDate(Instant scanDate) {
         this.scanDate = scanDate;

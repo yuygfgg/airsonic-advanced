@@ -14,46 +14,36 @@
   You should have received a copy of the GNU General Public License
   along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+  Copyright 2023 (C) Y.Tory
   Copyright 2016 (C) Airsonic Authors
   Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
 */
 package org.airsonic.player.domain;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.airsonic.player.service.SearchService;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The outcome of a search.
- *
- * @author Sindre Mehus
- * @see SearchService#search
- */
+* The outcome of a search.
+*
+* @author Sindre Mehus
+* @see SearchService#search
+*/
+@Getter
+@Setter
 public class ParamSearchResult<T> {
 
+    // The items searched for.
     private final List<T> items = new ArrayList<T>();
 
+    // The offset of the first item in the list.
     private int offset;
+
+    // The total number of hits.
     private int totalHits;
 
-    public List<T> getItems() {
-        return items;
-    }
-
-    public int getOffset() {
-        return offset;
-    }
-
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
-    public int getTotalHits() {
-        return totalHits;
-    }
-
-    public void setTotalHits(int totalHits) {
-        this.totalHits = totalHits;
-    }
 }

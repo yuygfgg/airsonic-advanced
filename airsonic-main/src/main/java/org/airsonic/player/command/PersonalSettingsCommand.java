@@ -244,7 +244,7 @@ public class PersonalSettingsCommand {
         this.keyboardShortcutsEnabled = keyboardShortcutsEnabled;
     }
 
-    public boolean getLastFmEnabled() {
+    public boolean isLastFmEnabled() {
         return lastFmEnabled;
     }
 
@@ -252,7 +252,7 @@ public class PersonalSettingsCommand {
         this.lastFmEnabled = lastFmEnabled;
     }
 
-    public boolean getListenBrainzEnabled() {
+    public boolean isListenBrainzEnabled() {
         return listenBrainzEnabled;
     }
 
@@ -268,7 +268,7 @@ public class PersonalSettingsCommand {
         this.listenBrainzUrl = listenBrainzUrl;
     }
 
-    public boolean getPodcastIndexEnabled() {
+    public boolean isPodcastIndexEnabled() {
         return podcastIndexEnabled;
     }
 

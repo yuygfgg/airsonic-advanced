@@ -569,7 +569,7 @@ public class SubsonicRESTController {
         jaxbPlaylist.setName(playlist.getName());
         jaxbPlaylist.setComment(playlist.getComment());
         jaxbPlaylist.setOwner(playlist.getUsername());
-        jaxbPlaylist.setPublic(playlist.getShared());
+        jaxbPlaylist.setPublic(playlist.isShared());
         jaxbPlaylist.setSongCount(playlist.getFileCount());
         jaxbPlaylist.setDuration((int) Math.round(playlist.getDuration()));
         jaxbPlaylist.setCreated(jaxbWriter.convertDate(playlist.getCreated()));
@@ -2038,7 +2038,7 @@ public class SubsonicRESTController {
         org.subsonic.restapi.User result = new org.subsonic.restapi.User();
         result.setUsername(user.getUsername());
         result.setEmail(user.getEmail());
-        result.setScrobblingEnabled(userSettings.getLastFmEnabled());
+        result.setScrobblingEnabled(userSettings.isLastFmEnabled());
         result.setAdminRole(user.isAdminRole());
         result.setSettingsRole(user.isSettingsRole());
         result.setDownloadRole(user.isDownloadRole());

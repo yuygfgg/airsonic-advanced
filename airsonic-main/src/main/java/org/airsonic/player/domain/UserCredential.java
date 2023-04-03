@@ -1,9 +1,37 @@
+/*
+ This file is part of Airsonic.
+
+ Airsonic is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ Airsonic is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
+
+ Copyright 2023 (C) Y.Tory
+ Copyright 2016 (C) Airsonic Authors
+ Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
+ */
 package org.airsonic.player.domain;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
+@AllArgsConstructor
+@Getter
+@Setter
 public class UserCredential {
     private String username;
     private String appUsername;
@@ -15,19 +43,6 @@ public class UserCredential {
     private Instant created;
     private Instant updated;
 
-    public UserCredential(String username, String appUsername, String credential, String encoder, App app,
-            String comment, Instant expiration, Instant created, Instant updated) {
-        super();
-        this.username = username;
-        this.appUsername = appUsername;
-        this.credential = credential;
-        this.encoder = encoder;
-        this.app = app;
-        this.comment = comment;
-        this.expiration = expiration;
-        this.created = created;
-        this.updated = updated;
-    }
 
     public UserCredential(String username, String appUsername, String credential, String encoder, App app,
             String comment, Instant expiration) {
@@ -49,78 +64,6 @@ public class UserCredential {
     public UserCredential(UserCredential uc) {
         this(uc.getUsername(), uc.getAppUsername(), uc.getCredential(), uc.getEncoder(), uc.getApp(),
                 uc.getComment(), uc.getExpiration(), uc.getCreated(), uc.getUpdated());
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getAppUsername() {
-        return appUsername;
-    }
-
-    public void setAppUsername(String appUsername) {
-        this.appUsername = appUsername;
-    }
-
-    public String getCredential() {
-        return credential;
-    }
-
-    public void setCredential(String credential) {
-        this.credential = credential;
-    }
-
-    public String getEncoder() {
-        return encoder;
-    }
-
-    public void setEncoder(String encoder) {
-        this.encoder = encoder;
-    }
-
-    public App getApp() {
-        return app;
-    }
-
-    public void setApp(App app) {
-        this.app = app;
-    }
-
-    public Instant getCreated() {
-        return created;
-    }
-
-    public void setCreated(Instant created) {
-        this.created = created;
-    }
-
-    public Instant getUpdated() {
-        return updated;
-    }
-
-    public void setUpdated(Instant updated) {
-        this.updated = updated;
-    }
-
-    public Instant getExpiration() {
-        return expiration;
-    }
-
-    public void setExpiration(Instant expiration) {
-        this.expiration = expiration;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
     }
 
     @Override
@@ -185,6 +128,8 @@ public class UserCredential {
         return true;
     }
 
+    @Getter
+    @RequiredArgsConstructor
     public enum App {
         AIRSONIC("Airsonic", false, true),
         LASTFM("Last.fm", true, false),
@@ -194,24 +139,6 @@ public class UserCredential {
         private final String name;
         private final boolean usernameRequired;
         private final boolean nonDecodableEncodersAllowed;
-
-        private App(String name, boolean usernameRequired, boolean nonDecodableEncodersAllowed) {
-            this.name = name;
-            this.usernameRequired = usernameRequired;
-            this.nonDecodableEncodersAllowed = nonDecodableEncodersAllowed;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public boolean getUsernameRequired() {
-            return usernameRequired;
-        }
-
-        public boolean getNonDecodableEncodersAllowed() {
-            return nonDecodableEncodersAllowed;
-        }
 
     }
 }

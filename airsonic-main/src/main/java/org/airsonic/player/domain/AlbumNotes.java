@@ -14,16 +14,22 @@
  *  You should have received a copy of the GNU General Public License
  *  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
  *
+ *  Copyright 2023 (C) Y.Tory
  *  Copyright 2016 (C) Airsonic Authors
  *  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 
 package org.airsonic.player.domain;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * @author Sindre Mehus
  * @version $Id$
  */
+@RequiredArgsConstructor
+@Getter
 public class AlbumNotes {
 
     private final String notes;
@@ -33,37 +39,4 @@ public class AlbumNotes {
     private final String mediumImageUrl;
     private final String largeImageUrl;
 
-    public AlbumNotes(String notes, String musicBrainzId, String lastFmUrl, String smallImageUrl,
-                      String mediumImageUrl, String largeImageUrl) {
-        this.notes = notes;
-        this.musicBrainzId = musicBrainzId;
-        this.lastFmUrl = lastFmUrl;
-        this.smallImageUrl = smallImageUrl;
-        this.mediumImageUrl = mediumImageUrl;
-        this.largeImageUrl = largeImageUrl;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    public String getMusicBrainzId() {
-        return musicBrainzId;
-    }
-
-    public String getLastFmUrl() {
-        return lastFmUrl;
-    }
-
-    public String getSmallImageUrl() {
-        return smallImageUrl;
-    }
-
-    public String getMediumImageUrl() {
-        return mediumImageUrl;
-    }
-
-    public String getLargeImageUrl() {
-        return largeImageUrl;
-    }
 }

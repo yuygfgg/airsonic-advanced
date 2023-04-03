@@ -14,11 +14,15 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.apache.commons.io.FilenameUtils;
 
 import java.nio.file.Path;
@@ -36,6 +40,9 @@ import java.util.stream.Collectors;
  * @author Sindre Mehus
  * @version $Id$
  */
+@NoArgsConstructor
+@Getter
+@Setter
 public class MediaFile {
 
     private Integer id;
@@ -113,338 +120,62 @@ public class MediaFile {
         this.musicBrainzRecordingId = musicBrainzRecordingId;
     }
 
-    public MediaFile() {
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public Integer getFolderId() {
-        return folderId;
-    }
-
-    public void setFolderId(Integer folderId) {
-        this.folderId = folderId;
-    }
 
     public Path getRelativePath() {
-        return Paths.get(path);
+        return Paths.get(this.path);
     }
 
     public Path getFullPath(Path relativeMediaFolderPath) {
-        return relativeMediaFolderPath.resolve(path);
-    }
-
-    public String getIndexPath() {
-        return indexPath;
-    }
-
-    public void setIndexPath(String path) {
-        this.indexPath = path;
+        return relativeMediaFolderPath.resolve(this.path);
     }
 
     public Path getRelativeIndexPath() {
-        return indexPath == null ? null : Paths.get(indexPath);
+        return this.indexPath == null ? null : Paths.get(this.indexPath);
     }
 
     public Path getFullIndexPath(Path folderPath) {
-        return folderPath.resolve(indexPath);
-    }
-
-    public MediaType getMediaType() {
-        return mediaType;
-    }
-
-    public void setMediaType(MediaType mediaType) {
-        this.mediaType = mediaType;
-    }
-
-    public Double getStartPosition() {
-        return startPosition;
-    }
-
-    public void setStartPosition(Double startPosition) {
-        this.startPosition = startPosition;
+        return folderPath.resolve(this.indexPath);
     }
 
     public boolean hasIndex() {
-        return indexPath != null;
+        return this.indexPath != null;
     }
 
     public boolean isVideo() {
-        return mediaType == MediaType.VIDEO;
+        return this.mediaType == MediaType.VIDEO;
     }
 
     public boolean isAudio() {
-        return MediaType.audioTypes().contains(mediaType.toString());
+        return MediaType.audioTypes().contains(this.mediaType.toString());
     }
 
     public boolean isIndexedTrack() {
-        return startPosition >= 0.0;
-    }
-
-    public String getFormat() {
-        return format;
-    }
-
-    public void setFormat(String format) {
-        this.format = format;
+        return this.startPosition >= 0.0;
     }
 
     public boolean isDirectory() {
-        return !isFile();
+        return !this.isFile();
     }
 
     public boolean isFile() {
-        return mediaType != MediaType.DIRECTORY && mediaType != MediaType.ALBUM;
+        return this.mediaType != MediaType.DIRECTORY && this.mediaType != MediaType.ALBUM;
     }
 
     public boolean isAlbum() {
-        return mediaType == MediaType.ALBUM;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getAlbumName() {
-        return albumName;
-    }
-
-    public void setAlbumName(String album) {
-        this.albumName = album;
-    }
-
-    public String getArtist() {
-        return artist;
-    }
-
-    public void setArtist(String artist) {
-        this.artist = artist;
-    }
-
-    public String getAlbumArtist() {
-        return albumArtist;
-    }
-
-    public void setAlbumArtist(String albumArtist) {
-        this.albumArtist = albumArtist;
-    }
-
-    public String getName() {
-        return title != null ? title : isDirectory() ? FilenameUtils.getName(path) : FilenameUtils.getBaseName(path);
-    }
-
-    public Integer getDiscNumber() {
-        return discNumber;
-    }
-
-    public void setDiscNumber(Integer discNumber) {
-        this.discNumber = discNumber;
-    }
-
-    public Integer getTrackNumber() {
-        return trackNumber;
-    }
-
-    public void setTrackNumber(Integer trackNumber) {
-        this.trackNumber = trackNumber;
-    }
-
-    public Integer getYear() {
-        return year;
-    }
-
-    public void setYear(Integer year) {
-        this.year = year;
-    }
-
-    public String getGenre() {
-        return genre;
-    }
-
-    public void setGenre(String genre) {
-        this.genre = genre;
-    }
-
-    public Integer getBitRate() {
-        return bitRate;
-    }
-
-    public void setBitRate(Integer bitRate) {
-        this.bitRate = bitRate;
-    }
-
-    public boolean isVariableBitRate() {
-        return variableBitRate;
-    }
-
-    public void setVariableBitRate(boolean variableBitRate) {
-        this.variableBitRate = variableBitRate;
-    }
-
-    public Double getDuration() {
-        return duration;
-    }
-
-    public void setDuration(Double duration) {
-        this.duration = duration;
-    }
-
-    public Long getFileSize() {
-        return fileSize;
-    }
-
-    public void setFileSize(Long fileSize) {
-        this.fileSize = fileSize;
-    }
-
-    public Integer getWidth() {
-        return width;
-    }
-
-    public void setWidth(Integer width) {
-        this.width = width;
-    }
-
-    public Integer getHeight() {
-        return height;
-    }
-
-    public void setHeight(Integer height) {
-        this.height = height;
-    }
-
-    public String getParentPath() {
-        return parentPath;
-    }
-
-    public void setParentPath(String parentPath) {
-        this.parentPath = parentPath;
-    }
-
-    public int getPlayCount() {
-        return playCount;
-    }
-
-    public void setPlayCount(int playCount) {
-        this.playCount = playCount;
-    }
-
-    public Instant getLastPlayed() {
-        return lastPlayed;
-    }
-
-    public void setLastPlayed(Instant lastPlayed) {
-        this.lastPlayed = lastPlayed;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
-    public Instant getCreated() {
-        return created;
-    }
-
-    public void setCreated(Instant created) {
-        this.created = created;
-    }
-
-    public Instant getChanged() {
-        return changed;
-    }
-
-    public void setChanged(Instant changed) {
-        this.changed = changed;
-    }
-
-    public Instant getLastScanned() {
-        return lastScanned;
-    }
-
-    public void setLastScanned(Instant lastScanned) {
-        this.lastScanned = lastScanned;
-    }
-
-    public Instant getStarredDate() {
-        return starredDate;
-    }
-
-    public void setStarredDate(Instant starredDate) {
-        this.starredDate = starredDate;
-    }
-
-    public String getMusicBrainzReleaseId() {
-        return musicBrainzReleaseId;
-    }
-
-    public void setMusicBrainzReleaseId(String musicBrainzReleaseId) {
-        this.musicBrainzReleaseId = musicBrainzReleaseId;
-    }
-
-    public String getMusicBrainzRecordingId() {
-        return musicBrainzRecordingId;
-    }
-
-    public void setMusicBrainzRecordingId(String musicBrainzRecordingId) {
-        this.musicBrainzRecordingId = musicBrainzRecordingId;
+        return this.mediaType == MediaType.ALBUM;
     }
 
     /**
-     * Returns when the children was last updated in the database.
+     * Returns the name of this media file. If the title is set, it is returned. Otherwise, if this is a directory,
+     * the name of the directory is returned. Otherwise, the base name of the file is returned.
+     * @return The name of this media file.
      */
-    public Instant getChildrenLastUpdated() {
-        return childrenLastUpdated;
-    }
-
-    public void setChildrenLastUpdated(Instant childrenLastUpdated) {
-        this.childrenLastUpdated = childrenLastUpdated;
-    }
-
-    public boolean isPresent() {
-        return present;
-    }
-
-    public void setPresent(boolean present) {
-        this.present = present;
-    }
-
-    public int getVersion() {
-        return version;
+    public String getName() {
+        return this.title != null ? this.title : this.isDirectory() ? FilenameUtils.getName(this.path) : FilenameUtils.getBaseName(this.path);
     }
 
     // placeholder to use prior to persistence
     private CoverArt art;
-
-    public CoverArt getArt() {
-        return art;
-    }
-
-    public void setArt(CoverArt art) {
-        this.art = art;
-    }
 
     @Override
     public boolean equals(Object obj) {

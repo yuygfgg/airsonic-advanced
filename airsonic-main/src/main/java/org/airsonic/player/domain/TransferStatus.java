@@ -14,11 +14,15 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 import java.nio.file.Path;
@@ -30,12 +34,15 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author Sindre Mehus
  */
+@Getter
+@Setter
 public class TransferStatus {
 
     private static final int HISTORY_LENGTH = 200;
     private static final long SAMPLE_INTERVAL_MILLIS = 5000;
 
     private final UUID id = UUID.randomUUID();
+    // the remote player for the stream.
     private final Player player;
     private Path externalFile;
     private MediaFile mediaFile;
@@ -44,14 +51,11 @@ public class TransferStatus {
     private final AtomicLong bytesTotal = new AtomicLong();
     private final SampleHistory history = new SampleHistory();
     private volatile boolean terminated;
+    // whether this transfer is active, i.e., if the connection is still established.
     private volatile boolean active = true;
 
     public TransferStatus(Player player) {
         this.player = player;
-    }
-
-    public UUID getId() {
-        return id;
     }
 
     /**
@@ -155,30 +159,6 @@ public class TransferStatus {
         bytesSkipped.addAndGet(byteCount);
     }
 
-    public Path getExternalFile() {
-        return externalFile;
-    }
-
-    public void setExternalFile(Path externalFile) {
-        this.externalFile = externalFile;
-    }
-
-    public MediaFile getMediaFile() {
-        return mediaFile;
-    }
-
-    public void setMediaFile(MediaFile mediaFile) {
-        this.mediaFile = mediaFile;
-    }
-
-    /**
-     * Returns the remote player for the stream.
-     *
-     * @return The remote player for the stream.
-     */
-    public Player getPlayer() {
-        return player;
-    }
 
     /**
      * Returns a history of samples for the stream
@@ -218,15 +198,6 @@ public class TransferStatus {
     }
 
     /**
-     * Returns whether this transfer is active, i.e., if the connection is still established.
-     *
-     * @return Whether this transfer is active.
-     */
-    public boolean isActive() {
-        return active;
-    }
-
-    /**
      * Sets whether this transfer is active, i.e., if the connection is still established.
      *
      * @param active Whether this transfer is active.
@@ -246,38 +217,13 @@ public class TransferStatus {
     /**
      * A sample containing a timestamp and the number of bytes transferred up to that point in time.
      */
+    @AllArgsConstructor
+    @Getter
     public static class Sample {
-        private long bytesTransferred;
-        private long timestamp;
-
-        /**
-         * Creates a new sample.
-         *
-         * @param bytesTransferred The total number of bytes transferred.
-         * @param timestamp        A point in time, in milliseconds.
-         */
-        public Sample(long bytesTransferred, long timestamp) {
-            this.bytesTransferred = bytesTransferred;
-            this.timestamp = timestamp;
-        }
-
-        /**
-         * Returns the number of bytes transferred.
-         *
-         * @return The number of bytes transferred.
-         */
-        public long getBytesTransferred() {
-            return bytesTransferred;
-        }
-
-        /**
-         * Returns the timestamp of the sample.
-         *
-         * @return The timestamp in milliseconds.
-         */
-        public long getTimestamp() {
-            return timestamp;
-        }
+        // The number of bytes transferred.
+        private final long bytesTransferred;
+        // A point in time, in milliseconds.
+        private final long timestamp;
     }
 
     @Override

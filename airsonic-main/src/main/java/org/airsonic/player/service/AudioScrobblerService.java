@@ -63,11 +63,11 @@ public class AudioScrobblerService {
         UserSettings userSettings = settingsService.getUserSettings(username);
 
         EnumSet<App> enabledApps = EnumSet.noneOf(App.class);
-        if (userSettings.getLastFmEnabled()) {
+        if (userSettings.isLastFmEnabled()) {
             enabledApps.add(App.LASTFM);
         }
 
-        if (userSettings.getListenBrainzEnabled()) {
+        if (userSettings.isListenBrainzEnabled()) {
             enabledApps.add(App.LISTENBRAINZ);
         }
 

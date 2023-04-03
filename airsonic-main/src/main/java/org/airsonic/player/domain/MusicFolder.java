@@ -14,12 +14,16 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
 import com.google.common.base.Objects;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.nio.file.Path;
@@ -34,32 +38,23 @@ import java.util.stream.Collectors;
  * @author Sindre Mehus
  * @version $Revision: 1.1 $ $Date: 2005/11/27 14:32:05 $
  */
+@AllArgsConstructor
+@Getter
+@Setter
 public class MusicFolder implements Serializable {
 
+    // The system-generated ID.
     private Integer id;
+    // The path of the music folder.
     private Path path;
+    // The user-defined name.
     private String name;
+    // The type of the music folder.
     private Type type = Type.MEDIA;
+    // Whether the folder is enabled.
     private boolean enabled;
+    // When the corresponding database entry was last changed.
     private Instant changed;
-
-    /**
-     * Creates a new music folder.
-     *
-     * @param id      The system-generated ID.
-     * @param path    The path of the music folder.
-     * @param name    The user-defined name.
-     * @param enabled Whether the folder is enabled.
-     * @param changed When the corresponding database entry was last changed.
-     */
-    public MusicFolder(Integer id, Path path, String name, Type type, boolean enabled, Instant changed) {
-        this.id = id;
-        this.path = path;
-        this.name = name;
-        this.type = type;
-        this.enabled = enabled;
-        this.changed = changed;
-    }
 
     /**
      * Creates a new music folder.
@@ -73,98 +68,6 @@ public class MusicFolder implements Serializable {
         this(null, path, name, type, enabled, changed);
     }
 
-    /**
-     * Returns the system-generated ID.
-     *
-     * @return The system-generated ID.
-     */
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    /**
-     * Returns the path of the music folder.
-     *
-     * @return The path of the music folder.
-     */
-    public Path getPath() {
-        return path;
-    }
-
-    /**
-     * Sets the path of the music folder.
-     *
-     * @param path The path of the music folder.
-     */
-    public void setPath(Path path) {
-        this.path = path;
-    }
-
-    /**
-     * Returns the user-defined name.
-     *
-     * @return The user-defined name.
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets the user-defined name.
-     *
-     * @param name The user-defined name.
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Returns whether the folder is enabled.
-     *
-     * @return Whether the folder is enabled.
-     */
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    /**
-     * Sets whether the folder is enabled.
-     *
-     * @param enabled Whether the folder is enabled.
-     */
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    /**
-     * Returns when the corresponding database entry was last changed.
-     *
-     * @return When the corresponding database entry was last changed.
-     */
-    public Instant getChanged() {
-        return changed;
-    }
-
-    /**
-     * Sets when the corresponding database entry was last changed.
-     *
-     * @param changed When the corresponding database entry was last changed.
-     */
-    public void setChanged(Instant changed) {
-        this.changed = changed;
-    }
-
-    public Type getType() {
-        return type;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -187,19 +90,31 @@ public class MusicFolder implements Serializable {
     }
 
 
+    /**
+     * Convert a list of MusicFolder to a list of id
+     *
+     * @param from List of MusicFolder to convert. null is not allowed.
+     * @return List of MusicFolder id.
+     */
     public static List<Integer> toIdList(List<MusicFolder> from) {
         return from.stream().map(toId()).collect(Collectors.toList());
     }
 
+    /**
+     * Convert a list of MusicFolder to a list of path
+     *
+     * @param from List of MusicFolder to convert. null is not allowed.
+     * @return List of MusicFolder path.
+     */
     public static List<String> toPathList(List<MusicFolder> from) {
         return from.stream().map(toPath()).collect(Collectors.toList());
     }
 
-    public static Function<MusicFolder, Integer> toId() {
+    private static Function<MusicFolder, Integer> toId() {
         return from -> from.getId();
     }
 
-    public static Function<MusicFolder, String> toPath() {
+    private static Function<MusicFolder, String> toPath() {
         return from -> from.getPath().toString();
     }
 }

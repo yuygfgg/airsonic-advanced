@@ -14,10 +14,13 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
+
+import lombok.Getter;
 
 import java.io.Serializable;
 import java.text.CollationKey;
@@ -25,6 +28,7 @@ import java.text.Collator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
 
 /**
  * A music index is a mapping from an index string to a list of prefixes.  A complete index consists of a list of
@@ -39,6 +43,7 @@ import java.util.Objects;
  *
  * @author Sindre Mehus
  */
+@Getter
 public class MusicIndex implements Serializable {
 
     public static final MusicIndex OTHER = new MusicIndex("#");
@@ -62,24 +67,6 @@ public class MusicIndex implements Serializable {
      */
     public void addPrefix(String prefix) {
         prefixes.add(prefix);
-    }
-
-    /**
-     * Returns the index name.
-     *
-     * @return The index name.
-     */
-    public String getIndex() {
-        return index;
-    }
-
-    /**
-     * Returns the list of prefixes.
-     *
-     * @return The list of prefixes.
-     */
-    public List<String> getPrefixes() {
-        return prefixes;
     }
 
     /**
@@ -118,7 +105,9 @@ public class MusicIndex implements Serializable {
      */
     public abstract static class SortableArtist implements Comparable<SortableArtist> {
 
+        @Getter
         private final String name;
+        @Getter
         private final String sortableName;
         private final CollationKey collationKey;
 
@@ -128,14 +117,6 @@ public class MusicIndex implements Serializable {
             collationKey = collator.getCollationKey(sortableName);
         }
 
-        public String getName() {
-            return name;
-        }
-
-        public String getSortableName() {
-            return sortableName;
-        }
-
         public int compareTo(SortableArtist other) {
             return collationKey.compareTo(other.collationKey);
         }
@@ -143,6 +124,7 @@ public class MusicIndex implements Serializable {
 
     public static class SortableArtistWithMediaFiles extends SortableArtist {
 
+        @Getter
         private final List<MediaFile> mediaFiles = new ArrayList<MediaFile>();
 
         public SortableArtistWithMediaFiles(String name, String sortableName, Collator collator) {
@@ -152,23 +134,16 @@ public class MusicIndex implements Serializable {
         public void addMediaFile(MediaFile mediaFile) {
             mediaFiles.add(mediaFile);
         }
-
-        public List<MediaFile> getMediaFiles() {
-            return mediaFiles;
-        }
     }
 
     public static class SortableArtistWithArtist extends SortableArtist {
 
+        @Getter
         private final Artist artist;
 
         public SortableArtistWithArtist(String name, String sortableName, Artist artist, Collator collator) {
             super(name, sortableName, collator);
             this.artist = artist;
-        }
-
-        public Artist getArtist() {
-            return artist;
         }
     }
 }

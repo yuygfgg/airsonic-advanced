@@ -14,11 +14,14 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.airsonic.player.service.SearchService;
 
 import java.time.Instant;
@@ -30,21 +33,50 @@ import java.util.List;
  * @author Sindre Mehus
  * @see SearchService#getRandomSongs
  */
+@AllArgsConstructor
+@Getter
 public class RandomSearchCriteria {
 
+    // Maximum number of songs to return.
     private final int count;
+
+    // Only return songs of the given genre. May be <code>null</code>.
     private final String genre;
+
+    // Only return songs released after (or in) this year. May be <code>null</code>.
     private final Integer fromYear;
+
+    // Only return songs released before (or in) this year. May be <code>null</code>.
     private final Integer toYear;
+
+    // Only return songs from these music folder. May NOT be <code>null</code>.
     private final List<MusicFolder> musicFolders;
+
+    // Only return songs last played after this date. May be <code>null</code>.
     private final Instant minLastPlayedDate;
+
+    // Only return songs last played before this date. May be <code>null</code>.
     private final Instant maxLastPlayedDate;
+
+    // Only return songs rated more or equal to this value. May be <code>null</code>.
     private final Integer minAlbumRating;
+
+    // Only return songs rated less or equal to this value. May be <code>null</code>.
     private final Integer maxAlbumRating;
+
+    // Only return songs whose play count is more or equal to this value. May be <code>null</code>.
     private final Integer minPlayCount;
+
+    // Only return songs whose play count is less or equal to this value. May be <code>null</code>.
     private final Integer maxPlayCount;
+
+    // Should starred songs be included?
     private final boolean showStarredSongs;
+
+    // Should unstarred songs be included?
     private final boolean showUnstarredSongs;
+
+    // Only return songs with the given format. May be <code>null</code>.
     private final String format;
 
     /**
@@ -63,110 +95,4 @@ public class RandomSearchCriteria {
         );
     }
 
-    /**
-     * Creates a new instance.
-     *
-     * @param count              Maximum number of songs to return.
-     * @param genre              Only return songs of the given genre. May be <code>null</code>.
-     * @param fromYear           Only return songs released after (or in) this year. May be <code>null</code>.
-     * @param toYear             Only return songs released before (or in) this year. May be <code>null</code>.
-     * @param musicFolders       Only return songs from these music folder. May NOT be <code>null</code>.
-     * @param minLastPlayedDate  Only return songs last played after this date. May be <code>null</code>.
-     * @param maxLastPlayedDate  Only return songs last played before this date. May be <code>null</code>.
-     * @param minAlbumRating     Only return songs rated more or equalt to this value. May be <code>null</code>.
-     * @param maxAlbumRating     Only return songs rated less or equal to this value. May be <code>null</code>.
-     * @param minPlayCount       Only return songs whose play count is more or equal to this value. May be <code>null</code>.
-     * @param maxPlayCount       Only return songs whose play count is less or equal to this value. May be <code>null</code>.
-     * @param showStarredSongs   Show starred songs. May NOT be <code>null</code>.
-     * @param showUnstarredSongs Show unstarred songs. May NOT be <code>null</code>.
-     * @param format             Only return songs whose file format is equal to this value. May be <code>null</code>.
-     */
-    public RandomSearchCriteria(
-            int count,
-            String genre,
-            Integer fromYear,
-            Integer toYear,
-            List<MusicFolder> musicFolders,
-            Instant minLastPlayedDate,
-            Instant maxLastPlayedDate,
-            Integer minAlbumRating,
-            Integer maxAlbumRating,
-            Integer minPlayCount,
-            Integer maxPlayCount,
-            boolean showStarredSongs,
-            boolean showUnstarredSongs,
-            String format
-    ) {
-
-        this.count = count;
-        this.genre = genre;
-        this.fromYear = fromYear;
-        this.toYear = toYear;
-        this.musicFolders = musicFolders;
-        this.minLastPlayedDate = minLastPlayedDate;
-        this.maxLastPlayedDate = maxLastPlayedDate;
-        this.minAlbumRating = minAlbumRating;
-        this.maxAlbumRating = maxAlbumRating;
-        this.minPlayCount = minPlayCount;
-        this.maxPlayCount = maxPlayCount;
-        this.showStarredSongs = showStarredSongs;
-        this.showUnstarredSongs = showUnstarredSongs;
-        this.format = format;
-    }
-
-    public int getCount() {
-        return count;
-    }
-
-    public String getGenre() {
-        return genre;
-    }
-
-    public Integer getFromYear() {
-        return fromYear;
-    }
-
-    public Integer getToYear() {
-        return toYear;
-    }
-
-    public List<MusicFolder> getMusicFolders() {
-        return musicFolders;
-    }
-
-    public Instant getMinLastPlayedDate() {
-        return minLastPlayedDate;
-    }
-
-    public Instant getMaxLastPlayedDate() {
-        return maxLastPlayedDate;
-    }
-
-    public Integer getMinAlbumRating() {
-        return minAlbumRating;
-    }
-
-    public Integer getMaxAlbumRating() {
-        return maxAlbumRating;
-    }
-
-    public boolean isShowStarredSongs() {
-        return showStarredSongs;
-    }
-
-    public boolean isShowUnstarredSongs() {
-        return showUnstarredSongs;
-    }
-
-    public String getFormat() {
-        return format;
-    }
-
-    public Integer getMinPlayCount() {
-        return minPlayCount;
-    }
-
-    public Integer getMaxPlayCount() {
-        return maxPlayCount;
-    }
 }

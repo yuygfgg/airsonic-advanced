@@ -14,10 +14,15 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,6 +31,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Sindre Mehus
  * @version $Id$
  */
+@NoArgsConstructor
+@Getter
+@Setter
 public class Artist {
 
     private int id;
@@ -34,9 +42,8 @@ public class Artist {
     private Instant lastScanned;
     private boolean present;
     private Integer folderId;
-
-    public Artist() {
-    }
+    // placeholder for persistence later
+    private CoverArt art;
 
     public Artist(int id, String name, int albumCount, Instant lastScanned, boolean present, Integer folderId) {
         this.id = id;
@@ -47,21 +54,6 @@ public class Artist {
         this.folderId = folderId;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public int getAlbumCount() {
         return albumCount.get();
@@ -71,38 +63,4 @@ public class Artist {
         this.albumCount.set(albumCount);
     }
 
-    public Instant getLastScanned() {
-        return lastScanned;
-    }
-
-    public void setLastScanned(Instant lastScanned) {
-        this.lastScanned = lastScanned;
-    }
-
-    public boolean isPresent() {
-        return present;
-    }
-
-    public void setPresent(boolean present) {
-        this.present = present;
-    }
-
-    public void setFolderId(Integer folderId) {
-        this.folderId = folderId;
-    }
-
-    public Integer getFolderId() {
-        return folderId;
-    }
-
-    // placeholder for persistence later
-    private CoverArt art;
-
-    public CoverArt getArt() {
-        return art;
-    }
-
-    public void setArt(CoverArt art) {
-        this.art = art;
-    }
 }

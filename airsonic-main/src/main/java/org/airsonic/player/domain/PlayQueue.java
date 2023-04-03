@@ -14,11 +14,14 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
 
 import java.nio.file.Files;
@@ -31,14 +34,25 @@ import java.util.stream.IntStream;
  *
  * @author Sindre Mehus
  */
+@Getter
+@Setter
 public class PlayQueue {
 
+    // all the files in the playlist
     private List<MediaFile> files = new ArrayList<>();
+
+    // the playlist is repeating status
     private RepeatStatus repeatStatus = RepeatStatus.OFF;
+
+    // User-defined name of the playlist.
     private String name = "(unnamed)";
+
     private Status status = Status.PLAYING;
 
+    // the criteria used to generate this random playlist
     private RandomSearchCriteria randomSearchCriteria;
+
+    // internal radio
     private InternetRadio internetRadio;
 
     private Function<Integer, MusicFolder> folderIdToFolder;
@@ -59,23 +73,6 @@ public class PlayQueue {
     private List<MediaFile> filesBackup = new ArrayList<>();
     private int indexBackup = 0;
 
-    /**
-     * Returns the user-defined name of the playlist.
-     *
-     * @return The name of the playlist, or <code>null</code> if no name has been assigned.
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets the user-defined name of the playlist.
-     *
-     * @param name The name of the playlist.
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
 
     /**
      * Returns the current song in the playlist.
@@ -98,15 +95,6 @@ public class PlayQueue {
 
             return file;
         }
-    }
-
-    /**
-     * Returns all music files in the playlist.
-     *
-     * @return All music files in the playlist.
-     */
-    public List<MediaFile> getFiles() {
-        return files;
     }
 
     /**
@@ -152,15 +140,6 @@ public class PlayQueue {
      */
     public boolean isEmpty() {
         return files.isEmpty();
-    }
-
-    /**
-     * Returns the index of the current song.
-     *
-     * @return The index of the current song, or -1 if the end of the playlist is reached.
-     */
-    public int getIndex() {
-        return index;
     }
 
     /**
@@ -337,19 +316,6 @@ public class PlayQueue {
         }
     }
 
-    public RepeatStatus getRepeatStatus() {
-        return repeatStatus;
-    }
-
-    /**
-     * Sets whether the playlist is repeating.
-     *
-     * @param repeatStatus Whether the playlist is repeating (and how)
-     */
-    public void setRepeatStatus(RepeatStatus repeatStatus) {
-        this.repeatStatus = repeatStatus;
-    }
-
     /**
      * Returns whether the play queue is in shuffle radio mode.
      *
@@ -383,15 +349,6 @@ public class PlayQueue {
     }
 
     /**
-     * Returns the playlist status.
-     *
-     * @return The playlist status.
-     */
-    public Status getStatus() {
-        return status;
-    }
-
-    /**
      * Sets the playlist status.
      *
      * @param status The playlist status.
@@ -403,41 +360,6 @@ public class PlayQueue {
         }
     }
 
-    /**
-     * Sets the current internet radio
-     *
-     * @param internetRadio An internet radio, or <code>null</code> if this is not an internet radio playlist
-     */
-    public void setInternetRadio(InternetRadio internetRadio) {
-        this.internetRadio = internetRadio;
-    }
-
-    /**
-     * Gets the current internet radio
-     *
-     * @return The current internet radio, or <code>null</code> if this is not an internet radio playlist
-     */
-    public InternetRadio getInternetRadio() {
-        return internetRadio;
-    }
-
-    /**
-     * Returns the criteria used to generate this random playlist
-     *
-     * @return The search criteria, or <code>null</code> if this is not a random playlist.
-     */
-    public RandomSearchCriteria getRandomSearchCriteria() {
-        return randomSearchCriteria;
-    }
-
-    /**
-     * Sets the criteria used to generate this random playlist
-     *
-     * @param randomSearchCriteria The search criteria, or <code>null</code> if this is not a random playlist.
-     */
-    public void setRandomSearchCriteria(RandomSearchCriteria randomSearchCriteria) {
-        this.randomSearchCriteria = randomSearchCriteria;
-    }
 
     /**
      * Returns the total length in bytes.

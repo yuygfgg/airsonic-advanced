@@ -14,12 +14,15 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
 import com.google.common.base.MoreObjects;
+import lombok.Getter;
+import lombok.Setter;
 import org.airsonic.player.service.SearchService;
 
 /**
@@ -28,35 +31,13 @@ import org.airsonic.player.service.SearchService;
  * @author Sindre Mehus
  * @see SearchService#search
  */
+@Getter
+@Setter
 public class SearchCriteria {
 
     private String query;
     private int offset;
     private int count;
-
-    public void setQuery(String query) {
-        this.query = query;
-    }
-
-    public String getQuery() {
-        return query;
-    }
-
-    public int getOffset() {
-        return offset;
-    }
-
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
-    public int getCount() {
-        return count;
-    }
-
-    public void setCount(int count) {
-        this.count = count;
-    }
 
     @Override
     public String toString() {

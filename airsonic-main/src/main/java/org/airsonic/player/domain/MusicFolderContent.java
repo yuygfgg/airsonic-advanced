@@ -14,10 +14,14 @@
  *  You should have received a copy of the GNU General Public License
  *  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
  *
+ *  Copyright 2023 (C) Y.Tory
  *  Copyright 2015 (C) Sindre Mehus
  */
 
 package org.airsonic.player.domain;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.SortedMap;
@@ -26,22 +30,11 @@ import java.util.SortedMap;
 * @author Sindre Mehus
 * @version $Id$
 */
+@RequiredArgsConstructor
+@Getter
 public class MusicFolderContent {
 
     private final SortedMap<MusicIndex, List<MusicIndex.SortableArtistWithMediaFiles>> indexedArtists;
     private final List<MediaFile> singleSongs;
-
-    public MusicFolderContent(SortedMap<MusicIndex, List<MusicIndex.SortableArtistWithMediaFiles>> indexedArtists, List<MediaFile> singleSongs) {
-        this.indexedArtists = indexedArtists;
-        this.singleSongs = singleSongs;
-    }
-
-    public SortedMap<MusicIndex, List<MusicIndex.SortableArtistWithMediaFiles>> getIndexedArtists() {
-        return indexedArtists;
-    }
-
-    public List<MediaFile> getSingleSongs() {
-        return singleSongs;
-    }
 
 }

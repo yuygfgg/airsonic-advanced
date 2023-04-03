@@ -14,10 +14,14 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
+
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Instant;
 
@@ -27,9 +31,12 @@ import java.time.Instant;
  * @author Sindre Mehus
  * @see PodcastChannel
  */
+
+@Getter
+@Setter
 public class PodcastEpisode {
 
-    private Integer id;
+    private final Integer id;
     private Integer mediaFileId;
     private Integer channelId;
     private String episodeGuid;
@@ -61,68 +68,13 @@ public class PodcastEpisode {
         this.errorMessage = errorMessage;
     }
 
-    public Integer getId() {
-        return id;
-    }
-
-    public Integer getChannelId() {
-        return channelId;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Instant getPublishDate() {
-        return publishDate;
-    }
-
-    public void setPublishDate(Instant publishDate) {
-        this.publishDate = publishDate;
-    }
-
-    public String getDuration() {
-        return duration;
-    }
-
-    public void setDuration(String duration) {
-        this.duration = duration;
-    }
-
-    public Long getBytesTotal() {
-        return bytesTotal;
-    }
-
-    public void setBytesTotal(Long bytesTotal) {
-        this.bytesTotal = bytesTotal;
-    }
-
-    public Long getBytesDownloaded() {
-        return bytesDownloaded;
-    }
-
+    /**
+     * Returns the completion rate of this episode, or null if the length is unknown.
+     *
+     * @return The completion rate, or null if the length is unknown.
+     */
     public Double getCompletionRate() {
-        if (bytesTotal == null || bytesTotal == 0) {
+        if (this.bytesTotal == null || bytesTotal == 0) {
             return null;
         }
         if (bytesDownloaded == null) {
@@ -134,39 +86,4 @@ public class PodcastEpisode {
         return d / t;
     }
 
-    public void setBytesDownloaded(Long bytesDownloaded) {
-        this.bytesDownloaded = bytesDownloaded;
-    }
-
-    public PodcastStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(PodcastStatus status) {
-        this.status = status;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
-
-    public Integer getMediaFileId() {
-        return mediaFileId;
-    }
-
-    public void setMediaFileId(Integer mediaFileId) {
-        this.mediaFileId = mediaFileId;
-    }
-
-    public String getEpisodeGuid() {
-        return episodeGuid;
-    }
-
-    public void setEpisodeGuid(String episodeGuid) {
-        this.episodeGuid = episodeGuid;
-    }
 }

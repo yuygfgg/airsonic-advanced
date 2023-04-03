@@ -14,12 +14,15 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Sindre Mehus
  * @version $Id$
  */
+@Data
+@NoArgsConstructor
 public class Album {
 
     private int id;
@@ -46,9 +51,8 @@ public class Album {
     private boolean present;
     private Integer folderId;
     private String musicBrainzReleaseId;
-
-    public Album() {
-    }
+    // placeholder for persistence later
+    private CoverArt art;
 
     public Album(int id, String path, String name, String artist, int songCount, double duration,
             Integer year, String genre, int playCount, Instant lastPlayed, String comment, Instant created, Instant lastScanned,
@@ -71,37 +75,6 @@ public class Album {
         this.musicBrainzReleaseId = musicBrainzReleaseId;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getArtist() {
-        return artist;
-    }
-
-    public void setArtist(String artist) {
-        this.artist = artist;
-    }
 
     public int getSongCount() {
         return songCount.get();
@@ -127,21 +100,6 @@ public class Album {
         this.duration.addAndGet(duration);
     }
 
-    public Integer getYear() {
-        return year;
-    }
-
-    public void setYear(Integer year) {
-        this.year = year;
-    }
-
-    public String getGenre() {
-        return genre;
-    }
-
-    public void setGenre(String genre) {
-        this.genre = genre;
-    }
 
     public int getPlayCount() {
         return playCount.get();
@@ -153,73 +111,6 @@ public class Album {
 
     public void incrementPlayCount() {
         this.playCount.incrementAndGet();
-    }
-
-    public Instant getLastPlayed() {
-        return lastPlayed;
-    }
-
-    public void setLastPlayed(Instant lastPlayed) {
-        this.lastPlayed = lastPlayed;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
-    public Instant getCreated() {
-        return created;
-    }
-
-    public void setCreated(Instant created) {
-        this.created = created;
-    }
-
-    public Instant getLastScanned() {
-        return lastScanned;
-    }
-
-    public void setLastScanned(Instant lastScanned) {
-        this.lastScanned = lastScanned;
-    }
-
-    public boolean isPresent() {
-        return present;
-    }
-
-    public void setPresent(boolean present) {
-        this.present = present;
-    }
-
-    public void setFolderId(Integer folderId) {
-        this.folderId = folderId;
-    }
-
-    public Integer getFolderId() {
-        return folderId;
-    }
-
-    public String getMusicBrainzReleaseId() {
-        return musicBrainzReleaseId;
-    }
-
-    public void setMusicBrainzReleaseId(String musicBrainzReleaseId) {
-        this.musicBrainzReleaseId = musicBrainzReleaseId;
-    }
-
-    // placeholder for persistence later
-    private CoverArt art;
-
-    public CoverArt getArt() {
-        return art;
-    }
-
-    public void setArt(CoverArt art) {
-        this.art = art;
     }
 
 }

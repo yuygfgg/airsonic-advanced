@@ -65,11 +65,11 @@ public class PlayQueueController {
         map.put("user", user);
         map.put("players", playerService.getPlayersForUserAndClientId(user.getUsername(), null));
         map.put("visibility", userSettings.getPlayqueueVisibility());
-        map.put("partyMode", userSettings.getPartyModeEnabled());
-        map.put("notify", userSettings.getSongNotificationEnabled());
-        map.put("autoHide", userSettings.getAutoHidePlayQueue());
+        map.put("partyMode", userSettings.isPartyModeEnabled());
+        map.put("notify", userSettings.isSongNotificationEnabled());
+        map.put("autoHide", userSettings.isAutoHidePlayQueue());
         map.put("initialPaginationSize", userSettings.getPaginationSizePlayqueue());
-        map.put("autoBookmark", userSettings.getAutoBookmark());
+        map.put("autoBookmark", userSettings.isAutoBookmark());
         map.put("audioBookmarkFrequency", userSettings.getAudioBookmarkFrequency());
         return new ModelAndView("playQueue", "model", map);
     }

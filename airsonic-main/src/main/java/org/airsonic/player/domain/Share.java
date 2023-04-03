@@ -14,10 +14,16 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.Instant;
 
@@ -27,6 +33,11 @@ import java.time.Instant;
  * @author Sindre Mehus
  * @version $Id$
  */
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 public class Share {
 
     private int id;
@@ -38,82 +49,4 @@ public class Share {
     private Instant lastVisited;
     private int visitCount;
 
-    public Share() {
-    }
-
-    public Share(int id, String name, String description, String username, Instant created,
-            Instant expires, Instant lastVisited, int visitCount) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.username = username;
-        this.created = created;
-        this.expires = expires;
-        this.lastVisited = lastVisited;
-        this.visitCount = visitCount;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public Instant getCreated() {
-        return created;
-    }
-
-    public void setCreated(Instant created) {
-        this.created = created;
-    }
-
-    public Instant getExpires() {
-        return expires;
-    }
-
-    public void setExpires(Instant expires) {
-        this.expires = expires;
-    }
-
-    public Instant getLastVisited() {
-        return lastVisited;
-    }
-
-    public void setLastVisited(Instant lastVisited) {
-        this.lastVisited = lastVisited;
-    }
-
-    public int getVisitCount() {
-        return visitCount;
-    }
-
-    public void setVisitCount(int visitCount) {
-        this.visitCount = visitCount;
-    }
 }

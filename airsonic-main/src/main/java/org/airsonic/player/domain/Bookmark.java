@@ -20,6 +20,11 @@
  */
 package org.airsonic.player.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import javax.persistence.*;
 
 import java.time.Instant;
@@ -32,9 +37,11 @@ import java.time.Instant;
  */
 @Entity
 @Table(name = "bookmark", uniqueConstraints = @UniqueConstraint(columnNames = {"username","media_file_id"}))
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 public class Bookmark {
-
-    public Bookmark(){}
 
     public Bookmark(int mediaFileId, String username) {
         this.mediaFileId = mediaFileId;
@@ -43,18 +50,6 @@ public class Bookmark {
         this.created = now;
         this.changed = now;
     }
-
-    public Bookmark(int id, int mediaFileId, long positionMillis, String username, String comment, Instant created, Instant changed) {
-        this.id = id;
-        this.mediaFileId = mediaFileId;
-        this.positionMillis = positionMillis;
-        this.username = username;
-        this.comment = comment;
-        this.created = created;
-        this.changed = changed;
-    }
-
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -78,61 +73,5 @@ public class Bookmark {
 
     @Column(name = "changed")
     private Instant changed;
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public int getMediaFileId() {
-        return mediaFileId;
-    }
-
-    public void setMediaFileId(int mediaFileId) {
-        this.mediaFileId = mediaFileId;
-    }
-
-    public long getPositionMillis() {
-        return positionMillis;
-    }
-
-    public void setPositionMillis(long positionMillis) {
-        this.positionMillis = positionMillis;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
-    public Instant getCreated() {
-        return created;
-    }
-
-    public void setCreated(Instant created) {
-        this.created = created;
-    }
-
-    public Instant getChanged() {
-        return changed;
-    }
-
-    public void setChanged(Instant changed) {
-        this.changed = changed;
-    }
 
 }

@@ -19,32 +19,19 @@
 
 package org.airsonic.player.domain;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * @author Sindre Mehus
  * @version $Id$
  */
+@RequiredArgsConstructor
+@Getter
 public class LastFmCoverArt {
 
     private final String imageUrl;
     private final String artist;
     private final String album;
 
-    public LastFmCoverArt(String imageUrl, String artist, String album) {
-        this.imageUrl = imageUrl;
-        this.artist = artist;
-        this.album = album;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public String getArtist() {
-        return artist;
-    }
-
-    public String getAlbum() {
-        return album;
-    }
 }
-

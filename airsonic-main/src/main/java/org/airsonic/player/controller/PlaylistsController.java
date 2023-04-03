@@ -56,7 +56,7 @@ public class PlaylistsController {
         UserSettings userSettings = settingsService.getUserSettings(user.getUsername());
 
         map.put("username", user.getUsername());
-        map.put("viewAsList", userSettings.getViewAsList());
+        map.put("viewAsList", userSettings.isViewAsList());
         map.put("initialPaginationSize", userSettings.getPaginationSizePlaylist());
         model.addAttribute("model", map);
         return "playlists";

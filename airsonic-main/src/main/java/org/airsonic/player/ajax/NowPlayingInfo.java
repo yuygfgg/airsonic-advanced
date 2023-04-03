@@ -152,7 +152,7 @@ public class NowPlayingInfo {
             return null;
         }
         UserSettings userSettings = settingsService.getUserSettings(username);
-        if (!userSettings.getNowPlayingAllowed()) {
+        if (!userSettings.isNowPlayingAllowed()) {
             return null;
         }
 

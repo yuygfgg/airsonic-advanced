@@ -93,7 +93,7 @@ public class PlayerSettingsCommand {
         this.lastSeen = lastSeen;
     }
 
-    public boolean getDynamicIp() {
+    public boolean isDynamicIp() {
         return dynamicIp;
     }
 
@@ -101,7 +101,7 @@ public class PlayerSettingsCommand {
         this.dynamicIp = dynamicIp;
     }
 
-    public boolean getAutoControlEnabled() {
+    public boolean isAutoControlEnabled() {
         return autoControlEnabled;
     }
 
@@ -109,7 +109,7 @@ public class PlayerSettingsCommand {
         this.autoControlEnabled = autoControlEnabled;
     }
 
-    public boolean getM3uBomEnabled() {
+    public boolean isM3uBomEnabled() {
         return m3uBomEnabled;
     }
 

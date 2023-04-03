@@ -108,7 +108,7 @@ public class VideoPlayerController {
 
         map.put("video", file);
         map.put("position", position);
-        map.put("autoBookmark", settings.getAutoBookmark());
+        map.put("autoBookmark", settings.isAutoBookmark());
         map.put("videoBookmarkFrequency", settings.getVideoBookmarkFrequency());
         map.put("streamable", streamable);
         map.put("castable", castable);

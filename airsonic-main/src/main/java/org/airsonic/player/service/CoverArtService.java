@@ -37,7 +37,7 @@ public class CoverArtService {
     public void persistIfNeeded(MediaFile mediaFile) {
         if (mediaFile.getArt() != null && !CoverArt.NULL_ART.equals(mediaFile.getArt())) {
             CoverArt art = get(EntityType.MEDIA_FILE, mediaFile.getId());
-            if (CoverArt.NULL_ART.equals(art) || !art.getOverridden()) {
+            if (CoverArt.NULL_ART.equals(art) || !art.isOverridden()) {
                 mediaFile.getArt().setEntityId(mediaFile.getId());
                 upsert(mediaFile.getArt());
             }
@@ -48,7 +48,7 @@ public class CoverArtService {
     public void persistIfNeeded(Album album) {
         if (album.getArt() != null && !CoverArt.NULL_ART.equals(album.getArt())) {
             CoverArt art = get(EntityType.ALBUM, album.getId());
-            if (CoverArt.NULL_ART.equals(art) || !art.getOverridden()) {
+            if (CoverArt.NULL_ART.equals(art) || !art.isOverridden()) {
                 album.getArt().setEntityId(album.getId());
                 upsert(album.getArt());
             }
@@ -59,7 +59,7 @@ public class CoverArtService {
     public void persistIfNeeded(Artist artist) {
         if (artist.getArt() != null && !CoverArt.NULL_ART.equals(artist.getArt())) {
             CoverArt art = get(EntityType.ARTIST, artist.getId());
-            if (CoverArt.NULL_ART.equals(art) || !art.getOverridden()) {
+            if (CoverArt.NULL_ART.equals(art) || !art.isOverridden()) {
                 artist.getArt().setEntityId(artist.getId());
                 upsert(artist.getArt());
             }

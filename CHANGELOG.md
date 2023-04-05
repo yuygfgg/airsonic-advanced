@@ -2,6 +2,30 @@
 # CHANGELOG.md
 # kagemomiji/airsonic-advanced
 # -->
+
+## v11.1.1 - 5 Apr 2023
+
+> **Note**  
+> Clear browser cache to replace old javascript
+
+Fixes:
+- Fixed an issue where shuffle play on the More page failed with SQL error
+- Fixed an issue where bookmark would not be removed with duplicate key error
+- Fixed issue of `/search2` with NullPointerException problem 
+- Fixed video player icon issue
+- Fixed an issue where buttons on the Bookmark page would not respond when clicked.
+
+Changes:
+- Bump up mediaelement-and-player.js to 6.0.2
+- Bump up hls.js to 1.3.4
+- Bump up dash.js to 4.6.0
+
+Security:
+- Fix vulnerabilities from javascript codes detected by CodeQL
+
+Chores:
+- Docker build action supports dependabot PR
+
 ## v11.1.0 - 17 Feb 2023
 
 Changes:

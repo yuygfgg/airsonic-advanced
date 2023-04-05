@@ -7,7 +7,7 @@ Airsonic-Advanced
 ![](https://github.com/kagemomiji/airsonic-advanced/workflows/Edge%20Deploy%20CI%20(Maven)/badge.svg)
 ![](https://github.com/kagemomiji/airsonic-advanced/workflows/Stable%20Deploy%20CI%20(Maven)/badge.svg)
 
-What is kagemoiji/airsonic-advanced?
+What is kagemomiji/airsonic-advanced?
 ------------------------------------
 The main objective of this repository is to keep airsonic-advanced safe for use.
 I don't have much time to add features right now as I am adding tests to prevent deggregation and upgrade dependent libraries.

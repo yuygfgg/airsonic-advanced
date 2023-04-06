@@ -313,6 +313,14 @@ public class StreamController {
             // wait for src data thread to connect
             while (pin.source == null) {
                 // sit and wait and ponder life
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    LOG.debug("Interrupted while waiting for PipedInputStream to connect", e);
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                LOG.debug("Waiting for a source {}", pin.source == null);
             }
         }, responseHeaders);
     }

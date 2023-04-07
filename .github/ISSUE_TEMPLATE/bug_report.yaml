@@ -35,9 +35,10 @@ body:
       label: Version
       description: What version of our software are you running?
       options:
-        - 11.0.2 (Stable)
-        - 11.1.0 (Stable)
         - 11.1.x (Edge)
+        - 11.1.1 (Stable)
+        - 11.1.0 (Stable)
+        - 11.0.2 (Stable)
     validations:
       required: true
   - type: input

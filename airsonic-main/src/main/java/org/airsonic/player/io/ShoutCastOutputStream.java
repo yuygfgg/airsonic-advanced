@@ -165,30 +165,20 @@ public class ShoutCastOutputStream extends OutputStream {
         }
     }
 
-    public static byte[] createStreamTitle(String title) {
+    /**
+     * creates a stream title for the given title data.
+     *
+     * @param title title data
+     * @return stream title.
+     */
+    private byte[] createStreamTitle(String title) {
         // Remove any quotes from the title.
         title = title.replaceAll("'", "");
 
-        // Convert non-ascii characters to similar ascii characters.
-        for (char[] chars : ShoutCastOutputStream.CHAR_MAP) {
-            title = title.replace(chars[0], chars[1]);
-        }
-
         title = "StreamTitle='" + title + "';";
-        return title.getBytes(StandardCharsets.US_ASCII);
-    }
 
-    /**
-     * Maps from miscellaneous accented characters to similar-looking ASCII characters.
-     */
-    public static final char[][] CHAR_MAP = {
-            {'\u00C0', 'A'}, {'\u00C1', 'A'}, {'\u00C2', 'A'}, {'\u00C3', 'A'}, {'\u00C4', 'A'}, {'\u00C5', 'A'}, {'\u00C6', 'A'},
-            {'\u00C8', 'E'}, {'\u00C9', 'E'}, {'\u00CA', 'E'}, {'\u00CB', 'E'}, {'\u00CC', 'I'}, {'\u00CD', 'I'}, {'\u00CE', 'I'},
-            {'\u00CF', 'I'}, {'\u00D2', 'O'}, {'\u00D3', 'O'}, {'\u00D4', 'O'}, {'\u00D5', 'O'}, {'\u00D6', 'O'}, {'\u00D9', 'U'},
-            {'\u00DA', 'U'}, {'\u00DB', 'U'}, {'\u00DC', 'U'}, {'\u00DF', 'B'}, {'\u00E0', 'a'}, {'\u00E1', 'a'}, {'\u00E2', 'a'},
-            {'\u00E3', 'a'}, {'\u00E4', 'a'}, {'\u00E5', 'a'}, {'\u00E6', 'a'}, {'\u00E7', 'c'}, {'\u00E8', 'e'}, {'\u00E9', 'e'},
-            {'\u00EA', 'e'}, {'\u00EB', 'e'}, {'\u00EC', 'i'}, {'\u00ED', 'i'}, {'\u00EE', 'i'}, {'\u00EF', 'i'}, {'\u00F1', 'n'},
-            {'\u00F2', 'o'}, {'\u00F3', 'o'}, {'\u00F4', 'o'}, {'\u00F5', 'o'}, {'\u00F6', 'o'}, {'\u00F8', 'o'}, {'\u00F9', 'u'},
-            {'\u00FA', 'u'}, {'\u00FB', 'u'}, {'\u00FC', 'u'}, {'\u2013', '-'}
-    };
+        // Original icy specification needs ascii encode,
+        // but external player (Winamp/AIMP/foobar etc) support UTF-8 encoded value.
+        return title.getBytes(StandardCharsets.UTF_8);
+    }
 }

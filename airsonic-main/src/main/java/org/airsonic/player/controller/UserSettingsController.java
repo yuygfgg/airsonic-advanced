@@ -20,6 +20,7 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.command.UserSettingsCommand;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.TranscodeScheme;
@@ -78,6 +79,8 @@ public class UserSettingsController {
     private MediaFolderService mediaFolderService;
     @Autowired
     private TranscodingService transcodingService;
+    @Autowired
+    private AirsonicHomeConfig airsonicConfig;
 
     @InitBinder
     protected void initBinder(WebDataBinder binder, HttpServletRequest request) {
@@ -109,7 +112,7 @@ public class UserSettingsController {
         }
         command.setUsers(securityService.getAllUsers());
         command.setTranscodingSupported(transcodingService.isDownsamplingSupported(null));
-        command.setTranscodeDirectory(SettingsService.getTranscodeDirectory().toString());
+        command.setTranscodeDirectory(airsonicConfig.getTranscodeDirectory().toString());
         command.setTranscodeSchemes(TranscodeScheme.values());
         command.setLdapEnabled(settingsService.isLdapEnabled());
         command.setAllMusicFolders(mediaFolderService.getAllMusicFolders());

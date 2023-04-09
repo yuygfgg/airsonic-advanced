@@ -23,13 +23,14 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.RateLimiter;
+import org.airsonic.player.config.AirsonicDefaultFolderConfig;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.AvatarDao;
 import org.airsonic.player.dao.InternetRadioDao;
 import org.airsonic.player.dao.UserDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.service.sonos.SonosServiceRegistration;
 import org.airsonic.player.util.StringUtil;
-import org.airsonic.player.util.Util;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +47,6 @@ import javax.annotation.PostConstruct;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,10 +63,6 @@ import java.util.stream.Stream;
  */
 @Service
 public class SettingsService {
-
-    // Airsonic home directory.
-    private static final Path AIRSONIC_HOME_WINDOWS = Paths.get("c:/airsonic");
-    private static final Path AIRSONIC_HOME_OTHER = Paths.get("/var/airsonic");
 
     // Global settings.
     private static final String KEY_INDEX_STRING = "IndexString";
@@ -176,7 +170,6 @@ public class SettingsService {
     private static final String DEFAULT_UPLOADS_FOLDER = "%{['USER_MUSIC_FOLDERS'][0]}/Incoming";
     private static final String DEFAULT_GENRE_SEPARATORS = ";";
     private static final String DEFAULT_SHORTCUTS = "New Incoming Podcast";
-    private static final String DEFAULT_PLAYLIST_FOLDER = Util.getDefaultPlaylistFolder();
     private static final String DEFAULT_MUSIC_FILE_TYPES = "mp3 ogg oga aac m4a m4b flac wav wma aif aiff ape mpc shn mka opus alm 669 mdl far xm mod fnk imf it liq wow mtm ptm rtm stm s3m ult dmf dbm med okt emod sfx m15 mtn amf gdm stx gmc psm j2b umx amd rad hsc flx gtk mgt mtp wv";
     private static final String DEFAULT_VIDEO_FILE_TYPES = "flv avi mpg mpeg mp4 m4v mkv mov wmv ogv divx m2ts webm";
     private static final String DEFAULT_COVER_ART_FILE_TYPES = "cover.jpg cover.png cover.gif folder.jpg jpg jpeg gif png";
@@ -264,6 +257,8 @@ public class SettingsService {
     private static final String DEFAULT_DATABASE_PASSWORD = null;
     private static final String DEFAULT_DATABASE_JNDI_NAME = null;
     private static final Integer DEFAULT_DATABASE_MIGRATION_PARAMETER_MYSQL_VARCHAR_MAXLENGTH = 384;
+    public static final String DEFAULT_JDBC_USERNAME = "sa";
+    public static final String DEFAULT_JDBC_PASSWORD = "";
 
     private static final String LOCALES_FILE = "/org/airsonic/player/i18n/locales.txt";
     private static final String THEMES_FILE = "/org/airsonic/player/theme/themes.txt";
@@ -280,6 +275,10 @@ public class SettingsService {
     private AvatarDao avatarDao;
     @Autowired
     private Environment env;
+    @Autowired
+    private AirsonicHomeConfig airsonicConfig;
+    @Autowired
+    private AirsonicDefaultFolderConfig defaultFolderConfig;
 
     private Set<String> cachedCoverArtFileTypes;
     private Set<String> cachedMusicFileTypes;
@@ -373,20 +372,31 @@ public class SettingsService {
     }
 
     public static void setDefaultConstants(Environment env, Map<String, Object> defaultConstants) {
+        AirsonicHomeConfig config = new AirsonicHomeConfig(
+            env.getProperty("airsonic.home"),
+            env.getProperty("libresonic.home")
+        );
+
+        AirsonicDefaultFolderConfig defaultFolderConfig = new AirsonicDefaultFolderConfig(
+            env.getProperty("airsonic.defaultMusicFolder"),
+            env.getProperty("airsonic.defaultPodcastFolder"),
+            env.getProperty("airsonic.defaultPlaylistFolder")
+        );
+
         // if jndi is set, everything datasource-related is ignored
         if (StringUtils.isBlank(env.getProperty(KEY_DATABASE_URL))) {
-            defaultConstants.put(KEY_DATABASE_URL, getDefaultJDBCUrl());
+            defaultConstants.put(KEY_DATABASE_URL, config.getDefaultJDBCUrl());
         }
         if (StringUtils.isBlank(env.getProperty(KEY_DATABASE_USERNAME))) {
-            defaultConstants.put(KEY_DATABASE_USERNAME, getDefaultJDBCUsername());
+            defaultConstants.put(KEY_DATABASE_USERNAME, DEFAULT_JDBC_USERNAME);
         }
         if (StringUtils.isBlank(env.getProperty(KEY_DATABASE_PASSWORD))) {
-            defaultConstants.put(KEY_DATABASE_PASSWORD, getDefaultJDBCPassword());
+            defaultConstants.put(KEY_DATABASE_PASSWORD, DEFAULT_JDBC_PASSWORD);
         }
         if (StringUtils.isBlank(env.getProperty(KEY_DATABASE_MIGRATION_ROLLBACK_FILE))) {
             defaultConstants.put(
                     KEY_DATABASE_MIGRATION_ROLLBACK_FILE,
-                    getAirsonicHome().toAbsolutePath().resolve("rollback.sql").toFile());
+                    config.getAirsonicHome().toAbsolutePath().resolve("rollback.sql").toFile());
         }
         if (StringUtils.isBlank(env.getProperty(KEY_DATABASE_MIGRATION_PARAMETER_MYSQL_VARCHAR_MAXLENGTH))) {
             defaultConstants.put(
@@ -394,50 +404,23 @@ public class SettingsService {
                     DEFAULT_DATABASE_MIGRATION_PARAMETER_MYSQL_VARCHAR_MAXLENGTH.toString());
         }
         if (StringUtils.isBlank(env.getProperty(KEY_DATABASE_MIGRATION_PARAMETER_DEFAULT_MUSIC_FOLDER))) {
-            defaultConstants.put(KEY_DATABASE_MIGRATION_PARAMETER_DEFAULT_MUSIC_FOLDER, Util.getDefaultMusicFolder());
+            defaultConstants.put(KEY_DATABASE_MIGRATION_PARAMETER_DEFAULT_MUSIC_FOLDER, defaultFolderConfig.getDefaultMusicFolder());
         }
         if (StringUtils.isBlank(env.getProperty(KEY_DATABASE_MIGRATION_PARAMETER_DEFAULT_PODCAST_FOLDER))) {
-            defaultConstants.put(KEY_DATABASE_MIGRATION_PARAMETER_DEFAULT_PODCAST_FOLDER, Util.getDefaultPodcastFolder());
+            defaultConstants.put(KEY_DATABASE_MIGRATION_PARAMETER_DEFAULT_PODCAST_FOLDER, defaultFolderConfig.getDefaultPodcastFolder());
         }
         if (StringUtils.isBlank(env.getProperty(LogFile.FILE_NAME_PROPERTY))) {
-            defaultConstants.put(LogFile.FILE_NAME_PROPERTY, getDefaultLogFile());
+            defaultConstants.put(LogFile.FILE_NAME_PROPERTY, config.getDefaultLogFile());
         }
-    }
-
-    public static Path getAirsonicHome() {
-        Path home;
-
-        String overrideHome = System.getProperty("airsonic.home");
-        String oldHome = System.getProperty("libresonic.home");
-        if (overrideHome != null) {
-            home = Paths.get(overrideHome);
-        } else if (oldHome != null) {
-            home = Paths.get(oldHome);
-        } else {
-            home = Util.isWindows() ? AIRSONIC_HOME_WINDOWS : AIRSONIC_HOME_OTHER;
-        }
-        ensureDirectoryPresent(home);
-
-        return home;
     }
 
     /**
-     * Returns the directory in which all transcoders are installed.
+     * check if the executable exists and can be executed
+     *
+     * @param executable the executable to check
+     * @return true if the executable exists and can be executed, otherwise false
      */
-    public static Path getTranscodeDirectory() {
-        Path dir = getAirsonicHome().resolve("transcode");
-        if (!Files.exists(dir)) {
-            try {
-                dir = Files.createDirectory(dir);
-                LOG.info("Created directory {}", dir);
-            } catch (Exception e) {
-                LOG.warn("Failed to create directory {}", dir);
-            }
-        }
-        return dir;
-    }
-
-    private static boolean isExecutableInstalled(String executable) {
+    private boolean isExecutableInstalled(String executable) {
         Process process = null;
         try {
             process = new ProcessBuilder(executable).start();
@@ -453,20 +436,15 @@ public class SettingsService {
         }
     }
 
-    private static LoadingCache<String, String> transcodeExecutableCache = CacheBuilder.newBuilder()
-        .expireAfterAccess(8, TimeUnit.HOURS)
-        .build(new CacheLoader<String, String>() {
-            @Override
-            public String load(String executable) throws Exception {
-                    return Arrays.asList(getTranscodeDirectory().resolve(executable).toString(), executable)
-                        .stream()
-                        .filter(SettingsService::isExecutableInstalled)
-                        .findFirst()
-                        .orElseThrow();
-            }
-        });
-
-    public static String resolveTranscodeExecutable(String executable, String defaultValue) {
+    private LoadingCache<String, String> transcodeExecutableCache;
+    /**
+     * Resolve the transcode executable to use.
+     *
+     * @param executable the executable to resolve
+     * @param defaultValue the default value to use if the executable cannot be resolved
+     * @return the resolved executable or the default value if the executable cannot be resolved
+     */
+    public String resolveTranscodeExecutable(String executable, String defaultValue) {
         try {
             return transcodeExecutableCache.get(executable);
         } catch (Exception e) {
@@ -474,33 +452,12 @@ public class SettingsService {
         }
     }
 
-    private static String getFileSystemAppName() {
-        String home = getAirsonicHome().toString();
-        return home.contains("libresonic") ? "libresonic" : "airsonic";
-    }
-
-    public static String getDefaultJDBCUrl() {
-        return "jdbc:hsqldb:file:" + getAirsonicHome().resolve("db").resolve(getFileSystemAppName()).toString() + ";hsqldb.tx=mvcc;sql.enforce_size=false;sql.char_literal=false;sql.nulls_first=false;sql.pad_space=false;hsqldb.defrag_limit=50;shutdown=true";
-    }
-
-    public static String getDefaultJDBCUsername() {
-        return "sa";
-    }
-
-    public static String getDefaultJDBCPassword() {
-        return "";
-    }
-
     public int getUPnpPort() {
         return getInt(KEY_UPNP_PORT, DEFAULT_UPNP_PORT);
     }
 
-    public static String getDefaultLogFile() {
-        return SettingsService.getAirsonicHome().resolve(getFileSystemAppName() + ".log").toString();
-    }
-
     public String getLogFile() {
-        return getProperty(LogFile.FILE_NAME_PROPERTY, getDefaultLogFile());
+        return getProperty(LogFile.FILE_NAME_PROPERTY, airsonicConfig.getDefaultLogFile());
     }
 
     /**
@@ -509,10 +466,22 @@ public class SettingsService {
      */
     @PostConstruct
     public void init() {
+        transcodeExecutableCache = CacheBuilder.newBuilder()
+            .expireAfterAccess(8, TimeUnit.HOURS)
+            .build(new CacheLoader<String, String>() {
+                @Override
+                public String load(String executable) throws Exception {
+                        return Arrays.asList(airsonicConfig.getTranscodeDirectory().resolve(executable).toString(), executable)
+                            .stream()
+                            .filter(command -> isExecutableInstalled(command))
+                            .findFirst()
+                            .orElseThrow();
+                }
+            });
         logServerInfo();
     }
 
-    private static void logServerInfo() {
+    private void logServerInfo() {
         LOG.info("Java: " + Runtime.version() +
                 ", OS: " + System.getProperty("os.name") +
                 ", Memory (max bytes): " + Runtime.getRuntime().maxMemory());
@@ -521,25 +490,6 @@ public class SettingsService {
     public void save() {
         this.setLong(KEY_SETTINGS_CHANGED, System.currentTimeMillis());
         ConfigurationPropertiesService.getInstance().save();
-    }
-
-    private static void ensureDirectoryPresent(Path home) {
-        // Attempt to create home directory if it doesn't exist.
-        if (!Files.exists(home) || !Files.isDirectory(home)) {
-            try {
-                Files.createDirectories(home);
-            } catch (Exception e) {
-                LOG.error("Could not create or see home directory {}", home, e);
-                String message = "The directory " + home + " does not exist. Please create it and make it writable. " +
-                        "(You can override the directory location by specifying -Dairsonic.home=... when " +
-                        "starting the servlet container.)";
-                throw new RuntimeException(message);
-            }
-        }
-    }
-
-    static Path getPropertyFile() {
-        return getAirsonicHome().resolve(getFileSystemAppName() + ".properties");
     }
 
     private Map<String, Object> settingsCache = new ConcurrentHashMap<>();
@@ -625,9 +575,9 @@ public class SettingsService {
 
     public Map<String, Object> buildSpelContext() {
         Map<String, Object> context = new HashMap<>();
-        context.put("AIRSONIC_HOME", getAirsonicHome());
+        context.put("AIRSONIC_HOME", airsonicConfig.getAirsonicHome());
         context.put("DEFAULT_PLAYLIST_FOLDER", getPlaylistFolder());
-        context.put("DEFAULT_MUSIC_FOLDER", Util.getDefaultMusicFolder());
+        context.put("DEFAULT_MUSIC_FOLDER", defaultFolderConfig.getDefaultMusicFolder());
         return context;
     }
 
@@ -669,7 +619,7 @@ public class SettingsService {
     }
 
     public String getPlaylistFolder() {
-        return getProperty(KEY_PLAYLIST_FOLDER, DEFAULT_PLAYLIST_FOLDER);
+        return getProperty(KEY_PLAYLIST_FOLDER, defaultFolderConfig.getDefaultPlaylistFolder());
     }
 
     public void setPlaylistFolder(String playlistFolder) {
@@ -1696,8 +1646,16 @@ public class SettingsService {
         setBoolean(KEY_PREFER_NONDECODABLE_PASSWORDS, preference);
     }
 
-    public void setEnvironment(Environment env) {
+    protected void setEnvironment(Environment env) {
         this.env = env;
+    }
+
+    protected void setAirsonicConfig(AirsonicHomeConfig airsonicConfig) {
+        this.airsonicConfig = airsonicConfig;
+    }
+
+    protected void setAirsonicDefaultFolderConfig(AirsonicDefaultFolderConfig airsonicDefaultFolderConfig) {
+        this.defaultFolderConfig = airsonicDefaultFolderConfig;
     }
 
     public void resetDatabaseToDefault() {

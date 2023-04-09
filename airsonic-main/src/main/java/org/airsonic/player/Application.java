@@ -6,6 +6,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
@@ -19,6 +20,7 @@ import java.lang.reflect.Method;
     JmxAutoConfiguration.class
 })
 @EnableTransactionManagement(mode = AdviceMode.ASPECTJ)
+@ConfigurationPropertiesScan
 public class Application extends SpringBootServletInitializer implements WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
 
     private static final Logger LOG = LoggerFactory.getLogger(Application.class);

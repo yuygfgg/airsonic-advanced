@@ -14,24 +14,42 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.controller;
 
-import junit.framework.TestCase;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.awt.*;
+import java.awt.Dimension;
+import java.nio.file.Files;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Sindre Mehus
  * @version $Id: StreamControllerTestCase.java 3307 2013-01-04 13:48:49Z sindre_mehus $
  */
-public class HLSControllerTestCase extends TestCase {
 
-    public void testParseBitRate() {
-        HLSController controller = new HLSController();
+@ExtendWith(MockitoExtension.class)
+public class HLSControllerTestCase {
+
+    @Mock
+    private AirsonicHomeConfig airsonicConfig;
+
+    @Test
+    public void testParseBitRate() throws Exception {
+        when(airsonicConfig.getAirsonicHome()).thenReturn(Files.createTempDirectory("airsonicTest").toAbsolutePath());
+        HLSController controller = new HLSController(null, null, null, null, null, null, null, airsonicConfig);
 
         Pair<Integer, Dimension> pair = controller.parseBitRate("1000", null);
         assertEquals(1000, pair.getLeft().intValue());

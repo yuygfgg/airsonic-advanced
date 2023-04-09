@@ -22,6 +22,7 @@ package org.airsonic.player.service;
 import de.umass.lastfm.*;
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Artist;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
@@ -58,13 +59,15 @@ public class LastFmService {
     private MediaFileService mediaFileService;
     @Autowired
     private ArtistDao artistDao;
+    @Autowired
+    private AirsonicHomeConfig airsonicConfig;
 
     @PostConstruct
     public void init() {
         Caller caller = Caller.getInstance();
         caller.setUserAgent("Airsonic");
 
-        Path cacheDir = SettingsService.getAirsonicHome().resolve("lastfmcache");
+        Path cacheDir = airsonicConfig.getAirsonicHome().resolve("lastfmcache");
         caller.setCache(new LastFmCache(cacheDir, CACHE_TIME_TO_LIVE_MILLIS));
     }
 

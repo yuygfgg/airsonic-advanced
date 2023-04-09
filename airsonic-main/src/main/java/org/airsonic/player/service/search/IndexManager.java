@@ -20,11 +20,11 @@
 
 package org.airsonic.player.service.search;
 
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
-import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.Util;
 import org.apache.lucene.document.Document;
@@ -34,7 +34,6 @@ import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.store.FSDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -75,6 +74,31 @@ public class IndexManager {
      */
     private static final int INDEX_VERSION = 19;
 
+    public IndexManager(
+            AnalyzerFactory analyzerFactory,
+            DocumentFactory documentFactory,
+            MediaFileDao mediaFileDao,
+            ArtistDao artistDao,
+            AlbumDao albumDao,
+            AirsonicHomeConfig airsonicConfig
+    ) {
+        this.analyzerFactory = analyzerFactory;
+        this.documentFactory = documentFactory;
+        this.mediaFileDao = mediaFileDao;
+        this.artistDao = artistDao;
+        this.albumDao = albumDao;
+        this.airsonicConfig = airsonicConfig;
+        this.rootIndexDirectory = airsonicConfig.getAirsonicHome().resolve(INDEX_ROOT_DIR_NAME.concat(Integer.toString(INDEX_VERSION)));
+    }
+
+
+    private AnalyzerFactory analyzerFactory;
+    private DocumentFactory documentFactory;
+    private MediaFileDao mediaFileDao;
+    private ArtistDao artistDao;
+    private AlbumDao albumDao;
+    private AirsonicHomeConfig airsonicConfig;
+
     /**
      * Literal name of index top directory.
      */
@@ -83,27 +107,12 @@ public class IndexManager {
     /**
      * File for index directory.
      */
-    private Path rootIndexDirectory = SettingsService.getAirsonicHome().resolve(INDEX_ROOT_DIR_NAME.concat(Integer.toString(INDEX_VERSION)));
+    private Path rootIndexDirectory;
 
     /**
      * Returns the directory of the specified index
      */
     private Function<IndexType, Path> getIndexDirectory = (indexType) -> rootIndexDirectory.resolve(indexType.toString().toLowerCase());
-
-    @Autowired
-    private AnalyzerFactory analyzerFactory;
-
-    @Autowired
-    private DocumentFactory documentFactory;
-
-    @Autowired
-    private MediaFileDao mediaFileDao;
-
-    @Autowired
-    private ArtistDao artistDao;
-
-    @Autowired
-    private AlbumDao albumDao;
 
     private Map<IndexType, SearcherManager> searchers = new ConcurrentHashMap<>();
 
@@ -350,7 +359,7 @@ public class IndexManager {
     public void deleteOldIndexFiles() throws IOException {
 
         // Delete legacy files unconditionally
-        try (Stream<Path> files = Files.list(SettingsService.getAirsonicHome())) {
+        try (Stream<Path> files = Files.list(airsonicConfig.getAirsonicHome())) {
             files
                 .filter(p -> legacyIndexPattern.matcher(p.getFileName().toString()).matches())
                 .forEach(p -> {
@@ -361,7 +370,7 @@ public class IndexManager {
         }
 
         // Delete if not old index version
-        try (Stream<Path> files = Files.list(SettingsService.getAirsonicHome())) {
+        try (Stream<Path> files = Files.list(airsonicConfig.getAirsonicHome())) {
             files
                 .filter(p -> nonCurrentIndexPattern.matcher(p.getFileName().toString()).matches())
                 .filter(p -> !p.equals(rootIndexDirectory))

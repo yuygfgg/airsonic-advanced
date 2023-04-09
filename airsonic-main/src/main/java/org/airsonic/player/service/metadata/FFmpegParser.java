@@ -62,6 +62,9 @@ public class FFmpegParser extends MetaDataParser {
     @Autowired
     private MediaFolderService mediaFolderService;
 
+    @Autowired
+    private SettingsService settingsService;
+
     /**
      * Parses meta data for the given music file. No guessing or reformatting is done.
      *
@@ -76,7 +79,7 @@ public class FFmpegParser extends MetaDataParser {
 
         try {
             // Use `ffprobe` in the transcode directory if it exists, otherwise let the system sort it out.
-            String ffprobe = SettingsService.resolveTranscodeExecutable("ffprobe", "ffprobe");
+            String ffprobe = settingsService.resolveTranscodeExecutable("ffprobe", "ffprobe");
 
             List<String> command = new ArrayList<>();
             command.add(ffprobe);

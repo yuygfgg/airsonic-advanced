@@ -12,6 +12,7 @@ import liquibase.diff.output.DiffOutputControl;
 import liquibase.diff.output.StandardObjectChangeFilter;
 import liquibase.integration.commandline.CommandLineUtils;
 import liquibase.resource.DirectoryResourceAccessor;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.DatabaseDao;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.LambdaUtils;
@@ -63,6 +64,8 @@ public class DatabaseService {
     private SimpMessagingTemplate brokerTemplate;
     @Autowired
     private TaskSchedulingService taskService;
+    @Autowired
+    private AirsonicHomeConfig airsonicConfig;
 
     @PostConstruct
     public void init() {
@@ -258,15 +261,15 @@ public class DatabaseService {
         return DatabaseFactory.getInstance().findCorrectDatabaseImplementation(databaseConnection);
     }
 
-    private static Path getChangeLogFolder() {
+    private Path getChangeLogFolder() {
         String timestamp = LocalDateTime.now().format(DATE_TIME_FORMATTER);
-        return SettingsService.getAirsonicHome().resolve("backups")
+        return airsonicConfig.getAirsonicHome().resolve("backups")
                 .resolve(String.format("airsonic.exportDB.%s", timestamp));
     }
 
-    public static Path getImportDBFolder() {
+    public Path getImportDBFolder() {
         String timestamp = LocalDateTime.now().format(DATE_TIME_FORMATTER);
-        return SettingsService.getAirsonicHome().resolve("backups")
+        return airsonicConfig.getAirsonicHome().resolve("backups")
                 .resolve(String.format("airsonic.importDB.%s", timestamp));
     }
 

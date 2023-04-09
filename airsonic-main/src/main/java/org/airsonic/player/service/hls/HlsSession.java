@@ -5,7 +5,6 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.VideoTranscodingSettings;
 import org.airsonic.player.io.InputStreamReaderThread;
 import org.airsonic.player.io.TranscodeInputStream;
-import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.TranscodingService;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.Util;
@@ -40,16 +39,19 @@ public class HlsSession {
 
     private final TranscodingService transcodingService;
 
+    private final Path hlsRootDirectory;
+
     private Process process;
 
     private ScheduledFuture<?> destroySessionFuture;
 
-    public HlsSession(Key sessionKey, MediaFile mediaFile, TranscodingService transcodingService) {
+    public HlsSession(Key sessionKey, MediaFile mediaFile, TranscodingService transcodingService, Path hlsRootDirectory) {
         this.LOG = LoggerFactory.getLogger(HlsSession.class.toString() + "-" + sessionKey.id());
         this.LOG.info("Creating HLS session {}: {}", sessionKey.id(), sessionKey);
         this.sessionKey = sessionKey;
         this.mediaFile = mediaFile;
         this.transcodingService = transcodingService;
+        this.hlsRootDirectory = hlsRootDirectory;
     }
 
     public Path waitForSegment(int segmentIndex, long timeoutMillis) throws Exception {
@@ -136,8 +138,8 @@ public class HlsSession {
         return dir;
     }
 
-    public static Path getHlsRootDirectory() {
-        return SettingsService.getAirsonicHome().resolve("hls");
+    public Path getHlsRootDirectory() {
+        return hlsRootDirectory;
     }
 
     private void startProcess(int segmentIndex) throws IOException {

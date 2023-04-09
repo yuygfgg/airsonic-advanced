@@ -1,5 +1,6 @@
 package org.airsonic.player.spring;
 
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.controller.PodcastController;
 import org.airsonic.player.filter.BootstrapVerificationFilter;
 import org.airsonic.player.filter.MetricsFilter;
@@ -29,6 +30,9 @@ import java.util.Properties;
 @Configuration
 public class ServletConfiguration implements WebMvcConfigurer {
 
+    @Autowired
+    private AirsonicHomeConfig airsonicConfig;
+
     @Bean
     public ServletRegistrationBean<Servlet> cxfServletBean() {
         return new ServletRegistrationBean<>(new org.apache.cxf.transport.servlet.CXFServlet(), "/ws/*");
@@ -46,7 +50,7 @@ public class ServletConfiguration implements WebMvcConfigurer {
 
     @Bean
     public Filter bootstrapVerificationFilter() {
-        return new BootstrapVerificationFilter();
+        return new BootstrapVerificationFilter(airsonicConfig);
     }
 
     @Bean

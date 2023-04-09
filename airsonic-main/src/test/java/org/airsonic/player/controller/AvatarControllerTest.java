@@ -18,31 +18,33 @@
  */
 package org.airsonic.player.controller;
 
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.AvatarDao;
 import org.airsonic.player.domain.Avatar;
 import org.airsonic.player.domain.AvatarScheme;
 import org.airsonic.player.domain.UserSettings;
 import org.airsonic.player.service.SettingsService;
-import org.airsonic.player.util.HomeRule;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -55,9 +57,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Y.Tory
  * @version $Id$
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest
-@AutoConfigureMockMvc
+@ExtendWith(MockitoExtension.class)
+@WebMvcTest
+@ContextConfiguration(classes = {AvatarController.class}, initializers = ConfigDataApplicationContextInitializer.class)
+@EnableConfigurationProperties({AirsonicHomeConfig.class})
 public class AvatarControllerTest {
 
     @Autowired
@@ -66,14 +69,8 @@ public class AvatarControllerTest {
     @MockBean
     private UserSettings userSettings;
 
-    @SpyBean
+    @MockBean
     private SettingsService settingsService;
-
-    @SpyBean
-    private AvatarDao avatarDao;
-
-    @InjectMocks
-    private AvatarController avatarController;
 
     @Mock
     private UserSettings mockedUserSettings;
@@ -81,8 +78,19 @@ public class AvatarControllerTest {
     @Mock
     private Avatar mockedAvatar;
 
-    @ClassRule
-    public static final HomeRule classRule = new HomeRule(); // sets airsonic.home to a temporary dir
+    @TempDir
+    private static Path tempDir;
+
+    @BeforeAll
+    public static void setup() {
+        System.setProperty("airsonic.home", tempDir.toString());
+    }
+
+    @AfterAll
+    public static void teardown() {
+        System.clearProperty("airsonic.home");
+    }
+
     /** authentication info */
     private final String AIRSONIC_USER = "admin";
     private final String AIRSONIC_PASSWORD = "admin";
@@ -103,7 +111,7 @@ public class AvatarControllerTest {
         final Integer AVATAR_ID = 1;
 
         // setup mock
-        when(avatarDao.getSystemAvatar(anyInt())).thenReturn(null);
+        when(settingsService.getSystemAvatar(eq(AVATAR_ID))).thenReturn(null);
 
         mvc.perform(get("/avatar")
                 .param("id", AVATAR_ID.toString()))
@@ -113,6 +121,9 @@ public class AvatarControllerTest {
     @Test
     @WithMockUser(username = AIRSONIC_USER, password = AIRSONIC_PASSWORD)
     public void getAvatarByUsernameFailureByNotFound() throws Exception {
+
+        when(settingsService.getUserSettings(eq("user"))).thenReturn(mockedUserSettings);
+        when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.NONE);
 
         mvc.perform(get("/avatar")
                 .param("username", "user"))
@@ -127,7 +138,7 @@ public class AvatarControllerTest {
         final Integer AVATAR_ID = 1;
 
         // set up mock
-        when(avatarDao.getSystemAvatar(anyInt())).thenReturn(mockedAvatar);
+        when(settingsService.getSystemAvatar(eq(AVATAR_ID))).thenReturn(mockedAvatar);
         when(mockedAvatar.getMimeType()).thenReturn("img/png");
         when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","Engineer.png"));
 
@@ -138,7 +149,7 @@ public class AvatarControllerTest {
                 .andReturn().getResponse().getContentAsByteArray();
 
         // prepare expected
-        byte [] expected = avatarDao.getClass().getResourceAsStream("schema/Engineer.png").readAllBytes();
+        byte [] expected = AvatarDao.class.getResourceAsStream("schema/Engineer.png").readAllBytes();
 
         // assertion
         assertArrayEquals(expected, actual);
@@ -151,7 +162,7 @@ public class AvatarControllerTest {
         final Integer AVATAR_ID = 1;
 
         // set up mock
-        when(avatarDao.getSystemAvatar(anyInt())).thenReturn(mockedAvatar);
+        when(settingsService.getSystemAvatar(eq(AVATAR_ID))).thenReturn(mockedAvatar);
         when(mockedAvatar.getMimeType()).thenReturn("img/png");
         when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","Engineer.png"));
 
@@ -164,7 +175,7 @@ public class AvatarControllerTest {
         byte[] actual = result.getResponse().getContentAsByteArray();
 
         // prepare expected
-        byte [] expected = avatarDao.getClass().getResourceAsStream("schema/Engineer.png").readAllBytes();
+        byte [] expected = AvatarDao.class.getResourceAsStream("schema/Engineer.png").readAllBytes();
 
         // assertion
         assertArrayEquals(expected, actual);
@@ -183,7 +194,7 @@ public class AvatarControllerTest {
         when(settingsService.getUserSettings(anyString())).thenReturn(mockedUserSettings);
         when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.SYSTEM);
         when(mockedUserSettings.getSystemAvatarId()).thenReturn(AVATAR_ID);
-        when(avatarDao.getSystemAvatar(anyInt())).thenReturn(mockedAvatar);
+        when(settingsService.getSystemAvatar(eq(AVATAR_ID))).thenReturn(mockedAvatar);
         when(mockedAvatar.getMimeType()).thenReturn("img/png");
         when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","Engineer.png"));
 
@@ -195,7 +206,7 @@ public class AvatarControllerTest {
         byte[] actual = result.getResponse().getContentAsByteArray();
 
         // prepare expected
-        byte [] expected = avatarDao.getClass().getResourceAsStream("schema/Engineer.png").readAllBytes();
+        byte [] expected = AvatarDao.class.getResourceAsStream("schema/Engineer.png").readAllBytes();
 
         // assertion
         assertArrayEquals(expected, actual);
@@ -231,7 +242,7 @@ public class AvatarControllerTest {
         // setup mock
         when(settingsService.getUserSettings(anyString())).thenReturn(mockedUserSettings);
         when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.CUSTOM);
-        when(avatarDao.getCustomAvatar(anyString())).thenReturn(mockedAvatar);
+        when(settingsService.getCustomAvatar(anyString())).thenReturn(mockedAvatar);
         when(mockedAvatar.getMimeType()).thenReturn("img/png");
         when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","All-Caps.png"));
 
@@ -243,7 +254,7 @@ public class AvatarControllerTest {
         byte[] actual = result.getResponse().getContentAsByteArray();
 
         // prepare expected
-        byte [] expected = avatarDao.getClass().getResourceAsStream("schema/All-Caps.png").readAllBytes();
+        byte [] expected = AvatarDao.class.getResourceAsStream("schema/All-Caps.png").readAllBytes();
 
         // assertion
         assertArrayEquals(expected, actual);
@@ -260,7 +271,7 @@ public class AvatarControllerTest {
         // setup mock
         when(settingsService.getUserSettings(anyString())).thenReturn(mockedUserSettings);
         when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.SYSTEM);
-        when(avatarDao.getCustomAvatar(anyString())).thenReturn(mockedAvatar);
+        when(settingsService.getCustomAvatar(anyString())).thenReturn(mockedAvatar);
         when(mockedAvatar.getMimeType()).thenReturn("img/png");
         when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","All-Caps.png"));
 
@@ -273,7 +284,7 @@ public class AvatarControllerTest {
         byte[] actual = result.getResponse().getContentAsByteArray();
 
         // prepare expected
-        byte [] expected = avatarDao.getClass().getResourceAsStream("schema/All-Caps.png").readAllBytes();
+        byte [] expected = AvatarDao.class.getResourceAsStream("schema/All-Caps.png").readAllBytes();
 
         // assertion
         assertArrayEquals(expected, actual);

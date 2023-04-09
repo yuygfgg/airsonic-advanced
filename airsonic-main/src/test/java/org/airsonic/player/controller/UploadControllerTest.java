@@ -19,6 +19,7 @@
 package org.airsonic.player.controller;
 
 import com.google.common.util.concurrent.RateLimiter;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.TransferStatus;
 import org.airsonic.player.domain.User;
@@ -39,7 +40,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -74,7 +77,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(MockitoExtension.class)
 @WebMvcTest
-@ContextConfiguration(classes = {UploadController.class})
+@ContextConfiguration(classes = {UploadController.class}, initializers = {ConfigDataApplicationContextInitializer.class})
+@EnableConfigurationProperties({AirsonicHomeConfig.class})
 @SuppressWarnings("unchecked")
 class UploadControllerTest {
 

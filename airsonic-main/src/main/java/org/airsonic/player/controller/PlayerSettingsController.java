@@ -14,17 +14,18 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.controller;
 
 import org.airsonic.player.command.PlayerSettingsCommand;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.service.PlayQueueService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.SecurityService;
-import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.TranscodingService;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +60,8 @@ public class PlayerSettingsController {
     private TranscodingService transcodingService;
     @Autowired
     private PlayQueueService playQueueService;
+    @Autowired
+    private AirsonicHomeConfig airsonicConfig;
 
     @GetMapping
     protected String displayForm() {
@@ -102,7 +105,7 @@ public class PlayerSettingsController {
         }
 
         command.setTranscodingSupported(transcodingService.isDownsamplingSupported(null));
-        command.setTranscodeDirectory(SettingsService.getTranscodeDirectory().toString());
+        command.setTranscodeDirectory(airsonicConfig.getTranscodeDirectory().toString());
         command.setTranscodeSchemes(TranscodeScheme.values());
         command.setTechnologies(PlayerTechnology.values());
         command.setPlayers(players.toArray(new Player[players.size()]));

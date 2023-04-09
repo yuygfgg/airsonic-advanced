@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.MoreFiles;
 import com.google.common.util.concurrent.RateLimiter;
 import org.airsonic.player.ajax.UploadInfo;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.TransferStatus;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.service.PlayerService;
@@ -94,6 +95,8 @@ public class UploadController {
     private SettingsService settingsService;
     @Autowired
     private SimpMessagingTemplate brokerTemplate;
+    @Autowired
+    private AirsonicHomeConfig airsonicConfig;
 
     private static final Set<String> SUPPORTED_ZIP_FORMATS = ImmutableSet.of("zip", "7z", "rar", "cpio", "jar", "tar");
     public static final Map<UUID, Consumer<Path>> registeredCallbacks = new ConcurrentHashMap<>();
@@ -105,7 +108,7 @@ public class UploadController {
         try {
             securityService.checkUploadAllowed(p, checkExistence);
         } catch (AccessDeniedException ade) {
-            if (!user.isAdminRole() || !SecurityService.isFileInFolder(p, SettingsService.getAirsonicHome())) {
+            if (!user.isAdminRole() || !SecurityService.isFileInFolder(p, airsonicConfig.getAirsonicHome())) {
                 throw ade;
             }
         }

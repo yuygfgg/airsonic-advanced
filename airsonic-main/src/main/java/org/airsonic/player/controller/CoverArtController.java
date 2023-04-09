@@ -20,6 +20,7 @@
 package org.airsonic.player.controller;
 
 import com.google.common.io.MoreFiles;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.domain.*;
@@ -96,6 +97,9 @@ public class CoverArtController {
     private AlbumDao albumDao;
     @Autowired
     private JaudiotaggerParser jaudiotaggerParser;
+    @Autowired
+    private AirsonicHomeConfig airsonicConfig;
+
     private Semaphore semaphore;
 
     @PostConstruct
@@ -339,7 +343,7 @@ public class CoverArtController {
     }
 
     private synchronized Path getImageCacheDirectory(int size) {
-        Path dir = SettingsService.getAirsonicHome().resolve("thumbs").resolve(String.valueOf(size));
+        Path dir = airsonicConfig.getAirsonicHome().resolve("thumbs").resolve(String.valueOf(size));
         if (!Files.exists(dir)) {
             try {
                 dir = Files.createDirectories(dir);

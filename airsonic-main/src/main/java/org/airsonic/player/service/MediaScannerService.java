@@ -28,13 +28,10 @@ import org.airsonic.player.service.search.IndexManager;
 import org.apache.commons.lang.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.subsonic.restapi.ScanStatus;
-
-import javax.annotation.PostConstruct;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -63,37 +60,54 @@ public class MediaScannerService {
 
     private volatile boolean scanning;
 
-    @Autowired
-    private SettingsService settingsService;
-    @Autowired
-    private IndexManager indexManager;
-    @Autowired
-    private PlaylistService playlistService;
-    @Autowired
-    private MediaFileService mediaFileService;
-    @Autowired
-    private MediaFolderService mediaFolderService;
-    @Autowired
-    private CoverArtService coverArtService;
-    @Autowired
-    private MediaFileDao mediaFileDao;
-    @Autowired
-    private ArtistDao artistDao;
-    @Autowired
-    private AlbumDao albumDao;
-    @Autowired
-    private TaskSchedulingService taskService;
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    public MediaScannerService(
+        SettingsService settingsService,
+        IndexManager indexManager,
+        PlaylistService playlistService,
+        MediaFileService mediaFileService,
+        MediaFolderService mediaFolderService,
+        CoverArtService coverArtService,
+        MediaFileDao mediaFileDao,
+        ArtistDao artistDao,
+        AlbumDao albumDao,
+        TaskSchedulingService taskService,
+        SimpMessagingTemplate messagingTemplate,
+        Environment environment
+    ) {
+        this.settingsService = settingsService;
+        this.indexManager = indexManager;
+        this.playlistService = playlistService;
+        this.mediaFileService = mediaFileService;
+        this.mediaFolderService = mediaFolderService;
+        this.coverArtService = coverArtService;
+        this.mediaFileDao = mediaFileDao;
+        this.artistDao = artistDao;
+        this.albumDao = albumDao;
+        this.taskService = taskService;
+        this.messagingTemplate = messagingTemplate;
+        this.environment = environment;
+        init();
+    }
 
-    @Autowired
-    @Value("${MediaScannerParallelism:#{T(java.lang.Runtime).getRuntime().availableProcessors() + 1}}")
+    private final SettingsService settingsService;
+    private final IndexManager indexManager;
+    private final PlaylistService playlistService;
+    private final MediaFileService mediaFileService;
+    private final MediaFolderService mediaFolderService;
+    private final CoverArtService coverArtService;
+    private final MediaFileDao mediaFileDao;
+    private final ArtistDao artistDao;
+    private final AlbumDao albumDao;
+    private final TaskSchedulingService taskService;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final Environment environment;
+
     private int scannerParallelism;
-
     private AtomicInteger scanCount = new AtomicInteger(0);
 
-    @PostConstruct
     public void init() {
+        this.scannerParallelism = Integer.parseInt(environment.getProperty("MediaScannerParallelism",
+            String.valueOf(Runtime.getRuntime().availableProcessors() + 1)));
         indexManager.initializeIndexDirectory();
         schedule();
     }
@@ -467,33 +481,5 @@ public class MediaScannerService {
             artist.setFolderId(musicFolder.getId());
             indexManager.index(artist, musicFolder);
         }
-    }
-
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
-    }
-
-    public void setMediaFileService(MediaFileService mediaFileService) {
-        this.mediaFileService = mediaFileService;
-    }
-
-    public void setMediaFileDao(MediaFileDao mediaFileDao) {
-        this.mediaFileDao = mediaFileDao;
-    }
-
-    public void setArtistDao(ArtistDao artistDao) {
-        this.artistDao = artistDao;
-    }
-
-    public void setAlbumDao(AlbumDao albumDao) {
-        this.albumDao = albumDao;
-    }
-
-    public void setPlaylistService(PlaylistService playlistService) {
-        this.playlistService = playlistService;
-    }
-
-    public void setMessagingTemplate(SimpMessagingTemplate messagingTemplate) {
-        this.messagingTemplate = messagingTemplate;
     }
 }

@@ -142,7 +142,7 @@ public class CaptionsController {
         List<String> command = Arrays.stream(split).sequential()
                 .map(i -> {
                     if (i.equals(split[0])) {
-                        return SettingsService.resolveTranscodeExecutable(i, i);
+                        return settingsService.resolveTranscodeExecutable(i, i);
                     }
                     if (i.contains("%s")) {
                         return i.replace("%s", inputFile.toString());

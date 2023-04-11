@@ -682,6 +682,7 @@
                 alwaysShowControls: true,
                 enableKeyboard: false,
                 useDefaultControls: true,
+                iconSprite: "<c:url value='/script/mediaelement/mejs-controls.svg'/>",
                 castAppID: "4FBFE470",
                 features: ["speed", "chromecast"],
                 defaultSpeed: "1.00",

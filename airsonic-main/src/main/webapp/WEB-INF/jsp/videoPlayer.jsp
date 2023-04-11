@@ -84,6 +84,7 @@
             var vpr = this;
             this.videoPlayer = new MediaElementPlayer("videoPlayer", {
                 alwaysShowControls: true,
+                iconSprite: "<c:url value='/script/mediaelement/mejs-controls.svg'/>",
                 enableKeyboard: true,
                 useDefaultControls: true,
                 enableTracks: true,

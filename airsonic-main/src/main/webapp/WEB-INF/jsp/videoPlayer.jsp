@@ -50,6 +50,7 @@
         var videoModel = {
           duration: ${empty model.video.duration ? -1 : model.video.duration},
           videoTitle: "${model.video.title}",
+          iconSprite: "<c:url value='/script/mediaelement/mejs-controls.svg'/>",
           streamable: ${model.streamable},
           castable: ${model.castable},
           streamUrls: ${sub:toJson(model.streamUrls)},

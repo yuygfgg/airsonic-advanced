@@ -71,6 +71,7 @@
     var player = new MediaElementPlayer('player', {
         useDefaultControls: true,
         features: ['speed', 'quality', 'chromecast', 'playlist', 'prevtrack', 'nexttrack', 'shuffle', 'loop'],
+        iconSprite: "<c:url value='/script/mediaelement/mejs-controls.svg'/>",
         currentMessage: "",
         defaultSpeed: "1.00",
         speeds: ["8.00", "2.00", "1.50", "1.25", "1.00", "0.75", "0.5"],

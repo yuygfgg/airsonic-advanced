@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -32,7 +33,7 @@ import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.StatusService;
-import org.airsonic.player.upload.MonitoredDiskFileItemFactory;
+import org.airsonic.player.upload.MonitoredMultipartFile;
 import org.airsonic.player.upload.UploadListener;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.LambdaUtils;
@@ -43,9 +44,6 @@ import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +51,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -112,7 +112,12 @@ public class UploadController {
     }
 
     @PostMapping
-    protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) {
+    protected ModelAndView handleRequestInternal(
+        @RequestParam("file") List<MultipartFile> files,
+        @RequestParam("dir") String dirString,
+        @RequestParam(name = "unzip", required = false) boolean unzip,
+        @RequestParam(name = "callback", required = false) String callbackString,
+        HttpServletRequest request, HttpServletResponse response) {
 
         Map<String, Object> map = new HashMap<>();
         List<Path> uploadedFiles = new ArrayList<>();
@@ -130,49 +135,21 @@ public class UploadController {
             brokerTemplate.convertAndSendToUser(status.getPlayer().getUsername(), "/queue/uploads/status",
                     new UploadInfo(status.getId(), 0L, status.getBytesTotal()));
 
-            // Check that we have a file upload request
-            if (!ServletFileUpload.isMultipartContent(request)) {
-                throw new Exception("Illegal request.");
-            }
-
-            boolean unzip = false;
+            dir = Paths.get(dirString);
 
             UploadListener listener = new UploadListenerImpl(status, settingsService.getUploadBitrateLimiter(), brokerTemplate);
 
-            FileItemFactory factory = new MonitoredDiskFileItemFactory(listener);
-            ServletFileUpload upload = new ServletFileUpload(factory);
-
-            List<?> items = upload.parseRequest(request);
-
-            // First, look for "dir" and "unzip" parameters.
-            for (Object o : items) {
-                FileItem item = (FileItem) o;
-
-                if (item.isFormField() && "dir".equals(item.getFieldName())) {
-                    dir = Paths.get(item.getString());
-                } else if (item.isFormField() && "unzip".equals(item.getFieldName())) {
-                    unzip = true;
-                } else if (item.isFormField() && "callback".equals(item.getFieldName())) {
-                    callback = UUID.fromString(item.getString());
-                }
-            }
-
-            if (dir == null) {
-                throw new Exception("Missing 'dir' parameter.");
-            }
-
             checkUploadAllowed(user, dir, false);
-
             if (!Files.exists(dir)) {
                 Files.createDirectories(dir);
             }
 
             // Look for file items.
-            for (Object o : items) {
-                FileItem item = (FileItem) o;
+            for (MultipartFile file : files) {
+                MonitoredMultipartFile monitoredFile = new MonitoredMultipartFile(file, listener);
 
-                if (!item.isFormField()) {
-                    String fileName = item.getName();
+                if (!monitoredFile.isEmpty()) {
+                    String fileName = monitoredFile.getOriginalFilename();
                     if (!fileName.trim().isEmpty()) {
 
                         Path targetFile = dir.resolve(Paths.get(fileName).getFileName());
@@ -183,8 +160,7 @@ public class UploadController {
                             exceptions.add(e);
                             continue;
                         }
-
-                        item.write(targetFile.toFile());
+                        monitoredFile.transferTo(targetFile.toFile());
                         uploadedFiles.add(targetFile);
                         LOG.info("Uploaded {} ", targetFile);
 

@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -24,10 +25,6 @@ import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.StringUtil;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -36,6 +33,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
@@ -49,7 +48,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -70,34 +68,16 @@ public class AvatarUploadController {
     private SecurityService securityService;
 
     @PostMapping
-    protected ModelAndView handleRequestInternal(HttpServletRequest request) throws Exception {
+    protected ModelAndView handleRequestInternal(@RequestParam("file") MultipartFile file, HttpServletRequest request) throws Exception {
 
         String username = securityService.getCurrentUsername(request);
-
-        // Check that we have a file upload request.
-        if (!ServletFileUpload.isMultipartContent(request)) {
-            throw new Exception("Illegal request.");
-        }
-
         Map<String, Object> map = new HashMap<String, Object>();
-        FileItemFactory factory = new DiskFileItemFactory();
-        ServletFileUpload upload = new ServletFileUpload(factory);
-        List<FileItem> items = upload.parseRequest(request);
 
-        // Look for file items.
-        for (FileItem item : items) {
-            if (!item.isFormField()) {
-                String fileName = item.getName();
-                byte[] data = item.get();
-
-                if (StringUtils.isNotBlank(fileName) && data.length > 0) {
-                    createAvatar(fileName, data, username, map);
-                } else {
-                    map.put("error", new Exception("Missing file."));
-                    LOG.warn("Failed to upload personal image. No file specified.");
-                }
-                break;
-            }
+        if (!file.isEmpty()) {
+            createAvatar(file.getOriginalFilename(), file.getBytes(), username, map);
+        } else {
+            map.put("error", new Exception("Missing file."));
+            LOG.warn("Failed to upload personal image. No file specified.");
         }
 
         map.put("username", username);

@@ -328,7 +328,7 @@ public class UploadController {
 
     private void copyEntry(Path file, ArchiveEntry entry, LambdaUtils.ThrowingConsumer<Path, IOException> copier,
             List<Path> unzippedFiles, List<Exception> exceptions) {
-        final Path toPath = file.resolveSibling(entry.getName());
+        final Path toPath = file.resolveSibling(entry.getName().replaceAll("\\\\", "/"));
         try {
             if (!toPath.normalize().startsWith(file.getParent())) {
                 throw new IOException("Bad zip filename: " + toPath.toString());

@@ -325,7 +325,8 @@ public class MediaScannerService {
             if ((file.getDuration() != null) && (!file.isIndexedTrack())) {
                 statistics.incrementTotalDurationInSeconds(file.getDuration());
             }
-            if (file.getFileSize() != null) {
+            // don't add indexed tracks to the total size to avoid double-counting
+            if ((file.getFileSize() != null) && (!file.isIndexedTrack())) {
                 statistics.incrementTotalLengthInBytes(file.getFileSize());
             }
         } catch (Exception e) {

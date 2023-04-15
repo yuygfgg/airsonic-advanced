@@ -3,14 +3,11 @@ package org.airsonic.player.controller;
 import org.airsonic.player.domain.Playlist;
 import org.airsonic.player.service.PlaylistService;
 import org.airsonic.player.service.SecurityService;
-import org.airsonic.player.service.SettingsService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -65,17 +62,14 @@ public class ImportPlaylistControllerTest {
     @TempDir
     private static Path tempDir;
 
-    private static MockedStatic<SettingsService> settingsServiceMockedStatic;
-
     @BeforeAll
     public static void setup() {
-        settingsServiceMockedStatic = Mockito.mockStatic(SettingsService.class, Mockito.CALLS_REAL_METHODS);
-        settingsServiceMockedStatic.when(SettingsService::getAirsonicHome).thenReturn(tempDir);
+        System.setProperty("airsonic.home", tempDir.toString());
     }
 
     @AfterAll
     public static void teardown() {
-        settingsServiceMockedStatic.close();
+        System.clearProperty("airsonic.home");
     }
 
     @Test

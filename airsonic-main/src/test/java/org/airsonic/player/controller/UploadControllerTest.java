@@ -35,8 +35,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -113,17 +111,14 @@ class UploadControllerTest {
     @Mock
     TransferStatus mockedStatus;
 
-    private static MockedStatic<SettingsService> mockedStaticSettingsService;
-
     @BeforeAll
     public static void setup() {
-        mockedStaticSettingsService = Mockito.mockStatic(SettingsService.class, Mockito.CALLS_REAL_METHODS);
-        mockedStaticSettingsService.when(SettingsService::getAirsonicHome).thenReturn(tempDir);
+        System.setProperty("airsonic.home", tempDir.toString());
     }
 
     @AfterAll
     public static void tearDown() {
-        mockedStaticSettingsService.close();
+        System.clearProperty("airsonic.home");
     }
 
     @ParameterizedTest

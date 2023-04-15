@@ -11,8 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -61,18 +59,16 @@ public class AvatarUploadControllerTest {
     @TempDir
     private static Path tempDir;
 
-    private static MockedStatic<SettingsService> mockedStaticSettingsService;
-
     @BeforeAll
     public static void setup() {
-        mockedStaticSettingsService = Mockito.mockStatic(SettingsService.class, Mockito.CALLS_REAL_METHODS);
-        mockedStaticSettingsService.when(SettingsService::getAirsonicHome).thenReturn(tempDir);
+        System.setProperty("airsonic.home", tempDir.toString());
     }
 
     @AfterAll
-    public static void tearDown() {
-        mockedStaticSettingsService.close();
+    public static void teardown() {
+        System.clearProperty("airsonic.home");
     }
+
 
     @BeforeEach
     void setUp() {

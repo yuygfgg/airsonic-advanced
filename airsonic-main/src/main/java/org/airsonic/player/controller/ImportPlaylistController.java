@@ -70,6 +70,8 @@ public class ImportPlaylistController {
                 String username = securityService.getCurrentUsername(request);
                 Playlist playlist = playlistService.importPlaylist(username, playlistName, fileName, null, file.getInputStream(), null);
                 map.put("playlist", playlist);
+            } else {
+                throw new Exception("No file specified.");
             }
         } catch (Exception e) {
             map.put("error", e.getMessage());

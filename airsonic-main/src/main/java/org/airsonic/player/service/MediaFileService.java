@@ -737,8 +737,8 @@ public class MediaFileService {
             }
             long wholeFileSize = Files.size(audioFile);
             double wholeFileLength = 0.0; //todo: find sound length without metadata
-            if (metaData != null) {
-                wholeFileLength = (metaData.getDuration() != null) ? metaData.getDuration() : 0.0;
+            if (metaData != null && metaData.getDuration() != null) {
+                wholeFileLength = metaData.getDuration();
             }
 
             CueSheet cueSheet = getCueSheet(base, folder);
@@ -756,8 +756,9 @@ public class MediaFileService {
                 Integer folderId = base.getFolderId();
 
                 boolean update = needsUpdate(base, folder, settingsService.isFastCacheEnabled());
+                int trackSize = cueSheet.getAllTrackData().size();
 
-                for (int i = 0; i < cueSheet.getAllTrackData().size(); i++) {
+                for (int i = 0; i < trackSize; i++) {
                     TrackData trackData = cueSheet.getAllTrackData().get(i);
                     Position currentPosition = trackData.getIndices().get(0).getPosition();
                     // convert CUE timestamp (minutes:seconds:frames, 75 frames/second) to fractional seconds
@@ -808,7 +809,14 @@ public class MediaFileService {
                         track.setFormat(format);
                         track.setStartPosition(currentStart);
                         track.setDuration(duration);
-                        track.setFileSize((long) (duration / wholeFileLength * wholeFileSize)); //approximate
+                        // estimate file size based on duration and whole file size
+                        long estimatedSize = (long) (duration / wholeFileLength * wholeFileSize);
+                        // if estimated size is within of whole file size, use it. Otherwise use whole file size divided by number of tracks
+                        if (estimatedSize > 0 && estimatedSize <= wholeFileSize) {
+                            track.setFileSize(estimatedSize);
+                        } else {
+                            track.setFileSize((long)(wholeFileSize / trackSize));
+                        }
                         track.setPlayCount((existingFile == null) ? 0 : existingFile.getPlayCount());
                         track.setLastPlayed((existingFile == null) ? null : existingFile.getLastPlayed());
                         track.setComment((existingFile == null) ? null : existingFile.getComment());

@@ -28,6 +28,8 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -40,7 +42,8 @@ import static org.mockito.Mockito.never;
 
 @ExtendWith(SpringExtension.class)
 @EnableConfigurationProperties({AirsonicHomeConfig.class})
-public class AirsonicConfigTest {
+@ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class)
+public class AirsonicHomeConfigTest {
 
     @Nested
     @TestPropertySource(properties = {

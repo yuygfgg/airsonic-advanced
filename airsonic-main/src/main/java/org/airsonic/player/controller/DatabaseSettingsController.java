@@ -82,7 +82,7 @@ public class DatabaseSettingsController {
     @Autowired
     private SecurityService securityService;
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     private static final UUID DB_CONTROLLER_IMPORT_CALLBACK_ID = UUID.randomUUID();
 
@@ -154,7 +154,7 @@ public class DatabaseSettingsController {
 
         if (StringUtils.isNotBlank(command.getJNDIName())) {
             command.setConfigType(DataSourceConfigType.JNDI);
-        } else if (StringUtils.equals(command.getUrl(), airsonicConfig.getDefaultJDBCUrl())
+        } else if (StringUtils.equals(command.getUrl(), homeConfig.getDefaultJDBCUrl())
                 && StringUtils.equals(command.getUsername(), SettingsService.DEFAULT_JDBC_USERNAME)
                 && StringUtils.equals(command.getPassword(), SettingsService.DEFAULT_JDBC_PASSWORD)) {
             command.setConfigType(DataSourceConfigType.BUILTIN);

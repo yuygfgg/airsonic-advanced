@@ -61,7 +61,7 @@ public class PlayerSettingsController {
     @Autowired
     private PlayQueueService playQueueService;
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     @GetMapping
     protected String displayForm() {
@@ -105,7 +105,7 @@ public class PlayerSettingsController {
         }
 
         command.setTranscodingSupported(transcodingService.isDownsamplingSupported(null));
-        command.setTranscodeDirectory(airsonicConfig.getTranscodeDirectory().toString());
+        command.setTranscodeDirectory(homeConfig.getTranscodeDirectory().toString());
         command.setTranscodeSchemes(TranscodeScheme.values());
         command.setTechnologies(PlayerTechnology.values());
         command.setPlayers(players.toArray(new Player[players.size()]));

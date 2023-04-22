@@ -80,15 +80,15 @@ public class IndexManager {
             MediaFileDao mediaFileDao,
             ArtistDao artistDao,
             AlbumDao albumDao,
-            AirsonicHomeConfig airsonicConfig
+            AirsonicHomeConfig homeConfig
     ) {
         this.analyzerFactory = analyzerFactory;
         this.documentFactory = documentFactory;
         this.mediaFileDao = mediaFileDao;
         this.artistDao = artistDao;
         this.albumDao = albumDao;
-        this.airsonicConfig = airsonicConfig;
-        this.rootIndexDirectory = airsonicConfig.getAirsonicHome().resolve(INDEX_ROOT_DIR_NAME.concat(Integer.toString(INDEX_VERSION)));
+        this.homeConfig = homeConfig;
+        this.rootIndexDirectory = homeConfig.getAirsonicHome().resolve(INDEX_ROOT_DIR_NAME.concat(Integer.toString(INDEX_VERSION)));
     }
 
 
@@ -97,7 +97,7 @@ public class IndexManager {
     private MediaFileDao mediaFileDao;
     private ArtistDao artistDao;
     private AlbumDao albumDao;
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     /**
      * Literal name of index top directory.
@@ -359,7 +359,7 @@ public class IndexManager {
     public void deleteOldIndexFiles() throws IOException {
 
         // Delete legacy files unconditionally
-        try (Stream<Path> files = Files.list(airsonicConfig.getAirsonicHome())) {
+        try (Stream<Path> files = Files.list(homeConfig.getAirsonicHome())) {
             files
                 .filter(p -> legacyIndexPattern.matcher(p.getFileName().toString()).matches())
                 .forEach(p -> {
@@ -370,7 +370,7 @@ public class IndexManager {
         }
 
         // Delete if not old index version
-        try (Stream<Path> files = Files.list(airsonicConfig.getAirsonicHome())) {
+        try (Stream<Path> files = Files.list(homeConfig.getAirsonicHome())) {
             files
                 .filter(p -> nonCurrentIndexPattern.matcher(p.getFileName().toString()).matches())
                 .filter(p -> !p.equals(rootIndexDirectory))

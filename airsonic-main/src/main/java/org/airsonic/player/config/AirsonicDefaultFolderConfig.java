@@ -19,17 +19,13 @@
 package org.airsonic.player.config;
 
 import org.airsonic.player.util.Util;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
+import org.springframework.util.StringUtils;
 
 @ConfigurationProperties(prefix = "airsonic")
 @ConstructorBinding
 public class AirsonicDefaultFolderConfig {
-
-    // Logger
-    private static final Logger LOG = LoggerFactory.getLogger(AirsonicHomeConfig.class);
 
     // constants
     private final String DEFAULT_MUSIC_FOLDER_WINDOWS = "c:\\music";
@@ -50,7 +46,6 @@ public class AirsonicDefaultFolderConfig {
         this.defaultMusicFolder = getFolderProperty(defaultMusicFolder, DEFAULT_MUSIC_FOLDER_WINDOWS, DEFAULT_MUSIC_FOLDER_OTHER);
         this.defaultPodcastFolder = getFolderProperty(defaultPodcastFolder, DEFAULT_PODCAST_FOLDER_WINDOWS, DEFAULT_PODCAST_FOLDER_OTHER);
         this.defaultPlaylistFolder = getFolderProperty(defaultPlaylistFolder, DEFAULT_PLAYLIST_FOLDER_WINDOWS, DEFAULT_PLAYLIST_FOLDER_OTHER);
-        LOG.debug("constructor without libresonicHome");
     }
 
 
@@ -63,7 +58,7 @@ public class AirsonicDefaultFolderConfig {
      * @return The directory. Never {@code null}.
      */
     private String getFolderProperty(String loadedProperty, String windowsPath, String otherPath) {
-        if (loadedProperty != null) {
+        if (StringUtils.hasText(loadedProperty)) {
             return loadedProperty;
         }
         return Util.isWindows() ? windowsPath : otherPath;

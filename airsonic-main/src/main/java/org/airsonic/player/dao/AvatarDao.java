@@ -42,12 +42,12 @@ public class AvatarDao extends AbstractDao {
 
     private static final String INSERT_COLUMNS = "name, created_date, mime_type, width, height, path";
     private static final String QUERY_COLUMNS = "id, " + INSERT_COLUMNS;
-    private final AirsonicHomeConfig airsonicConfig;
+    private final AirsonicHomeConfig homeConfig;
     private final AvatarRowMapper rowMapper;
 
-    public AvatarDao(AirsonicHomeConfig airsonicConfig) {
-        this.airsonicConfig = airsonicConfig;
-        this.rowMapper = new AvatarRowMapper(airsonicConfig);
+    public AvatarDao(AirsonicHomeConfig homeConfig) {
+        this.homeConfig = homeConfig;
+        this.rowMapper = new AvatarRowMapper(homeConfig);
     }
 
     /**
@@ -97,20 +97,20 @@ public class AvatarDao extends AbstractDao {
             update("insert into custom_avatar(" + INSERT_COLUMNS
                    + ", username) values(" + questionMarks(INSERT_COLUMNS) + ", ?)",
                    avatar.getName(), avatar.getCreatedDate(), avatar.getMimeType(),
-                   avatar.getWidth(), avatar.getHeight(), StringUtils.replace(avatar.getPath().toString(), airsonicConfig.getAirsonicHome().toString(), "$[AIRSONIC_HOME]"), username);
+                   avatar.getWidth(), avatar.getHeight(), StringUtils.replace(avatar.getPath().toString(), homeConfig.getAirsonicHome().toString(), "$[AIRSONIC_HOME]"), username);
         }
     }
 
     private static class AvatarRowMapper implements RowMapper<Avatar> {
-        private final AirsonicHomeConfig airsonicConfig;
+        private final AirsonicHomeConfig homeConfig;
 
-        public AvatarRowMapper(AirsonicHomeConfig airsonicConfig) {
-            this.airsonicConfig = airsonicConfig;
+        public AvatarRowMapper(AirsonicHomeConfig homeConfig) {
+            this.homeConfig = homeConfig;
         }
 
         public Avatar mapRow(ResultSet rs, int rowNum) throws SQLException {
             return new Avatar(rs.getInt(1), rs.getString(2), Optional.ofNullable(rs.getTimestamp(3)).map(x -> x.toInstant()).orElse(null), rs.getString(4),
-                              rs.getInt(5), rs.getInt(6), StringUtils.replace(rs.getString(7), "$[AIRSONIC_HOME]", airsonicConfig.getAirsonicHome().toString()));
+                              rs.getInt(5), rs.getInt(6), StringUtils.replace(rs.getString(7), "$[AIRSONIC_HOME]", homeConfig.getAirsonicHome().toString()));
         }
     }
 

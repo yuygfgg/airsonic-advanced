@@ -49,10 +49,10 @@ public class BootstrapVerificationFilter implements Filter {
     private boolean airsonicHomeVerified = false;
     private final AtomicBoolean serverInfoLogged = new AtomicBoolean();
 
-    private final AirsonicHomeConfig airsonicConfig;
+    private final AirsonicHomeConfig homeConfig;
 
-    public BootstrapVerificationFilter(AirsonicHomeConfig airsonicConfig) {
-        this.airsonicConfig = airsonicConfig;
+    public BootstrapVerificationFilter(AirsonicHomeConfig homeConfig) {
+        this.homeConfig = homeConfig;
     }
 
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
@@ -64,7 +64,7 @@ public class BootstrapVerificationFilter implements Filter {
             return;
         }
 
-        Path home = airsonicConfig.getAirsonicHome();
+        Path home = homeConfig.getAirsonicHome();
         if (!directoryExists(home)) {
             error(res, "<p>The directory <b>" + home + "</b> does not exist. Please create it and make it writable, " +
                        "then restart the servlet container.</p>" +

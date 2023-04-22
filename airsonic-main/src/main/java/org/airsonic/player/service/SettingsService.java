@@ -276,7 +276,7 @@ public class SettingsService {
     @Autowired
     private Environment env;
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
     @Autowired
     private AirsonicDefaultFolderConfig defaultFolderConfig;
 
@@ -457,7 +457,7 @@ public class SettingsService {
     }
 
     public String getLogFile() {
-        return getProperty(LogFile.FILE_NAME_PROPERTY, airsonicConfig.getDefaultLogFile());
+        return getProperty(LogFile.FILE_NAME_PROPERTY, homeConfig.getDefaultLogFile());
     }
 
     /**
@@ -471,7 +471,7 @@ public class SettingsService {
             .build(new CacheLoader<String, String>() {
                 @Override
                 public String load(String executable) throws Exception {
-                        return Arrays.asList(airsonicConfig.getTranscodeDirectory().resolve(executable).toString(), executable)
+                        return Arrays.asList(homeConfig.getTranscodeDirectory().resolve(executable).toString(), executable)
                             .stream()
                             .filter(command -> isExecutableInstalled(command))
                             .findFirst()
@@ -575,7 +575,7 @@ public class SettingsService {
 
     public Map<String, Object> buildSpelContext() {
         Map<String, Object> context = new HashMap<>();
-        context.put("AIRSONIC_HOME", airsonicConfig.getAirsonicHome());
+        context.put("AIRSONIC_HOME", homeConfig.getAirsonicHome());
         context.put("DEFAULT_PLAYLIST_FOLDER", getPlaylistFolder());
         context.put("DEFAULT_MUSIC_FOLDER", defaultFolderConfig.getDefaultMusicFolder());
         return context;
@@ -1650,8 +1650,8 @@ public class SettingsService {
         this.env = env;
     }
 
-    protected void setAirsonicConfig(AirsonicHomeConfig airsonicConfig) {
-        this.airsonicConfig = airsonicConfig;
+    protected void setAirsonicConfig(AirsonicHomeConfig homeConfig) {
+        this.homeConfig = homeConfig;
     }
 
     protected void setAirsonicDefaultFolderConfig(AirsonicDefaultFolderConfig airsonicDefaultFolderConfig) {

@@ -60,14 +60,14 @@ public class LastFmService {
     @Autowired
     private ArtistDao artistDao;
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     @PostConstruct
     public void init() {
         Caller caller = Caller.getInstance();
         caller.setUserAgent("Airsonic");
 
-        Path cacheDir = airsonicConfig.getAirsonicHome().resolve("lastfmcache");
+        Path cacheDir = homeConfig.getAirsonicHome().resolve("lastfmcache");
         caller.setCache(new LastFmCache(cacheDir, CACHE_TIME_TO_LIVE_MILLIS));
     }
 

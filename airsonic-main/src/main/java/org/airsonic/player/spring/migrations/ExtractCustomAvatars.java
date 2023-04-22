@@ -48,7 +48,7 @@ public class ExtractCustomAvatars implements CustomSqlChange {
         if (database.getConnection() instanceof JdbcConnection) {
             conn = (JdbcConnection) database.getConnection();
         }
-        AirsonicHomeConfig airsonicConfig = new AirsonicHomeConfig(
+        AirsonicHomeConfig homeConfig = new AirsonicHomeConfig(
             System.getProperty("airsonic.home"),
             System.getProperty("libresonic.home")
         );
@@ -59,7 +59,7 @@ public class ExtractCustomAvatars implements CustomSqlChange {
 
                 while (result.next()) {
                     try {
-                        Path folder = airsonicConfig.getAirsonicHome().resolve("avatars").resolve(result.getString("username"));
+                        Path folder = homeConfig.getAirsonicHome().resolve("avatars").resolve(result.getString("username"));
                         Files.createDirectories(folder);
                         Path filePath = folder.resolve(result.getString("name") + "." + StringUtils.substringAfter(result.getString("mime_type"), "/"));
                         Files.copy(new ByteArrayInputStream(result.getBytes("data")), filePath);

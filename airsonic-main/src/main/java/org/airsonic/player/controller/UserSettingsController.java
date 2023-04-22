@@ -80,7 +80,7 @@ public class UserSettingsController {
     @Autowired
     private TranscodingService transcodingService;
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     @InitBinder
     protected void initBinder(WebDataBinder binder, HttpServletRequest request) {
@@ -112,7 +112,7 @@ public class UserSettingsController {
         }
         command.setUsers(securityService.getAllUsers());
         command.setTranscodingSupported(transcodingService.isDownsamplingSupported(null));
-        command.setTranscodeDirectory(airsonicConfig.getTranscodeDirectory().toString());
+        command.setTranscodeDirectory(homeConfig.getTranscodeDirectory().toString());
         command.setTranscodeSchemes(TranscodeScheme.values());
         command.setLdapEnabled(settingsService.isLdapEnabled());
         command.setAllMusicFolders(mediaFolderService.getAllMusicFolders());

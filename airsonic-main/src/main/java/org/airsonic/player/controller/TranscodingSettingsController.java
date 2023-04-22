@@ -52,7 +52,7 @@ public class TranscodingSettingsController {
     @Autowired
     private SettingsService settingsService;
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     @GetMapping
     public String doGet(Model model) {
@@ -60,7 +60,7 @@ public class TranscodingSettingsController {
         Map<String, Object> map = new HashMap<>();
 
         map.put("transcodings", transcodingService.getAllTranscodings());
-        map.put("transcodeDirectory", airsonicConfig.getTranscodeDirectory());
+        map.put("transcodeDirectory", homeConfig.getTranscodeDirectory());
         map.put("splitOptions", settingsService.getSplitOptions());
         map.put("splitCommand", settingsService.getSplitCommand());
         map.put("downsampleCommand", settingsService.getDownsamplingCommand());

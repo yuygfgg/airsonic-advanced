@@ -98,7 +98,7 @@ public class CoverArtController {
     @Autowired
     private JaudiotaggerParser jaudiotaggerParser;
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     private Semaphore semaphore;
 
@@ -343,7 +343,7 @@ public class CoverArtController {
     }
 
     private synchronized Path getImageCacheDirectory(int size) {
-        Path dir = airsonicConfig.getAirsonicHome().resolve("thumbs").resolve(String.valueOf(size));
+        Path dir = homeConfig.getAirsonicHome().resolve("thumbs").resolve(String.valueOf(size));
         if (!Files.exists(dir)) {
             try {
                 dir = Files.createDirectories(dir);

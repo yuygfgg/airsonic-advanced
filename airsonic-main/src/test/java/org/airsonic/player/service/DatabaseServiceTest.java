@@ -45,7 +45,7 @@ class DatabaseServiceTest {
     private TaskSchedulingService taskService;
 
     @Mock
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     @Mock
     private SimpMessagingTemplate brokerTemplate;
@@ -138,7 +138,7 @@ class DatabaseServiceTest {
         Path path = tempDir.resolve("backups").resolve(BACKUP_DIR);
         Path zipPath = path.resolve(BACKUP_DIR + ".zip");
 
-        when(airsonicConfig.getAirsonicHome()).thenReturn(tempDir);
+        when(homeConfig.getAirsonicHome()).thenReturn(tempDir);
         when(databaseDao.exportDB(eq(path), any())).thenAnswer(invocation -> {
             Path dbPath = invocation.getArgument(0);
             dbPath.toFile().mkdirs();
@@ -161,7 +161,7 @@ class DatabaseServiceTest {
         // Arrange
         Path path = tempDir.resolve("backups").resolve(BACKUP_DIR);
 
-        when(airsonicConfig.getAirsonicHome()).thenReturn(tempDir);
+        when(homeConfig.getAirsonicHome()).thenReturn(tempDir);
         when(databaseDao.exportDB(eq(path), any())).thenThrow(new Exception());
 
         // Act

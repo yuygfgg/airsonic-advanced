@@ -50,14 +50,14 @@ public class AirsonicConfigTest {
     public class AirsonicConfigTestWithProperties {
 
         @Autowired
-        private AirsonicHomeConfig airsonicConfig;
+        private AirsonicHomeConfig homeConfig;
 
         /**
          * Test method for {@link org.airsonic.player.config.AirsonicHomeConfig#getAirsonicHome()}.
          */
         @Test
         public void testGetAirsonicHome() {
-            assertEquals("/tmp/test_airsonic", airsonicConfig.getAirsonicHome().toString());
+            assertEquals("/tmp/test_airsonic", homeConfig.getAirsonicHome().toString());
         }
 
         /**
@@ -67,16 +67,16 @@ public class AirsonicConfigTest {
         public void testEnsureDirectoryPresent() throws Exception {
             // check no exception is thrown when the directory is present
             try (MockedStatic<Files> filesMockedStatic = Mockito.mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
-                filesMockedStatic.when(() -> Files.exists(airsonicConfig.getAirsonicHome())).thenReturn(true);
-                assertDoesNotThrow(() -> airsonicConfig.ensureDirectoryPresent());
-                filesMockedStatic.verify(() -> Files.createDirectory(airsonicConfig.getAirsonicHome()), never());
+                filesMockedStatic.when(() -> Files.exists(homeConfig.getAirsonicHome())).thenReturn(true);
+                assertDoesNotThrow(() -> homeConfig.ensureDirectoryPresent());
+                filesMockedStatic.verify(() -> Files.createDirectory(homeConfig.getAirsonicHome()), never());
             }
 
             try (MockedStatic<Files> filesMockedStatic = Mockito.mockStatic(Files.class)) {
-                filesMockedStatic.when(() -> Files.exists(airsonicConfig.getAirsonicHome())).thenReturn(false);
-                filesMockedStatic.when(() -> Files.createDirectory(airsonicConfig.getAirsonicHome())).thenReturn(Paths.get("/tmp/airsonic"));
-                assertDoesNotThrow(() -> airsonicConfig.ensureDirectoryPresent());
-                filesMockedStatic.verify(() -> Files.createDirectory(airsonicConfig.getAirsonicHome()));
+                filesMockedStatic.when(() -> Files.exists(homeConfig.getAirsonicHome())).thenReturn(false);
+                filesMockedStatic.when(() -> Files.createDirectory(homeConfig.getAirsonicHome())).thenReturn(Paths.get("/tmp/airsonic"));
+                assertDoesNotThrow(() -> homeConfig.ensureDirectoryPresent());
+                filesMockedStatic.verify(() -> Files.createDirectory(homeConfig.getAirsonicHome()));
             }
         }
     }
@@ -88,14 +88,14 @@ public class AirsonicConfigTest {
     public class AirsonicConfigTestWithLibreSonicHome {
 
         @Autowired
-        private AirsonicHomeConfig airsonicConfig;
+        private AirsonicHomeConfig homeConfig;
 
         /**
          * Test method for {@link org.airsonic.player.config.AirsonicHomeConfig#getAirsonicHome()}.
          */
         @Test
         public void testGetAirsonicHome() {
-            assertEquals("/tmp/test_libresonic", airsonicConfig.getAirsonicHome().toString());
+            assertEquals("/tmp/test_libresonic", homeConfig.getAirsonicHome().toString());
         }
     }
 
@@ -103,7 +103,7 @@ public class AirsonicConfigTest {
     public class AirsonicConfigTestWitoutProperties {
 
         @Autowired
-        private AirsonicHomeConfig airsonicConfig;
+        private AirsonicHomeConfig homeConfig;
 
         /**
          * Test method for {@link org.airsonic.player.config.AirsonicHomeConfig#getAirsonicHome()}.
@@ -116,7 +116,7 @@ public class AirsonicConfigTest {
         public void testGetAirsonicHome(boolean isWindows, String expectedPath) {
             try (MockedStatic<Util> mockedUtil = Mockito.mockStatic(Util.class, Mockito.CALLS_REAL_METHODS)) {
                 mockedUtil.when(Util::isWindows).thenReturn(isWindows);
-                assertEquals(expectedPath, airsonicConfig.getAirsonicHome().toString());
+                assertEquals(expectedPath, homeConfig.getAirsonicHome().toString());
             }
         }
     }

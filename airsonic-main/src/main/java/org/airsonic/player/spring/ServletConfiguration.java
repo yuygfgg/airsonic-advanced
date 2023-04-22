@@ -31,7 +31,7 @@ import java.util.Properties;
 public class ServletConfiguration implements WebMvcConfigurer {
 
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     @Bean
     public ServletRegistrationBean<Servlet> cxfServletBean() {
@@ -50,7 +50,7 @@ public class ServletConfiguration implements WebMvcConfigurer {
 
     @Bean
     public Filter bootstrapVerificationFilter() {
-        return new BootstrapVerificationFilter(airsonicConfig);
+        return new BootstrapVerificationFilter(homeConfig);
     }
 
     @Bean

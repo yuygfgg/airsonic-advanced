@@ -68,7 +68,7 @@ public class AvatarUploadController {
     @Autowired
     private SecurityService securityService;
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
 
     @PostMapping
@@ -100,7 +100,7 @@ public class AvatarUploadController {
             int width = image.getWidth();
             int height = image.getHeight();
             String mimeType = StringUtil.getMimeType(FilenameUtils.getExtension(fileName));
-            Path folder = airsonicConfig.getAirsonicHome().resolve("avatars").resolve(username);
+            Path folder = homeConfig.getAirsonicHome().resolve("avatars").resolve(username);
             Files.createDirectories(folder);
             Path fileOnDisk = folder.resolve(fileName + "." + StringUtils.substringAfter(mimeType, "/"));
             // Scale down image if necessary.

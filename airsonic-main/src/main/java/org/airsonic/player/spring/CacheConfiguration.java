@@ -35,7 +35,7 @@ import java.util.EnumSet;
 @EnableCaching(proxyTargetClass = true, mode = AdviceMode.ASPECTJ) // AspectJ used so classes calling methods on self can benefit from the cache
 public class CacheConfiguration {
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
     @Bean
     public javax.cache.CacheManager jCacheCacheManager() {
         CachingProvider provider = Caching.getCachingProvider("org.ehcache.jsr107.EhcacheCachingProvider");
@@ -55,7 +55,7 @@ public class CacheConfiguration {
         DefaultCacheEventListenerConfiguration cacheLogging = new DefaultCacheEventListenerConfiguration(EnumSet.allOf(EventType.class), CacheLogger.class);
 
         return ConfigurationBuilder.newConfigurationBuilder()
-                .withService(new DefaultPersistenceConfiguration(airsonicConfig.getAirsonicHome().resolve("cache").toFile()))
+                .withService(new DefaultPersistenceConfiguration(homeConfig.getAirsonicHome().resolve("cache").toFile()))
                 .withCache("userCache",
                         CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, User.class, pools)
                                 .withClassLoader(cl)

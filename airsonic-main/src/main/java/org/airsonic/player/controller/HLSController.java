@@ -105,9 +105,9 @@ public class HLSController {
     private final StatusService statusService;
     private final SettingsService settingsService;
     private final TranscodingService transcodingService;
-    private final AirsonicHomeConfig airsonicConfig;
+    private final AirsonicHomeConfig homeConfig;
 
-    public HLSController(PlayerService playerService, MediaFileService mediaFileService, SecurityService securityService, JWTSecurityService jwtSecurityService, StatusService statusService, SettingsService settingsService, TranscodingService transcodingService, AirsonicHomeConfig airsonicConfig) {
+    public HLSController(PlayerService playerService, MediaFileService mediaFileService, SecurityService securityService, JWTSecurityService jwtSecurityService, StatusService statusService, SettingsService settingsService, TranscodingService transcodingService, AirsonicHomeConfig homeConfig) {
         this.playerService = playerService;
         this.mediaFileService = mediaFileService;
         this.securityService = securityService;
@@ -115,14 +115,14 @@ public class HLSController {
         this.statusService = statusService;
         this.settingsService = settingsService;
         this.transcodingService = transcodingService;
-        this.airsonicConfig = airsonicConfig;
+        this.homeConfig = homeConfig;
         init();
     }
 
     private final Map<HlsSession.Key, HlsSession> sessions = new ConcurrentHashMap<>();
 
     public void init() {
-        Path airsonicHome = this.airsonicConfig.getAirsonicHome();
+        Path airsonicHome = this.homeConfig.getAirsonicHome();
         if (Files.exists(airsonicHome.resolve("hls"))) {
             FileUtil.delete(airsonicHome.resolve("hls"));
         }
@@ -350,7 +350,7 @@ public class HLSController {
                 }
             }
 
-            return new HlsSession(k, mediaFile, transcodingService, airsonicConfig.getAirsonicHome().resolve("hls"));
+            return new HlsSession(k, mediaFile, transcodingService, homeConfig.getAirsonicHome().resolve("hls"));
         });
     }
 

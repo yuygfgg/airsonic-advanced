@@ -67,7 +67,7 @@ public class SettingsServiceTestCase {
     StandardEnvironment env;
 
     @Autowired
-    AirsonicHomeConfig airsonicConfig;
+    AirsonicHomeConfig homeConfig;
 
     @Autowired
     AirsonicDefaultFolderConfig defaultFolderConfig;
@@ -84,7 +84,7 @@ public class SettingsServiceTestCase {
         SettingsService settingsService = new SettingsService();
         env.getPropertySources().addFirst(new ConfigurationPropertySource("airsonic-pre-init-configs", ConfigurationPropertiesService.getInstance().getConfiguration()));
         settingsService.setEnvironment(env);
-        settingsService.setAirsonicConfig(airsonicConfig);
+        settingsService.setAirsonicConfig(homeConfig);
         settingsService.setAirsonicDefaultFolderConfig(defaultFolderConfig);
         return settingsService;
     }

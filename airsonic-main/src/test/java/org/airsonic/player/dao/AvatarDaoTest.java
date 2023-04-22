@@ -41,7 +41,7 @@ public class AvatarDaoTest {
     private static Path tempDir;
 
     @SpyBean
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -120,7 +120,7 @@ public class AvatarDaoTest {
         avatarDao.setCustomAvatar(expected, TEST_USER_NAME);
 
         // Mock the AirsonicConfig to return a different path
-        when(airsonicConfig.getAirsonicHome()).thenReturn(Paths.get("/airsonic-home"));
+        when(homeConfig.getAirsonicHome()).thenReturn(Paths.get("/airsonic-home"));
 
         // Call the method to be tested
         Avatar actual = avatarDao.getCustomAvatar(TEST_USER_NAME);

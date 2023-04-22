@@ -96,7 +96,7 @@ public class UploadController {
     @Autowired
     private SimpMessagingTemplate brokerTemplate;
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     private static final Set<String> SUPPORTED_ZIP_FORMATS = ImmutableSet.of("zip", "7z", "rar", "cpio", "jar", "tar");
     public static final Map<UUID, Consumer<Path>> registeredCallbacks = new ConcurrentHashMap<>();
@@ -108,7 +108,7 @@ public class UploadController {
         try {
             securityService.checkUploadAllowed(p, checkExistence);
         } catch (AccessDeniedException ade) {
-            if (!user.isAdminRole() || !SecurityService.isFileInFolder(p, airsonicConfig.getAirsonicHome())) {
+            if (!user.isAdminRole() || !SecurityService.isFileInFolder(p, homeConfig.getAirsonicHome())) {
                 throw ade;
             }
         }

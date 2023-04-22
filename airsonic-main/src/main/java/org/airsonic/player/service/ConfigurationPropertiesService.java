@@ -38,11 +38,11 @@ public class ConfigurationPropertiesService {
     }
 
     private ConfigurationPropertiesService() {
-        AirsonicHomeConfig airsonicConfig = new AirsonicHomeConfig(
+        AirsonicHomeConfig homeConfig = new AirsonicHomeConfig(
             System.getProperty("airsonic.home"),
             System.getProperty("libresonic.home")
         );
-        Path propertyFile = airsonicConfig.getPropertyFile();
+        Path propertyFile = homeConfig.getPropertyFile();
         if (!Files.exists(propertyFile)) {
             try {
                 MoreFiles.touch(propertyFile);

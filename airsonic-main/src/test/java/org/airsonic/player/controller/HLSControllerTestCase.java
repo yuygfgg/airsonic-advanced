@@ -44,12 +44,12 @@ import static org.mockito.Mockito.when;
 public class HLSControllerTestCase {
 
     @Mock
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     @Test
     public void testParseBitRate() throws Exception {
-        when(airsonicConfig.getAirsonicHome()).thenReturn(Files.createTempDirectory("airsonicTest").toAbsolutePath());
-        HLSController controller = new HLSController(null, null, null, null, null, null, null, airsonicConfig);
+        when(homeConfig.getAirsonicHome()).thenReturn(Files.createTempDirectory("airsonicTest").toAbsolutePath());
+        HLSController controller = new HLSController(null, null, null, null, null, null, null, homeConfig);
 
         Pair<Integer, Dimension> pair = controller.parseBitRate("1000", null);
         assertEquals(1000, pair.getLeft().intValue());

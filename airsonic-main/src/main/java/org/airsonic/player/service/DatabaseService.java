@@ -65,7 +65,7 @@ public class DatabaseService {
     @Autowired
     private TaskSchedulingService taskService;
     @Autowired
-    private AirsonicHomeConfig airsonicConfig;
+    private AirsonicHomeConfig homeConfig;
 
     @PostConstruct
     public void init() {
@@ -263,13 +263,13 @@ public class DatabaseService {
 
     private Path getChangeLogFolder() {
         String timestamp = LocalDateTime.now().format(DATE_TIME_FORMATTER);
-        return airsonicConfig.getAirsonicHome().resolve("backups")
+        return homeConfig.getAirsonicHome().resolve("backups")
                 .resolve(String.format("airsonic.exportDB.%s", timestamp));
     }
 
     public Path getImportDBFolder() {
         String timestamp = LocalDateTime.now().format(DATE_TIME_FORMATTER);
-        return airsonicConfig.getAirsonicHome().resolve("backups")
+        return homeConfig.getAirsonicHome().resolve("backups")
                 .resolve(String.format("airsonic.importDB.%s", timestamp));
     }
 

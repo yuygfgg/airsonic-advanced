@@ -39,16 +39,12 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
 
 public class AirsonicHomeConfigTest {
 
@@ -97,26 +93,6 @@ public class AirsonicHomeConfigTest {
             assertEquals(
                 "jdbc:hsqldb:file:" + tempAirsonicDir.resolve("db").resolve("airsonic").toString() + ";hsqldb.tx=mvcc;sql.enforce_size=false;sql.char_literal=false;sql.nulls_first=false;sql.pad_space=false;hsqldb.defrag_limit=50;shutdown=true",
                 homeConfig.getDefaultJDBCUrl());
-        }
-
-        /**
-         * Test method for {@link org.airsonic.player.config.AirsonicHomeConfig#ensureDirectoryPresent()}.
-         */
-        @Test
-        public void testEnsureDirectoryPresent() throws Exception {
-            // check no exception is thrown when the directory is present
-            try (MockedStatic<Files> filesMockedStatic = Mockito.mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
-                filesMockedStatic.when(() -> Files.exists(eq(homeConfig.getAirsonicHome()))).thenReturn(true);
-                assertDoesNotThrow(() -> homeConfig.ensureDirectoryPresent());
-                filesMockedStatic.verify(() -> Files.createDirectory(eq(homeConfig.getAirsonicHome())), never());
-            }
-
-            try (MockedStatic<Files> filesMockedStatic = Mockito.mockStatic(Files.class)) {
-                filesMockedStatic.when(() -> Files.exists(eq(homeConfig.getAirsonicHome()))).thenReturn(false);
-                filesMockedStatic.when(() -> Files.createDirectory(eq(homeConfig.getAirsonicHome()))).thenReturn(Paths.get("/tmp/airsonic"));
-                assertDoesNotThrow(() -> homeConfig.ensureDirectoryPresent());
-                filesMockedStatic.verify(() -> Files.createDirectory(eq(homeConfig.getAirsonicHome())));
-            }
         }
     }
 

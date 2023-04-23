@@ -25,6 +25,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.PostConstruct;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -58,15 +60,10 @@ public class AirsonicHomeConfig {
         String libresonicHome) {
         this.airsonicHome = airsonicHome;
         this.libresonicHome = libresonicHome;
-        getAirsonicHome();
+        ensureDirectoryPresent();
     }
 
-    /**
-     * Returns the home directory for Airsonic.
-     *
-     * @return The home directory. Never {@code null}.
-     */
-    public Path getAirsonicHome() {
+    private Path getAirsonicHomePath() {
         // Airsonic home directory.
         Path home = Util.isWindows() ? AIRSONIC_HOME_WINDOWS : AIRSONIC_HOME_OTHER;
         if (StringUtils.hasText(this.airsonicHome)) {
@@ -77,7 +74,17 @@ public class AirsonicHomeConfig {
             LOG.warn("libresonic.home is deprecated. Please use airsonic.home instead.");
             home = Paths.get(this.libresonicHome);
         }
-        ensureDirectoryPresent(home);
+        return home;
+    }
+
+    /**
+     * Returns the home directory for Airsonic.
+     *
+     * @return The home directory. Never {@code null}.
+     */
+    public Path getAirsonicHome() {
+        Path home = getAirsonicHomePath();
+        ensureDirectoryPresent();
         return home;
     }
 
@@ -122,7 +129,9 @@ public class AirsonicHomeConfig {
      * Ensure that the airsonic home directory is present.
      * If not, create it.
      */
-    private void ensureDirectoryPresent(Path home) {
+    @PostConstruct
+    public void ensureDirectoryPresent() {
+        Path home = getAirsonicHomePath();
         if (!Files.exists(home)) {
             try {
                 Files.createDirectory(home);

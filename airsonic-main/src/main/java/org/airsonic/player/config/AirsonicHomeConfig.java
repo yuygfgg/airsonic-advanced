@@ -124,13 +124,13 @@ public class AirsonicHomeConfig {
      */
     @PostConstruct
     public void ensureDirectoryPresent() {
-        Path airsonicHome = getAirsonicHome();
-        if (!Files.exists(airsonicHome)) {
+        Path home = getAirsonicHome();
+        if (!Files.exists(home)) {
             try {
-                Files.createDirectory(airsonicHome);
+                Files.createDirectory(home);
             } catch (Exception e) {
-                LOG.error("Failed to create or see airsonic home directory. {}", airsonicHome, e);
-                String message = "The directory " + airsonicHome + " does not exist. Please create it and make it writable. " +
+                LOG.error("Failed to create or see airsonic home directory. {}", home, e);
+                String message = "The directory " + home + " does not exist. Please create it and make it writable. " +
                         "(You can override the directory location by specifying -Dairsonic.home=... when " +
                         "starting the servlet container.)";
                 throw new RuntimeException(message);

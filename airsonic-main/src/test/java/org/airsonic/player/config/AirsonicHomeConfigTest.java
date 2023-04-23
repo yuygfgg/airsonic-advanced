@@ -19,48 +19,84 @@
 package org.airsonic.player.config;
 
 import org.airsonic.player.util.Util;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 
-@ExtendWith(SpringExtension.class)
-@EnableConfigurationProperties({AirsonicHomeConfig.class})
-@ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class)
 public class AirsonicHomeConfigTest {
 
+    @TempDir
+    private static Path tempAirsonicDir;
+
+    @TempDir
+    private static Path tempLibresonicDir;
+
+    @BeforeAll
+    public static void setup() {
+        System.clearProperty("airsonic.home");
+        System.clearProperty("libresonic.home");
+        System.setProperty("airsonic.home", tempAirsonicDir.toString());
+        System.setProperty("libresonic.home", tempLibresonicDir.toString());
+    }
+
+
+    @AfterAll
+    public static void cleanup() {
+        System.clearProperty("airsonic.home");
+        System.clearProperty("libresonic.home");
+    }
+
     @Nested
-    @TestPropertySource(properties = {
-        "airsonic.home=/tmp/test_airsonic",
-        "libresonic.home=/tmp/test_libresonic"
-    })
+    @EnableConfigurationProperties({AirsonicHomeConfig.class})
+    @ContextConfiguration(initializers = {ConfigDataApplicationContextInitializer.class})
+    @ExtendWith(SpringExtension.class)
     public class AirsonicConfigTestWithProperties {
 
         @Autowired
         private AirsonicHomeConfig homeConfig;
 
+
         /**
-         * Test method for {@link org.airsonic.player.config.AirsonicHomeConfig#getAirsonicHome()}.
+         * Test getters of AirsonicHomeConfig
          */
         @Test
-        public void testGetAirsonicHome() {
-            assertEquals("/tmp/test_airsonic", homeConfig.getAirsonicHome().toString());
+        public void testGetters() {
+            assertEquals(tempAirsonicDir.toString(), homeConfig.getAirsonicHome().toString());
+            assertFalse(tempAirsonicDir.resolve("transcode").toFile().exists());
+            assertEquals(tempAirsonicDir.resolve("transcode").toString(), homeConfig.getTranscodeDirectory().toString());
+            assertTrue(tempAirsonicDir.resolve("transcode").toFile().exists());
+            assertEquals(tempAirsonicDir.resolve("airsonic.properties").toString(), homeConfig.getPropertyFile().toString());
+            assertEquals(tempAirsonicDir.resolve("airsonic.log").toString(), homeConfig.getDefaultLogFile().toString());
+            assertEquals(
+                "jdbc:hsqldb:file:" + tempAirsonicDir.resolve("db").resolve("airsonic").toString() + ";hsqldb.tx=mvcc;sql.enforce_size=false;sql.char_literal=false;sql.nulls_first=false;sql.pad_space=false;hsqldb.defrag_limit=50;shutdown=true",
+                homeConfig.getDefaultJDBCUrl());
         }
 
         /**
@@ -70,55 +106,51 @@ public class AirsonicHomeConfigTest {
         public void testEnsureDirectoryPresent() throws Exception {
             // check no exception is thrown when the directory is present
             try (MockedStatic<Files> filesMockedStatic = Mockito.mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
-                filesMockedStatic.when(() -> Files.exists(homeConfig.getAirsonicHome())).thenReturn(true);
+                filesMockedStatic.when(() -> Files.exists(eq(homeConfig.getAirsonicHome()))).thenReturn(true);
                 assertDoesNotThrow(() -> homeConfig.ensureDirectoryPresent());
-                filesMockedStatic.verify(() -> Files.createDirectory(homeConfig.getAirsonicHome()), never());
+                filesMockedStatic.verify(() -> Files.createDirectory(eq(homeConfig.getAirsonicHome())), never());
             }
 
             try (MockedStatic<Files> filesMockedStatic = Mockito.mockStatic(Files.class)) {
-                filesMockedStatic.when(() -> Files.exists(homeConfig.getAirsonicHome())).thenReturn(false);
-                filesMockedStatic.when(() -> Files.createDirectory(homeConfig.getAirsonicHome())).thenReturn(Paths.get("/tmp/airsonic"));
+                filesMockedStatic.when(() -> Files.exists(eq(homeConfig.getAirsonicHome()))).thenReturn(false);
+                filesMockedStatic.when(() -> Files.createDirectory(eq(homeConfig.getAirsonicHome()))).thenReturn(Paths.get("/tmp/airsonic"));
                 assertDoesNotThrow(() -> homeConfig.ensureDirectoryPresent());
-                filesMockedStatic.verify(() -> Files.createDirectory(homeConfig.getAirsonicHome()));
+                filesMockedStatic.verify(() -> Files.createDirectory(eq(homeConfig.getAirsonicHome())));
             }
         }
     }
 
     @Nested
-    @TestPropertySource(properties = {
-        "libresonic.home=/tmp/test_libresonic"
-    })
-    public class AirsonicConfigTestWithLibreSonicHome {
-
-        @Autowired
-        private AirsonicHomeConfig homeConfig;
+    public class TestGetAirsonicHome {
 
         /**
-         * Test method for {@link org.airsonic.player.config.AirsonicHomeConfig#getAirsonicHome()}.
+         * provide arguments for testGetAirsonicHome
+         *
+         * @return Stream of Arguments for testGetAirsonicHome
          */
-        @Test
-        public void testGetAirsonicHome() {
-            assertEquals("/tmp/test_libresonic", homeConfig.getAirsonicHome().toString());
+        private static Stream<Arguments> provideArguments() {
+            return Stream.of(
+                Arguments.of(null, null, Util.isWindows() ? "c:\\airsonic" : "/var/airsonic"),   // default
+                Arguments.of("", "", Util.isWindows() ? "c:\\airsonic" : "/var/airsonic"),   // default
+                Arguments.of(" ", " ", Util.isWindows() ? "c:\\airsonic" : "/var/airsonic"),   // default
+                Arguments.of(tempAirsonicDir.toString(), null, tempAirsonicDir.toString()),      // airsonic.home
+                Arguments.of(tempAirsonicDir.toString(), "", tempAirsonicDir.toString()),      // airsonic.home
+                Arguments.of(tempAirsonicDir.toString(), " ", tempAirsonicDir.toString()),      // airsonic.home
+                Arguments.of(null, tempLibresonicDir.toString(), tempLibresonicDir.toString()), // libresonic.home
+                Arguments.of("", tempLibresonicDir.toString(), tempLibresonicDir.toString()), // libresonic.home
+                Arguments.of(" ", tempLibresonicDir.toString(), tempLibresonicDir.toString()), // libresonic.home
+                Arguments.of(tempAirsonicDir.toString(), tempLibresonicDir.toString(), tempAirsonicDir.toString()) // airsonic.home > libresonic.home
+            );
         }
-    }
-
-    @Nested
-    public class AirsonicConfigTestWitoutProperties {
-
-        @Autowired
-        private AirsonicHomeConfig homeConfig;
-
         /**
          * Test method for {@link org.airsonic.player.config.AirsonicHomeConfig#getAirsonicHome()}.
          */
         @ParameterizedTest
-        @CsvSource({
-            "true, c:/airsonic",
-            "false, /var/airsonic"
-        })
-        public void testGetAirsonicHome(boolean isWindows, String expectedPath) {
-            try (MockedStatic<Util> mockedUtil = Mockito.mockStatic(Util.class, Mockito.CALLS_REAL_METHODS)) {
-                mockedUtil.when(Util::isWindows).thenReturn(isWindows);
+        @MethodSource("provideArguments")
+        public void testGetAirsonicHome(String airsonicHome, String libresonicHome, String expectedPath) {
+            try (MockedStatic<Files> mockedFiles = Mockito.mockStatic(Files.class)) {
+                mockedFiles.when(() -> Files.exists(any(Path.class), any(LinkOption[].class))).thenReturn(true);
+                AirsonicHomeConfig homeConfig = new AirsonicHomeConfig(airsonicHome, libresonicHome);
                 assertEquals(expectedPath, homeConfig.getAirsonicHome().toString());
             }
         }

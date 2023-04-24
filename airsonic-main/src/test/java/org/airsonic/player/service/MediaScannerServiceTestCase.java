@@ -98,7 +98,6 @@ public class MediaScannerServiceTestCase {
     @Before
     public void setup() {
         jdbcTemplate.execute("DELETE FROM media_file");
-        jdbcTemplate.execute("DELETE FROM music_folder");
         jdbcTemplate.execute("DELETE FROM album");
         jdbcTemplate.execute("DELETE FROM artist");
         TestCaseUtils.waitForScanFinish(mediaScannerService);

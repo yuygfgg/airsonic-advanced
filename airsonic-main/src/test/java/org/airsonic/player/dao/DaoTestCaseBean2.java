@@ -1,6 +1,7 @@
 package org.airsonic.player.dao;
 
 import org.airsonic.player.TestCaseUtils.TestDao;
+import org.airsonic.player.config.AirsonicDefaultFolderConfig;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.util.HomeRule;
 import org.junit.ClassRule;
@@ -20,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Import(TestDao.class)
 @Transactional
 @ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class)
-@EnableConfigurationProperties({AirsonicHomeConfig.class})
+@EnableConfigurationProperties({AirsonicHomeConfig.class, AirsonicDefaultFolderConfig.class})
 public class DaoTestCaseBean2 {
     @ClassRule
     public static final HomeRule airsonicRule = new HomeRule();

@@ -73,10 +73,7 @@ public class BookmarkReposiotoryTest extends DaoTestCaseBean2 {
     @Before
     public void setup() {
         // clean
-        getJdbcTemplate().execute("delete from user_credentials");
-        getJdbcTemplate().execute("delete from users");
         getJdbcTemplate().execute("delete from media_file");
-        getJdbcTemplate().execute("delete from music_folder");
         getJdbcTemplate().execute("delete from bookmark");
 
         // music folder

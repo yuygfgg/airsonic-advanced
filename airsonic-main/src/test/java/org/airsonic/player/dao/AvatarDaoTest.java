@@ -6,8 +6,10 @@ import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.UserCredential;
 import org.airsonic.player.domain.UserCredential.App;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -46,7 +48,7 @@ public class AvatarDaoTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    private final String TEST_USER_NAME = "testUser";
+    private final String TEST_USER_NAME = "avatarDaoTestUser";
 
     @BeforeAll
     public static void beforeAll() {
@@ -56,8 +58,6 @@ public class AvatarDaoTest {
     @BeforeEach
     public void beforeEach() {
         // Clear the database
-        jdbcTemplate.execute("DELETE FROM users");
-        jdbcTemplate.execute("DELETE FROM user_credentials");
         jdbcTemplate.execute("DELETE FROM custom_avatar");
     }
 
@@ -85,52 +85,65 @@ public class AvatarDaoTest {
         assertEquals(expected.getWidth(), actual.getWidth());
     }
 
-    @Test
-    public void testCustomAvatar() throws Exception {
+    @Nested
+    public class TestCustomAvatar {
 
-        User user = new User(TEST_USER_NAME, "user1@example.com");
-        UserCredential uc = new UserCredential(TEST_USER_NAME, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
-        userDao.createUser(user, uc);
-        Avatar expected = new Avatar(1, "avatar1", Instant.now(), "image/jpeg", 100, 100, "/avatars/avatar1.jpg");
 
-        // Call the method to be tested
-        avatarDao.setCustomAvatar(expected, TEST_USER_NAME);
+        @BeforeEach
+        public void beforeEach() {
+            User user = new User(TEST_USER_NAME, "avatar_dao_test@example.com");
+            UserCredential uc = new UserCredential(TEST_USER_NAME, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
+            userDao.createUser(user, uc);
+        }
 
-        // Call the method to be tested
-        Avatar actual = avatarDao.getCustomAvatar(TEST_USER_NAME);
+        @AfterEach
+        public void afterEach() {
+            userDao.deleteUser(TEST_USER_NAME);
+        }
 
-        // Assertions
-        assertEquals(expected.getName(), actual.getName());
-        assertEquals(expected.getMimeType(), actual.getMimeType());
-        assertEquals(expected.getPath(), actual.getPath());
-        assertEquals(expected.getHeight(), actual.getHeight());
-        assertEquals(expected.getWidth(), actual.getWidth());
+        @Test
+        public void testCustomAvatar() throws Exception {
+
+            Avatar expected = new Avatar(1, "avatar1", Instant.now(), "image/jpeg", 100, 100, "/avatars/avatar1.jpg");
+
+            // Call the method to be tested
+            avatarDao.setCustomAvatar(expected, TEST_USER_NAME);
+
+            // Call the method to be tested
+            Avatar actual = avatarDao.getCustomAvatar(TEST_USER_NAME);
+
+            // Assertions
+            assertEquals(expected.getName(), actual.getName());
+            assertEquals(expected.getMimeType(), actual.getMimeType());
+            assertEquals(expected.getPath(), actual.getPath());
+            assertEquals(expected.getHeight(), actual.getHeight());
+            assertEquals(expected.getWidth(), actual.getWidth());
+        }
+
+        @Test
+        public void testCustomAvatarWithAirsonicHomePath() throws Exception {
+
+            Avatar expected = new Avatar(1, "avatar1", Instant.now(), "image/jpeg", 100, 100, tempDir.resolve("avatars/avatar1.jpg"));
+
+            // Call the method to be tested
+            avatarDao.setCustomAvatar(expected, TEST_USER_NAME);
+
+            // Mock the AirsonicConfig to return a different path
+            when(homeConfig.getAirsonicHome()).thenReturn(Paths.get("/airsonic-home"));
+
+            // Call the method to be tested
+            Avatar actual = avatarDao.getCustomAvatar(TEST_USER_NAME);
+
+            // Assertions
+            assertEquals(expected.getName(), actual.getName());
+            assertEquals(expected.getMimeType(), actual.getMimeType());
+            assertEquals(Paths.get("/airsonic-home/avatars/avatar1.jpg"), actual.getPath());
+            assertEquals(expected.getHeight(), actual.getHeight());
+            assertEquals(expected.getWidth(), actual.getWidth());
+        }
+
     }
 
-    @Test
-    public void testCustomAvatarWithAirsonicHomePath() throws Exception {
 
-        User user = new User(TEST_USER_NAME, "user1@example.com");
-        UserCredential uc = new UserCredential(TEST_USER_NAME, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
-        userDao.createUser(user, uc);
-        Avatar expected = new Avatar(1, "avatar1", Instant.now(), "image/jpeg", 100, 100, tempDir.resolve("avatars/avatar1.jpg"));
-
-
-        // Call the method to be tested
-        avatarDao.setCustomAvatar(expected, TEST_USER_NAME);
-
-        // Mock the AirsonicConfig to return a different path
-        when(homeConfig.getAirsonicHome()).thenReturn(Paths.get("/airsonic-home"));
-
-        // Call the method to be tested
-        Avatar actual = avatarDao.getCustomAvatar(TEST_USER_NAME);
-
-        // Assertions
-        assertEquals(expected.getName(), actual.getName());
-        assertEquals(expected.getMimeType(), actual.getMimeType());
-        assertEquals(Paths.get("/airsonic-home/avatars/avatar1.jpg"), actual.getPath());
-        assertEquals(expected.getHeight(), actual.getHeight());
-        assertEquals(expected.getWidth(), actual.getWidth());
-    }
 
 }

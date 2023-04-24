@@ -63,6 +63,8 @@ public class BookmarkReposiotoryTest extends DaoTestCaseBean2 {
     @Autowired
     MusicFolderDao musicFolderDao;
 
+    private final String TEST_FOLDER_PATH = "testFolderPath";
+
     private final String TEST_USER_NAME = "testUserForBookmark";
 
     private MediaFile mediaFile;
@@ -71,14 +73,11 @@ public class BookmarkReposiotoryTest extends DaoTestCaseBean2 {
     @Before
     public void setup() {
         // clean
-        getJdbcTemplate().execute("delete from user_credentials");
-        getJdbcTemplate().execute("delete from users");
         getJdbcTemplate().execute("delete from media_file");
-        getJdbcTemplate().execute("delete from music_folder");
         getJdbcTemplate().execute("delete from bookmark");
 
         // music folder
-        MusicFolder musicFolder = new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        MusicFolder musicFolder = new MusicFolder(Paths.get(TEST_FOLDER_PATH), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         musicFolderDao.createMusicFolder(musicFolder);
 
         // media file
@@ -109,10 +108,10 @@ public class BookmarkReposiotoryTest extends DaoTestCaseBean2 {
     }
     @After
     public void clean() {
-        getJdbcTemplate().execute("delete from user_credentials");
-        getJdbcTemplate().execute("delete from users");
+        userDao.deleteUser(TEST_USER_NAME);
         getJdbcTemplate().execute("delete from media_file");
-        getJdbcTemplate().execute("delete from music_folder");
+        MusicFolder folder = musicFolderDao.getMusicFolderForPath(TEST_FOLDER_PATH);
+        musicFolderDao.deleteMusicFolder(folder.getId());
         getJdbcTemplate().execute("delete from bookmark");
     }
 

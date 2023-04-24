@@ -21,6 +21,7 @@ package org.airsonic.player.controller;
 
 import org.airsonic.player.command.DatabaseSettingsCommand;
 import org.airsonic.player.command.DatabaseSettingsCommand.DataSourceConfigType;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.TransferStatus;
 import org.airsonic.player.domain.User;
@@ -80,6 +81,8 @@ public class DatabaseSettingsController {
     private StatusService statusService;
     @Autowired
     private SecurityService securityService;
+    @Autowired
+    private AirsonicHomeConfig homeConfig;
 
     private static final UUID DB_CONTROLLER_IMPORT_CALLBACK_ID = UUID.randomUUID();
 
@@ -151,15 +154,15 @@ public class DatabaseSettingsController {
 
         if (StringUtils.isNotBlank(command.getJNDIName())) {
             command.setConfigType(DataSourceConfigType.JNDI);
-        } else if (StringUtils.equals(command.getUrl(), SettingsService.getDefaultJDBCUrl())
-                && StringUtils.equals(command.getUsername(), SettingsService.getDefaultJDBCUsername())
-                && StringUtils.equals(command.getPassword(), SettingsService.getDefaultJDBCPassword())) {
+        } else if (StringUtils.equals(command.getUrl(), homeConfig.getDefaultJDBCUrl())
+                && StringUtils.equals(command.getUsername(), SettingsService.DEFAULT_JDBC_USERNAME)
+                && StringUtils.equals(command.getPassword(), SettingsService.DEFAULT_JDBC_PASSWORD)) {
             command.setConfigType(DataSourceConfigType.BUILTIN);
         } else {
             command.setConfigType(DataSourceConfigType.EXTERNAL);
         }
         command.setCallback(DB_CONTROLLER_IMPORT_CALLBACK_ID.toString());
-        command.setImportFolder(DatabaseService.getImportDBFolder().toString());
+        command.setImportFolder(databaseService.getImportDBFolder().toString());
         command.setBackuppable(databaseService.backuppable());
         command.setDbBackupInterval(settingsService.getDbBackupInterval());
         command.setDbBackupRetentionCount(settingsService.getDbBackupRetentionCount());

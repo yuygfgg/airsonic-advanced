@@ -21,6 +21,8 @@ package org.airsonic.player.service;
 
 import com.google.common.collect.ImmutableMap;
 import org.airsonic.player.TestCaseUtils;
+import org.airsonic.player.config.AirsonicDefaultFolderConfig;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.util.HomeRule;
 import org.apache.commons.configuration2.spring.ConfigurationPropertySource;
 import org.junit.Before;
@@ -28,6 +30,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -52,6 +55,7 @@ import static org.junit.Assert.assertTrue;
  * @author Sindre Mehus
  */
 @RunWith(SpringRunner.class)
+@EnableConfigurationProperties({AirsonicHomeConfig.class, AirsonicDefaultFolderConfig.class})
 public class SettingsServiceTestCase {
 
     @ClassRule
@@ -61,6 +65,12 @@ public class SettingsServiceTestCase {
 
     @Autowired
     StandardEnvironment env;
+
+    @Autowired
+    AirsonicHomeConfig homeConfig;
+
+    @Autowired
+    AirsonicDefaultFolderConfig defaultFolderConfig;
 
     @Before
     public void setUp() throws IOException {
@@ -74,12 +84,9 @@ public class SettingsServiceTestCase {
         SettingsService settingsService = new SettingsService();
         env.getPropertySources().addFirst(new ConfigurationPropertySource("airsonic-pre-init-configs", ConfigurationPropertiesService.getInstance().getConfiguration()));
         settingsService.setEnvironment(env);
+        settingsService.setAirsonicConfig(homeConfig);
+        settingsService.setAirsonicDefaultFolderConfig(defaultFolderConfig);
         return settingsService;
-    }
-
-    @Test
-    public void testAirsonicHome() {
-        assertEquals("Wrong Airsonic home.", TestCaseUtils.airsonicHomePathForTest(), SettingsService.getAirsonicHome().toString());
     }
 
     @Test

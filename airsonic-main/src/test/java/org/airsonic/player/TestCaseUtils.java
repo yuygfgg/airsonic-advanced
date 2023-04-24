@@ -18,7 +18,7 @@ public class TestCaseUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestCaseUtils.class);
 
-    private static Path airsonicHomeDirForTest = null;
+    public static Path airsonicHomeDirForTest = null;
 
     /**
      * Returns the path of the AIRSONIC_HOME directory to use for tests.

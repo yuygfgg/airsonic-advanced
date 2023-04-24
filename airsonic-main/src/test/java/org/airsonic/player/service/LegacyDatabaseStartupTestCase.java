@@ -1,6 +1,7 @@
 package org.airsonic.player.service;
 
 import org.airsonic.player.TestCaseUtils;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.util.EmbeddedTestCategory;
 import org.airsonic.player.util.FileUtils;
 import org.airsonic.player.util.HomeRule;
@@ -36,8 +37,9 @@ public class LegacyDatabaseStartupTestCase {
         Path dbDirectory = Paths.get(homeParent, "db");
         FileUtils.copyRecursively(LegacyDatabaseStartupTestCase.class.getResource("/db/pre-liquibase/db"), dbDirectory);
         // have to change the url here because old db files are libresonic
+        AirsonicHomeConfig config = new AirsonicHomeConfig(homeParent, null);
         System.setProperty(SettingsService.KEY_DATABASE_URL,
-                SettingsService.getDefaultJDBCUrl().replaceAll("airsonic;", "libresonic;"));
+                config.getDefaultJDBCUrl().replaceAll("airsonic;", "libresonic;"));
         System.setProperty(SettingsService.KEY_DATABASE_USERNAME, "sa");
         System.setProperty(SettingsService.KEY_DATABASE_PASSWORD, "");
     }

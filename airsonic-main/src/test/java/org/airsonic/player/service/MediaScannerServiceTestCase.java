@@ -24,6 +24,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -86,6 +87,9 @@ public class MediaScannerServiceTestCase {
     @Autowired
     private MediaFolderService mediaFolderService;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -93,6 +97,9 @@ public class MediaScannerServiceTestCase {
 
     @Before
     public void setup() {
+        jdbcTemplate.execute("DELETE FROM media_file");
+        jdbcTemplate.execute("DELETE FROM album");
+        jdbcTemplate.execute("DELETE FROM artist");
         TestCaseUtils.waitForScanFinish(mediaScannerService);
     }
 
@@ -326,8 +333,4 @@ public class MediaScannerServiceTestCase {
 
         assertTrue(listMusicChildren.get(0).getDuration() > 0.0);
     }
-
-
-
-
 }

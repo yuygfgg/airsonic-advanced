@@ -19,15 +19,25 @@
 
 package org.airsonic.player.dao;
 
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ContextConfiguration;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -40,7 +50,10 @@ import static org.junit.Assert.assertEquals;
  *
  * @author Y.Tory
  */
-public class MediaFileDaoTest extends DaoTestCaseBean2 {
+@SpringBootTest
+@EnableConfigurationProperties(AirsonicHomeConfig.class)
+@ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class)
+public class MediaFileDaoTest {
 
     @Autowired
     MediaFileDao mediaFileDao;
@@ -48,18 +61,35 @@ public class MediaFileDaoTest extends DaoTestCaseBean2 {
     @Autowired
     MusicFolderDao musicFolderDao;
 
-    @Before
-    public void setUp() {
-        getJdbcTemplate().execute("delete from media_file");
-        getJdbcTemplate().execute("delete from music_folder");
-        MusicFolder musicFolder = new MusicFolder(Paths.get("path"), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
-        musicFolderDao.createMusicFolder(musicFolder);
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
+    @TempDir
+    private static Path tempAirsonicDir;
+
+    private static final String MUSIC_FOLDER_PATH = "/path";
+
+    @BeforeAll
+    public static void setUp() {
+        System.setProperty("airsonic.home", tempAirsonicDir.toString());
     }
 
     @AfterAll
-    public void cleanUp() {
-        getJdbcTemplate().execute("delete from media_file");
-        getJdbcTemplate().execute("delete from music_folder");
+    public static void cleanUp() {
+        System.clearProperty("airsonic.home");
+    }
+
+    @BeforeEach
+    public void cleanUpBefore() {
+        MusicFolder musicFolder = new MusicFolder(Paths.get(MUSIC_FOLDER_PATH), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        musicFolderDao.createMusicFolder(musicFolder);
+    }
+
+    @AfterEach
+    public void cleanUpAfter() {
+        MusicFolder folder = musicFolderDao.getMusicFolderForPath(MUSIC_FOLDER_PATH);
+        jdbcTemplate.execute("DELETE FROM media_file");
+        musicFolderDao.deleteMusicFolder(folder.getId());
     }
 
     @Test

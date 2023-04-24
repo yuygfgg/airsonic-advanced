@@ -20,6 +20,7 @@
  */
 package org.airsonic.player.controller;
 
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Avatar;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
@@ -66,6 +67,9 @@ public class AvatarUploadController {
     private SettingsService settingsService;
     @Autowired
     private SecurityService securityService;
+    @Autowired
+    private AirsonicHomeConfig homeConfig;
+
 
     @PostMapping
     protected ModelAndView handleRequestInternal(@RequestParam("file") MultipartFile file, HttpServletRequest request) throws Exception {
@@ -96,7 +100,7 @@ public class AvatarUploadController {
             int width = image.getWidth();
             int height = image.getHeight();
             String mimeType = StringUtil.getMimeType(FilenameUtils.getExtension(fileName));
-            Path folder = SettingsService.getAirsonicHome().resolve("avatars").resolve(username);
+            Path folder = homeConfig.getAirsonicHome().resolve("avatars").resolve(username);
             Files.createDirectories(folder);
             Path fileOnDisk = folder.resolve(fileName + "." + StringUtils.substringAfter(mimeType, "/"));
             // Scale down image if necessary.

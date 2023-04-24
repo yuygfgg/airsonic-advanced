@@ -1,5 +1,6 @@
 package org.airsonic.player.controller;
 
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Avatar;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
@@ -13,7 +14,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mock.web.MockMultipartFile;
@@ -40,7 +43,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(MockitoExtension.class)
 @WebMvcTest
-@ContextConfiguration(classes = {AvatarUploadController.class})
+@ContextConfiguration(classes = {AvatarUploadController.class}, initializers = ConfigDataApplicationContextInitializer.class)
+@EnableConfigurationProperties({AirsonicHomeConfig.class})
 @SuppressWarnings("unchecked")
 public class AvatarUploadControllerTest {
 

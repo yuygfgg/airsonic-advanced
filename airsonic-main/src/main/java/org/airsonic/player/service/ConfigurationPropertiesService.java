@@ -1,6 +1,7 @@
 package org.airsonic.player.service;
 
 import com.google.common.io.MoreFiles;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.apache.commons.configuration2.*;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Parameters;
@@ -37,7 +38,11 @@ public class ConfigurationPropertiesService {
     }
 
     private ConfigurationPropertiesService() {
-        Path propertyFile = SettingsService.getPropertyFile();
+        AirsonicHomeConfig homeConfig = new AirsonicHomeConfig(
+            System.getProperty("airsonic.home"),
+            System.getProperty("libresonic.home")
+        );
+        Path propertyFile = homeConfig.getPropertyFile();
         if (!Files.exists(propertyFile)) {
             try {
                 MoreFiles.touch(propertyFile);

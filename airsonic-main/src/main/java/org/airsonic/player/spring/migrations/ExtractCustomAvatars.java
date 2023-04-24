@@ -9,7 +9,7 @@ import liquibase.exception.SetupException;
 import liquibase.exception.ValidationErrors;
 import liquibase.resource.ResourceAccessor;
 import liquibase.statement.SqlStatement;
-import org.airsonic.player.service.SettingsService;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +48,10 @@ public class ExtractCustomAvatars implements CustomSqlChange {
         if (database.getConnection() instanceof JdbcConnection) {
             conn = (JdbcConnection) database.getConnection();
         }
+        AirsonicHomeConfig homeConfig = new AirsonicHomeConfig(
+            System.getProperty("airsonic.home"),
+            System.getProperty("libresonic.home")
+        );
 
         if (conn != null) {
             try (PreparedStatement st = conn.prepareStatement("select * from custom_avatar");
@@ -55,7 +59,7 @@ public class ExtractCustomAvatars implements CustomSqlChange {
 
                 while (result.next()) {
                     try {
-                        Path folder = SettingsService.getAirsonicHome().resolve("avatars").resolve(result.getString("username"));
+                        Path folder = homeConfig.getAirsonicHome().resolve("avatars").resolve(result.getString("username"));
                         Files.createDirectories(folder);
                         Path filePath = folder.resolve(result.getString("name") + "." + StringUtils.substringAfter(result.getString("mime_type"), "/"));
                         Files.copy(new ByteArrayInputStream(result.getBytes("data")), filePath);

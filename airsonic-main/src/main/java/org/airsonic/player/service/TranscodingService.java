@@ -383,7 +383,7 @@ public class TranscodingService {
         return new TranscodeInputStream(builder, in, tmpFile);
     }
 
-    public static ProcessBuilder transformTranscodingVariables(String command, Map<String, String> vars) {
+    public ProcessBuilder transformTranscodingVariables(String command, Map<String, String> vars) {
         String[] splitCommand = StringUtil.split(command);
         List<String> kl = new ArrayList<>(vars.size());
         List<String> vl = new ArrayList<>(vars.size());
@@ -399,9 +399,9 @@ public class TranscodingService {
         return new ProcessBuilder(result);
     }
 
-    public static String substituteTranscodingVariable(int index, String commandSegment, String[] keys, String[] values) {
+    public String substituteTranscodingVariable(int index, String commandSegment, String[] keys, String[] values) {
         if (index == 0) {
-            return SettingsService.resolveTranscodeExecutable(commandSegment, commandSegment);
+            return settingsService.resolveTranscodeExecutable(commandSegment, commandSegment);
         }
 
         return StringUtils.replaceEach(commandSegment, keys, values);
@@ -528,7 +528,7 @@ public class TranscodingService {
             return true;
         }
         String executable = StringUtil.split(step)[0];
-        return SettingsService.resolveTranscodeExecutable(executable, null) != null;
+        return settingsService.resolveTranscodeExecutable(executable, null) != null;
     }
 
     /**
@@ -717,4 +717,3 @@ public class TranscodingService {
         }
     }
 }
-

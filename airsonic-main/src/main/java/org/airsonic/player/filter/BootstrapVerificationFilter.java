@@ -14,12 +14,13 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.filter;
 
-import org.airsonic.player.service.SettingsService;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,12 @@ public class BootstrapVerificationFilter implements Filter {
     private boolean airsonicHomeVerified = false;
     private final AtomicBoolean serverInfoLogged = new AtomicBoolean();
 
+    private final AirsonicHomeConfig homeConfig;
+
+    public BootstrapVerificationFilter(AirsonicHomeConfig homeConfig) {
+        this.homeConfig = homeConfig;
+    }
+
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
 
@@ -57,7 +64,7 @@ public class BootstrapVerificationFilter implements Filter {
             return;
         }
 
-        Path home = SettingsService.getAirsonicHome();
+        Path home = homeConfig.getAirsonicHome();
         if (!directoryExists(home)) {
             error(res, "<p>The directory <b>" + home + "</b> does not exist. Please create it and make it writable, " +
                        "then restart the servlet container.</p>" +

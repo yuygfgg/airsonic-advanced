@@ -14,12 +14,14 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.controller;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.TransferStatus;
@@ -41,7 +43,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.core.io.PathResource;
 import org.springframework.core.io.Resource;
@@ -61,7 +62,6 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -98,27 +98,33 @@ public class HLSController {
     private static final int SEGMENT_DURATION = 10;
     private static final Pattern BITRATE_PATTERN = Pattern.compile("(\\d+)(@(\\d+)x(\\d+))?");
 
-    @Autowired
-    private PlayerService playerService;
-    @Autowired
-    private MediaFileService mediaFileService;
-    @Autowired
-    private SecurityService securityService;
-    @Autowired
-    private JWTSecurityService jwtSecurityService;
-    @Autowired
-    private StatusService statusService;
-    @Autowired
-    private SettingsService settingsService;
-    @Autowired
-    private TranscodingService transcodingService;
+    private final PlayerService playerService;
+    private final MediaFileService mediaFileService;
+    private final SecurityService securityService;
+    private final JWTSecurityService jwtSecurityService;
+    private final StatusService statusService;
+    private final SettingsService settingsService;
+    private final TranscodingService transcodingService;
+    private final AirsonicHomeConfig homeConfig;
+
+    public HLSController(PlayerService playerService, MediaFileService mediaFileService, SecurityService securityService, JWTSecurityService jwtSecurityService, StatusService statusService, SettingsService settingsService, TranscodingService transcodingService, AirsonicHomeConfig homeConfig) {
+        this.playerService = playerService;
+        this.mediaFileService = mediaFileService;
+        this.securityService = securityService;
+        this.jwtSecurityService = jwtSecurityService;
+        this.statusService = statusService;
+        this.settingsService = settingsService;
+        this.transcodingService = transcodingService;
+        this.homeConfig = homeConfig;
+        init();
+    }
 
     private final Map<HlsSession.Key, HlsSession> sessions = new ConcurrentHashMap<>();
 
-    @PostConstruct
     public void init() {
-        if (Files.exists(HlsSession.getHlsRootDirectory())) {
-            FileUtil.delete(HlsSession.getHlsRootDirectory());
+        Path airsonicHome = this.homeConfig.getAirsonicHome();
+        if (Files.exists(airsonicHome.resolve("hls"))) {
+            FileUtil.delete(airsonicHome.resolve("hls"));
         }
     }
 
@@ -344,7 +350,7 @@ public class HLSController {
                 }
             }
 
-            return new HlsSession(k, mediaFile, transcodingService);
+            return new HlsSession(k, mediaFile, transcodingService, homeConfig.getAirsonicHome().resolve("hls"));
         });
     }
 

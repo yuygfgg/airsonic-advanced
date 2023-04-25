@@ -49,7 +49,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class BookmarkReposiotoryTest extends DaoTestCaseBean2 {
+public class BookmarkRepositoryTest extends DaoTestCaseBean2 {
 
     @Autowired
     private BookmarkRepository bookmarkRepository;

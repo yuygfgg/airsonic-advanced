@@ -45,7 +45,8 @@ jobs:
       with:
         languages: ${{ matrix.language }}
 
-    - name: Build
+    - if: matrix.language == 'java'
+      name: Build
       run: mvn package -DskipTests -Dcheckstyle.skip=true
         
     - name: Perform CodeQL Analysis

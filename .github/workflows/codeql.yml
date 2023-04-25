@@ -44,7 +44,6 @@ jobs:
       uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
-        debug: true
 
     - if: matrix.language == 'java'
       name: Build

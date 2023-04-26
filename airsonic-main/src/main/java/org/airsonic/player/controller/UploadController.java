@@ -159,7 +159,7 @@ public class UploadController {
                     String fileName = monitoredFile.getOriginalFilename();
                     if (!fileName.trim().isEmpty()) {
 
-                        Path targetFile = dir.resolve(FilenameUtils.getName(fileName));
+                        Path targetFile = dir.resolve(pattern.matcher(FilenameUtils.getName(fileName)).replaceAll(""));
 
                         try {
                             checkUploadAllowed(user, targetFile, true);

@@ -380,11 +380,11 @@ public class UploadController {
         }
 
         @Override
-        public void bytesRead(long bytesRead) {
+        public void bytesRead(int bytesRead) {
             status.addBytesTransferred(bytesRead);
             broadcast();
-            // Throttle bitrate.
-            rateLimiter.acquire((int) bytesRead);
+            // Throttle the upload speed to bytes per second
+            rateLimiter.acquire(bytesRead);
         }
 
         private void broadcast() {

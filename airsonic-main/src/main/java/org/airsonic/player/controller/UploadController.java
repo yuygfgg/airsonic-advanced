@@ -26,6 +26,7 @@ import com.github.junrar.rarfile.FileHeader;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.MoreFiles;
 import com.google.common.util.concurrent.RateLimiter;
+import com.google.re2j.Pattern;
 import org.airsonic.player.ajax.UploadInfo;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.TransferStatus;
@@ -139,7 +140,9 @@ public class UploadController {
             brokerTemplate.convertAndSendToUser(status.getPlayer().getUsername(), "/queue/uploads/status",
                     new UploadInfo(status.getId(), 0L, status.getBytesTotal()));
 
-            dir = Paths.get(dirString.replaceAll("\\.+/", ""));
+            Pattern pattern = Pattern.compile("\\.+/");
+
+            dir = Paths.get(pattern.matcher(dirString).replaceAll(""));
 
             UploadListener listener = new UploadListenerImpl(status, settingsService.getUploadBitrateLimiter(), brokerTemplate);
 

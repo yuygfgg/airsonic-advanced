@@ -237,7 +237,7 @@ class UploadControllerTest {
     @CsvSource({
             "false, test",
             "false, ../test_airsonic",
-            "true, .../.../test_airsonic"
+            "true, ../../test_airsonic"
     })
     void testHandleRequestInternalIfFolderIsNotAllowedToUpload(boolean isAdmin, String uploadFolder) throws Exception {
 

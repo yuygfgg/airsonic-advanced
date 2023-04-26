@@ -26,6 +26,7 @@ import com.github.junrar.rarfile.FileHeader;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.MoreFiles;
 import com.google.common.util.concurrent.RateLimiter;
+import com.google.re2j.Pattern;
 import org.airsonic.player.ajax.UploadInfo;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.TransferStatus;
@@ -45,6 +46,7 @@ import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -138,7 +140,9 @@ public class UploadController {
             brokerTemplate.convertAndSendToUser(status.getPlayer().getUsername(), "/queue/uploads/status",
                     new UploadInfo(status.getId(), 0L, status.getBytesTotal()));
 
-            dir = Paths.get(dirString);
+            Pattern pattern = Pattern.compile("\\.+/");
+
+            dir = Paths.get(pattern.matcher(dirString).replaceAll(""));
 
             UploadListener listener = new UploadListenerImpl(status, settingsService.getUploadBitrateLimiter(), brokerTemplate);
 
@@ -155,7 +159,7 @@ public class UploadController {
                     String fileName = monitoredFile.getOriginalFilename();
                     if (!fileName.trim().isEmpty()) {
 
-                        Path targetFile = dir.resolve(Paths.get(fileName).getFileName());
+                        Path targetFile = dir.resolve(pattern.matcher(FilenameUtils.getName(fileName)).replaceAll(""));
 
                         try {
                             checkUploadAllowed(user, targetFile, true);

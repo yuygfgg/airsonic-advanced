@@ -1,5 +1,6 @@
 package org.airsonic.player.upload;
 
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -19,7 +20,7 @@ public class MonitoredMultipartFile implements MultipartFile {
         this.listener = listener;
 
         if (file.getOriginalFilename() != null) {
-            listener.start(file.getOriginalFilename());
+            listener.start(FilenameUtils.getName(file.getOriginalFilename()));
         }
 
     }

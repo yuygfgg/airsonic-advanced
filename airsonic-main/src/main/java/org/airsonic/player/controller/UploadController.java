@@ -46,6 +46,7 @@ import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -158,7 +159,7 @@ public class UploadController {
                     String fileName = monitoredFile.getOriginalFilename();
                     if (!fileName.trim().isEmpty()) {
 
-                        Path targetFile = dir.resolve(fileName);
+                        Path targetFile = dir.resolve(FilenameUtils.getName(fileName));
 
                         try {
                             checkUploadAllowed(user, targetFile, true);

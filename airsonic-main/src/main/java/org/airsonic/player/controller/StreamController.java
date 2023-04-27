@@ -14,12 +14,15 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.controller;
 
 import com.google.common.io.ByteStreams;
+import com.google.re2j.Matcher;
+import com.google.re2j.Pattern;
 import org.airsonic.player.dao.PlayerDaoPlayQueueFactory;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.io.PipeStreams.MonitoredInputStream;
@@ -64,8 +67,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * A controller which streams the content of a {@link PlayQueue} to a remote
@@ -139,8 +140,10 @@ public class StreamController {
         // Is this a request for a single file (typically from the embedded Flash player)?
         // In that case, create a separate playlist (in order to support multiple parallel streams).
         // Also, enable partial download (HTTP byte range).
-        MediaFile file = path.map(mediaFileService::getMediaFile)
-                .orElseGet(() -> id.map(mediaFileService::getMediaFile).orElse(null));
+        MediaFile file = path.map(p -> {
+            Pattern pattern = Pattern.compile("\\.+/");
+            return mediaFileService.getMediaFile(pattern.matcher(p).replaceAll(""));
+        }).orElseGet(() -> id.map(mediaFileService::getMediaFile).orElse(null));
         boolean isSingleFile = Objects.nonNull(file);
 
         Long byteOffset = null;

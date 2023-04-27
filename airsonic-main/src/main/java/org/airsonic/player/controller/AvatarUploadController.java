@@ -20,6 +20,7 @@
  */
 package org.airsonic.player.controller;
 
+import com.google.re2j.Pattern;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Avatar;
 import org.airsonic.player.service.SecurityService;
@@ -78,7 +79,9 @@ public class AvatarUploadController {
         Map<String, Object> map = new HashMap<String, Object>();
 
         if (!file.isEmpty()) {
-            createAvatar(file.getOriginalFilename(), file.getBytes(), username, map);
+            String filename = file.getOriginalFilename();
+            Pattern pattern = Pattern.compile("\\.+/");
+            createAvatar(pattern.matcher(filename).replaceAll(""), file.getBytes(), username, map);
         } else {
             map.put("error", new Exception("Missing file."));
             LOG.warn("Failed to upload personal image. No file specified.");
@@ -89,6 +92,14 @@ public class AvatarUploadController {
         return new ModelAndView("avatarUploadResult", "model", map);
     }
 
+    /**
+     * Creates an avatar image from the given data.
+     *
+     * @param fileName the file name of the image.
+     * @param data the image data.
+     * @param username the username.
+     * @param map the model.
+     */
     private void createAvatar(String fileName, byte[] data, String username, Map<String, Object> map) {
 
         BufferedImage image;

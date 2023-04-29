@@ -207,6 +207,11 @@ First migration to 11.x will create a backup DB next to the DB folder. It will b
 If you use HSQLDB for 10.6.0, DB migration must fails.
 First upgrade to 11.0.0-SNAPSHOT.20221224143241 then upgrade to latest release.
 
+Troubleshooting
+------
+
+See the [Troubleshooting](./docs/troubleshooting.md)
+
 History
 -----
 

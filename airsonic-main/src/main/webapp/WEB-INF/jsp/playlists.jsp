@@ -317,7 +317,7 @@
         //append container first to keep order intact when async callback happens
         $('#thumbs').append('<div class="albumThumb" id="playlistThumb-' + playlist.id + '"></div>');
         var delayString = delay ? ("&appearAfter=" + delay) : "";
-        $.get(urlBase + '?hideOverflow=true&showLink=true' + delayString + '&coverArtSize=160&captionCount=2&caption2=' + encodeURIComponent(playlist.fileCount + ' <fmt:message key="playlist2.songs"/> &ndash; ' + playlist.duration) + '&caption1=' + encodeURIComponent(playlist.name) +'&playlistId=' + playlist.id, data => {
+        $.get(urlBase + '?hideOverflow=true&showLink=true' + delayString + '&coverArtSize=160&captionCount=2&caption2=' + encodeURIComponent(playlist.fileCount + ' <fmt:message key="playlist2.songs"/> &ndash; ' + formatDuration(Math.round(playlist.duration))) + '&caption1=' + encodeURIComponent(playlist.name) +'&playlistId=' + playlist.id, data => {
             $('#playlistThumb-' + playlist.id).append(data);
         });
       }

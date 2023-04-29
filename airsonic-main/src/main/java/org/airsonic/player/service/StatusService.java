@@ -73,11 +73,11 @@ public class StatusService {
     private final List<TransferStatus> streamStatuses = Collections.synchronizedList(new ArrayList<>());
     private final List<TransferStatus> downloadStatuses = Collections.synchronizedList(new ArrayList<>());
     private final List<TransferStatus> uploadStatuses = Collections.synchronizedList(new ArrayList<>());
-    private final Set<PlayStatus> remotePlays = ConcurrentHashMap.newKeySet();
     private final Set<PlayStatus> activeLocalPlays = ConcurrentHashMap.newKeySet();
 
     // Maps from player ID to latest inactive stream status.
     private final Map<Integer, TransferStatus> inactiveStreamStatuses = new ConcurrentHashMap<>();
+    private final Map<Integer, PlayStatus> remotePlays = new ConcurrentHashMap<>();
 
     public TransferStatus createStreamStatus(Player player) {
         return createStatus(player, streamStatuses);
@@ -93,7 +93,10 @@ public class StatusService {
             }
             return status;
         });
-        broadcast(getPlayStatus(status), "recent/add");
+        // Remove the inactive status after a while.
+        if (!remotePlays.containsKey(status.getPlayer().getId())) {
+            broadcast(getPlayStatus(status), "recent/add");
+        }
     }
 
     public List<TransferStatus> getAllStreamStatuses() {
@@ -144,15 +147,26 @@ public class StatusService {
     }
 
     public void cleanupRemotePlays() {
-        Set<PlayStatus> expired = remotePlays.parallelStream().filter(PlayStatus::isExpired).collect(Collectors.toSet());
+        Set<PlayStatus> expired = remotePlays.values().parallelStream().filter(PlayStatus::isExpired).collect(Collectors.toSet());
         expired.forEach(e -> {
-            remotePlays.remove(e);
+            remotePlays.remove(e.getPlayer().getId());
             broadcast(e, "recent/remove");
         });
     }
 
     public void addRemotePlay(PlayStatus playStatus) {
-        remotePlays.add(playStatus);
+        // remove any existing play status for this player
+        remotePlays.compute(playStatus.getPlayer().getId(), (k, v) -> {
+            if (v != null) {
+                broadcast(v, "recent/remove");
+            }
+            return playStatus;
+        });
+        // remove any existing inactive stream status for this player
+        TransferStatus ts = inactiveStreamStatuses.remove(playStatus.getPlayer().getId());
+        if (ts != null) {
+            broadcast(getPlayStatus(ts), "recent/remove");
+        }
         broadcast(playStatus, "recent/add");
     }
 
@@ -201,9 +215,12 @@ public class StatusService {
     }
 
     public List<NowPlayingInfo> getInactivePlays() {
-        return Stream
-                .concat(remotePlays.parallelStream(),
-                        inactiveStreamStatuses.values().parallelStream().map(ts -> getPlayStatus(ts)))
+        Map<Integer, PlayStatus> inactivePlayStatuses = inactiveStreamStatuses.values().parallelStream()
+                .map(ts -> getPlayStatus(ts))
+                .collect(Collectors.toMap(s -> s.getPlayer().getId(), s -> s));
+        inactivePlayStatuses.putAll(remotePlays);
+
+        return inactivePlayStatuses.values().parallelStream()
                 .map(s -> NowPlayingInfo.createForBroadcast(s, settingsService))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

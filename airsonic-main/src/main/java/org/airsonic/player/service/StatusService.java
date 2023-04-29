@@ -93,7 +93,10 @@ public class StatusService {
             }
             return status;
         });
-        broadcast(getPlayStatus(status), "recent/add");
+        // Remove the inactive status after a while.
+        if (!remotePlays.containsKey(status.getPlayer().getId())) {
+            broadcast(getPlayStatus(status), "recent/add");
+        }
     }
 
     public List<TransferStatus> getAllStreamStatuses() {
@@ -159,6 +162,11 @@ public class StatusService {
             }
             return playStatus;
         });
+        // remove any existing inactive stream status for this player
+        TransferStatus ts = inactiveStreamStatuses.remove(playStatus.getPlayer().getId());
+        if (ts != null) {
+            broadcast(getPlayStatus(ts), "recent/remove");
+        }
         broadcast(playStatus, "recent/add");
     }
 

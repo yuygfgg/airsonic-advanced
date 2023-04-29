@@ -152,6 +152,14 @@ public class StatusService {
     }
 
     public void addRemotePlay(PlayStatus playStatus) {
+        // remove any existing play status for this player
+        remotePlays.removeIf(p -> {
+            if (p.getPlayer().getClientId() == playStatus.getPlayer().getClientId()) {
+                broadcast(p, "recent/remove");
+                return true;
+            }
+            return false;
+        });
         remotePlays.add(playStatus);
         broadcast(playStatus, "recent/add");
     }
@@ -202,10 +210,11 @@ public class StatusService {
 
     public List<NowPlayingInfo> getInactivePlays() {
         return Stream
-                .concat(remotePlays.parallelStream(),
-                        inactiveStreamStatuses.values().parallelStream().map(ts -> getPlayStatus(ts)))
+                .concat(remotePlays.stream(),
+                        inactiveStreamStatuses.values().stream().map(ts -> getPlayStatus(ts)))
                 .map(s -> NowPlayingInfo.createForBroadcast(s, settingsService))
                 .filter(Objects::nonNull)
+                .limit(5)
                 .collect(Collectors.toList());
     }
 

@@ -758,6 +758,16 @@ public class MediaFileService {
                 boolean update = needsUpdate(base, folder, settingsService.isFastCacheEnabled());
                 int trackSize = cueSheet.getAllTrackData().size();
 
+                if (trackSize > 0) {
+                    TrackData lastTrackData = cueSheet.getAllTrackData().get(trackSize - 1);
+                    double lastTrackStart = lastTrackData.getIndices().get(0).getPosition().getMinutes() * 60 + lastTrackData.getIndices().get(0).getPosition().getSeconds() + (lastTrackData.getIndices().get(0).getPosition().getFrames() / 75);
+                    if (lastTrackStart >= wholeFileLength) {
+                        base.setIndexPath(null);
+                        updateMediaFile(base);
+                        return children;
+                    }
+                }
+
                 for (int i = 0; i < trackSize; i++) {
                     TrackData trackData = cueSheet.getAllTrackData().get(i);
                     Position currentPosition = trackData.getIndices().get(0).getPosition();
@@ -897,7 +907,12 @@ public class MediaFileService {
                     } catch (IOException e) {
                         LOG.warn("Defaulting to UTF-8 for cuesheet {}", cueFile);
                     }
-                    return CueParser.parse(cueFile, cs);
+                    CueSheet cueSheet = CueParser.parse(cueFile, cs);
+                    if (cueSheet.getMessages().stream().filter(m -> m.toString().toLowerCase().contains("warning")).findFirst().isPresent()) {
+                        LOG.warn("Error parsing cuesheet {}", cueFile);
+                        return null;
+                    }
+                    return cueSheet;
                 case "flac":
                     return FLACReader.getCueSheet(cueFile);
 

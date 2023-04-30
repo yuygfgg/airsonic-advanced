@@ -1,5 +1,5 @@
 FILE "airsonic-test.wav" MOTOROLA
-PERFORMER "TestArtist"
+PERFORMER "TestInvalidCueArtist"
 TITLE "AirsonicTest"
 REM DATE 2023
 REM GENRE "Classic"

@@ -43,6 +43,18 @@ public class MusicFolderTestData {
         return resolveBaseMediaPath().resolve("cue");
     }
 
+    public static Path resolveMusicInvalidCueFolderPath() {
+        return resolveBaseMediaPath().resolve("invalidCue");
+    }
+
+    public static Path resolveMusicInvalidCue2FolderPath() {
+        return resolveBaseMediaPath().resolve("invalidCue2");
+    }
+
+    public static Path resolveMusicInvalidCue3FolderPath() {
+        return resolveBaseMediaPath().resolve("invalidCue3");
+    }
+
     public static Path resolveMusicMpcFolderPath() {
         return resolveBaseMediaPath().resolve("mpc");
     }
@@ -50,11 +62,11 @@ public class MusicFolderTestData {
     public static List<MusicFolder> getTestMusicFolders() {
         List<MusicFolder> liste = new ArrayList<>();
         Path musicDir = resolveMusicFolderPath();
-        MusicFolder musicFolder = new MusicFolder(1, musicDir, "Music", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        MusicFolder musicFolder = new MusicFolder(1, musicDir, "MusicTest", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         liste.add(musicFolder);
 
         Path music2Dir = resolveMusic2FolderPath();
-        MusicFolder musicFolder2 = new MusicFolder(2, music2Dir, "Music2", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        MusicFolder musicFolder2 = new MusicFolder(2, music2Dir, "MusicTest2", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         liste.add(musicFolder2);
         return liste;
     }

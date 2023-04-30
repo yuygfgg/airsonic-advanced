@@ -26,6 +26,7 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.RandomSearchCriteria;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowMapper;
@@ -293,14 +294,14 @@ public class MediaFileDao extends AbstractDao {
         return queryOne("select play_count, last_played, comment from music_file_info where path=?", musicFileInfoRowMapper, path);
     }
 
-    public void deleteMediaFile(String path, Integer folderId) {
-        deleteMediaFiles(Collections.singletonList(path), folderId);
+    public void deleteMediaFile(String path, Double position, Integer folderId) {
+        deleteMediaFiles(Collections.singletonList(Pair.of(path, position)), folderId);
     }
 
-    public void deleteMediaFiles(Collection<String> paths, Integer folderId) {
-        if (!paths.isEmpty()) {
-            batchedUpdate("update media_file set present=false, children_last_updated=? where path=? and folder_id=?",
-                    paths.parallelStream().map(p -> new Object[] { Instant.ofEpochMilli(1), p, folderId }).collect(Collectors.toList()));
+    public void deleteMediaFiles(Collection<Pair<String, Double>> pathAndPositions, Integer folderId) {
+        if (!pathAndPositions.isEmpty()) {
+            batchedUpdate("update media_file set present=false, children_last_updated=? where path=? and start_position=? and folder_id=?",
+                    pathAndPositions.parallelStream().map(pi -> new Object[] { Instant.ofEpochMilli(1), pi.getKey(), pi.getValue(), folderId }).collect(Collectors.toList()));
         }
     }
 

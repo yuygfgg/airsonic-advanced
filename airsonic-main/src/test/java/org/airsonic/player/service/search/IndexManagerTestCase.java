@@ -126,7 +126,7 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
         List<Integer> candidates = mediaFileDao.getArtistExpungeCandidates();
         assertEquals(0, candidates.size());
 
-        result.getMediaFiles().forEach(a -> mediaFileDao.deleteMediaFile(a.getPath(), a.getFolderId()));
+        result.getMediaFiles().forEach(a -> mediaFileDao.deleteMediaFile(a.getPath(), a.getStartPosition(), a.getFolderId()));
 
         candidates = mediaFileDao.getArtistExpungeCandidates();
         assertEquals(2, candidates.size());
@@ -140,7 +140,7 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
         candidates = mediaFileDao.getAlbumExpungeCandidates();
         assertEquals(0, candidates.size());
 
-        result.getMediaFiles().forEach(a -> mediaFileDao.deleteMediaFile(a.getPath(), a.getFolderId()));
+        result.getMediaFiles().forEach(a -> mediaFileDao.deleteMediaFile(a.getPath(), a.getStartPosition(), a.getFolderId()));
 
         candidates = mediaFileDao.getAlbumExpungeCandidates();
         assertEquals(2, candidates.size());
@@ -154,7 +154,7 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
         candidates = mediaFileDao.getSongExpungeCandidates();
         assertEquals(0, candidates.size());
 
-        result.getMediaFiles().forEach(a -> mediaFileDao.deleteMediaFile(a.getPath(), a.getFolderId()));
+        result.getMediaFiles().forEach(a -> mediaFileDao.deleteMediaFile(a.getPath(), a.getStartPosition(), a.getFolderId()));
 
         candidates = mediaFileDao.getSongExpungeCandidates();
         assertEquals(2, candidates.size());

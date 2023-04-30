@@ -132,18 +132,18 @@ public class MediaScannerServiceTestCase {
 
         System.out.println("--- List of all artists ---");
         System.out.println("artistName#albumCount");
-        List<Artist> allArtists = artistDao.getAlphabetialArtists(0, Integer.MAX_VALUE, musicFolderDao.getAllMusicFolders());
+        List<Artist> allArtists = artistDao.getAlphabetialArtists(0, Integer.MAX_VALUE, testFolders);
         allArtists.forEach(artist -> System.out.println(artist.getName() + "#" + artist.getAlbumCount()));
         System.out.println("--- *********************** ---");
 
         System.out.println("--- List of all albums ---");
         System.out.println("name#artist");
-        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, musicFolderDao.getAllMusicFolders());
+        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, testFolders);
         allAlbums.forEach(album -> System.out.println(album.getName() + "#" + album.getArtist()));
         Assert.assertEquals(5, allAlbums.size());
         System.out.println("--- *********************** ---");
 
-        List<MediaFile> listeSongs = mediaFileDao.getSongsByGenre("Baroque Instrumental", 0, Integer.MAX_VALUE, musicFolderDao.getAllMusicFolders());
+        List<MediaFile> listeSongs = mediaFileDao.getSongsByGenre("Baroque Instrumental", 0, Integer.MAX_VALUE, testFolders);
         Assert.assertEquals(2, listeSongs.size());
 
         // display out metrics report
@@ -164,7 +164,7 @@ public class MediaScannerServiceTestCase {
         Path musicFile = artistDir.resolve(fileName);
         Files.copy(Paths.get(Resources.getResource("MEDIAS/piano.mp3").toURI()), musicFile);
 
-        MusicFolder musicFolder = new MusicFolder(1, temporaryFolder.getRoot().toPath(), "Music", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        MusicFolder musicFolder = new MusicFolder(1, temporaryFolder.getRoot().toPath(), "MusicSpecial", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         cleanupId = ScanningTestUtils.before(Arrays.asList(musicFolder), mediaFolderService, mediaScannerService);
         MediaFile mediaFile = mediaFileService.getMediaFile(musicFile);
         assertEquals(mediaFile.getRelativePath(), temporaryFolder.getRoot().toPath().relativize(musicFile));
@@ -197,7 +197,7 @@ public class MediaScannerServiceTestCase {
         List<Artist> allArtists = artistDao.getAlphabetialArtists(0, Integer.MAX_VALUE, folders);
         Assert.assertEquals(1, allArtists.size());
         Artist artist = allArtists.get(0);
-        Assert.assertEquals("TestArtist", artist.getName());
+        Assert.assertEquals("TestMusic3Artist", artist.getName());
         Assert.assertEquals(1, artist.getAlbumCount());
 
         // Test that the album is correctly imported, along with its MusicBrainz release ID
@@ -205,7 +205,7 @@ public class MediaScannerServiceTestCase {
         Assert.assertEquals(1, allAlbums.size());
         Album album = allAlbums.get(0);
         Assert.assertEquals("TestAlbum", album.getName());
-        Assert.assertEquals("TestArtist", album.getArtist());
+        Assert.assertEquals("TestMusic3Artist", album.getArtist());
         Assert.assertEquals(1, album.getSongCount());
         Assert.assertEquals("0820752d-1043-4572-ab36-2df3b5cc15fa", album.getMusicBrainzReleaseId());
         Assert.assertEquals("TestAlbum", album.getPath());
@@ -217,8 +217,8 @@ public class MediaScannerServiceTestCase {
         Assert.assertEquals("Aria", file.getTitle());
         Assert.assertEquals("flac", file.getFormat());
         Assert.assertEquals("TestAlbum", file.getAlbumName());
-        Assert.assertEquals("TestArtist", file.getArtist());
-        Assert.assertEquals("TestArtist", file.getAlbumArtist());
+        Assert.assertEquals("TestMusic3Artist", file.getArtist());
+        Assert.assertEquals("TestMusic3Artist", file.getAlbumArtist());
         Assert.assertEquals(1, (long)file.getTrackNumber());
         Assert.assertEquals(2001, (long)file.getYear());
         Assert.assertEquals(album.getPath(), file.getParentPath());
@@ -247,7 +247,7 @@ public class MediaScannerServiceTestCase {
         List<Artist> allArtists = artistDao.getAlphabetialArtists(0, Integer.MAX_VALUE, folders);
         assertEquals(1, allArtists.size());
         Artist artist = allArtists.get(0);
-        assertEquals("TestArtist", artist.getName());
+        assertEquals("TestCueArtist", artist.getName());
         assertEquals(1, artist.getAlbumCount());
 
 
@@ -256,7 +256,7 @@ public class MediaScannerServiceTestCase {
         assertEquals(1, allAlbums.size());
         Album album = allAlbums.get(0);
         assertEquals("AirsonicTest", album.getName());
-        assertEquals("TestArtist", album.getArtist());
+        assertEquals("TestCueArtist", album.getArtist());
         assertEquals(2, album.getSongCount());
 
         // Test that the music file is correctly imported
@@ -280,7 +280,7 @@ public class MediaScannerServiceTestCase {
         assertEquals("wav", track1.getFormat());
         assertEquals(track1.getAlbumName(), "AirsonicTest");
         assertEquals("Beecham", track1.getArtist());
-        assertEquals("TestArtist", track1.getAlbumArtist());
+        assertEquals("TestCueArtist", track1.getAlbumArtist());
         assertEquals(1L, (long)track1.getTrackNumber());
         assertNull(track1.getYear());
         assertEquals(album.getPath(), track1.getParentPath());
@@ -288,6 +288,92 @@ public class MediaScannerServiceTestCase {
         assertNull(track1.getIndexPath());
         assertEquals(0.0d, track1.getStartPosition(), 0.0d);
     }
+
+    @Test
+    public void testMusicInvalidCueWithLengthError() {
+
+        // Add the "cue" folder to the database
+        Path musicFolderFile = MusicFolderTestData.resolveMusicInvalidCue2FolderPath();
+        MusicFolder musicFolder = new MusicFolder(1, musicFolderFile, "InvalidCue2", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        cleanupId = ScanningTestUtils.before(Arrays.asList(musicFolder), mediaFolderService, mediaScannerService);
+
+        // Retrieve the "Cue" folder from the database to make
+        // sure that we don't accidentally operate on other folders
+        // from previous tests.
+        musicFolder = musicFolderDao.getMusicFolderForPath(musicFolder.getPath().toString());
+        List<MusicFolder> folders = new ArrayList<>();
+        folders.add(musicFolder);
+
+        // Test that the artist is correctly imported
+        List<Artist> allArtists = artistDao.getAlphabetialArtists(0, Integer.MAX_VALUE, folders);
+        assertEquals(0, allArtists.size());
+
+
+        // Test that the album is correctly imported
+        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, folders);
+        assertEquals(0, allAlbums.size());
+
+        // Test that the music file is correctly imported
+        List<MediaFile> albumFiles = mediaFileDao.getChildrenOf("", folders.get(0).getId(), false);
+        Assert.assertEquals(1, albumFiles.size());
+        MediaFile file = albumFiles.get(0);
+        assertEquals("airsonic-test", file.getTitle());
+        assertEquals("wav", file.getFormat());
+        assertNull(file.getAlbumName());
+        assertNull(file.getArtist());
+        assertNull(file.getAlbumArtist());
+        assertNull(file.getTrackNumber());
+        assertNull(file.getYear());
+        assertEquals("", file.getParentPath());
+        assertEquals("airsonic-test.wav", file.getPath());
+        assertNull(file.getIndexPath());
+        assertEquals(-1.0d, file.getStartPosition(), 0.0d);
+    }
+
+
+    @Test
+    public void testMusicInvalidCueWithWarning() {
+
+        // Add the "cue" folder to the database
+        Path musicFolderFile = MusicFolderTestData.resolveMusicInvalidCue3FolderPath();
+        MusicFolder musicFolder = new MusicFolder(1, musicFolderFile, "InvalidCue3", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        cleanupId = ScanningTestUtils.before(Arrays.asList(musicFolder), mediaFolderService, mediaScannerService);
+
+        // Retrieve the "Cue" folder from the database to make
+        // sure that we don't accidentally operate on other folders
+        // from previous tests.
+        musicFolder = musicFolderDao.getMusicFolderForPath(musicFolder.getPath().toString());
+        List<MusicFolder> folders = new ArrayList<>();
+        folders.add(musicFolder);
+
+        // Test that the artist is correctly imported
+        List<Artist> allArtists = artistDao.getAlphabetialArtists(0, Integer.MAX_VALUE, folders);
+        assertEquals(0, allArtists.size());
+
+
+        // Test that the album is correctly imported
+        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, folders);
+        assertEquals(0, allAlbums.size());
+
+        // Test that the music file is correctly imported
+        List<MediaFile> albumFiles = mediaFileDao.getChildrenOf("", folders.get(0).getId(), false);
+        Assert.assertEquals(1, albumFiles.size());
+        MediaFile file = albumFiles.get(0);
+        assertEquals("airsonic-test", file.getTitle());
+        assertEquals("wav", file.getFormat());
+        assertNull(file.getAlbumName());
+        assertNull(file.getArtist());
+        assertNull(file.getAlbumArtist());
+        assertNull(file.getTrackNumber());
+        assertNull(file.getYear());
+        assertEquals("", file.getParentPath());
+        assertEquals("airsonic-test.wav", file.getPath());
+        assertNull(file.getIndexPath());
+        assertEquals(-1.0d, file.getStartPosition(), 0.0d);
+    }
+
+
+
 
     @Test
     public void testMusicWithCommmaFolderAndDuplicateBasenameAudio() {

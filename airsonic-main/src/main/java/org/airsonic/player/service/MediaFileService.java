@@ -209,12 +209,12 @@ public class MediaFileService {
         if (mediaFile.hasIndex()) {
             if (!Files.exists(mediaFile.getFullPath(folder.getPath()))) {
                 // Delete children and base file that no longer exist on disk.
-                mediaFileDao.deleteMediaFile(mediaFile.getPath(), mediaFile.getFolderId());
+                mediaFileDao.deleteMediaFile(mediaFile.getPath(),mediaFile.getStartPosition(), mediaFile.getFolderId());
                 mediaFile.setPresent(false);
                 mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
             } else if (!Files.exists(mediaFile.getFullIndexPath(folder.getPath()))) {
                 // Delete children that no longer exist on disk
-                mediaFileDao.deleteMediaFile(mediaFile.getPath(), mediaFile.getFolderId());
+                mediaFileDao.deleteMediaFile(mediaFile.getPath(), mediaFile.getStartPosition(), mediaFile.getFolderId());
                 mediaFile.setPresent(true);
                 mediaFile.setIndexPath(null);
                 mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
@@ -555,7 +555,7 @@ public class MediaFileService {
             result.addAll(indexedTracks);
 
             // Delete children that no longer exist on disk.
-            mediaFileDao.deleteMediaFiles(storedChildrenMap.keySet().stream().map(Pair::getKey).collect(Collectors.toList()), parent.getFolderId());
+            mediaFileDao.deleteMediaFiles(storedChildrenMap.keySet(), parent.getFolderId());
 
             // Update timestamp in parent.
             parent.setChildrenLastUpdated(parent.getChanged());
@@ -758,6 +758,16 @@ public class MediaFileService {
                 boolean update = needsUpdate(base, folder, settingsService.isFastCacheEnabled());
                 int trackSize = cueSheet.getAllTrackData().size();
 
+                if (trackSize > 0) {
+                    TrackData lastTrackData = cueSheet.getAllTrackData().get(trackSize - 1);
+                    double lastTrackStart = lastTrackData.getIndices().get(0).getPosition().getMinutes() * 60 + lastTrackData.getIndices().get(0).getPosition().getSeconds() + (lastTrackData.getIndices().get(0).getPosition().getFrames() / 75);
+                    if (lastTrackStart >= wholeFileLength) {
+                        base.setIndexPath(null);
+                        updateMediaFile(base);
+                        return children;
+                    }
+                }
+
                 for (int i = 0; i < trackSize; i++) {
                     TrackData trackData = cueSheet.getAllTrackData().get(i);
                     Position currentPosition = trackData.getIndices().get(0).getPosition();
@@ -897,7 +907,12 @@ public class MediaFileService {
                     } catch (IOException e) {
                         LOG.warn("Defaulting to UTF-8 for cuesheet {}", cueFile);
                     }
-                    return CueParser.parse(cueFile, cs);
+                    CueSheet cueSheet = CueParser.parse(cueFile, cs);
+                    if (cueSheet.getMessages().stream().filter(m -> m.toString().toLowerCase().contains("warning")).findFirst().isPresent()) {
+                        LOG.warn("Error parsing cuesheet {}", cueFile);
+                        return null;
+                    }
+                    return cueSheet;
                 case "flac":
                     return FLACReader.getCueSheet(cueFile);
 

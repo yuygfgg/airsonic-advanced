@@ -209,12 +209,12 @@ public class MediaFileService {
         if (mediaFile.hasIndex()) {
             if (!Files.exists(mediaFile.getFullPath(folder.getPath()))) {
                 // Delete children and base file that no longer exist on disk.
-                mediaFileDao.deleteMediaFile(mediaFile.getPath(), mediaFile.getFolderId());
+                mediaFileDao.deleteMediaFile(mediaFile.getPath(),mediaFile.getStartPosition(), mediaFile.getFolderId());
                 mediaFile.setPresent(false);
                 mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
             } else if (!Files.exists(mediaFile.getFullIndexPath(folder.getPath()))) {
                 // Delete children that no longer exist on disk
-                mediaFileDao.deleteMediaFile(mediaFile.getPath(), mediaFile.getFolderId());
+                mediaFileDao.deleteMediaFile(mediaFile.getPath(), mediaFile.getStartPosition(), mediaFile.getFolderId());
                 mediaFile.setPresent(true);
                 mediaFile.setIndexPath(null);
                 mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
@@ -555,7 +555,7 @@ public class MediaFileService {
             result.addAll(indexedTracks);
 
             // Delete children that no longer exist on disk.
-            mediaFileDao.deleteMediaFiles(storedChildrenMap.keySet().stream().map(Pair::getKey).collect(Collectors.toList()), parent.getFolderId());
+            mediaFileDao.deleteMediaFiles(storedChildrenMap.keySet(), parent.getFolderId());
 
             // Update timestamp in parent.
             parent.setChildrenLastUpdated(parent.getChanged());

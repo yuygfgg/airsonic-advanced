@@ -21,6 +21,7 @@ package org.airsonic.player.service;
 
 import com.google.common.collect.ImmutableMap;
 import org.airsonic.player.TestCaseUtils;
+import org.airsonic.player.config.AirsonicCueConfig;
 import org.airsonic.player.config.AirsonicDefaultFolderConfig;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.util.HomeRule;
@@ -33,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
@@ -55,7 +57,11 @@ import static org.junit.Assert.assertTrue;
  * @author Sindre Mehus
  */
 @RunWith(SpringRunner.class)
-@EnableConfigurationProperties({AirsonicHomeConfig.class, AirsonicDefaultFolderConfig.class})
+@EnableConfigurationProperties({AirsonicHomeConfig.class, AirsonicDefaultFolderConfig.class, AirsonicCueConfig.class})
+@TestPropertySource(properties = {
+        "airsonic.cue.enabled=true",
+        "airsonic.cue.hide-indexed-files=true"
+})
 public class SettingsServiceTestCase {
 
     @ClassRule
@@ -72,6 +78,9 @@ public class SettingsServiceTestCase {
     @Autowired
     AirsonicDefaultFolderConfig defaultFolderConfig;
 
+    @Autowired
+    AirsonicCueConfig cueConfig;
+
     @Before
     public void setUp() throws IOException {
         TestCaseUtils.cleanAirsonicHomeForTest();
@@ -86,6 +95,7 @@ public class SettingsServiceTestCase {
         settingsService.setEnvironment(env);
         settingsService.setAirsonicConfig(homeConfig);
         settingsService.setAirsonicDefaultFolderConfig(defaultFolderConfig);
+        settingsService.setAirsonicCueConfig(cueConfig);
         return settingsService;
     }
 

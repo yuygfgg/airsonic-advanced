@@ -24,6 +24,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.RateLimiter;
+import org.airsonic.player.config.AirsonicCueConfig;
 import org.airsonic.player.config.AirsonicDefaultFolderConfig;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.AvatarDao;
@@ -236,8 +237,6 @@ public class SettingsService {
     private static final String DEFAULT_SONOS_LINK_METHOD = SonosServiceRegistration.AuthenticationType.APPLICATION_LINK.name();
     private static final String DEFAULT_EXPORT_PLAYLIST_FORMAT = "m3u";
     private static final boolean DEFAULT_IGNORE_SYMLINKS = false;
-    private static final boolean DEFAULT_ENABLE_CUE_INDEXING = true;
-    private static final boolean DEFAULT_HIDE_INDEXED_FILES = true;
     private static final String DEFAULT_EXCLUDE_PATTERN_STRING = null;
     private static final String DEFAULT_PREFERRED_NONDECODABLE_PASSWORD_ENCODER = "bcrypt";
     private static final String DEFAULT_PREFERRED_DECODABLE_PASSWORD_ENCODER = "encrypted-AES-GCM";
@@ -282,6 +281,8 @@ public class SettingsService {
     private AirsonicHomeConfig homeConfig;
     @Autowired
     private AirsonicDefaultFolderConfig defaultFolderConfig;
+    @Autowired
+    private AirsonicCueConfig cueConfig;
 
     private Set<String> cachedCoverArtFileTypes;
     private Set<String> cachedMusicFileTypes;
@@ -1087,7 +1088,7 @@ public class SettingsService {
     }
 
     public boolean getEnableCueIndexing() {
-        return getBoolean(KEY_ENABLE_CUE_INDEXING, DEFAULT_ENABLE_CUE_INDEXING);
+        return getBoolean(KEY_ENABLE_CUE_INDEXING, cueConfig.isEnabled());
     }
 
     public void setEnableCueIndexing(boolean b) {
@@ -1095,7 +1096,7 @@ public class SettingsService {
     }
 
     public boolean getHideIndexedFiles() {
-        return getBoolean(KEY_HIDE_INDEXED_FILES, DEFAULT_HIDE_INDEXED_FILES);
+        return getBoolean(KEY_HIDE_INDEXED_FILES, cueConfig.isHideIndexedFiles());
     }
 
     public void setHideIndexedFiles(boolean b) {
@@ -1667,6 +1668,10 @@ public class SettingsService {
 
     protected void setAirsonicDefaultFolderConfig(AirsonicDefaultFolderConfig airsonicDefaultFolderConfig) {
         this.defaultFolderConfig = airsonicDefaultFolderConfig;
+    }
+
+    protected void setAirsonicCueConfig(AirsonicCueConfig airsonicCueConfig) {
+        this.cueConfig = airsonicCueConfig;
     }
 
     public void resetDatabaseToDefault() {

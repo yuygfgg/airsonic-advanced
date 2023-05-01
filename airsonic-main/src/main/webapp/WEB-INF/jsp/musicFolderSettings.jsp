@@ -34,9 +34,10 @@
         function updateEnableCueIndexing() {
             if (!$("#enableCueIndexing").prop("checked")) {
                 $("#hideIndexedFiles").prop("disabled", true)
-                $("#hideIndexedFiles").prop("checked", true);
+                $("#hideIndexedFiles").prop("checked", false);
             } else {
                 $("#hideIndexedFiles").prop("disabled", false)
+                $("#hideIndexedFiles").prop("checked", true);
             }
         }
 

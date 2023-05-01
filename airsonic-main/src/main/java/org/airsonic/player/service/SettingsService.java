@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -144,6 +145,7 @@ public class SettingsService {
     private static final String KEY_SMTP_FROM = "SmtpFrom";
     private static final String KEY_EXPORT_PLAYLIST_FORMAT = "PlaylistExportFormat";
     private static final String KEY_IGNORE_SYMLINKS = "IgnoreSymLinks";
+    private static final String KEY_ENABLE_CUE_INDEXING = "EnableCueIndexing";
     private static final String KEY_HIDE_INDEXED_FILES = "HideIndexedFiles";
     private static final String KEY_EXCLUDE_PATTERN_STRING = "ExcludePattern";
 
@@ -234,6 +236,7 @@ public class SettingsService {
     private static final String DEFAULT_SONOS_LINK_METHOD = SonosServiceRegistration.AuthenticationType.APPLICATION_LINK.name();
     private static final String DEFAULT_EXPORT_PLAYLIST_FORMAT = "m3u";
     private static final boolean DEFAULT_IGNORE_SYMLINKS = false;
+    private static final boolean DEFAULT_ENABLE_CUE_INDEXING = true;
     private static final boolean DEFAULT_HIDE_INDEXED_FILES = true;
     private static final String DEFAULT_EXCLUDE_PATTERN_STRING = null;
     private static final String DEFAULT_PREFERRED_NONDECODABLE_PASSWORD_ENCODER = "bcrypt";
@@ -1081,6 +1084,14 @@ public class SettingsService {
 
     public void setIgnoreSymLinks(boolean b) {
         setBoolean(KEY_IGNORE_SYMLINKS, b);
+    }
+
+    public boolean getEnableCueIndexing() {
+        return getBoolean(KEY_ENABLE_CUE_INDEXING, DEFAULT_ENABLE_CUE_INDEXING);
+    }
+
+    public void setEnableCueIndexing(boolean b) {
+        setBoolean(KEY_ENABLE_CUE_INDEXING, b);
     }
 
     public boolean getHideIndexedFiles() {

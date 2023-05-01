@@ -106,6 +106,7 @@ public class SettingsServiceTestCase {
         assertEquals("Wrong default LDAP search filter.", "(sAMAccountName={0})", settingsService.getLdapSearchFilter());
         assertEquals("Wrong default LDAP auto-shadowing.", false, settingsService.isLdapAutoShadowing());
         assertEquals("30m", settingsService.getSessionDuration());
+        assertEquals("Wrong default enableCueIndexing", true, settingsService.getEnableCueIndexing());
         assertEquals("Wrong default hideIndexedFile.", true, settingsService.getHideIndexedFiles());
     }
 
@@ -133,6 +134,7 @@ public class SettingsServiceTestCase {
         settingsService.setLdapManagerPassword("secret");
         settingsService.setLdapSearchFilter("newLdapSearchFilter");
         settingsService.setLdapAutoShadowing(true);
+        settingsService.setEnableCueIndexing(false);
         settingsService.setHideIndexedFiles(false);
 
         verifySettings(settingsService);
@@ -170,6 +172,7 @@ public class SettingsServiceTestCase {
         assertEquals("Wrong LDAP manager password.", "secret", settingsService.getLdapManagerPassword());
         assertEquals("Wrong LDAP search filter.", "newLdapSearchFilter", settingsService.getLdapSearchFilter());
         assertTrue("Wrong LDAP auto-shadowing.", settingsService.isLdapAutoShadowing());
+        assertFalse("Wrong default enableCueIndexing", settingsService.getEnableCueIndexing());
         assertFalse("Wrong default hideIndexedFile.", settingsService.getHideIndexedFiles());
     }
 

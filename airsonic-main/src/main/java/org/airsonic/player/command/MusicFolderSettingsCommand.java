@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -50,6 +51,7 @@ public class MusicFolderSettingsCommand {
     private String uploadsFolder;
     private String excludePatternString;
     private boolean ignoreSymLinks;
+    private boolean enableCueIndexing;
     private boolean hideIndexedFiles;
     private Boolean fullScan;
     private Boolean clearFullScanSettingAfterScan;
@@ -136,6 +138,14 @@ public class MusicFolderSettingsCommand {
 
     public boolean getIgnoreSymLinks() {
         return ignoreSymLinks;
+    }
+
+    public boolean isEnableCueIndexing() {
+        return enableCueIndexing;
+    }
+
+    public void setEnableCueIndexing(boolean enableCueIndexing) {
+        this.enableCueIndexing = enableCueIndexing;
     }
 
     public boolean getHideIndexedFiles() {

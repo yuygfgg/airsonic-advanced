@@ -15,17 +15,28 @@
             parent.frames.left.location.href="left.view?";
             </c:if>
 
+            updateEnableCueIndexing();
             updateClearFullScan();
 
             $("#fullScan").change(function() { updateClearFullScan(); });
+            $("#enableCueIndexing").change(function() { updateEnableCueIndexing(); });
         }
 
         function updateClearFullScan() {
             if (!$("#fullScan").prop("checked")) {
                 $("#clearFullScanSettingAfterScan").prop("disabled", true);
-                $("#clearFullScanSettingAfterScan").prop("checked", false);
             } else {
+                $("#clearFullScanSettingAfterScan").prop("checked", true);
                 $("#clearFullScanSettingAfterScan").prop("disabled", false);
+            }
+        }
+
+        function updateEnableCueIndexing() {
+            if (!$("#enableCueIndexing").prop("checked")) {
+                $("#hideIndexedFiles").prop("disabled", true)
+                $("#hideIndexedFiles").prop("checked", true);
+            } else {
+                $("#hideIndexedFiles").prop("disabled", false)
             }
         }
 
@@ -149,6 +160,11 @@
     </div>
 
     <div>
+        <form:checkbox path="enableCueIndexing" cssClass="checkbox" id="enableCueIndexing"/>
+        <form:label path="enableCueIndexing"><fmt:message key="musicfoldersettings.enablecueindexing"/></form:label>
+        <c:import url="helpToolTip.jsp"><c:param name="topic" value="enablecueindexing"/></c:import>
+    </div>
+    <div style="margin-left:1em;">
         <form:checkbox path="hideIndexedFiles" id="hideIndexedFiles"/>
         <form:label path="hideIndexedFiles"><fmt:message key="musicfoldersettings.hideindexedfiles"/></form:label>
         <c:import url="helpToolTip.jsp"><c:param name="topic" value="hideindexedfiles"/></c:import>

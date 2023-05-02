@@ -1012,7 +1012,7 @@ public class MediaFileService {
 
         List<MediaFile> result = new ArrayList<MediaFile>();
 
-        for (MediaFile child : getChildrenOf(ancestor, true, true, sort)) {
+        for (MediaFile child : getVisibleChildrenOf(ancestor, true, sort)) {
             if (child.isDirectory()) {
                 result.addAll(getDescendantsOf(child, sort));
             } else {

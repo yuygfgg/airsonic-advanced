@@ -21,6 +21,8 @@ package org.airsonic.player.config;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
@@ -28,7 +30,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AirsonicCueConfigTest {
@@ -54,22 +56,19 @@ public class AirsonicCueConfigTest {
     }
 
     @Nested
-    @EnableConfigurationProperties({AirsonicCueConfig.class})
-    @ContextConfiguration(initializers = {ConfigDataApplicationContextInitializer.class})
-    @ExtendWith(SpringExtension.class)
-    @TestPropertySource(properties = {
-        "airsonic.cue.enabled=false",
-        "airsonic.cue.hide-indexed-files=false"
-    })
-    public class AirsonicCueConfigTestFalseProperties {
+    public class AirsonicCueConfigTestWithParameters {
 
-        @Autowired
-        private AirsonicCueConfig airsonicCueConfig;
-
-        @Test
-        public void testAirsonicCueConfig() {
-            assertFalse(airsonicCueConfig.isEnabled());
-            assertFalse(airsonicCueConfig.isHideIndexedFiles());
+        @ParameterizedTest
+        @CsvSource({
+            "true, true, true, true",
+            "true, false, true, false",
+            "false, true, false, false",
+            "false, false, false, false"
+        })
+        public void testAirsonicCueConfig(boolean enabled, boolean hideIndexedFiles, boolean expectedEnabled, boolean expectedHideIndexedFiles) {
+            AirsonicCueConfig airsonicCueConfig = new AirsonicCueConfig(enabled, hideIndexedFiles);
+            assertEquals(expectedEnabled, airsonicCueConfig.isEnabled());
+            assertEquals(expectedHideIndexedFiles, airsonicCueConfig.isHideIndexedFiles());
         }
     }
 }

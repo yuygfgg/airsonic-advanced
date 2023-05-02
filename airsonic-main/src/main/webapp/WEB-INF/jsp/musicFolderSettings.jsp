@@ -37,7 +37,6 @@
                 $("#hideIndexedFiles").prop("checked", false);
             } else {
                 $("#hideIndexedFiles").prop("disabled", false)
-                $("#hideIndexedFiles").prop("checked", true);
             }
         }
 

@@ -113,7 +113,7 @@ public class MusicFolderSettingsController {
         command.setExcludePatternString(settingsService.getExcludePatternString());
         command.setIgnoreSymLinks(settingsService.getIgnoreSymLinks());
         command.setEnableCueIndexing(settingsService.getEnableCueIndexing());
-        command.setHideIndexedFiles(settingsService.getHideIndexedFiles());
+        command.setHideIndexedFiles(settingsService.getEnableCueIndexing() && settingsService.getHideIndexedFiles());
         command.setFullScan(settingsService.getFullScan());
         command.setClearFullScanSettingAfterScan(!settingsService.getFullScan() ? settingsService.getFullScan() : settingsService.getClearFullScanSettingAfterScan());
 
@@ -206,7 +206,7 @@ public class MusicFolderSettingsController {
         settingsService.setExcludePatternString(command.getExcludePatternString());
         settingsService.setIgnoreSymLinks(command.getIgnoreSymLinks());
         settingsService.setEnableCueIndexing(command.isEnableCueIndexing());
-        settingsService.setHideIndexedFiles(command.getHideIndexedFiles());
+        settingsService.setHideIndexedFiles(command.isEnableCueIndexing() && command.getHideIndexedFiles());
         settingsService.setFullScan(command.getFullScan());
         settingsService.setClearFullScanSettingAfterScan(!command.getFullScan() ? command.getFullScan() : command.getClearFullScanSettingAfterScan());
         settingsService.save();

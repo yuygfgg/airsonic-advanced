@@ -15,7 +15,7 @@ public class AirsonicCueConfig {
         boolean enabled,
         boolean hideIndexedFiles) {
         this.enabled = enabled;
-        this.hideIndexedFiles = hideIndexedFiles;
+        this.hideIndexedFiles = enabled && hideIndexedFiles;
     }
 
     public boolean isEnabled() {

@@ -575,7 +575,8 @@ public class MediaFileService {
      * hide specific file types in player and API
      */
     public boolean showMediaFile(MediaFile media) {
-        return !(settingsService.getHideIndexedFiles() && media.hasIndex());
+        return (settingsService.getEnableCueIndexing() || media.getStartPosition() == MediaFile.NOT_INDEXED) &&
+            !(settingsService.getHideIndexedFiles() && media.hasIndex());
     }
 
     public boolean includeMediaFile(MediaFile candidate, MusicFolder folder) {

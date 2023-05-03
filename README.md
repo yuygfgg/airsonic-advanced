@@ -167,6 +167,10 @@ mvn clean compile package verify
 ```
 The main binary would be in `airsonic-main/target`
 
+### Configuration
+
+See the [Configuration](./docs/configures/README.md)
+
 Compatibility Notes:
 ------
 The following properties are new in Airsonic-Advanced:

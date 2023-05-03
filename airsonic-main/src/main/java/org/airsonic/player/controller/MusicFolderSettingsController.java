@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -111,7 +112,8 @@ public class MusicFolderSettingsController {
         command.setUploadsFolder(settingsService.getUploadsFolder());
         command.setExcludePatternString(settingsService.getExcludePatternString());
         command.setIgnoreSymLinks(settingsService.getIgnoreSymLinks());
-        command.setHideIndexedFiles(settingsService.getHideIndexedFiles());
+        command.setEnableCueIndexing(settingsService.getEnableCueIndexing());
+        command.setHideIndexedFiles(settingsService.getEnableCueIndexing() && settingsService.getHideIndexedFiles());
         command.setFullScan(settingsService.getFullScan());
         command.setClearFullScanSettingAfterScan(!settingsService.getFullScan() ? settingsService.getFullScan() : settingsService.getClearFullScanSettingAfterScan());
 
@@ -203,7 +205,8 @@ public class MusicFolderSettingsController {
         settingsService.setUploadsFolder(command.getUploadsFolder());
         settingsService.setExcludePatternString(command.getExcludePatternString());
         settingsService.setIgnoreSymLinks(command.getIgnoreSymLinks());
-        settingsService.setHideIndexedFiles(command.getHideIndexedFiles());
+        settingsService.setEnableCueIndexing(command.isEnableCueIndexing());
+        settingsService.setHideIndexedFiles(command.isEnableCueIndexing() && command.getHideIndexedFiles());
         settingsService.setFullScan(command.getFullScan());
         settingsService.setClearFullScanSettingAfterScan(!command.getFullScan() ? command.getFullScan() : command.getClearFullScanSettingAfterScan());
         settingsService.save();

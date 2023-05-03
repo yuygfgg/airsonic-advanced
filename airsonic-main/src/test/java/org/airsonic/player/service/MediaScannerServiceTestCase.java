@@ -24,8 +24,10 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.nio.file.Files;
@@ -43,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 /**
  * A unit test class to test the MediaScannerService.
@@ -57,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * An empty database is created on the fly.
  */
 @RunWith(SpringRunner.class)
+@TestPropertySource(properties = "airsonic.cue.enabled=true")
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class MediaScannerServiceTestCase {
@@ -89,6 +93,9 @@ public class MediaScannerServiceTestCase {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @SpyBean
+    private SettingsService settingsService;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -288,6 +295,51 @@ public class MediaScannerServiceTestCase {
         assertNull(track1.getIndexPath());
         assertEquals(0.0d, track1.getStartPosition(), 0.0d);
     }
+
+    @Test
+    public void testMusicCueWithDisableCueIndexing() {
+
+        when(settingsService.getEnableCueIndexing()).thenReturn(false);
+
+        // Add the "cue" folder to the database
+        Path musicFolderFile = MusicFolderTestData.resolveMusicDisableCueFolderPath();
+        MusicFolder musicFolder = new MusicFolder(1, musicFolderFile, "CueDisabled", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        cleanupId = ScanningTestUtils.before(Arrays.asList(musicFolder), mediaFolderService, mediaScannerService);
+
+        // Retrieve the "Cue" folder from the database to make
+        // sure that we don't accidentally operate on other folders
+        // from previous tests.
+        musicFolder = musicFolderDao.getMusicFolderForPath(musicFolder.getPath().toString());
+        List<MusicFolder> folders = new ArrayList<>();
+        folders.add(musicFolder);
+
+        // Test that the artist is correctly imported
+        List<Artist> allArtists = artistDao.getAlphabetialArtists(0, Integer.MAX_VALUE, folders);
+        assertEquals(0, allArtists.size());
+
+        // Test that the album is correctly imported
+        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, folders);
+        assertEquals(0, allAlbums.size());
+
+        // Test that the music file is correctly imported
+        List<MediaFile> albumFiles = mediaFileDao.getChildrenOf("", musicFolder.getId(), false);
+        Assert.assertEquals(1, albumFiles.size());
+        MediaFile file = albumFiles.get(0);
+        assertEquals("airsonic-test", file.getTitle());
+        assertEquals("wav", file.getFormat());
+        assertNull(file.getAlbumName());
+        assertNull(file.getArtist());
+        assertNull(file.getAlbumArtist());
+        assertNull(file.getTrackNumber());
+        assertNull(file.getYear());
+        assertEquals("", file.getParentPath());
+        assertEquals("airsonic-test.wav", file.getPath());
+        assertNull(file.getIndexPath());
+        assertEquals(-1.0d, file.getStartPosition(), 0.0d);
+
+    }
+
+
 
     @Test
     public void testMusicInvalidCueWithLengthError() {

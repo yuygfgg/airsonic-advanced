@@ -485,11 +485,12 @@ public class MediaFileService {
 
         // collect files and cuesheets, if any
         try (Stream<Path> children = Files.list(parent.getFullPath(folder.getPath()))) {
+            boolean isEnableCueIndexing = settingsService.getEnableCueIndexing();
             Map<String, MediaFile> bareFiles = children.parallel()
                     .map(x -> { // collect cuesheets
                         try {
-                            if (("cue".equalsIgnoreCase(FilenameUtils.getExtension(x.toString())))
-                                || ("flac".equalsIgnoreCase(FilenameUtils.getExtension(x.toString())) && (FLACReader.getCueSheet(folder.getPath().resolve(x)) != null))) {
+                            if (isEnableCueIndexing && (("cue".equalsIgnoreCase(FilenameUtils.getExtension(x.toString())))
+                                || ("flac".equalsIgnoreCase(FilenameUtils.getExtension(x.toString())) && (FLACReader.getCueSheet(folder.getPath().resolve(x)) != null)))) {
                                 cueFiles.add(x.toString());
                             }
                         } catch (IOException e) {
@@ -575,7 +576,8 @@ public class MediaFileService {
      * hide specific file types in player and API
      */
     public boolean showMediaFile(MediaFile media) {
-        return !(settingsService.getHideIndexedFiles() && media.hasIndex());
+        return (settingsService.getEnableCueIndexing() || media.getStartPosition() == MediaFile.NOT_INDEXED) &&
+            !(settingsService.getHideIndexedFiles() && media.hasIndex());
     }
 
     public boolean includeMediaFile(MediaFile candidate, MusicFolder folder) {
@@ -1011,7 +1013,7 @@ public class MediaFileService {
 
         List<MediaFile> result = new ArrayList<MediaFile>();
 
-        for (MediaFile child : getChildrenOf(ancestor, true, true, sort)) {
+        for (MediaFile child : getVisibleChildrenOf(ancestor, true, sort)) {
             if (child.isDirectory()) {
                 result.addAll(getDescendantsOf(child, sort));
             } else {

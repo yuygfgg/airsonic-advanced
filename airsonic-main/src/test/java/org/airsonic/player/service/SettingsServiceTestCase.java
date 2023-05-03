@@ -21,6 +21,7 @@ package org.airsonic.player.service;
 
 import com.google.common.collect.ImmutableMap;
 import org.airsonic.player.TestCaseUtils;
+import org.airsonic.player.config.AirsonicCueConfig;
 import org.airsonic.player.config.AirsonicDefaultFolderConfig;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.util.HomeRule;
@@ -33,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
@@ -55,7 +57,11 @@ import static org.junit.Assert.assertTrue;
  * @author Sindre Mehus
  */
 @RunWith(SpringRunner.class)
-@EnableConfigurationProperties({AirsonicHomeConfig.class, AirsonicDefaultFolderConfig.class})
+@EnableConfigurationProperties({AirsonicHomeConfig.class, AirsonicDefaultFolderConfig.class, AirsonicCueConfig.class})
+@TestPropertySource(properties = {
+        "airsonic.cue.enabled=true",
+        "airsonic.cue.hide-indexed-files=true"
+})
 public class SettingsServiceTestCase {
 
     @ClassRule
@@ -72,6 +78,9 @@ public class SettingsServiceTestCase {
     @Autowired
     AirsonicDefaultFolderConfig defaultFolderConfig;
 
+    @Autowired
+    AirsonicCueConfig cueConfig;
+
     @Before
     public void setUp() throws IOException {
         TestCaseUtils.cleanAirsonicHomeForTest();
@@ -86,6 +95,7 @@ public class SettingsServiceTestCase {
         settingsService.setEnvironment(env);
         settingsService.setAirsonicConfig(homeConfig);
         settingsService.setAirsonicDefaultFolderConfig(defaultFolderConfig);
+        settingsService.setAirsonicCueConfig(cueConfig);
         return settingsService;
     }
 
@@ -106,6 +116,7 @@ public class SettingsServiceTestCase {
         assertEquals("Wrong default LDAP search filter.", "(sAMAccountName={0})", settingsService.getLdapSearchFilter());
         assertEquals("Wrong default LDAP auto-shadowing.", false, settingsService.isLdapAutoShadowing());
         assertEquals("30m", settingsService.getSessionDuration());
+        assertEquals("Wrong default enableCueIndexing", true, settingsService.getEnableCueIndexing());
         assertEquals("Wrong default hideIndexedFile.", true, settingsService.getHideIndexedFiles());
     }
 
@@ -133,6 +144,7 @@ public class SettingsServiceTestCase {
         settingsService.setLdapManagerPassword("secret");
         settingsService.setLdapSearchFilter("newLdapSearchFilter");
         settingsService.setLdapAutoShadowing(true);
+        settingsService.setEnableCueIndexing(false);
         settingsService.setHideIndexedFiles(false);
 
         verifySettings(settingsService);
@@ -170,6 +182,7 @@ public class SettingsServiceTestCase {
         assertEquals("Wrong LDAP manager password.", "secret", settingsService.getLdapManagerPassword());
         assertEquals("Wrong LDAP search filter.", "newLdapSearchFilter", settingsService.getLdapSearchFilter());
         assertTrue("Wrong LDAP auto-shadowing.", settingsService.isLdapAutoShadowing());
+        assertFalse("Wrong default enableCueIndexing", settingsService.getEnableCueIndexing());
         assertFalse("Wrong default hideIndexedFile.", settingsService.getHideIndexedFiles());
     }
 

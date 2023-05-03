@@ -43,8 +43,8 @@ public class MusicFolderTestData {
         return resolveBaseMediaPath().resolve("cue");
     }
 
-    public static Path resolveMusicInvalidCueFolderPath() {
-        return resolveBaseMediaPath().resolve("invalidCue");
+    public static Path resolveMusicDisableCueFolderPath() {
+        return resolveBaseMediaPath().resolve("disableCue");
     }
 
     public static Path resolveMusicInvalidCue2FolderPath() {

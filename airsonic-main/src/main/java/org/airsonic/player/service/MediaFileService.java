@@ -485,11 +485,12 @@ public class MediaFileService {
 
         // collect files and cuesheets, if any
         try (Stream<Path> children = Files.list(parent.getFullPath(folder.getPath()))) {
+            boolean isEnableCueIndexing = settingsService.getEnableCueIndexing();
             Map<String, MediaFile> bareFiles = children.parallel()
                     .map(x -> { // collect cuesheets
                         try {
-                            if (("cue".equalsIgnoreCase(FilenameUtils.getExtension(x.toString())))
-                                || ("flac".equalsIgnoreCase(FilenameUtils.getExtension(x.toString())) && (FLACReader.getCueSheet(folder.getPath().resolve(x)) != null))) {
+                            if (isEnableCueIndexing && (("cue".equalsIgnoreCase(FilenameUtils.getExtension(x.toString())))
+                                || ("flac".equalsIgnoreCase(FilenameUtils.getExtension(x.toString())) && (FLACReader.getCueSheet(folder.getPath().resolve(x)) != null)))) {
                                 cueFiles.add(x.toString());
                             }
                         } catch (IOException e) {

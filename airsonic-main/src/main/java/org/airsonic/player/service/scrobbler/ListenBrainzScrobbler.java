@@ -31,6 +31,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -42,6 +43,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * <br/>
  * See https://listenbrainz.readthedocs.io/
  */
+@Component
 public class ListenBrainzScrobbler {
 
     private static final Logger LOG = LoggerFactory.getLogger(ListenBrainzScrobbler.class);

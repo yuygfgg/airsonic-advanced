@@ -195,27 +195,4 @@ public class JukeboxLegacySubsonicService implements AudioPlayer.Listener {
         }
     }
 
-    public void setTranscodingService(TranscodingService transcodingService) {
-        this.transcodingService = transcodingService;
-    }
-
-    public void setAudioScrobblerService(AudioScrobblerService audioScrobblerService) {
-        this.audioScrobblerService = audioScrobblerService;
-    }
-
-    public void setStatusService(StatusService statusService) {
-        this.statusService = statusService;
-    }
-
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
-    }
-
-    public void setSecurityService(SecurityService securityService) {
-        this.securityService = securityService;
-    }
-
-    public void setMediaFileService(MediaFileService mediaFileService) {
-        this.mediaFileService = mediaFileService;
-    }
 }

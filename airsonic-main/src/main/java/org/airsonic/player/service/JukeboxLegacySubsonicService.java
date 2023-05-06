@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -25,7 +26,6 @@ import org.airsonic.player.service.jukebox.AudioPlayerFactory;
 import org.airsonic.player.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -40,20 +40,31 @@ public class JukeboxLegacySubsonicService implements AudioPlayer.Listener {
 
     private static final Logger LOG = LoggerFactory.getLogger(JukeboxLegacySubsonicService.class);
 
-    @Autowired
-    private TranscodingService transcodingService;
-    @Autowired
-    private AudioScrobblerService audioScrobblerService;
-    @Autowired
-    private StatusService statusService;
-    @Autowired
-    private SettingsService settingsService;
-    @Autowired
-    private SecurityService securityService;
-    @Autowired
-    private MediaFileService mediaFileService;
-    @Autowired
-    private AudioPlayerFactory audioPlayerFactory;
+    private final TranscodingService transcodingService;
+    private final AudioScrobblerService audioScrobblerService;
+    private final StatusService statusService;
+    private final SettingsService settingsService;
+    private final SecurityService securityService;
+    private final MediaFileService mediaFileService;
+    private final AudioPlayerFactory audioPlayerFactory;
+
+    public JukeboxLegacySubsonicService(
+        AudioPlayerFactory audioPlayerFactory,
+        AudioScrobblerService audioScrobblerService,
+        MediaFileService mediaFileService,
+        SecurityService securityService,
+        SettingsService settingsService,
+        StatusService statusService,
+        TranscodingService transcodingService
+    ) {
+        this.audioPlayerFactory = audioPlayerFactory;
+        this.audioScrobblerService = audioScrobblerService;
+        this.mediaFileService = mediaFileService;
+        this.securityService = securityService;
+        this.settingsService = settingsService;
+        this.statusService = statusService;
+        this.transcodingService = transcodingService;
+    }
 
     private AudioPlayer audioPlayer;
     private Player player;

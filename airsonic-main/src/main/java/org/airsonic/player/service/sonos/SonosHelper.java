@@ -41,7 +41,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.*;
 
-import static org.airsonic.player.service.NetworkService.getBaseUrl;
+import static org.airsonic.player.util.NetworkUtil.getBaseUrl;
 
 /**
  * @author Sindre Mehus

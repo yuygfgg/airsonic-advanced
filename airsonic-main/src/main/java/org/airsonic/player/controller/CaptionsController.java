@@ -9,12 +9,12 @@ import org.airsonic.player.security.JWTAuthenticationToken;
 import org.airsonic.player.service.JWTSecurityService;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.MediaFolderService;
-import org.airsonic.player.service.NetworkService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
 import org.airsonic.player.service.metadata.MetaDataParserFactory;
+import org.airsonic.player.util.NetworkUtil;
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -90,7 +90,7 @@ public class CaptionsController {
             throw new AccessDeniedException("Access to file " + id + " is forbidden for user " + user.getUsername());
         }
 
-        List<CaptionInfo> captions = listCaptions(video, NetworkService.getBaseUrl(request));
+        List<CaptionInfo> captions = listCaptions(video, NetworkUtil.getBaseUrl(request));
         CaptionInfo res;
         if (captionId == null) {
             res = captions.stream().findFirst().orElse(null);
@@ -199,7 +199,7 @@ public class CaptionsController {
             expiration = JWTSecurityService.getExpiration((JWTAuthenticationToken) authentication);
         }
 
-        return listCaptions(video, NetworkService.getBaseUrl(request), user, expiration);
+        return listCaptions(video, NetworkUtil.getBaseUrl(request), user, expiration);
     }
 
     public List<CaptionInfo> listCaptions(MediaFile video, String basePath) {

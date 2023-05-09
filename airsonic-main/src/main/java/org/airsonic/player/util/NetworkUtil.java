@@ -17,14 +17,13 @@
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
-package org.airsonic.player.service;
+package org.airsonic.player.util;
 
 import org.airsonic.player.spring.WebsocketConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.stereotype.Service;
 import org.springframework.web.util.UrlPathHelper;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,8 +33,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-@Service
-public class NetworkService {
+public class NetworkUtil {
 
     private static UrlPathHelper urlPathHelper = new UrlPathHelper();
     private static final String X_FORWARDED_SERVER = "X-Forwarded-Server";
@@ -44,7 +42,7 @@ public class NetworkService {
     private static final String X_FORWARDED_FOR = "X-Forwarded-For";
     private static final String X_FORWARDED_SCHEME = "X-Forwarded-Scheme";
 
-    private final static Logger LOG = LoggerFactory.getLogger(NetworkService.class);
+    private final static Logger LOG = LoggerFactory.getLogger(NetworkUtil.class);
 
     public static String getBaseUrl(SimpMessageHeaderAccessor websocketHeaders) {
         return getBaseUrl((HttpServletRequest) websocketHeaders.getSessionAttributes().get(WebsocketConfiguration.UNDERLYING_SERVLET_REQUEST));

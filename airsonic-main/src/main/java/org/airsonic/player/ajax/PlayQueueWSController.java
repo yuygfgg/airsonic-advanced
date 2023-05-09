@@ -2,10 +2,10 @@ package org.airsonic.player.ajax;
 
 import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.Player;
-import org.airsonic.player.service.NetworkService;
 import org.airsonic.player.service.PlayQueueService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.spring.WebsocketConfiguration;
+import org.airsonic.player.util.NetworkUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -29,7 +29,7 @@ public class PlayQueueWSController {
     @SubscribeMapping("/get")
     public PlayQueueInfo getPlayQueue(@DestinationVariable int playerId, SimpMessageHeaderAccessor headers) throws Exception {
         Player player = getPlayer(playerId, headers);
-        String baseUrl = NetworkService.getBaseUrl(headers);
+        String baseUrl = NetworkUtil.getBaseUrl(headers);
         return playQueueService.getPlayQueueInfo(player, baseUrl);
     }
 

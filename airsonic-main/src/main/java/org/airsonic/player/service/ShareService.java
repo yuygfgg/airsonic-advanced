@@ -24,6 +24,7 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.Share;
 import org.airsonic.player.domain.User;
+import org.airsonic.player.util.NetworkUtil;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.slf4j.Logger;
@@ -107,7 +108,7 @@ public class ShareService {
 
     public String getShareUrl(HttpServletRequest request, Share share) {
         String shareUrl = "ext/share/" + share.getName();
-        return NetworkService.getBaseUrl(request) + jwtSecurityService
+        return NetworkUtil.getBaseUrl(request) + jwtSecurityService
                 .addJWTToken(User.USERNAME_ANONYMOUS, UriComponentsBuilder.fromUriString(shareUrl), share.getExpires())
                 .build().toUriString();
     }

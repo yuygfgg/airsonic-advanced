@@ -447,9 +447,13 @@ public class LastFmServiceTest {
         // return artist with null name
         setupMockedMediaFileReturnTestArtist();
         when(mockedMediaFile.getAlbumName()).thenReturn(null);
+        when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
 
         // verify
-        assertNull(lastFmService.getAlbumNotesByMediaFile(mockedMediaFile));
+        try (MockedStatic<Artist> mockedStaticArtist = org.mockito.Mockito.mockStatic(Artist.class)) {
+            mockedStaticArtist.when(() -> Artist.getInfo(eq("testArtist"), anyString())).thenReturn(mockedInfoArtist);
+            assertNull(lastFmService.getAlbumNotesByMediaFile(mockedMediaFile));
+        }
     }
 
     @Test
@@ -457,7 +461,10 @@ public class LastFmServiceTest {
         // return artist with null name
         setupMockedMediaFileReturnTestArtist();
         when(mockedMediaFile.getAlbumName()).thenReturn("testAlbum");
-        try (MockedStatic<Album> mockedStaticAlbum = org.mockito.Mockito.mockStatic(Album.class)) {
+        when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
+        try (MockedStatic<Artist> mockedStaticArtist = Mockito.mockStatic(Artist.class);
+            MockedStatic<Album> mockedStaticAlbum = Mockito.mockStatic(Album.class)) {
+            mockedStaticArtist.when(() -> Artist.getInfo(eq("testArtist"), anyString())).thenReturn(mockedInfoArtist);
             mockedStaticAlbum.when(() -> Album.getInfo(eq("testArtist"), eq("testAlbum"), anyString())).thenReturn(null);
             // verify
             assertNull(lastFmService.getAlbumNotesByMediaFile(mockedMediaFile));
@@ -478,7 +485,10 @@ public class LastFmServiceTest {
             thenReturn("testLargeImageURL");
         when(mockedInfoAlbum.getImageURL(eq(ImageSize.MEDIUM))).
             thenReturn("testMediumImageURL");
-        try (MockedStatic<Album> mockedStaticAlbum = org.mockito.Mockito.mockStatic(Album.class)) {
+        when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
+        try (MockedStatic<Artist> mockedStaticArtist = Mockito.mockStatic(Artist.class);
+            MockedStatic<Album> mockedStaticAlbum = Mockito.mockStatic(Album.class)) {
+            mockedStaticArtist.when(() -> Artist.getInfo(eq("testArtist"), anyString())).thenReturn(mockedInfoArtist);
             mockedStaticAlbum.when(() -> Album.getInfo(eq("testArtist"), eq("testAlbum"), anyString())).thenReturn(mockedInfoAlbum);
             // verify
             AlbumNotes albumNotes = lastFmService.getAlbumNotesByMediaFile(mockedMediaFile);

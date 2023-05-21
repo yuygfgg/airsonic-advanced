@@ -28,6 +28,7 @@ import org.airsonic.player.domain.UserSettings;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -54,6 +55,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 @RunWith(MockitoJUnitRunner.class)
 public class StatusServiceTestCase {
 
+    @InjectMocks
     private StatusService service;
     private Player player1;
     private Player player2;
@@ -66,16 +68,14 @@ public class StatusServiceTestCase {
     private SettingsService settingsService;
     @Mock
     private UserSettings settings;
+    @Mock
+    private TaskSchedulingService taskService;
 
     @Before
     public void setUp() {
         doReturn(new MediaFile()).when(mediaFileService).getMediaFile(any(Path.class));
         doReturn(settings).when(settingsService).getUserSettings(any(String.class));
         doReturn(true).when(settings).getNowPlayingAllowed();
-        service = new StatusService();
-        service.setMessagingTemplate(messagingTemplate);
-        service.setMediaFileService(mediaFileService);
-        service.setSettingsService(settingsService);
         player1 = new Player();
         player1.setId(1);
         player1.setUsername("p1");

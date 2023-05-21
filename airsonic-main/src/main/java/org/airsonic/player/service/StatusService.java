@@ -25,11 +25,8 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.PlayStatus;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.TransferStatus;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -56,18 +53,26 @@ import java.util.stream.Stream;
 @Service
 public class StatusService {
 
-    @Autowired
-    private MediaFileService mediaFileService;
-    @Autowired
-    private SettingsService settingsService;
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
-    @Autowired
-    private TaskSchedulingService taskService;
+    private final MediaFileService mediaFileService;
+    private final SettingsService settingsService;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final TaskSchedulingService taskService;
 
-    @PostConstruct
     public void cleanup() {
         taskService.scheduleFixedDelayTask("remote-playstatus-cleanup", () -> cleanupRemotePlays(), Instant.now().plus(3, ChronoUnit.HOURS), Duration.ofHours(3), true);
+    }
+
+    public StatusService(
+        MediaFileService mediaFileService,
+        SettingsService settingsService,
+        SimpMessagingTemplate messagingTemplate,
+        TaskSchedulingService taskService
+    ) {
+        this.mediaFileService = mediaFileService;
+        this.settingsService = settingsService;
+        this.messagingTemplate = messagingTemplate;
+        this.taskService = taskService;
+        this.cleanup();
     }
 
     private final List<TransferStatus> streamStatuses = Collections.synchronizedList(new ArrayList<>());
@@ -226,15 +231,4 @@ public class StatusService {
                 .collect(Collectors.toList());
     }
 
-    public void setMediaFileService(MediaFileService mediaFileService) {
-        this.mediaFileService = mediaFileService;
-    }
-
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
-    }
-
-    public void setMessagingTemplate(SimpMessagingTemplate messagingTemplate) {
-        this.messagingTemplate = messagingTemplate;
-    }
 }

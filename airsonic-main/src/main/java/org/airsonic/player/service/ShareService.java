@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -29,7 +30,6 @@ import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -53,14 +53,17 @@ public class ShareService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ShareService.class);
 
-    @Autowired
-    private ShareDao shareDao;
-    @Autowired
-    private SecurityService securityService;
-    @Autowired
-    private MediaFileService mediaFileService;
-    @Autowired
-    private JWTSecurityService jwtSecurityService;
+    private final ShareDao shareDao;
+    private final SecurityService securityService;
+    private final MediaFileService mediaFileService;
+    private final JWTSecurityService jwtSecurityService;
+
+    public ShareService(ShareDao shareDao, SecurityService securityService, MediaFileService mediaFileService, JWTSecurityService jwtSecurityService) {
+        this.shareDao = shareDao;
+        this.securityService = securityService;
+        this.mediaFileService = mediaFileService;
+        this.jwtSecurityService = jwtSecurityService;
+    }
 
     public List<Share> getAllShares() {
         return shareDao.getAllShares();
@@ -84,12 +87,12 @@ public class ShareService {
 
     public Share createShare(HttpServletRequest request, List<MediaFile> files) {
 
+        Instant now = Instant.now();
         Share share = new Share();
         share.setName(RandomStringUtils.random(5, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"));
-        share.setCreated(Instant.now());
+        share.setCreated(now);
         share.setUsername(securityService.getCurrentUsername(request));
-
-        share.setExpires(Instant.now().plus(ChronoUnit.YEARS.getDuration()));
+        share.setExpires(now.plus(ChronoUnit.YEARS.getDuration()));
 
         shareDao.createShare(share);
         shareDao.createSharedFiles(share.getId(), files.stream().map(f -> f.getId()).collect(toList()));
@@ -113,19 +116,4 @@ public class ShareService {
                 .build().toUriString();
     }
 
-    public void setSecurityService(SecurityService securityService) {
-        this.securityService = securityService;
-    }
-
-    public void setShareDao(ShareDao shareDao) {
-        this.shareDao = shareDao;
-    }
-
-    public void setMediaFileService(MediaFileService mediaFileService) {
-        this.mediaFileService = mediaFileService;
-    }
-
-    public void setJwtSecurityService(JWTSecurityService jwtSecurityService) {
-        this.jwtSecurityService = jwtSecurityService;
-    }
 }

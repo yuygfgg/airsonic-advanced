@@ -365,7 +365,7 @@ public class SubsonicRESTController {
             return;
         }
         List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
-        List<MediaFile> similarSongs = lastFmService.getSimilarSongs(mediaFile, count, musicFolders);
+        List<MediaFile> similarSongs = lastFmService.getSimilarSongsByMediaFile(mediaFile, count, musicFolders);
         Player player = playerService.getPlayer(request, response);
         for (MediaFile similarSong : similarSongs) {
             result.getSong().add(createJaxbChild(player, similarSong, username));
@@ -443,11 +443,11 @@ public class SubsonicRESTController {
             return;
         }
         List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
-        List<MediaFile> similarArtists = lastFmService.getSimilarArtists(mediaFile, count, includeNotPresent, musicFolders);
+        List<MediaFile> similarArtists = lastFmService.getSimilarArtistsByMediaFile(mediaFile, count, includeNotPresent, musicFolders);
         for (MediaFile similarArtist : similarArtists) {
             result.getSimilarArtist().add(createJaxbArtist(similarArtist, username));
         }
-        ArtistBio artistBio = lastFmService.getArtistBio(mediaFile, localeResolver.resolveLocale(request));
+        ArtistBio artistBio = lastFmService.getArtistBioByMediaFile(mediaFile, localeResolver.resolveLocale(request));
         if (artistBio != null) {
             result.setBiography(artistBio.getBiography());
             result.setMusicBrainzId(artistBio.getMusicBrainzId());
@@ -2240,7 +2240,7 @@ public class SubsonicRESTController {
             error(request, response, SubsonicRESTController.ErrorCode.NOT_FOUND, "Media file not found.");
             return;
         }
-        AlbumNotes albumNotes = this.lastFmService.getAlbumNotes(mediaFile);
+        AlbumNotes albumNotes = this.lastFmService.getAlbumNotesByMediaFile(mediaFile);
 
         AlbumInfo result = getAlbumInfoInternal(albumNotes);
         Response res = createResponse();
@@ -2259,7 +2259,7 @@ public class SubsonicRESTController {
             error(request, response, SubsonicRESTController.ErrorCode.NOT_FOUND, "Album not found.");
             return;
         }
-        AlbumNotes albumNotes = this.lastFmService.getAlbumNotes(album);
+        AlbumNotes albumNotes = this.lastFmService.getAlbumNotesByAlbum(album);
 
         AlbumInfo result = getAlbumInfoInternal(albumNotes);
         Response res = createResponse();

@@ -14,9 +14,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
  *
+ *  Copyright 2023 (C) Y.Tory
  *  Copyright 2014 (C) Sindre Mehus
  */
-
 package org.airsonic.player.service;
 
 import de.umass.lastfm.*;
@@ -29,10 +29,7 @@ import org.airsonic.player.domain.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -53,17 +50,24 @@ public class LastFmService {
     private static final long CACHE_TIME_TO_LIVE_MILLIS = 6 * 30 * 24 * 3600 * 1000L; // 6 months
     private static final Logger LOG = LoggerFactory.getLogger(LastFmService.class);
 
-    @Autowired
-    private MediaFileDao mediaFileDao;
-    @Autowired
-    private MediaFileService mediaFileService;
-    @Autowired
-    private ArtistDao artistDao;
-    @Autowired
-    private AirsonicHomeConfig homeConfig;
+    private final MediaFileDao mediaFileDao;
+    private final MediaFileService mediaFileService;
+    private final ArtistDao artistDao;
+    private final AirsonicHomeConfig homeConfig;
 
-    @PostConstruct
-    public void init() {
+    public LastFmService(
+        AirsonicHomeConfig homeConfig,
+        ArtistDao artistDao,
+        MediaFileDao mediaFileDao,
+        MediaFileService mediaFileService) {
+        this.homeConfig = homeConfig;
+        this.artistDao = artistDao;
+        this.mediaFileDao = mediaFileDao;
+        this.mediaFileService = mediaFileService;
+        init();
+    }
+
+    private void init() {
         Caller caller = Caller.getInstance();
         caller.setUserAgent("Airsonic");
 
@@ -80,7 +84,7 @@ public class LastFmService {
      * @param musicFolders      Only return artists present in these folders.
      * @return Similar artists, ordered by presence then similarity.
      */
-    public List<MediaFile> getSimilarArtists(MediaFile mediaFile, int count, boolean includeNotPresent, List<MusicFolder> musicFolders) {
+    public List<MediaFile> getSimilarArtistsByMediaFile(MediaFile mediaFile, int count, boolean includeNotPresent, List<MusicFolder> musicFolders) {
         List<MediaFile> result = new ArrayList<MediaFile>();
         if (mediaFile == null) {
             return result;
@@ -135,7 +139,9 @@ public class LastFmService {
     public List<org.airsonic.player.domain.Artist> getSimilarArtists(org.airsonic.player.domain.Artist artist,
                                                                      int count, boolean includeNotPresent, List<MusicFolder> musicFolders) {
         List<org.airsonic.player.domain.Artist> result = new ArrayList<org.airsonic.player.domain.Artist>();
-
+        if (artist == null) {
+            return result;
+        }
         try {
 
             // First select artists that are present.
@@ -199,7 +205,7 @@ public class LastFmService {
      * @param musicFolders Only return songs from artists present in these folders.
      * @return Songs from similar artists;
      */
-    public List<MediaFile> getSimilarSongs(MediaFile mediaFile, int count, List<MusicFolder> musicFolders) {
+    public List<MediaFile> getSimilarSongsByMediaFile(MediaFile mediaFile, int count, List<MusicFolder> musicFolders) {
         List<MediaFile> similarSongs = new ArrayList<MediaFile>();
 
         String artistName = getArtistName(mediaFile);
@@ -208,7 +214,7 @@ public class LastFmService {
             similarSongs.addAll(mediaFileService.getRandomSongsForParent(artist, count));
         }
 
-        for (MediaFile similarArtist : getSimilarArtists(mediaFile, 100, false, musicFolders)) {
+        for (MediaFile similarArtist : getSimilarArtistsByMediaFile(mediaFile, 100, false, musicFolders)) {
             similarSongs.addAll(mediaFileService.getRandomSongsForParent(similarArtist, count));
         }
         Collections.shuffle(similarSongs);
@@ -221,14 +227,14 @@ public class LastFmService {
      * @param mediaFile The media file (song, album or artist).
      * @return Artist bio.
      */
-    public ArtistBio getArtistBio(MediaFile mediaFile, Locale locale) {
+    public ArtistBio getArtistBioByMediaFile(MediaFile mediaFile, Locale locale) {
         return getArtistBio(getCanonicalArtistName(getArtistName(mediaFile)), locale);
     }
 
     /**
      * Returns artist bio and images.
      *
-     * @param artist The artist.
+     * @param artist The artist. null is not allowed.
      * @return Artist bio.
      */
     public ArtistBio getArtistBio(org.airsonic.player.domain.Artist artist, Locale locale) {
@@ -265,8 +271,8 @@ public class LastFmService {
      * @param musicFolders Only return songs present in these folders.
      * @return Top songs for artist.
      */
-    public List<MediaFile> getTopSongs(MediaFile artist, int count, List<MusicFolder> musicFolders) {
-        return getTopSongs(artist.getName(), count, musicFolders);
+    public List<MediaFile> getTopSongsByMediaFile(MediaFile artist, int count, List<MusicFolder> musicFolders) {
+        return getTopSongs(getArtistName(artist), count, musicFolders);
     }
 
     /**
@@ -283,8 +289,13 @@ public class LastFmService {
                 return Collections.emptyList();
             }
 
+            String canonicalArtistName = getCanonicalArtistName(artistName);
+            if (StringUtils.isBlank(canonicalArtistName)) {
+                return Collections.emptyList();
+            }
+
             List<MediaFile> result = new ArrayList<MediaFile>();
-            for (Track topTrack : Artist.getTopTracks(artistName, LAST_FM_KEY)) {
+            for (Track topTrack : Artist.getTopTracks(canonicalArtistName, LAST_FM_KEY)) {
                 MediaFile song = mediaFileDao.getSongByArtistAndTitle(artistName, topTrack.getName(), musicFolders);
                 if (song != null) {
                     result.add(song);
@@ -306,7 +317,7 @@ public class LastFmService {
      * @param mediaFile The media file (song or album).
     * @return Album notes.
     */
-    public AlbumNotes getAlbumNotes(MediaFile mediaFile) {
+    public AlbumNotes getAlbumNotesByMediaFile(MediaFile mediaFile) {
         return getAlbumNotes(getCanonicalArtistName(getArtistName(mediaFile)), mediaFile.getAlbumName());
     }
 
@@ -316,7 +327,7 @@ public class LastFmService {
      * @param album The album.
      * @return Album notes.
      */
-    public AlbumNotes getAlbumNotes(org.airsonic.player.domain.Album album) {
+    public AlbumNotes getAlbumNotesByAlbum(org.airsonic.player.domain.Album album) {
         return getAlbumNotes(getCanonicalArtistName(album.getArtist()), album.getName());
     }
 
@@ -348,6 +359,13 @@ public class LastFmService {
         }
     }
 
+    /**
+     * search for cover art
+     *
+     * @param artist artist name
+     * @param album album name
+     * @return list of cover art.
+     */
     public List<LastFmCoverArt> searchCoverArt(String artist, String album) {
         if (artist == null && album == null) {
             return Collections.emptyList();
@@ -363,7 +381,7 @@ public class LastFmService {
 
             Collection<Album> matches = Album.search(query.toString(), LAST_FM_KEY);
             return matches.stream()
-                    .map(LastFmService::convert)
+                    .map(this::convert)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
         } catch (Throwable x) {
@@ -372,7 +390,7 @@ public class LastFmService {
         }
     }
 
-    private static LastFmCoverArt convert(Album album) {
+    private LastFmCoverArt convert(Album album) {
         return EnumSet.allOf(ImageSize.class).stream()
                 .sorted(Comparator.reverseOrder())
                 .map(imageSize -> StringUtils.trimToNull(album.getImageURL(imageSize)))
@@ -456,15 +474,4 @@ public class LastFmService {
         return artistName;
     }
 
-    public void setMediaFileDao(MediaFileDao mediaFileDao) {
-        this.mediaFileDao = mediaFileDao;
-    }
-
-    public void setMediaFileService(MediaFileService mediaFileService) {
-        this.mediaFileService = mediaFileService;
-    }
-
-    public void setArtistDao(ArtistDao artistDao) {
-        this.artistDao = artistDao;
-    }
 }

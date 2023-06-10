@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -33,6 +34,7 @@ import org.airsonic.player.domain.PodcastStatus;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
 import org.airsonic.player.service.metadata.MetaDataParserFactory;
+import org.airsonic.player.service.websocket.AsyncSocketClient;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.StringUtil;
 import org.airsonic.player.util.Util;
@@ -54,11 +56,7 @@ import org.jdom2.Element;
 import org.jdom2.Namespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -81,7 +79,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.airsonic.player.util.XMLUtil.createSAXBuilder;
@@ -103,34 +100,56 @@ public class PodcastService {
 
     private final ExecutorService refreshExecutor;
     private final ExecutorService downloadExecutor;
-    @Autowired
-    private PodcastDao podcastDao;
-    @Autowired
-    private SettingsService settingsService;
-    @Autowired
-    private SecurityService securityService;
-    @Autowired
-    private MediaFileService mediaFileService;
-    @Autowired
-    private MediaFolderService mediaFolderService;
-    @Autowired
-    private CoverArtService coverArtService;
-    @Autowired
-    private MetaDataParserFactory metaDataParserFactory;
-    @Autowired
-    private VersionService versionService;
-    @Autowired
-    private TaskSchedulingService taskService;
-    @Autowired
-    private SimpMessagingTemplate brokerTemplate;
+    private final PodcastDao podcastDao;
+    private final SettingsService settingsService;
+    private final SecurityService securityService;
+    private final MediaFileService mediaFileService;
+    private final MediaFolderService mediaFolderService;
+    private final CoverArtService coverArtService;
+    private final MetaDataParserFactory metaDataParserFactory;
+    private final VersionService versionService;
+    private final TaskSchedulingService taskService;
+    private final AsyncSocketClient asyncSocketClient;
+    private Runnable defaultTask;
+    private Predicate<PodcastEpisode> filterAllowed;
 
-    public PodcastService() {
+    public PodcastService(
+        PodcastDao podcastDao,
+        SettingsService settingsService,
+        SecurityService securityService,
+        MediaFileService mediaFileService,
+        MediaFolderService mediaFolderService,
+        CoverArtService coverArtService,
+        MetaDataParserFactory metaDataParserFactory,
+        VersionService versionService,
+        TaskSchedulingService taskService,
+        AsyncSocketClient asyncSocketClient
+    ) {
+        this.podcastDao = podcastDao;
+        this.settingsService = settingsService;
+        this.securityService = securityService;
+        this.mediaFileService = mediaFileService;
+        this.mediaFolderService = mediaFolderService;
+        this.coverArtService = coverArtService;
+        this.metaDataParserFactory = metaDataParserFactory;
+        this.versionService = versionService;
+        this.taskService = taskService;
+        this.asyncSocketClient = asyncSocketClient;
         refreshExecutor = Executors.newFixedThreadPool(5, Util.getDaemonThreadfactory("podcast-refresh"));
         downloadExecutor = Executors.newFixedThreadPool(3, Util.getDaemonThreadfactory("podcast-download"));
+        defaultTask = () -> {
+            LOG.info("Starting scheduled default Podcast refresh.");
+            Set<Integer> ruleIds = podcastDao.getAllChannelRules().parallelStream().map(r -> r.getId()).collect(toSet());
+            List<PodcastChannel> channelsWithoutRules = podcastDao.getAllChannels().parallelStream().filter(c -> !ruleIds.contains(c.getId())).collect(toList());
+            refreshChannels(channelsWithoutRules, true);
+            LOG.info("Completed scheduled default Podcast refresh.");
+        };
+        filterAllowed = episode -> episode.getMediaFileId() == null
+            || securityService.isReadAllowed(mediaFileService.getMediaFile(episode.getMediaFileId()), false);
+        init();
     }
 
-    @PostConstruct
-    public void init() {
+    private void init() {
         try {
             // Clean up partial downloads.
             getAllChannels()
@@ -188,14 +207,6 @@ public class PodcastService {
 
         LOG.info("Automatic Podcast update for podcast id {} scheduled to run every {} hour(s), starting at {}", r.getId(), hoursBetween, firstTime);
     }
-
-    private Runnable defaultTask = () -> {
-        LOG.info("Starting scheduled default Podcast refresh.");
-        Set<Integer> ruleIds = podcastDao.getAllChannelRules().parallelStream().map(r -> r.getId()).collect(toSet());
-        List<PodcastChannel> channelsWithoutRules = podcastDao.getAllChannels().parallelStream().filter(c -> !ruleIds.contains(c.getId())).collect(toList());
-        refreshChannels(channelsWithoutRules, true);
-        LOG.info("Completed scheduled default Podcast refresh.");
-    };
 
     public synchronized void scheduleDefault() {
         int hoursBetween = settingsService.getPodcastUpdateInterval();
@@ -315,8 +326,6 @@ public class PodcastService {
         }).collect(Collectors.toList());
     }
 
-    private Predicate<PodcastEpisode> filterAllowed = episode -> episode.getMediaFileId() == null
-            || securityService.isReadAllowed(mediaFileService.getMediaFile(episode.getMediaFileId()), false);
 
     public PodcastEpisode getEpisode(int episodeId, boolean includeDeleted) {
         PodcastEpisode episode = podcastDao.getEpisode(episodeId);
@@ -413,7 +422,7 @@ public class PodcastService {
 
     private void updateChannel(PodcastChannel channel) {
         podcastDao.updateChannel(channel);
-        runAsync(() -> brokerTemplate.convertAndSend("/topic/podcasts/updated", channel.getId()));
+        asyncSocketClient.send("/topic/podcasts/updated", channel.getId());
     }
 
     private void downloadImage(PodcastChannel channel) {
@@ -824,7 +833,7 @@ public class PodcastService {
         }
 
         podcastDao.deleteChannel(channelId);
-        runAsync(() -> brokerTemplate.convertAndSend("/topic/podcasts/deleted", channelId));
+        asyncSocketClient.send("/topic/podcasts/deleted", channelId);
     }
 
     /**
@@ -858,25 +867,5 @@ public class PodcastService {
         } else {
             podcastDao.deleteEpisode(episode.getId());
         }
-    }
-
-    public void setPodcastDao(PodcastDao podcastDao) {
-        this.podcastDao = podcastDao;
-    }
-
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
-    }
-
-    public void setSecurityService(SecurityService securityService) {
-        this.securityService = securityService;
-    }
-
-    public void setMediaFileService(MediaFileService mediaFileService) {
-        this.mediaFileService = mediaFileService;
-    }
-
-    public void setMetaDataParserFactory(MetaDataParserFactory metaDataParserFactory) {
-        this.metaDataParserFactory = metaDataParserFactory;
     }
 }

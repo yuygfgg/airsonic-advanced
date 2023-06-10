@@ -23,9 +23,9 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.service.JWTSecurityService;
-import org.airsonic.player.service.NetworkService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.TranscodingService;
+import org.airsonic.player.util.NetworkUtil;
 import org.airsonic.player.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -62,7 +62,7 @@ public class M3UController {
 
         Player player = playerService.getPlayer(request, response);
 
-        String baseUrl = NetworkService.getBaseUrl(request);
+        String baseUrl = NetworkUtil.getBaseUrl(request);
         String prefix = "ext/stream?";
 
         if (player.isExternalWithPlaylist()) {

@@ -164,7 +164,7 @@ public class PlayQueueService {
             boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
             if (queueFollowingSongs) {
                 MediaFile dir = mediaFileService.getParentOf(file);
-                songs = mediaFileService.getChildrenOf(dir, true, false, true);
+                songs = mediaFileService.getVisibleChildrenOf(dir, false, true);
                 if (!songs.isEmpty()) {
                     int index = songs.indexOf(file);
                     songs = songs.subList(index, songs.size());
@@ -221,7 +221,7 @@ public class PlayQueueService {
         boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
 
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(player.getUsername());
-        List<MediaFile> files = lastFmService.getTopSongs(mediaFileService.getMediaFile(id), 50, musicFolders);
+        List<MediaFile> files = lastFmService.getTopSongsByMediaFile(mediaFileService.getMediaFile(id), 50, musicFolders);
         if (!files.isEmpty() && index != null) {
             if (queueFollowingSongs) {
                 files = files.subList(index, files.size());
@@ -322,7 +322,7 @@ public class PlayQueueService {
     public void playSimilar(Player player, int id, int count, String sessionId) {
         MediaFile artist = mediaFileService.getMediaFile(id);
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(player.getUsername());
-        List<MediaFile> similarSongs = lastFmService.getSimilarSongs(artist, count, musicFolders);
+        List<MediaFile> similarSongs = lastFmService.getSimilarSongsByMediaFile(artist, count, musicFolders);
 
         doPlay(player, similarSongs, null, sessionId);
     }
@@ -479,7 +479,7 @@ public class PlayQueueService {
 
     private void broadcastPlayQueue(Player player, Function<PlayQueueInfo, PlayQueueInfo> playQueueModifier, String triggeringSessionId) {
         runAsync(() -> {
-            PlayQueueInfo info = playQueueModifier.apply(getPlayQueueInfo(player));
+            PlayQueueInfo info = playQueueModifier.apply(getPlayQueueInfo(player, ""));
             brokerTemplate.convertAndSendToUser(player.getUsername(),
                     "/queue/playqueues/" + player.getId() + "/updated", info);
             postBroadcast(info, player, triggeringSessionId);
@@ -500,10 +500,6 @@ public class PlayQueueService {
                 skip(player, info.getStartPlayerAt(), info.getStartPlayerAtPosition());
             }
         }
-    }
-
-    public PlayQueueInfo getPlayQueueInfo(Player player) {
-        return getPlayQueueInfo(player, "");
     }
 
     public PlayQueueInfo getPlayQueueInfo(Player player, String basePath) {

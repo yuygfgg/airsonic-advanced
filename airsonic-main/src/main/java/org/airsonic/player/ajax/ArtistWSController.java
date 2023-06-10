@@ -33,7 +33,7 @@ public class ArtistWSController {
     public ArtistInfo getArtistInfo(Principal principal, ArtistInfoRequest req) {
         MediaFile mediaFile = mediaFileService.getMediaFile(req.getMediaFileId());
         List<SimilarArtist> similarArtists = getSimilarArtists(principal.getName(), req.getMediaFileId(), req.getMaxSimilarArtists());
-        ArtistBio artistBio = lastFmService.getArtistBio(mediaFile, localeResolver.resolveLocale(principal.getName()));
+        ArtistBio artistBio = lastFmService.getArtistBioByMediaFile(mediaFile, localeResolver.resolveLocale(principal.getName()));
         List<MediaFileEntry> topSongs = getTopSongs(principal.getName(), mediaFile, req.getMaxTopSongs());
 
         return new ArtistInfo(similarArtists, artistBio, topSongs);
@@ -42,14 +42,14 @@ public class ArtistWSController {
     private List<MediaFileEntry> getTopSongs(String username, MediaFile mediaFile, int limit) {
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
 
-        return mediaFileService.toMediaFileEntryList(lastFmService.getTopSongs(mediaFile, limit, musicFolders), username, true, true, null, null, null);
+        return mediaFileService.toMediaFileEntryList(lastFmService.getTopSongsByMediaFile(mediaFile, limit, musicFolders), username, true, true, null, null, null);
     }
 
     private List<SimilarArtist> getSimilarArtists(String username, int mediaFileId, int limit) {
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
 
         MediaFile artist = mediaFileService.getMediaFile(mediaFileId);
-        return lastFmService.getSimilarArtists(artist, limit, false, musicFolders).parallelStream()
+        return lastFmService.getSimilarArtistsByMediaFile(artist, limit, false, musicFolders).parallelStream()
                 .map(similarArtist -> new SimilarArtist(similarArtist.getId(), similarArtist.getName()))
                 .collect(Collectors.toList());
     }

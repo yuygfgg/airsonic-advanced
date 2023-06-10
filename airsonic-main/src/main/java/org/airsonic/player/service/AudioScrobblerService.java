@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -38,7 +39,9 @@ import java.util.Map;
  */
 @Service
 public class AudioScrobblerService {
+    @Autowired
     private LastFMScrobbler lastFMScrobbler;
+    @Autowired
     private ListenBrainzScrobbler listenBrainzScrobbler;
     @Autowired
     private SettingsService settingsService;
@@ -75,9 +78,6 @@ public class AudioScrobblerService {
 
         UserCredential cred = creds.get(App.LASTFM);
         if (cred != null) {
-            if (lastFMScrobbler == null) {
-                lastFMScrobbler = new LastFMScrobbler();
-            }
             String decoded = SecurityService.decodeCredentials(cred);
             if (decoded != null) {
                 lastFMScrobbler.register(mediaFile, cred.getAppUsername(), decoded, submission, time);
@@ -86,21 +86,10 @@ public class AudioScrobblerService {
 
         cred = creds.get(App.LISTENBRAINZ);
         if (cred != null) {
-            if (listenBrainzScrobbler == null) {
-                listenBrainzScrobbler = new ListenBrainzScrobbler();
-            }
             String decoded = SecurityService.decodeCredentials(cred);
             if (decoded != null) {
                 listenBrainzScrobbler.register(mediaFile, userSettings.getListenBrainzUrl(), decoded, submission, time);
             }
         }
-    }
-
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
-    }
-
-    public void setSecurityService(SecurityService securityService) {
-        this.securityService = securityService;
     }
 }

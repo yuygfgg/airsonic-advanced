@@ -18,9 +18,9 @@
  */
 package org.airsonic.player.controller;
 
-import org.airsonic.player.service.NetworkService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.SonosService;
+import org.airsonic.player.util.NetworkUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -85,7 +85,7 @@ public class SonosSettingsController {
         map.put("sonosEnabled", settingsService.isSonosEnabled());
         map.put("sonosServiceName", settingsService.getSonosServiceName());
         map.put("sonosLinkMethod", settingsService.getSonosLinkMethod());
-        map.put("callbackHostAddress", settingsService.getSonosCallbackHostAddress(NetworkService.getBaseUrl(request)));
+        map.put("callbackHostAddress", settingsService.getSonosCallbackHostAddress(NetworkUtil.getBaseUrl(request)));
         map.put("existingLinks", sonosService.getExistingSonosLinks());
         map.put("pendingLinks", sonosService.getPendingSonosLinks());
         return map;

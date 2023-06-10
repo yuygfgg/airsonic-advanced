@@ -36,6 +36,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -50,6 +51,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * <br/>
  * See https://www.last.fm/api/submissions
  */
+@Component
 public class LastFMScrobbler {
 
     private static final Logger LOG = LoggerFactory.getLogger(LastFMScrobbler.class);

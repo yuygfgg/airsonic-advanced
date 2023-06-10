@@ -30,7 +30,6 @@ import org.airsonic.player.io.PipeStreams.MonitoredResource;
 import org.airsonic.player.security.JWTAuthenticationToken;
 import org.airsonic.player.service.JWTSecurityService;
 import org.airsonic.player.service.MediaFileService;
-import org.airsonic.player.service.NetworkService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
@@ -38,6 +37,7 @@ import org.airsonic.player.service.StatusService;
 import org.airsonic.player.service.TranscodingService;
 import org.airsonic.player.service.hls.HlsSession;
 import org.airsonic.player.util.FileUtil;
+import org.airsonic.player.util.NetworkUtil;
 import org.airsonic.player.util.StringUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -168,7 +168,7 @@ public class HLSController {
 
         String requestWithoutContextPath = request.getRequestURI().substring(request.getContextPath().length() + 1);
         UriComponentsBuilder prefix = UriComponentsBuilder.fromUriString(StringUtils.removeEndIgnoreCase(requestWithoutContextPath, "/hls.m3u8")); // ext/hls or hls
-        String basePath = NetworkService.getBaseUrl(request);
+        String basePath = NetworkUtil.getBaseUrl(request);
         PrintWriter writer = response.getWriter();
         if (bitRates.size() > 1) {
             generateVariantPlaylist(authentication, basePath, prefix, id, player, bitRates, writer);

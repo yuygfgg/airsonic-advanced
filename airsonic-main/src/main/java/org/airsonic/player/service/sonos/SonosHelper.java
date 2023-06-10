@@ -41,7 +41,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.*;
 
-import static org.airsonic.player.service.NetworkService.getBaseUrl;
+import static org.airsonic.player.util.NetworkUtil.getBaseUrl;
 
 /**
  * @author Sindre Mehus
@@ -157,7 +157,7 @@ public class SonosHelper {
     public List<AbstractMedia> forRadioArtist(int mediaFileId, int count, String username, HttpServletRequest request) {
         MediaFile artist = mediaFileService.getMediaFile(mediaFileId);
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
-        List<MediaFile> songs = filterMusic(lastFmService.getSimilarSongs(artist, count, musicFolders));
+        List<MediaFile> songs = filterMusic(lastFmService.getSimilarSongsByMediaFile(artist, count, musicFolders));
         Collections.shuffle(songs);
         songs = songs.subList(0, Math.min(count, songs.size()));
         return forMediaFiles(songs, username, request);
@@ -559,7 +559,7 @@ public class SonosHelper {
     public List<AbstractMedia> forSimilarArtists(int mediaFileId, String username, HttpServletRequest request) {
         MediaFile mediaFile = mediaFileService.getMediaFile(mediaFileId);
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
-        List<MediaFile> similarArtists = lastFmService.getSimilarArtists(mediaFile, 100, false, musicFolders);
+        List<MediaFile> similarArtists = lastFmService.getSimilarArtistsByMediaFile(mediaFile, 100, false, musicFolders);
         return forMediaFiles(similarArtists, username, request);
     }
 

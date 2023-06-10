@@ -23,6 +23,7 @@ import com.google.common.io.MoreFiles;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.security.JWTAuthenticationToken;
 import org.airsonic.player.service.*;
+import org.airsonic.player.util.NetworkUtil;
 import org.airsonic.player.util.StringUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -138,7 +139,7 @@ public class ExternalPlayerController {
 
     public MediaFileWithUrlInfo addUrlInfo(HttpServletRequest request, Player player, MediaFile mediaFile, Instant expires) {
         String prefix = "ext";
-        String baseUrl = NetworkService.getBaseUrl(request);
+        String baseUrl = NetworkUtil.getBaseUrl(request);
 
         boolean streamable = true;
         String contentType = StringUtil.getMimeType(MoreFiles.getFileExtension(mediaFile.getRelativePath()));

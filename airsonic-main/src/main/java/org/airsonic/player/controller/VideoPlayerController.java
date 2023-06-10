@@ -28,11 +28,11 @@ import org.airsonic.player.domain.UserSettings;
 import org.airsonic.player.service.BookmarkService;
 import org.airsonic.player.service.JWTSecurityService;
 import org.airsonic.player.service.MediaFileService;
-import org.airsonic.player.service.NetworkService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.metadata.MetaData;
+import org.airsonic.player.util.NetworkUtil;
 import org.airsonic.player.util.StringUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -99,12 +99,12 @@ public class VideoPlayerController {
         UserSettings settings = settingsService.getUserSettings(user.getUsername());
 
         Integer playerId = playerService.getPlayer(request, response).getId();
-        String url = NetworkService.getBaseUrl(request);
+        String url = NetworkUtil.getBaseUrl(request);
         boolean streamable = isStreamable(file);
         boolean castable = isCastable(file);
 
         Pair<String, Map<String, String>> streamUrls = getStreamUrls(file, user, url, streamable, playerId);
-        List<CaptionsController.CaptionInfo> captions = captionsController.listCaptions(file, NetworkService.getBaseUrl(request));
+        List<CaptionsController.CaptionInfo> captions = captionsController.listCaptions(file, NetworkUtil.getBaseUrl(request));
 
         map.put("video", file);
         map.put("position", position);

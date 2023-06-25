@@ -329,6 +329,7 @@ public class SettingsService {
 
         keyMaps.put("airsonic.rememberMeKey", KEY_REMEMBER_ME_KEY);
         keyMaps.put("IgnoreFileTimestamps", KEY_FULL_SCAN);
+        keyMaps.put("MediaScannerParallelism", "AIRSONIC_SCAN_PARALLELISM");
 
         return keyMaps;
     }

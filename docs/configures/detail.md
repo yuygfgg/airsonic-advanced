@@ -88,3 +88,44 @@ Configuration by Java options, environment variables are working as default valu
 | environment variable | AIRSONIC_CUE_HIDEINDEXEDFILES |
 | airsonic.properties | HIDE_INDEXED_FILES |
 | web interface | Settings > Music Folder > Hide cue-indexed files |
+
+
+## airsonic.scan.full-timeout
+
+The maximum time in seconds that Airsonic will spend scanning  media folders when FullScan is enabled.
+
+| item | description |
+| --- | --- |
+| type | integer |
+| default | 3600 |
+| example | airsonic.scan.full-timeout=3600 |
+| configurable by | Java options, environment variables |
+| environment variable | AIRSONIC_SCAN_FULLTIMEOUT |
+
+
+## airsonic.scan.timeout
+
+The maximum time in seconds that Airsonic will spend scanning  media folders when FullScan is disabled.
+
+| item | description |
+| --- | --- |
+| type | integer |
+| default | 600 |
+| example | airsonic.scan.timeout=600 |
+| configurable by | Java options, environment variables |
+| environment variable | AIRSONIC_SCAN_TIMEOUT |
+
+## airsonic.scan.parallelism
+
+The number of parallel threads that Airsonic will use when scanning media folders.  
+MediaScannerParallelism is deprecated. Please use this option instead.
+
+
+| item | description |
+| --- | --- |
+| type | integer |
+| default | the number of CPU processors + 1 |
+| example | airsonic.scan.parallelism=4 |
+| configurable by | Java options, environment variables, airsonic.properties |
+| environment variable | AIRSONIC_SCAN_PARALLELISM |
+| airsonic.properties | AIRSONIC_SCAN_PARALLELISM |

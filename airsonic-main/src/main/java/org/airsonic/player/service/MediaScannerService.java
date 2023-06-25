@@ -19,6 +19,7 @@
  */
 package org.airsonic.player.service;
 
+import org.airsonic.player.config.AirsonicScanConfig;
 import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.dao.MediaFileDao;
@@ -28,7 +29,6 @@ import org.airsonic.player.service.search.IndexManager;
 import org.apache.commons.lang.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.env.Environment;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.subsonic.restapi.ScanStatus;
@@ -45,6 +45,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory;
 import java.util.concurrent.ForkJoinWorkerThread;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -72,7 +74,7 @@ public class MediaScannerService {
         AlbumDao albumDao,
         TaskSchedulingService taskService,
         SimpMessagingTemplate messagingTemplate,
-        Environment environment
+        AirsonicScanConfig scanConfig
     ) {
         this.settingsService = settingsService;
         this.indexManager = indexManager;
@@ -85,7 +87,7 @@ public class MediaScannerService {
         this.albumDao = albumDao;
         this.taskService = taskService;
         this.messagingTemplate = messagingTemplate;
-        this.environment = environment;
+        this.scanConfig = scanConfig;
         init();
     }
 
@@ -100,14 +102,13 @@ public class MediaScannerService {
     private final AlbumDao albumDao;
     private final TaskSchedulingService taskService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final Environment environment;
+    private final AirsonicScanConfig scanConfig;
 
     private int scannerParallelism;
     private AtomicInteger scanCount = new AtomicInteger(0);
 
     public void init() {
-        this.scannerParallelism = Integer.parseInt(environment.getProperty("MediaScannerParallelism",
-            String.valueOf(Runtime.getRuntime().availableProcessors() + 1)));
+        this.scannerParallelism = scanConfig.getParallelism();
         indexManager.initializeIndexDirectory();
         schedule();
     }
@@ -202,9 +203,24 @@ public class MediaScannerService {
 
         ForkJoinPool pool = new ForkJoinPool(scannerParallelism, mediaScannerThreadFactory, null, true);
 
+        boolean isFullScan = settingsService.getFullScan();
+        long timeoutSeconds = isFullScan ? scanConfig.getFullTimeout() : scanConfig.getTimeout();
+        LOG.info("Starting media library scan with timeout {} seconds.", timeoutSeconds);
         CompletableFuture.runAsync(() -> doScanLibrary(pool), pool)
+                .orTimeout(timeoutSeconds, TimeUnit.SECONDS)
+                .whenComplete((r,e) -> {
+                    if (e instanceof TimeoutException) {
+                        LOG.warn("Media library scan timed out after {} seconds.", timeoutSeconds);
+                    } else if (e != null) {
+                        LOG.error("Media library scan failed.", e);
+                    } else {
+                        LOG.info("Media library scan completed.");
+                    }
+                })
                 .thenRunAsync(() -> playlistService.importPlaylists(), pool)
-                .whenComplete((r,e) -> pool.shutdown())
+                .whenComplete((r,e) -> {
+                    pool.shutdown();
+                })
                 .whenComplete((r,e) -> setScanning(false));
     }
 

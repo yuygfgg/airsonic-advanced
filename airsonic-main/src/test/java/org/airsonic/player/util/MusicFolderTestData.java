@@ -59,6 +59,12 @@ public class MusicFolderTestData {
         return resolveBaseMediaPath().resolve("mpc");
     }
 
+    public static Path resolveMusicLoopFolderPath() {
+        return resolveBaseMediaPath().resolve("loop");
+    }
+
+
+
     public static List<MusicFolder> getTestMusicFolders() {
         List<MusicFolder> liste = new ArrayList<>();
         Path musicDir = resolveMusicFolderPath();

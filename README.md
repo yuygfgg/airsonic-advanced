@@ -174,7 +174,8 @@ See the [Configuration](./docs/configures/README.md)
 Compatibility Notes:
 ------
 The following properties are new in Airsonic-Advanced:
-  - `MediaScannerParallelism`: (default: number of available processors + 1) The parallelism to use when scanning media
+  - `MediaScannerParallelism(<= 11.1.2)`: (default: number of available processors + 1) The parallelism to use when scanning media
+  - `AIRSONIC_SCAN_PARALLELISM(> 11.1.2)`: (default: number of available processors + 1) The parallelism to use when scanning media
   - `ClearFullScanSettingAfterScan`: (default: false) Whether to clear FullScan setting after the next SUCCESSFUL scan (useful for doing full scan once and then reverting to default scan)
 
 The following property names are different between Airsonic and Airsonic-Advanced:

@@ -60,7 +60,9 @@ import static org.mockito.Mockito.when;
  * An empty database is created on the fly.
  */
 @RunWith(SpringRunner.class)
-@TestPropertySource(properties = "airsonic.cue.enabled=true")
+@TestPropertySource(properties = {
+    "airsonic.cue.enabled=true"
+})
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class MediaScannerServiceTestCase {
@@ -79,7 +81,7 @@ public class MediaScannerServiceTestCase {
     @Autowired
     private MusicFolderDao musicFolderDao;
 
-    @Autowired
+    @SpyBean
     private MediaFileService mediaFileService;
 
     @Autowired

@@ -121,7 +121,7 @@ public class UploadController {
         @RequestParam("file") List<MultipartFile> files,
         @RequestParam("dir") String dirString,
         @RequestParam(name = "unzip", required = false) boolean unzip,
-        @RequestParam(name = "callback", required = false) String callbackString,
+        @RequestParam(name = "callback", required = false) UUID callback,
         HttpServletRequest request, HttpServletResponse response) {
 
         Map<String, Object> map = new HashMap<>();
@@ -130,7 +130,6 @@ public class UploadController {
         List<Exception> exceptions = new ArrayList<>();
         User user = securityService.getCurrentUser(request);
         TransferStatus status = null;
-        UUID callback = null;
         Path dir = null;
 
         try {

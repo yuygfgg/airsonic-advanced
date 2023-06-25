@@ -1,5 +1,6 @@
 package org.airsonic.player.service;
 
+import org.airsonic.player.config.AirsonicScanConfig;
 import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.dao.MediaFileDao;
@@ -9,12 +10,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.core.env.Environment;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -43,16 +41,15 @@ public class MediaScannerServiceUnitTest {
     @Mock
     IndexManager indexManager;
     @Mock
-    Environment environment;
+    AirsonicScanConfig scanConfig;
 
 
     @Test
     public void neverScanned() {
-        when(environment.getProperty(eq("MediaScannerParallelism"), anyString())).thenReturn("1");
         when(settingsService.getIndexCreationInterval()).thenReturn(-1);
         when(settingsService.getIndexCreationHour()).thenReturn(-1);
         when(indexManager.getStatistics()).thenReturn(null);
-        MediaScannerService mediaScannerService = new MediaScannerService(settingsService, indexManager, playlistService, mediaFileService, mediaFolderService, coverArtService, mediaFileDao, artistDao, albumDao, taskService, messagingTemplate, environment);
+        MediaScannerService mediaScannerService = new MediaScannerService(settingsService, indexManager, playlistService, mediaFileService, mediaFolderService, coverArtService, mediaFileDao, artistDao, albumDao, taskService, messagingTemplate, scanConfig);
         assertTrue(mediaScannerService.neverScanned());
 
         when(indexManager.getStatistics()).thenReturn(new MediaLibraryStatistics());

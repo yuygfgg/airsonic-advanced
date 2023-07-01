@@ -25,8 +25,8 @@
         function updateClearFullScan() {
             if (!$("#fullScan").prop("checked")) {
                 $("#clearFullScanSettingAfterScan").prop("disabled", true);
+                $("#clearFullScanSettingAfterScan").prop("checked", false);
             } else {
-                $("#clearFullScanSettingAfterScan").prop("checked", true);
                 $("#clearFullScanSettingAfterScan").prop("disabled", false);
             }
         }

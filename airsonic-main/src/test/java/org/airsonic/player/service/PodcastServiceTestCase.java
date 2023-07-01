@@ -27,7 +27,7 @@ import org.airsonic.player.domain.PodcastChannelRule;
 import org.airsonic.player.domain.PodcastEpisode;
 import org.airsonic.player.domain.PodcastStatus;
 import org.airsonic.player.domain.Version;
-import org.airsonic.player.service.websocket.AsyncSocketClient;
+import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -85,7 +85,7 @@ public class PodcastServiceTestCase {
     @Mock
     private MediaFolderService mediaFolderService;
     @Mock
-    private AsyncSocketClient asyncSocketClient;
+    private AsyncWebSocketClient asyncSocketClient;
     @Mock
     private VersionService versionService;
 

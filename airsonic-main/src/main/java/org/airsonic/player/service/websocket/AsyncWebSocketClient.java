@@ -29,9 +29,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 @EnableAsync
-public class AsyncSocketClient {
+public class AsyncWebSocketClient {
 
-    private final Logger LOG = LoggerFactory.getLogger(AsyncSocketClient.class);
+    private final Logger LOG = LoggerFactory.getLogger(AsyncWebSocketClient.class);
 
     @Autowired
     private SimpMessagingTemplate brokerTemplate;

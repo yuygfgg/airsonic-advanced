@@ -17,10 +17,10 @@ import org.airsonic.player.domain.PodcastEpisode;
 import org.airsonic.player.domain.PodcastStatus;
 import org.airsonic.player.domain.RandomSearchCriteria;
 import org.airsonic.player.domain.SavedPlayQueue;
+import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageType;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -29,9 +29,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-
-import static java.util.concurrent.CompletableFuture.runAsync;
 
 @Service
 public class PlayQueueService {
@@ -64,15 +63,15 @@ public class PlayQueueService {
     @Autowired
     private InternetRadioService internetRadioService;
     @Autowired
-    private SimpMessagingTemplate brokerTemplate;
+    private AsyncWebSocketClient webSocketClient;
 
     public void start(Player player) {
         player.getPlayQueue().setStatus(PlayQueue.Status.PLAYING);
         if (player.isJukebox()) {
             jukeboxService.start(player);
         }
-        runAsync(() -> brokerTemplate.convertAndSendToUser(player.getUsername(),
-                "/queue/playqueues/" + player.getId() + "/playstatus", PlayQueue.Status.PLAYING));
+        webSocketClient.sendToUser(player.getUsername(), "/queue/playqueues/" + player.getId() + "/playstatus",
+                PlayQueue.Status.PLAYING);
     }
 
     public void stop(Player player) {
@@ -80,8 +79,8 @@ public class PlayQueueService {
         if (player.isJukebox()) {
             jukeboxService.stop(player);
         }
-        runAsync(() -> brokerTemplate.convertAndSendToUser(player.getUsername(),
-                "/queue/playqueues/" + player.getId() + "/playstatus", PlayQueue.Status.STOPPED));
+        webSocketClient.sendToUser(player.getUsername(), "/queue/playqueues/" + player.getId() + "/playstatus",
+                PlayQueue.Status.STOPPED);
     }
 
     public void toggleStartStop(Player player) {
@@ -98,12 +97,11 @@ public class PlayQueueService {
             jukeboxService.skip(player, index, (int) (offset / 1000));
         }
 
-        runAsync(() -> {
-            brokerTemplate.convertAndSendToUser(player.getUsername(),
-                    "/queue/playqueues/" + player.getId() + "/skip", ImmutableMap.of("index", index, "offset", offset));
-            brokerTemplate.convertAndSendToUser(player.getUsername(),
-                    "/queue/playqueues/" + player.getId() + "/playstatus", player.getPlayQueue().getStatus());
-        });
+        CompletableFuture<Void> resultSkip = webSocketClient.sendToUser(player.getUsername(), "/queue/playqueues/" + player.getId() + "/skip",
+                ImmutableMap.of("index", index, "offset", offset));
+
+        resultSkip.thenRun(() -> webSocketClient.sendToUser(player.getUsername(), "/queue/playqueues/" + player.getId() + "/playstatus",
+                player.getPlayQueue().getStatus()));
     }
 
     public void reloadSearchCriteria(Player player, String sessionId) {
@@ -437,8 +435,8 @@ public class PlayQueueService {
         } else {
             playQueue.setRepeatStatus(RepeatStatus.getNext(playQueue.getRepeatStatus()));
         }
-        runAsync(() -> brokerTemplate.convertAndSendToUser(player.getUsername(),
-                "/queue/playqueues/" + player.getId() + "/repeat", playQueue.getRepeatStatus()));
+        webSocketClient.sendToUser(player.getUsername(), "/queue/playqueues/" + player.getId() + "/repeat",
+                playQueue.getRepeatStatus());
     }
 
     public void undo(Player player) {
@@ -459,14 +457,12 @@ public class PlayQueueService {
     //
     public void setJukeboxGain(Player player, float gain) {
         jukeboxService.setGain(player, gain);
-        runAsync(() -> brokerTemplate.convertAndSendToUser(player.getUsername(),
-                "/queue/playqueues/" + player.getId() + "/jukebox/gain", gain));
+        webSocketClient.sendToUser(player.getUsername(), "/queue/playqueues/" + player.getId() + "/jukebox/gain", gain);
     }
 
     public void setJukeboxPosition(Player player, int positionInSeconds) {
         jukeboxService.setPosition(player, positionInSeconds);
-        runAsync(() -> brokerTemplate.convertAndSendToUser(player.getUsername(),
-                "/queue/playqueues/" + player.getId() + "/jukebox/position", positionInSeconds));
+        webSocketClient.sendToUser(player.getUsername(), "/queue/playqueues/" + player.getId() + "/jukebox/position", positionInSeconds);
     }
 
     //
@@ -478,12 +474,9 @@ public class PlayQueueService {
     }
 
     private void broadcastPlayQueue(Player player, Function<PlayQueueInfo, PlayQueueInfo> playQueueModifier, String triggeringSessionId) {
-        runAsync(() -> {
-            PlayQueueInfo info = playQueueModifier.apply(getPlayQueueInfo(player, ""));
-            brokerTemplate.convertAndSendToUser(player.getUsername(),
-                    "/queue/playqueues/" + player.getId() + "/updated", info);
-            postBroadcast(info, player, triggeringSessionId);
-        });
+        PlayQueueInfo info = playQueueModifier.apply(getPlayQueueInfo(player, ""));
+        CompletableFuture<Void> updatedFuture = webSocketClient.sendToUser(player.getUsername(), "/queue/playqueues/" + player.getId() + "/updated", info);
+        updatedFuture.thenRun(() -> postBroadcast(info, player, triggeringSessionId));
     }
 
     private void postBroadcast(PlayQueueInfo info, Player player, String sessionId) {
@@ -492,8 +485,7 @@ public class PlayQueueService {
                 // trigger the web player to start playing at this location
                 SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
                 headerAccessor.setSessionId(sessionId);
-                brokerTemplate.convertAndSendToUser(player.getUsername(),
-                        "/queue/playqueues/" + player.getId() + "/skip",
+                webSocketClient.sendToUser(player.getUsername(), "/queue/playqueues/" + player.getId() + "/skip",
                         ImmutableMap.of("index", info.getStartPlayerAt(), "offset", info.getStartPlayerAtPosition()),
                         headerAccessor.getMessageHeaders());
             } else if (!player.isExternalWithPlaylist()) {

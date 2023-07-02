@@ -24,6 +24,7 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.SavedPlayQueue;
+import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -36,13 +37,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -52,7 +51,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,7 +60,7 @@ public class PlayQueueServiceTest {
     @Mock
     private JukeboxService jukeboxService;
     @Mock
-    private SimpMessagingTemplate brokerTemplate;
+    private AsyncWebSocketClient webSocketClient;
     @Mock
     private MediaFileService mediaFileService;
     @Mock
@@ -105,22 +103,15 @@ public class PlayQueueServiceTest {
             when(mockedPlayer.getUsername()).thenReturn("testuser");
             when(mockedPlayer.getId()).thenReturn(1);
 
-            // Verify brokerTemplate is called to send message
-            // Configure mock behavior
-            doAnswer(invocation -> {
-                TimeUnit.MILLISECONDS.sleep(100);
-                return null;
-            }).when(brokerTemplate).convertAndSendToUser(anyString(), anyString(), any());
+            // Verify websocketClient is called to send message
+            when(webSocketClient.sendToUser(anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
             // Test
             playQueueService.start(mockedPlayer);
 
             // then
             verify(mockedPlayQueue).setStatus(PlayQueue.Status.PLAYING);
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                verify(brokerTemplate).convertAndSendToUser("testuser", "/queue/playqueues/1/playstatus", PlayQueue.Status.PLAYING);
-            }, executor);
-            future.get(3000, TimeUnit.MILLISECONDS); // Wait for the future to complete
+            verify(webSocketClient).sendToUser("testuser", "/queue/playqueues/1/playstatus", PlayQueue.Status.PLAYING);
         }
 
         @Test
@@ -130,22 +121,15 @@ public class PlayQueueServiceTest {
             when(mockedPlayer.getUsername()).thenReturn("testuser");
             when(mockedPlayer.getId()).thenReturn(1);
 
-            // Verify brokerTemplate is called to send message
-            // Configure mock behavior
-            doAnswer(invocation -> {
-                TimeUnit.MILLISECONDS.sleep(100);
-                return null;
-            }).when(brokerTemplate).convertAndSendToUser(anyString(), anyString(), any());
+            // Verify websocketClient is called to send message
+            when(webSocketClient.sendToUser(anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
             // Test
             playQueueService.stop(mockedPlayer);
 
             // then
             verify(mockedPlayQueue).setStatus(PlayQueue.Status.STOPPED);
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                verify(brokerTemplate).convertAndSendToUser("testuser", "/queue/playqueues/1/playstatus", PlayQueue.Status.STOPPED);
-            }, executor);
-            future.get(3000, TimeUnit.MILLISECONDS); // Wait for the future to complete
+            verify(webSocketClient).sendToUser("testuser", "/queue/playqueues/1/playstatus", PlayQueue.Status.STOPPED);
         }
 
         @ParameterizedTest
@@ -160,23 +144,17 @@ public class PlayQueueServiceTest {
             when(mockedPlayer.getId()).thenReturn(1);
             when(mockedPlayQueue.getStatus()).thenReturn(initialStatus);
 
-            // Verify brokerTemplate is called to send message
-            // Configure mock behavior
-            doAnswer(invocation -> {
-                TimeUnit.MILLISECONDS.sleep(100);
-                return null;
-            }).when(brokerTemplate).convertAndSendToUser(anyString(), anyString(), any());
+            // Verify websocketClient is called to send message
+            when(webSocketClient.sendToUser(anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
             // Test
             playQueueService.toggleStartStop(mockedPlayer);
 
             // then
             verify(mockedPlayQueue).setStatus(expectedStatus);
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                verify(brokerTemplate).convertAndSendToUser("testuser", "/queue/playqueues/1/playstatus", expectedStatus);
-            }, executor);
-            future.get(3000, TimeUnit.MILLISECONDS); // Wait for the future to complete
+            verify(webSocketClient).sendToUser("testuser", "/queue/playqueues/1/playstatus", expectedStatus);
         }
+
         @Test
         public void testSkip() throws Exception {
             // given
@@ -184,14 +162,14 @@ public class PlayQueueServiceTest {
             when(mockedPlayer.getUsername()).thenReturn("testuser");
             when(mockedPlayer.getId()).thenReturn(1);
             when(mockedPlayQueue.getStatus()).thenReturn(PlayQueue.Status.PLAYING);
+            when(webSocketClient.sendToUser(anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
             // when
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> playQueueService.skip(mockedPlayer, 2, 3L), executor);
-            future.get();
+            playQueueService.skip(mockedPlayer, 2, 3L);
 
             // then
-            verify(brokerTemplate, timeout(1000)).convertAndSendToUser("testuser", "/queue/playqueues/1/skip", ImmutableMap.of("index", 2, "offset", 3L));
-            verify(brokerTemplate, timeout(1000)).convertAndSendToUser("testuser", "/queue/playqueues/1/playstatus", PlayQueue.Status.PLAYING);
+            verify(webSocketClient).sendToUser("testuser", "/queue/playqueues/1/skip", ImmutableMap.of("index", 2, "offset", 3L));
+            verify(webSocketClient).sendToUser("testuser", "/queue/playqueues/1/playstatus", PlayQueue.Status.PLAYING);
             verify(mockedPlayQueue).setIndex(2);
         }
     }

@@ -22,23 +22,41 @@ package org.airsonic.player.service.websocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.AdviceMode;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 
-@Component
-@EnableAsync
-public class AsyncSocketClient {
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-    private final Logger LOG = LoggerFactory.getLogger(AsyncSocketClient.class);
+@Component
+@EnableAsync(mode = AdviceMode.ASPECTJ)
+public class AsyncWebSocketClient {
+
+    private final Logger LOG = LoggerFactory.getLogger(AsyncWebSocketClient.class);
 
     @Autowired
     private SimpMessagingTemplate brokerTemplate;
 
-    @Async
+    @Async("BroadcastThreadPool")
     public void send(String destination, Object payload) {
         LOG.debug("Sending to {}: {}", destination, payload);
         brokerTemplate.convertAndSend(destination, payload);
+    }
+
+    @Async("BroadcastThreadPool")
+    public CompletableFuture<Void> sendToUser(String user, String destination, Object payload) {
+        LOG.debug("Sending to user {}: {}: {}", user, destination, payload);
+        brokerTemplate.convertAndSendToUser(user, destination, payload);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Async("BroadcastThreadPool")
+    public CompletableFuture<Void> sendToUser(String user, String destination, Object payload, Map<String, Object> headers) {
+        LOG.debug("Sending to user {}: {}: {}", user, destination, payload);
+        brokerTemplate.convertAndSendToUser(user, destination, payload, headers);
+        return CompletableFuture.completedFuture(null);
     }
 }

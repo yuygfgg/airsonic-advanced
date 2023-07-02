@@ -34,7 +34,7 @@ import org.airsonic.player.domain.PodcastStatus;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
 import org.airsonic.player.service.metadata.MetaDataParserFactory;
-import org.airsonic.player.service.websocket.AsyncSocketClient;
+import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.StringUtil;
 import org.airsonic.player.util.Util;
@@ -109,7 +109,7 @@ public class PodcastService {
     private final MetaDataParserFactory metaDataParserFactory;
     private final VersionService versionService;
     private final TaskSchedulingService taskService;
-    private final AsyncSocketClient asyncSocketClient;
+    private final AsyncWebSocketClient asyncSocketClient;
     private Runnable defaultTask;
     private Predicate<PodcastEpisode> filterAllowed;
 
@@ -123,7 +123,7 @@ public class PodcastService {
         MetaDataParserFactory metaDataParserFactory,
         VersionService versionService,
         TaskSchedulingService taskService,
-        AsyncSocketClient asyncSocketClient
+        AsyncWebSocketClient asyncSocketClient
     ) {
         this.podcastDao = podcastDao;
         this.settingsService = settingsService;

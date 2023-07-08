@@ -62,11 +62,17 @@ public class AudioPlayer implements AutoCloseable {
         line.open(format);
         LOG.debug("Opened line " + line);
 
-        if (line.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
-            gainControl = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
-            setGain(DEFAULT_GAIN);
+        try {
+            if (line.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                gainControl = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
+                setGain(DEFAULT_GAIN);
+            }
+            new AudioDataWriter();
+        } catch (Throwable x) {
+            LOG.warn("Failed to open audio line", x);
+            close();
+            throw x;
         }
-        new AudioDataWriter();
     }
 
     /**
@@ -172,7 +178,9 @@ public class AudioPlayer implements AutoCloseable {
 
                 while (true) {
 
-                    switch (state.get()) {
+                    State currentState = state.get();
+
+                    switch (currentState) {
                         case CLOSED:
                         case EOM:
                             return;

@@ -475,8 +475,8 @@ public class PlayQueueService {
 
     private void broadcastPlayQueue(Player player, Function<PlayQueueInfo, PlayQueueInfo> playQueueModifier, String triggeringSessionId) {
         PlayQueueInfo info = playQueueModifier.apply(getPlayQueueInfo(player, ""));
-        CompletableFuture<Void> updatedFuture = webSocketClient.sendToUser(player.getUsername(), "/queue/playqueues/" + player.getId() + "/updated", info);
-        updatedFuture.thenRun(() -> postBroadcast(info, player, triggeringSessionId));
+        webSocketClient.sendToUser(player.getUsername(), "/queue/playqueues/" + player.getId() + "/updated", info).join();
+        postBroadcast(info, player, triggeringSessionId);
     }
 
     private void postBroadcast(PlayQueueInfo info, Player player, String sessionId) {

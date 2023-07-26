@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="iso-8859-1" %>
-
 <html>
 <head>
-    <%@ include file="head.jsp" %>
-    <%@ include file="jquery.jsp" %>
-    <script type="text/javascript" src="<c:url value='/script/utils.js'/>"></script>
+    <th:block th:replace="head" />
+    <th:block th:replace="jquery" />
+    <script type="text/javascript" th:src="@{/script/utils.js}"></script>
 
     <script type="text/javascript">
         function scanningStatus(msg) {

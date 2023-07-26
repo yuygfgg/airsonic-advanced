@@ -1,9 +1,7 @@
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="iso-8859-1"%>
-
 <html><head>
-    <%@ include file="head.jsp" %>
-    <%@ include file="websocket.jsp" %>
+    <th:block th:replace="head" />
+    <th:block th:replace="websocket" />
     <link rel="alternate" type="application/rss+xml" title="Airsonic Podcast" href="podcast.view?suffix=.rss">
     <style>
         iframe {
@@ -63,23 +61,24 @@
     </style>
 </head>
 
-<body class="bgcolor2" style="height: 100%; margin: 0; overflow-y: hidden">
+<body class="bgcolor2" style="height: 100%; margin: 0; overflow-y: hidden" th:with="mainParam=${#request.getParameter('main')}">
     <div class="entire-panel">
-        <iframe id="upper" name="upper" src="top.view?" onload="this.style.height=(this.contentWindow.document.body.clientHeight+15)+'px';" class="bgcolor2 main-navigation"></iframe>
+        <iframe id="upper" name="upper" src="top?" onload="this.style.height=(this.contentWindow.document.body.clientHeight+15)+'px';" class="bgcolor2 main-navigation"></iframe>
 
         <div class="lower">
-            <div class="bgcolor2 left-nav-container" ${!model.showSideBar ? "style='display: none;'" : ""}>
-                <iframe id="left" name="left" src="left.view?" class="left-navigation"></iframe>
+            <div class="bgcolor2 left-nav-container" th:style="${!model.showSideBar ? 'display: none;' : ''}">
+                <iframe id="left" name="left" src="left?" class="left-navigation"></iframe>
             </div>
             <div class="non-left-navigation-container">
                 <div class="main-right-container">
-                    <iframe id="main" name="main" src="${empty param.main? 'nowPlaying.view' : param.main}" class="bgcolor1 main-panel" allowfullscreen></iframe>
-                    <div class="bgcolor1 right-info-container" ${!model.showRight ? "style='display: none;'" : ""}>
-                        <iframe id="right" name="right" src="right.view?" class="right-info"></iframe>
+                    <iframe id="main" name="main" th:src="${mainParam} ?: 'nowPlaying.view'"
+                            class="bgcolor1 main-panel" allowfullscreen></iframe>
+                    <div class="bgcolor1 right-info-container" th:style="${!model.showRight ? 'display: none;' : ''}">
+                        <iframe id="right" name="right" src="right?" class="right-info"></iframe>
                     </div>
                 </div>
                 <div class="bgcolor2 playqueue-container">
-                    <c:import url="/playQueue.view" />
+                    <th:block th:replace="playQueue" />
                 </div>
            </div>
        </div>

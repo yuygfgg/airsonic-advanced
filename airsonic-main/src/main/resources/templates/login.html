@@ -1,8 +1,6 @@
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="iso-8859-1"%>
-
 <html><head>
-    <%@ include file="head.jsp" %>
+    <th:block th:include="head" />
     <script type="text/javascript">
         if (window != window.top) {
             top.location.href = location.href;
@@ -12,51 +10,56 @@
 </head>
 <body style="min-width:550px" class="mainframe bgcolor1">
 
-    <form action="<c:url value='/login'/>" method="POST">
-        <sec:csrfInput />
+    <form th:action="@{/login}" method="POST">
+        <input
+                type="hidden"
+                th:name="${_csrf.parameterName}"
+                th:value="${_csrf.token}" />
 
         <div id="loginframe" class="bgcolor2 shadow">
 
-            <img src="<spring:theme code='logoImage'/>" alt="">
+            <img th:src="${#themes.code('logoImage')}" alt="">
 
-            <div class="loginmessagetop">${model.loginMessage}</div>
+            <div class="loginmessagetop" th:text="${model.loginMessage}"></div>
 
-            <input required type="text" autofocus id="j_username" name="j_username" tabindex="1" placeholder="<fmt:message key='login.username'/>">
+            <input required type="text" autofocus id="j_username" name="j_username" tabindex="1"
+                   th:placeholder="#{login.username}">
 
-            <input required type="password" autocomplete="off"  name="j_password" tabindex="2" placeholder="<fmt:message key='login.password'/>">
+            <input required type="password" autocomplete="off"  name="j_password" tabindex="2"
+                   th:placeholder="#{login.password}">
 
-            <input name="submit" type="submit" value="<fmt:message key='login.login'/>" tabindex="4">
+            <input name="submit" type="submit" th:value="#{login.login}" tabindex="4">
 
             <div class="details">
                 <div id="loginremember">
-                    <label for="remember"><fmt:message key="login.remember"/></label>
+                    <label for="remember" th:text="#{login.remember}">Remember</label>
                     <input type="checkbox" name="remember-me" id="remember" tabindex="3">
                 </div>
 
-                <a href="recover.view"><fmt:message key="login.recover"/></a>
+                <a href="recover.view" th:text="#{login.recover}">Recover</a>
             </div>
 
-            <c:if test="${model.logout}">
+            <th:block th:if="${model.logout}">
                 <div class="loginmessagebottom">
-                    <b><fmt:message key="login.logout"/></b>
+                    <b th:text="#{login.logout}">Logout</b>
                 </div>
-            </c:if>
+            </th:block>
 
-            <c:if test="${model.error}">
+            <th:block th:if="${model.error}">
                 <div class="loginmessagebottom">
-                    <span class="warning"><fmt:message key="login.error"/></span>
+                    <span class="warning" th:text="#{login.error}">Error</span>
                     <br/>
-                    <c:if test="${SPRING_SECURITY_LAST_EXCEPTION != null}">
-                       Reason: <c:out value="${SPRING_SECURITY_LAST_EXCEPTION.message}" />
-                    </c:if>
+                    <th:block th:if="${SPRING_SECURITY_LAST_EXCEPTION != null}">
+                       Reason: <th:block th:text="SPRING_SECURITY_LAST_EXCEPTION.message"></th:block>
+                    </th:block>
                 </div>
-            </c:if>
+            </th:block>
 
-            <c:if test="${model.insecure}">
+            <th:block th:if="${model.insecure}">
                 <div class="loginmessagebottom">
-                    <p class="warning"><fmt:message key="login.insecure"><fmt:param value="${model.brand}"/></fmt:message></p>
+                    <p class="warning" th:utext="#{login.insecure(${model.brand})}"></p>
                 </div>
-            </c:if>
+            </th:block>
 
         </div>
     </form>

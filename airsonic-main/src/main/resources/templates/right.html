@@ -17,42 +17,51 @@
         }
 
         function init() {
-            top.StompClient.subscribe("right.jsp", {
-                // no need to populate initial because the updates will occur frequently enough and are self-sufficient
-                '/topic/scanStatus': scanningStatus
-                <c:if test="${model.showNowPlaying}">
-                ,
-                '/topic/nowPlaying/current/add': function(msg) {
-	                addStatus(JSON.parse(msg.body), 'nowPlaying');
-	            },
-	            '/topic/nowPlaying/current/remove': function(msg) {
-	                removeStatus(JSON.parse(msg.body), 'nowPlaying');
-	            },
-	            '/topic/nowPlaying/recent/add': function(msg) {
-	                addStatus(JSON.parse(msg.body), 'recentlyPlayed');
-	            },
-	            '/topic/nowPlaying/recent/remove': function(msg) {
-	                removeStatus(JSON.parse(msg.body), 'recentlyPlayed');
-	            },
-	            // Add existing (initial population, one time)
-	            '/app/nowPlaying/current': function(msg) {
-	                $('#nowPlayingTable').empty();
-	                removeStatus({}, 'nowPlaying');
-	                var statuses = JSON.parse(msg.body);
-	                for (var i = 0; i < statuses.length; i++) {
-	                    addStatus(statuses[i], 'nowPlaying');
-	                }
-	            },
-	            '/app/nowPlaying/recent': function(msg) {
-	                $('#recentlyPlayedTable').empty();
-	                removeStatus({}, 'recentlyPlayed');
-	                var statuses = JSON.parse(msg.body);
-	                for (var i = 0; i < statuses.length; i++) {
-	                    addStatus(statuses[i], 'recentlyPlayed');
-	                }
-	            }
-                </c:if>
-            });
+            let showNowPlaying = [[${model.showNowPlaying}]];
+            let sub;
+            if(!showNowPlaying) {
+                sub = {
+                    // no need to populate initial because the updates will occur frequently enough and are self-sufficient
+                    '/topic/scanStatus': scanningStatus
+                }
+            } else {
+                sub = {
+                    // no need to populate initial because the updates will occur frequently enough and are self-sufficient
+                    '/topic/scanStatus': scanningStatus,
+                    '/topic/nowPlaying/current/add': function (msg) {
+                        addStatus(JSON.parse(msg.body), 'nowPlaying');
+                    },
+                    '/topic/nowPlaying/current/remove': function (msg) {
+                        removeStatus(JSON.parse(msg.body), 'nowPlaying');
+                    },
+                    '/topic/nowPlaying/recent/add': function (msg) {
+                        addStatus(JSON.parse(msg.body), 'recentlyPlayed');
+                    },
+                    '/topic/nowPlaying/recent/remove': function (msg) {
+                        removeStatus(JSON.parse(msg.body), 'recentlyPlayed');
+                    },
+                    // Add existing (initial population, one time)
+                    '/app/nowPlaying/current': function (msg) {
+                        $('#nowPlayingTable').empty();
+                        removeStatus({}, 'nowPlaying');
+                        var statuses = JSON.parse(msg.body);
+                        for (var i = 0; i < statuses.length; i++) {
+                            addStatus(statuses[i], 'nowPlaying');
+                        }
+                    },
+                    '/app/nowPlaying/recent': function (msg) {
+                        $('#recentlyPlayedTable').empty();
+                        removeStatus({}, 'recentlyPlayed');
+                        var statuses = JSON.parse(msg.body);
+                        for (var i = 0; i < statuses.length; i++) {
+                            addStatus(statuses[i], 'recentlyPlayed');
+                        }
+                    }
+                }
+
+            }
+
+            top.StompClient.subscribe("right.html", sub);
         }
 
         function addStatus(status, table) {
@@ -74,7 +83,7 @@
             html += "<span class='songTitle'>" + status.title + "</span></a><br/>";
             if (status.lyricsUrl != null) {
                 html += "<span class='forward'><a href='" + status.lyricsUrl + "' onclick=\"return popupSize(this, 'lyrics', 500, 550)\">" +
-                        "<fmt:message key="main.lyrics"/>" + "</a></span>";
+                        [[#{main.lyrics}]] + "</a></span>";
             }
             html += "</td><td>" +
                     "<a title='" + status.tooltip + "' target='main' href='" + status.albumUrl + "'>" +
@@ -83,7 +92,7 @@
 
             var minutesAgo = status.minutesAgo;
             if (minutesAgo > 4) {
-                html += "<tr><td class='detail' colspan='2'>" + minutesAgo + " <fmt:message key="main.minutesago"/></td></tr>";
+                html += "<tr><td class='detail' colspan='2'>" + minutesAgo + "[(#{main.minutesago})]</td></tr>";
             }
 
             $('.playstatus-'+status.transferId).remove();
@@ -101,25 +110,23 @@
 </head>
 <body class="bgcolor1 rightframe" style="padding-top:2em" onload="init()">
 
-<c:if test="${model.newVersionAvailable}">
-    <div class="warning" style="padding-bottom: 1em">
-        <fmt:message key="top.upgrade"><fmt:param value="${model.brand}"/><fmt:param value="${model.latestVersion}"/><fmt:param value="${model.latestVersion.url}"/></fmt:message>
+    <div th:if="${model.newVersionAvailable}" class="warning" style="padding-bottom: 1em"
+        th:utext="#{top.upgrade(${model.brand}, ${model.latestVersion}, ${model.latestVersion.url})}">
     </div>
-</c:if>
 
-<div id="scanningStatus" style="display: none;" class="warning">
-    <img src="<spring:theme code='scanningImage'/>" title="" alt=""> <fmt:message key="main.scanning"/> <span id="scanCount"></span>
-</div>
+    <div id="scanningStatus" style="display: none;" class="warning">
+        <img th:src="${#themes.code('scanningImage')}" title="" alt=""> <span th:text="#{main.scanning}"></span> <span id="scanCount"></span>
+    </div>
 
-<div id="nowPlaying" style='display:none'>
-    <h2><fmt:message key="main.nowplaying"/></h2>
-    <table id="nowPlayingTable" style='width:100%'></table>
-</div>
+    <div id="nowPlaying" style='display:none'>
+        <h2 th:text="#{main.nowplaying}"></h2>
+        <table id="nowPlayingTable" style='width:100%'></table>
+    </div>
 
-<div id="recentlyPlayed" style='display:none'>
-    <h2><fmt:message key="main.recentlyplayed"/></h2>
-    <table id="recentlyPlayedTable" style='width:100%'></table>
-</div>
+    <div id="recentlyPlayed" style='display:none'>
+        <h2 th:text="#{main.recentlyplayed}"></h2>
+        <table id="recentlyPlayedTable" style='width:100%'></table>
+    </div>
 
 </body>
 </html>

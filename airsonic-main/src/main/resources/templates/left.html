@@ -3,9 +3,9 @@
     <th:block th:replace="head" />
     <th:block th:replace="jquery" />
     <script type="text/javascript" th:src="@{/script/utils.js}"></script>
-    <script type="text/javascript" language="javascript">
+    <script type="text/javascript" th:inline="javascript">
         function init() {
-            top.StompClient.subscribe("left.jsp", {
+            top.StompClient.subscribe("left.html", {
                 '/user/queue/playlists/deleted': function(msg) {
                     deletedPlaylistCallback(JSON.parse(msg.body));
                 },
@@ -25,8 +25,8 @@
             });
 
             var mainLocation = top.main.location.href;
-            if (${model.musicFolderChanged}) {
-                if (mainLocation.indexOf("/home.view") != -1) {
+            if ([[${model.musicFolderChanged}]]) {
+                if (mainLocation.indexOf("/home") != -1) {
                     top.main.location.href = mainLocation;
                 }
             }
@@ -53,7 +53,7 @@
             for (var i = 0; i < playlists.length; i++) {
                 var playlist = playlists[i];
                 var playlistName = escapeHtml(playlist.name) + "&nbsp;(" + playlist.fileCount + ")";
-                var node = $("<p class='dense truncate playlist' id='playlistid-" + playlist.id + "' title='" + playlistName + "'><a target='main' href='playlist.view?id=" +
+                var node = $("<p class='dense truncate playlist' id='playlistid-" + playlist.id + "' title='" + playlistName + "'><a target='main' href='playlist?id=" +
                         playlist.id + "'>" + playlistName + "</a></p>");
                 var overflow = i > 9;
                 if (!overflow) {
@@ -74,7 +74,7 @@
         function updatedPlaylistCallback(playlist) {
             var oldNode = $("#playlistid-" + playlist.id);
             var playlistName = escapeHtml(playlist.name) + "&nbsp;(" + playlist.fileCount + ")";
-            var node = $("<p class='dense truncate playlist' id='playlistid-" + playlist.id + "' title='" + playlistName + "'><a target='main' href='playlist.view?id=" +
+            var node = $("<p class='dense truncate playlist' id='playlistid-" + playlist.id + "' title='" + playlistName + "'><a target='main' href='playlist?id=" +
                         playlist.id + "'>" + playlistName + "</a></p>");
             if (oldNode.length == 0) {
                 var overflow = $(".playlist").length > 10;
@@ -102,150 +102,107 @@
 </head>
 
 <body class="bgcolor2 leftframe" onload="init()">
-<a name="top"></a>
+<a id="top"></a>
 
 <div style="padding-bottom:1.5em">
-    <a href="home.view" target="main">
-      <img src="<spring:theme code='logoImage'/>" style="width:196px" title="<fmt:message key='top.help'/>" alt="">
+    <a href="home" target="main">
+      <img th:src="${#themes.code('logoImage')}" style="width:196px" th:title="#{top.help}" alt="">
     </a>
 </div>
 
-<c:if test="${fn:length(model.musicFolders) > 1}">
-    <div style="padding-bottom:1.0em">
-    <select name="musicFolderId" style="width:100%" onchange="location='left.view?musicFolderId=' + options[selectedIndex].value;">
-            <option value="-1"><fmt:message key="left.allfolders"/></option>
-            <c:forEach items="${model.musicFolders}" var="musicFolder">
-                <option ${model.selectedMusicFolder.id == musicFolder.id ? "selected" : ""} value="${musicFolder.id}">${fn:escapeXml(musicFolder.name)}</option>
-            </c:forEach>
-        </select>
-    </div>
-</c:if>
+<div style="padding-bottom:1.0em" th:if="${#lists.size(model.musicFolders) > 1}">
+<select name="musicFolderId" style="width:100%" onchange="location='left?musicFolderId=' + options[selectedIndex].value;">
+        <option value="-1" th:text="#{left.allfolders}">All folders</option>
+        <option th:each="musicFolder:${model.musicFolders}" th:selected="${model.selectedMusicFolder?.id == musicFolder.id}"
+                    th:value="${musicFolder.id}" th:text="${musicFolder.name}">folder name</option>
+    </select>
+</div>
 
 <div style="margin-bottom:0.5em;padding-left: 2px" class="bgcolor1">
-    <c:forEach items="${model.indexes}" var="index">
-        <a href="#${index.index}" accesskey="${index.index}">${index.index}</a>
-    </c:forEach>
+    <a th:each="index: ${model.indexes}" th:href="|#${index.index}|" th:accesskey="${index.index}" th:text="${index.index}">index</a>
 </div>
 
 <div style="padding-bottom:0.5em">
     <div class="forward">
-        <c:choose>
-            <c:when test="${model.scanning}">
-                <a href="left.view"><fmt:message key="common.refresh"/></a>
-            </c:when>
-            <c:otherwise>
-                <a href="left.view?refresh=true"><fmt:message key="common.refresh"/></a>
-            </c:otherwise>
-        </c:choose>
+        <a th:if="${model.scanning}" href="left" th:text="#{common.refresh}">Refresh</a>
+        <a th:unless="${model.scanning}" href="left?refresh=true" th:text="#{common.refresh}">Refresh</a>
     </div>
 </div>
 
-<c:if test="${not empty model.shortcuts}">
-    <h2 class="bgcolor1" style="padding-left: 2px"><fmt:message key="left.shortcut"/></h2>
-    <c:forEach items="${model.shortcuts}" var="shortcut">
-        <p class="dense truncate" style="padding-left:2px">
-            <sub:url value="main.view" var="mainUrl">
-                <sub:param name="id" value="${shortcut.id}"/>
-            </sub:url>
-            <a target="main" href="${mainUrl}">${fn:escapeXml(shortcut.name)}</a>
-        </p>
-    </c:forEach>
-</c:if>
+<th:block th:if="${!#lists.isEmpty(model.shortcuts)}">
+    <h2 class="bgcolor1" style="padding-left: 2px" th:text="#{left.shortcut}">shortcut</h2>
+    <p th:each="shortcut : ${model.shortcuts}" class="dense truncate" style="padding-left:2px">
+        <a target="main" th:href="@{/main(id=${shortcut.id})}" th:text="${shortcut.name}">name</a>
+    </p>
+</th:block>
 
-<h2 class="bgcolor1" style="padding-left: 2px"><fmt:message key="left.playlists"/></h2>
+<h2 class="bgcolor1" style="padding-left: 2px" th:text="#{left.playlists}">playlists</h2>
 <div id="playlistWrapper" style='padding-left:2px'>
     <div id="playlists"></div>
     <div id="playlistOverflow" style="display:none"></div>
     <div style="padding-top: 0.3em"></div>
-    <div class="forward" id="showAllPlaylists" style="display: none"><a href="#" onclick="showAllPlaylists()"><fmt:message key="left.showallplaylists"/></a></div>
-    <div class="forward"><a href="#" onclick="createEmptyPlaylist()"><fmt:message key="left.createplaylist"/></a></div>
-    <div class="forward"><a href="importPlaylist.view" target="main"><fmt:message key="left.importplaylist"/></a></div>
+    <div class="forward" id="showAllPlaylists" style="display: none"><a href="#" onclick="showAllPlaylists()" th:text="left.showallplaylists">show all</a></div>
+    <div class="forward"><a href="#" onclick="createEmptyPlaylist()" th:text="#{left.createplaylist}">create</a></div>
+    <div class="forward"><a href="importPlaylist" target="main" th:text="#{left.importplaylist}">import</a></div>
 </div>
 
-<c:if test="${not empty model.radios}">
-    <h2 class="bgcolor1" style="padding-left: 2px"><fmt:message key="left.radio"/></h2>
+<th:block th:if="${#lists.isEmpty(model.radios)}">
+    <h2 class="bgcolor1" style="padding-left: 2px" th:utext="#{left.radio}">radio</h2>
     <iframe id="radio-playlist-data" style="display:none;"></iframe>
-    <c:forEach items="${model.radios}" var="radio">
+    <th:block th:each="radio : ${model.radios}">
         <p class="dense truncate" style="padding-left: 2px">
-        <a target="hidden" href="${radio.streamUrl}" class="radio-play" data-id="${radio.id}">
-            <img src="<spring:theme code='playImage'/>" alt="<fmt:message key='common.play'/>" title="<fmt:message key='common.play'/>"></a>
+        <a target="hidden" th:href="${radio.streamUrl}" class="radio-play" th:data-id="${radio.id}">
+            <img th:src="${#themes.code('playImage')}" />" th:alt="#{common.play}" th:title="#{common.play}"></a>
             <span style="vertical-align: middle">
-                <c:choose>
-                    <c:when test="${empty radio.homepageUrl}">
-                        <span title="${fn:escapeXml(radio.name)}">${fn:escapeXml(radio.name)}</span>
-                    </c:when>
-                    <c:otherwise>
-                        <a target="_blank" rel="noopener" href="${radio.homepageUrl}" title="Visit ${fn:escapeXml(radio.name)}">${fn:escapeXml(radio.name)}</a>
-                    </c:otherwise>
-                </c:choose>
+                <span th:if="${#strings.isEmpty(radio.homepageUrl)}" th:title="${radio.name}" th:text="${radio.name}">name</span>
+                <a th:unless="${#strings.isEmpty(radio.homepageUrl)}" target="_blank" rel="noopener" th:href="${radio.homepageUrl}" th:title="|Visit ${radio.name}|" th:text="${radio.name}">name</a>
             </span>
         </p>
-    </c:forEach>
-</c:if>
+    </th:block>
+</th:block>
 
-<c:forEach items="${model.indexedArtists}" var="entry">
+<th:block th:each="entry : ${model.indexedArtists}">
     <table class="bgcolor1" style="width:100%;padding:0;margin:1em 0 0 0;border:0">
         <tr style="padding:0;margin:0;border:0">
-            <th style="text-align:left;padding:0;margin:0;border:0"><a name="${fn:escapeXml(entry.key.index)}"></a>
-                <h2 style="padding:0;margin:0;border:0">${fn:escapeXml(entry.key.index)}</h2>
+            <th style="text-align:left;padding:0;margin:0;border:0"><a th:name="${entry.key.index}"></a>
+                <h2 style="padding:0;margin:0;border:0" th:text="${entry.key.index}">index</h2>
             </th>
             <th style="text-align:right;">
-                <a href="#top"><img src="<spring:theme code='upImage'/>" alt="" style="height:18px;"></a>
+                <a href="#top"><img th:src="${#themes.code('upImage')}" alt="" style="height:18px;"></a>
             </th>
         </tr>
     </table>
 
-    <c:forEach items="${entry.value}" var="artist">
-        <p class="dense truncate" style="padding-left:2px">
-            <span title="${artist.name}">
-                <sub:url value="main.view" var="mainUrl">
-                    <c:forEach items="${artist.mediaFiles}" var="mediaFile">
-                        <sub:param name="id" value="${mediaFile.id}"/>
-                    </c:forEach>
-                </sub:url>
-                <a target="main" href="${mainUrl}"><str:truncateNicely upper="${35}">${fn:escapeXml(artist.name)}</str:truncateNicely></a>
-            </span>
-        </p>
-    </c:forEach>
-</c:forEach>
+    <p th:each="artist : ${entry.value}" class="dense truncate" style="padding-left:2px">
+        <span th:title="${artist.name}">
+<!--            TODO CDC is mdeiafiles always a single element?-->
+            <a target="main"
+               th:href="@{/main(id=${artist.mediaFiles[0].id})}"
+               th:text="${#strings.abbreviate(artist.name, 35)}">artist.name</a>
+        </span>
+    </p>
+</th:block>
 
 <div style="padding-top:1em"></div>
 
-<c:forEach items="${model.singleSongs}" var="song">
-    <p class="dense truncate" style="padding-left:2px">
-        <span class="songTitle" title="${fn:escapeXml(song.title)}">
-            <c:import url="playButtons.jsp">
-                <c:param name="id" value="${song.id}"/>
-                <c:param name="playEnabled" value="${model.user.streamRole and not model.partyMode}"/>
-                <c:param name="addEnabled" value="${model.user.streamRole}"/>
-                <c:param name="downloadEnabled" value="${model.user.downloadRole and not model.partyMode}"/>
-                <c:param name="video" value="${song.video and model.player.web}"/>
-            </c:import>
-            <str:truncateNicely upper="${35}">${fn:escapeXml(song.title)}</str:truncateNicely>
-        </span>
-    </p>
-</c:forEach>
+<p th:each="song : ${model.singleSongs}" class="dense truncate" style="padding-left:2px">
+    <span class="songTitle" th:title="${song.title}">
+        <th:block th:replace="playButtons :: buttons(${song.id}, ${model.user.streamRole and not model.partyMode},
+        ${model.user.streamRole}, ${model.user.downloadRole and not model.partyMode}, ${song.video and model.player.web})" />
+        <th:block th:text="${#strings.abbreviate(song.title, 35)}"></th:block>
+    </span>
+</p>
 
-<c:if test="${model.statistics.songCount gt 0}">
-    <div class="detail" style="padding-top: 0.6em; padding-left: 2px">
-        <fmt:message key="left.statistics">
-            <fmt:param value="${model.statistics.artistCount}"/>
-            <fmt:param value="${model.statistics.albumCount}"/>
-            <fmt:param value="${model.statistics.songCount}"/>
-            <fmt:param value="${model.bytes}"/>
-            <fmt:param value="${model.hours}"/>
-        </fmt:message>
-    </div>
-</c:if>
+<div th:if="${model.statistics.songCount gt 0}" class="detail" style="padding-top: 0.6em; padding-left: 2px"
+th:utext="#{left.statistics(${model.statistics.artistCount}, ${model.statistics.albumCount}, ${model.statistics.songCount}, ${model.bytes}, ${model.hours})}">
+</div>
 
 <div style="height:5em"></div>
 
 
 <div class="bgcolor2" style="opacity: 1.0; clear: both; position: fixed; bottom: 0; right: 0; left: 0;
       padding: 0.25em 0.75em 0.25em 0.75em; border-top:1px solid black; max-width: 850px;">
-    <c:forEach items="${model.indexes}" var="index">
-        <a href="#${index.index}">${index.index}</a>
-    </c:forEach>
+    <a th:each="index: ${model.indexes}" th:href="|#${index.index}|" th:text="${index.index}">A</a>
 </div>
 
 </body></html>

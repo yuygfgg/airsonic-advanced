@@ -1,9 +1,8 @@
-<%@ page contentType="text/html; charset=utf-8" pageEncoding="utf-8" %>
-<script type="text/javascript" src="<c:url value='/script/sockjs-1.5.0.min.js'/>"></script>
-<script type="text/javascript" src="<c:url value='/script/stomp-4.0.8.min.js'/>"></script>
-<script type="text/javascript">
-    var csrfheaderName = "${_csrf.headerName}";
-    var csrftoken = "${_csrf.token}";
+<script type="text/javascript" th:src="@{/script/sockjs-1.5.0.min.js}"></script>
+<script type="text/javascript" th:src="@{/script/stomp-4.0.8.min.js}"></script>
+<script type="text/javascript" th:inline="javascript">
+    var csrfheaderName = [[${_csrf.headerName}]];
+    var csrftoken = [[${_csrf.token}]];
     var StompClient = {
         stompClient: null,
         onConnect: [],
@@ -39,7 +38,7 @@
                 stompclient.outstandingConnectionCallbacks.push(postConnectCallback);
             }
             if (stompclient.stompClient == null) {
-                var socket = new SockJS("<c:url value='/websocket'/>");
+                var socket = new SockJS([[@{/websocket}]]);
                 stompclient.stompClient = Stomp.over(socket);
                 stompclient.stompClient.heartbeat.incoming = 20000;
                 stompclient.stompClient.heartbeat.outgoing = 20000;

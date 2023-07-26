@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
-
 <html><head>
-    <%@ include file="head.jsp" %>
-    <%@ include file="jquery.jsp" %>
+    <th:block th:replace="head" />
+    <th:block th:replace="jquery" />
 
-    <script type="text/javascript" language="javascript">
+    <script type="text/javascript" th:inline="javascript">
         function init() {
-            <c:if test="${not model.musicFoldersExist}">
-            $().toastmessage("showNoticeToast", "<fmt:message key="top.missing"/>");
-            </c:if>
+            let musicFoldersExist = [[${model.musicFoldersExist}]];
+            if(!musicFoldersExist) {
+                $().toastmessage("showNoticeToast", [[#{top.missing}]]);
+            }
 
-            <c:if test="${model.isIndexBeingCreated}">
-            $().toastmessage("showNoticeToast", "<fmt:message key="home.scan"/>");
-            </c:if>
+            let isIndexBeingCreated = [[${model.isIndexBeingCreated}]];
+            if(isIndexBeingCreated) {
+                $().toastmessage("showNoticeToast", [[#{home.scan}]]);
+            }
         }
 
         function refresh() {
@@ -21,109 +21,52 @@
         }
 
         function playShuffle() {
-            top.playQueue.onPlayShuffle('${model.listType}', ${model.listOffset}, ${model.listSize}, '${model.genre}', '${model.decade}');
+            top.playQueue.onPlayShuffle([[${model.listType}]], [[${model.listOffset}]], [[${model.listSize}]], '[(${model['genre']})]', '[(${model['decade']})]');
         }
 
     </script>
 </head>
 <body class="mainframe bgcolor1" onload="init();">
-<c:if test="${not empty model.welcomeTitle}">
-<h1>
-    <img src="<spring:theme code='homeImage'/>" alt="">
-    <span style="vertical-align: middle">${model.welcomeTitle}</span>
+<h1 th:if="${!#strings.isEmpty(model.welcomeTitle)}">
+    <img th:src="${#themes.code('homeImage')}" alt="">
+    <span style="vertical-align: middle" th:text="${model.welcomeTitle}">Welcome</span>
 </h1>
-</c:if>
 
-<c:if test="${not empty model.welcomeSubtitle}">
-    <h2>${model.welcomeSubtitle}</h2>
-</c:if>
+<h2 th:if="${!#strings.isEmpty(model.welcomeSubtitle)}" th:text="${model.welcomeSubtitle}">welcomeSubtitle</h2>
 
-<p>
-    <c:forTokens items="random newest starred highest frequent recent decade genre alphabetical" delims=" " var="cat" varStatus="loopStatus">
-        <c:if test="${loopStatus.count > 1}">&nbsp;|&nbsp;</c:if>
-        <sub:url var="url" value="home.view">
-            <sub:param name="listType" value="${cat}"/>
-        </sub:url>
+<p th:with="tokens=${ {'random', 'newest', 'starred', 'highest', 'frequent', 'recent', 'decade', 'genre', 'alphabetical'} }">
+    <th:block th:each="cat, loopStatus : ${tokens}">
+        <span th:if="${loopStatus.count > 1}">&nbsp;|&nbsp;</span>
 
-        <c:choose>
-            <c:when test="${model.listType eq cat}">
-                <span class="headerSelected"><fmt:message key="home.${cat}.title"/></span>
-            </c:when>
-            <c:otherwise>
-                <span class="header"><a href="${url}"><fmt:message key="home.${cat}.title"/></a></span>
-            </c:otherwise>
-        </c:choose>
-
-    </c:forTokens>
+        <span th:if="${model.listType eq cat}" class="headerSelected" th:text="#{home.__${cat}__.title}">category</span>
+        <span th:if="${model.listType ne cat}" class="header"><a th:href="@{/home(listType=${cat})}" th:text="#{home.__${cat}__.title}">category</a></span>
+    </th:block>
 </p>
 
-<%@ include file="homePager.jsp" %>
+<th:block th:replace="homePager" />
 
-<c:if test="${not empty model.welcomeMessage}">
-    <div style="width:15em;float:right;padding:0 1em 0 1em;border-left:1px solid #<spring:theme code='detailColor'/>">
-        ${model.welcomeMessage}
-    </div>
-</c:if>
-
-<c:forEach items="${model.albums}" var="album" varStatus="loopStatus">
-
-    <c:set var="albumTitle">
-        <c:choose>
-            <c:when test="${empty album.albumTitle}">
-                <fmt:message key="common.unknown"/>
-            </c:when>
-            <c:otherwise>
-                ${album.albumTitle}
-            </c:otherwise>
-        </c:choose>
-    </c:set>
-
-    <c:set var="captionCount" value="2"/>
-
-    <c:if test="${not empty album.playCount}">
-        <c:set var="caption3"><fmt:message key="home.playcount"><fmt:param value="${album.playCount}"/></fmt:message></c:set>
-        <c:set var="captionCount" value="3"/>
-    </c:if>
-    <c:if test="${not empty album.lastPlayed}">
-        <javatime:format value="${album.lastPlayed}" style="S-" var="lastPlayedDate"/>
-        <c:set var="caption3"><fmt:message key="home.lastplayed"><fmt:param value="${lastPlayedDate}"/></fmt:message></c:set>
-        <c:set var="captionCount" value="3"/>
-    </c:if>
-    <c:if test="${not empty album.created}">
-        <javatime:format value="${album.created}" style="S-" var="creationDate"/>
-        <c:set var="caption3"><fmt:message key="home.created"><fmt:param value="${creationDate}"/></fmt:message></c:set>
-        <c:set var="captionCount" value="3"/>
-    </c:if>
-    <c:if test="${not empty album.year}">
-        <c:set var="caption3" value="${album.year}"/>
-        <c:set var="captionCount" value="3"/>
-    </c:if>
-
+<div th:if="${!#strings.isEmpty(model.welcomeMessage)}"
+     th:style="|width:15em;float:right;padding:0 1em 0 1em;border-left:1px solid #${#themes.code('detailColor')}|"
+     th:utext="${model.welcomeMessage}"
+></div>
+<th:block th:each="album, loopStatus : ${model.albums}">
     <div class="albumThumb">
-        <c:import url="coverArt.jsp">
-            <c:param name="albumId" value="${album.id}"/>
-            <c:param name="caption1" value="${fn:escapeXml(album.albumTitle)}"/>
-            <c:param name="caption2" value="${fn:escapeXml(album.artist)}"/>
-            <c:param name="caption3" value="${caption3}"/>
-            <c:param name="captionCount" value="${captionCount}"/>
-            <c:param name="coverArtSize" value="${model.coverArtSize}"/>
-            <c:param name="showLink" value="true"/>
-            <c:param name="appearAfter" value="${loopStatus.count * 30}"/>
-            <c:param name="hideOverflow" value="true"/>
-        </c:import>
+        <th:block th:replace="coverArt:: art(albumId=${album.id},
+            caption1=${album.albumTitle},
+            caption2=${album.artist},
+            caption3=${@mediaFileService.calcAlbumThirdCaption(album,#locale)},
+            captionCount=3,
+            hideOverflow =${true},
+            appearAfter=${loopStatus.count * 30},
+            showLink=${true},
+            coverArtSize=${model.coverArtSize}
+        )" />
 
-        <c:if test="${not empty album.rating}">
-            <c:import url="rating.jsp">
-                <c:param name="readonly" value="true"/>
-                <c:param name="rating" value="${album.rating}"/>
-            </c:import>
-        </c:if>
+        <th:block th:if="${!#strings.isEmpty(album.rating)}"><th:block th:replace="rating::rating(true,${album.rating})"></th:block></th:block>
 
     </div>
-</c:forEach>
+</th:block>
 
-<c:if test="${model.listSize eq fn:length(model.albums)}">
-    <%@ include file="homePager.jsp" %>
-</c:if>
+<th:block th:if="${model.listSize eq #lists.size(model.albums)}" th:replace="homePager"></th:block>
 
 </body></html>

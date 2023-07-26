@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
 
 <html><head>
-    <%@ include file="head.jsp" %>
-    <%@ include file="jquery.jsp" %>
-    <%@ include file="table.jsp" %>
-    <script type="text/javascript" src="<c:url value='/script/jquery.fancyzoom.js'/>"></script>
-    <script type="text/javascript" src="<c:url value='/script/utils.js'/>"></script>
-    <style type="text/css">
+    <th:block th:replace="head" />
+    <th:block th:replace="jquery" />
+    <th:block th:replace="table" />
+    <script type="text/javascript" th:src="@{/script/jquery.fancyzoom.js}"></script>
+    <script type="text/javascript" th:src="@{/script/utils.js}"></script>
+    <style>
         #topSongsHeader, #filesHeader, #subDirsHeader {
             display: inline-block;
             border: dotted;
@@ -32,17 +31,17 @@
             padding-left:3px;
         }
     </style>
-<script type="text/javascript" language="javascript">
+<script type="text/javascript">
     var mediaDir = {files: [], subDirs: []};
     var filesTable = null;
     var subDirsTable = null;
     var subDirsTableData = [];
     var thumbsData = [];
-    var viewAsList = ${model.viewAsList};
+    var viewAsList = [[${model.viewAsList == true}]];
     var topSongs = [];
     var artistTopSongsTable = null;
-    var initialIds = ${model.initialIdsJSON};
-    var initialPaths = ${model.initialPathsJSON};
+    var initialIds = [[${model.initialIdsJSON}]];
+    var initialPaths = [[${model.initialPathsJSON}]];
 
     function getMediaDirectory(mediaFileId) {
         getMediaDirectories([mediaFileId]);
@@ -54,15 +53,15 @@
 
     function getMediaDirectoryCallback(mediaDirObj) {
         if (mediaDirObj.contentType == 'notFound') {
-            window.location = 'notFound.view?';
+            window.location = 'notFound';
             return;
         }
         if (mediaDirObj.contentType == 'home') {
-            window.location = 'home.view?';
+            window.location = 'home';
             return;
         }
         if (mediaDirObj.contentType == 'accessDenied') {
-            window.location = 'accessDenied.view?';
+            window.location = 'accessDenied';
             return;
         }
 
@@ -78,9 +77,8 @@
         generateMediaDirThumb();
         refreshViewDependentComponents();
 
-      <c:if test="${model.showArtistInfo}">
-        loadArtistInfo();
-      </c:if>
+        let showArtistInfo = [[${model.showArtistInfo}]]
+        if(showArtistInfo) { loadArtistInfo(); }
 
         // directory star
         updateStarImage();
@@ -156,26 +154,26 @@
     }
 
     function generateMediaDirThumb() {
-        var urlBase = "<c:url value='/coverArtJsp.view'/>";
-        $.get(urlBase + '?coverArtSize=${model.coverArtSizeLarge}&showZoom=true&showChange=${model.user.coverArtRole}&albumId=' + mediaDir.id, data => {
+        var urlBase = [[@{/coverArtJsp}]];
+        $.get(urlBase + '?coverArtSize=[(${model.coverArtSizeLarge})]&showZoom=true&showChange=[(${model.user.coverArtRole})]&albumId=' + mediaDir.id, data => {
             $('#mediaDirThumb').html(data);
         });
     }
 
     function generateThumbs() {
-        var urlBase = "<c:url value='/coverArtJsp.view'/>";
+        var urlBase = [[@{/coverArtJsp}]];
         $('#thumbs').html('');
 
         thumbsData.filter(t => t.entryType != 'VIDEO').forEach((t,i) => {
             //append container first to keep order intact when async callback happens
             $('#thumbs').append('<div class="albumThumb"></div>');
-            $.get(urlBase + '?hideOverflow=true&showLink=true&appearAfter=' + (i * 30) + '&coverArtSize=${model.coverArtSizeMedium}&captionCount=2&caption2=' + (t.year ? t.year : '') + '&caption1=' + encodeURIComponent(t.title) +'&albumId=' + t.id, data => {
+            $.get(urlBase + '?hideOverflow=true&showLink=true&appearAfter=' + (i * 30) + '&coverArtSize=[(${model.coverArtSizeMedium})]&captionCount=2&caption2=' + (t.year ? t.year : '') + '&caption1=' + encodeURIComponent(t.title) +'&albumId=' + t.id, data => {
                 $('#thumbs .albumThumb:nth-child(' + (i + 1) + ')').append(data);
             });
         });
 
-        var videoUrlBase = "<c:url value='/videoPlayer.view'/>";
-        var covertArtUrlBase = "<c:url value='/coverArt.view'/>";
+        var videoUrlBase = [[@{/videoPlayer}]];
+        var covertArtUrlBase = [[@{/coverArt}]];
         thumbsData.filter(t => t.entryType == 'VIDEO').forEach(t => {
             var vidUrl = videoUrlBase + '?id=' + t.id;
             var vid = '' +
@@ -199,7 +197,7 @@
     }
 
     function getRatings() {
-        var urlBase = "<c:url value='/ratingJsp.view'/>";
+        var urlBase = [[@{/ratingJsp}]];
         if (mediaDir.averageRating && mediaDir.averageRating > 0) {
             $.get(urlBase + '?readonly=true&rating=' + mediaDir.averageRating, data => {
                 $('#avgRating').html('&nbsp;&nbsp;'+data).show();
@@ -278,7 +276,7 @@
             orderMulti: true,
             pageLength: ${model.initialPaginationSizeFiles},
           <c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSizeFiles)) ? '' : ', '.concat(model.initialPaginationSizeFiles)}" />
-            lengthMenu: [[10, 20, 50, 100, -1 ${paginationaddition}], [10, 20, 50, 100, "All" ${paginationaddition}]],
+            lengthMenu: [ [10, 20, 50, 100, -1 ${paginationaddition}], [10, 20, 50, 100, "All" ${paginationaddition}] ],
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -523,7 +521,7 @@
             orderMulti: false,
             pageLength: ${model.initialPaginationSizeFolders},
           <c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSizeFolders)) ? '' : ', '.concat(model.initialPaginationSizeFolders)}" />
-            lengthMenu: [[10, 20, 50, 100, -1 ${paginationaddition}], [10, 20, 50, 100, "All" ${paginationaddition}]],
+            lengthMenu: [ [10, 20, 50, 100, -1 ${paginationaddition}], [10, 20, 50, 100, "All" ${paginationaddition}] ],
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -608,7 +606,7 @@
             orderMulti: false,
             pageLength: ${model.initialPaginationSizeFolders},
           <c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSizeFolders)) ? '' : ', '.concat(model.initialPaginationSizeFolders)}" />
-            lengthMenu: [[10, 20, 50, 100, -1 ${paginationaddition}], [10, 20, 50, 100, "All" ${paginationaddition}]],
+            lengthMenu: [ [10, 20, 50, 100, -1 ${paginationaddition}], [10, 20, 50, 100, "All" ${paginationaddition}] ],
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -709,7 +707,7 @@
 
         viewSelectorRefresh();
 
-        top.StompClient.subscribe("mediaMain.jsp", {
+        top.StompClient.subscribe("mediaMain.html", {
             '/user/queue/mediafile/directory/get': function(msg) {
                 getMediaDirectoryCallback(JSON.parse(msg.body));
             },

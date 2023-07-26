@@ -1,17 +1,15 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
-<%@ include file="include.jsp" %>
-<%@ include file="jquery.jsp" %>
-<%@ include file="table.jsp" %>
-<script type="text/javascript" src="<c:url value='/script/utils.js'/>"></script>
-<script type="text/javascript" src="<c:url value='/script/mediaelement/mediaelement-and-player.min.js'/>"></script>
-<script src="<c:url value='/script/mediaelement/plugins/speed/speed.min.js'/>"></script>
-<script src="<c:url value='/script/mediaelement/plugins/speed/speed-i18n.js'/>"></script>
-<script src="<c:url value='/script/mediaelement/plugins/chromecast/chromecast.min.js'/>"></script>
-<script src="<c:url value='/script/mediaelement/plugins/chromecast/chromecast-i18n.js'/>"></script>
-<link rel="stylesheet" href="<c:url value='/script/mediaelement/plugins/speed/speed.min.css'/>">
-<link rel="stylesheet" href="<c:url value='/script/mediaelement/plugins/chromecast/chromecast.min.css'/>">
+<th:block th:replace="jquery" />
+<th:block th:replace="table" />
+<script type="text/javascript" th:src="@{/script/utils.js}"></script>
+<script type="text/javascript" th:src="@{/script/mediaelement/mediaelement-and-player.min.js}"></script>
+<script th:src="@{/script/mediaelement/plugins/speed/speed.min.js}"></script>
+<script th:src="@{/script/mediaelement/plugins/speed/speed-i18n.js}"></script>
+<script th:src="@{/script/mediaelement/plugins/chromecast/chromecast.min.js}"></script>
+<script th:src="@{/script/mediaelement/plugins/chromecast/chromecast-i18n.js}"></script>
+<link rel="stylesheet" th:href="@{/script/mediaelement/plugins/speed/speed.min.css}">
+<link rel="stylesheet" th:href="@{/script/mediaelement/plugins/chromecast/chromecast.min.css}">
 
-<style type="text/css">
+<style >
     .ui-slider .ui-slider-handle {
         width: 11px;
         height: 11px;
@@ -33,8 +31,9 @@
         display: inline-block;
     }
 </style>
-
-<script type="text/javascript" language="javascript">
+<script type="text/javascript" th:inline="javascript"
+th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(model['initialPaginationSize'] ?: '') ) ?
+                            '' : ', '.concat(model['initialPaginationSize'] ?: '')}">
     "use strict";
 
     /** Toggle between <a> and <span> in order to disable play queue action buttons */
@@ -82,8 +81,8 @@
         songs: [],
         
         bookmarks: {},
-        autoBookmark: ${model.autoBookmark},
-        audioBookmarkFrequency: ${model.audioBookmarkFrequency},
+        autoBookmark: [(${model['autoBookmark'] ?: false})],
+        audioBookmarkFrequency: [[${model['audioBookmarkFrequency']}]],
 
         // Stream URL of the media being played
         currentStreamUrl: null,
@@ -109,8 +108,8 @@
         audioPlayer: null,
 
         init() {
-            var ratingOnImage = "<spring:theme code='ratingOnImage'/>";
-            var ratingOffImage = "<spring:theme code='ratingOffImage'/>";
+            var ratingOnImage = "[(${#themes.code('ratingOnImage')})]";
+            var ratingOffImage = "[(${#themes.code('ratingOffImage')})]";
             var pq = this;
 
             pq.musicTable = $("#playQueueMusic").DataTable( {
@@ -133,12 +132,11 @@
                 order: [],
                 orderFixed: [ 0, 'asc' ],
                 orderMulti: false,
-                pageLength: ${model.initialPaginationSize},
-              <c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSize)) ? '' : ', '.concat(model.initialPaginationSize)}" />
-                lengthMenu: [[10, 20, 50, 100, -1 ${paginationaddition}], [10, 20, 50, 100, "All" ${paginationaddition}]],
+                pageLength: [[${model['initialPaginationSize']}]],
+                lengthMenu: [ [10, 20, 50, 100, -1 [(${paginationaddition})] ], [10, 20, 50, 100, "All" [(${paginationaddition})]  ] ],
                 buttons: [
                     {
-                      text: "<fmt:message key='main.nowplaying'/>",
+                      text: [[#{main.nowplaying}]],
                       action: function (e, dt, node, config) {
                           if (pq.currentSongIndex != -1) {
                               dt.row(pq.currentSongIndex).show().draw(false);
@@ -168,7 +166,7 @@
                     selector: "td:not(.not-draggable)"
                 },
                 language: {
-                    emptyTable: "<fmt:message key='playlist.empty'/>"
+                    emptyTable: [[#{playlist.empty}]]
                 },
                 ajax(ajaxData, callback) {
                     for ( var i=0, len=pq.songs.length ; i<len ; i++ ) {
@@ -201,16 +199,17 @@
                       searchable: false,
                       name: "remove",
                       className: "fit not-draggable centeralign",
-                      defaultContent: "<img class='removeSong' src=\"<spring:theme code='removeImage'/>\" style='height:18px;' alt=\"<fmt:message key='playlist.remove'/>\" title=\"<fmt:message key='playlist.remove'/>\">"
+                      defaultContent: "<img class='removeSong' src=\"[( ${#themes.code('removeImage')} )]\" style='height:18px;' " +
+                          "alt=\"[(#{playlist.remove})]\" title=\"[(#{playlist.remove})]\">"
                     },
-                    { data: "trackNumber", className: "detail fit", visible: ${model.visibility.trackNumberVisible}, title: "<fmt:message key='personalsettings.tracknumber'/>" },
-                    { data: "discNumber", className: "detail fit", visible: ${model.visibility.discNumberVisible}, title: "<fmt:message key='personalsettings.discnumber'/>" },
+                    { data: "trackNumber", className: "detail fit", visible: [( ${model['visibility']?.trackNumberVisible == true} )], title: [[#{personalsettings.tracknumber}]] },
+                    { data: "discNumber", className: "detail fit", visible: [( ${model['visibility']?.discNumberVisible} == true)], title: [[#{personalsettings.discnumber}]] },
                     { data: "title",
                       className: "detail songTitle truncate",
-                      title: "<fmt:message key='edittags.songtitle'/>",
+                      title: [[#{edittags.songtitle}]],
                       render(title, type, row) {
                           if (type == "display") {
-                              var img = "<img class='currentImage' src=\"<spring:theme code='currentImage'/>\" alt='' style='display: none; padding-right: 0.5em' />";
+                              var img = "<img class='currentImage' src=\"[( ${#themes.code('currentImage')} )]\" alt='' style='display: none; padding-right: 0.5em' />";
                               if (playQueue.player.tech != "EXTERNAL_WITH_PLAYLIST") {
                                   return img + $("<a>", {title: title, alt: title, text: title}).addClass("titleUrl").attr("href", "javascript:void(0)")[0].outerHTML;
                               } else {
@@ -222,8 +221,8 @@
                     },
                     { data: "album",
                       className: "detail truncate",
-                      visible: ${model.visibility.albumVisible},
-                      title: "<fmt:message key='personalsettings.album'/>",
+                      visible: [[${model['visibility']?.albumVisible == true} ]],
+                      title: [[ #{personalsettings.album} ]],
                       render(album, type, row) {
                           if (type == "display" && album != null) {
                               return $("<a>", {title: album, alt: album, text: album}).attr("href", row.albumUrl).attr("target", !pq.internetRadioEnabled ? "main" : "_blank").attr("rel", !pq.internetRadioEnabled ? "" : "noopener noreferrer")[0].outerHTML;
@@ -233,8 +232,8 @@
                     },
                     { data: "artist",
                       className: "detail truncate",
-                      visible: ${model.visibility.artistVisible},
-                      title: "<fmt:message key='personalsettings.artist'/>",
+                      visible: [[ ${model['visibility']?.artistVisible =true} ]],
+                      title: [[#{personalsettings.artist}]],
                       render(artist, type) {
                           if (type == "display" && artist != null) {
                               return $("<span>", {title: artist, alt: artist, text: artist})[0].outerHTML;
@@ -244,8 +243,8 @@
                     },
                     { data: "albumArtist",
                       className: "detail truncate",
-                      visible: ${model.visibility.albumArtistVisible},
-                      title: "<fmt:message key='personalsettings.albumartist'/>",
+                      visible: [[ ${model['visibility']?.albumArtistVisible == true} ]],
+                      title: [[ #{personalsettings.albumartist} ]],
                       render(artist, type) {
                           if (type == "display" && artist != null) {
                               return $("<span>", {title: artist, alt: artist, text: artist})[0].outerHTML;
@@ -255,8 +254,8 @@
                     },
                     { data: "genre",
                       className: "detail truncate",
-                      visible: ${model.visibility.genreVisible},
-                      title: "<fmt:message key='personalsettings.genre'/>",
+                      visible: [[${model['visibility']?.genreVisible == true}]],
+                      title: [[ #{personalsettings.genre} ]],
                       render(genre, type) {
                           if (type == "display" && genre != null) {
                               return $("<span>", {title: genre, alt: genre, text: genre})[0].outerHTML;
@@ -264,13 +263,13 @@
                           return genre;
                       }
                     },
-                    { data: "year", className: "detail fit rightalign", visible: ${model.visibility.yearVisible}, title: "<fmt:message key='personalsettings.year'/>" },
-                    { data: "format", className: "detail fit rightalign", visible: ${model.visibility.formatVisible}, title: "<fmt:message key='personalsettings.format'/>" },
-                    { data: "fileSize", className: "detail fit rightalign", visible: ${model.visibility.fileSizeVisible}, title: "<fmt:message key='personalsettings.filesize'/>" },
+                    { data: "year", className: "detail fit rightalign", visible: [[${model['visibility']?.yearVisible}]], title: [[ #{personalsettings.year} ]] },
+                    { data: "format", className: "detail fit rightalign", visible: [[${model['visibility']?.formatVisible}]], title: [[ #{personalsettings.format} ]] },
+                    { data: "fileSize", className: "detail fit rightalign", visible: [[${model['visibility']?.fileSizeVisible}]], title: [[ #{personalsettings.filesize} ]] },
                     { data: "duration",
                       className: "detail fit rightalign",
-                      visible: ${model.visibility.durationVisible},
-                      title: "<fmt:message key='personalsettings.duration'/>",
+                      visible: [[${model['visibility']?.durationVisible == true}]],
+                      title: [[#{personalsettings.duration}]],
                       render: function(data, type, row) {
                           if (type == "display" && data != null) {
                               return formatDuration(Math.round(data));
@@ -278,12 +277,12 @@
                           return data;
                       }
                     },
-                    { data: "bitRate", className: "detail fit rightalign", visible: ${model.visibility.bitRateVisible}, title: "<fmt:message key='personalsettings.bitrate'/>" },
-                    { data: "playCount", className: "detail fit rightalign", visible: ${model.visibility.playCountVisible}, title: "<fmt:message key='personalsettings.playcount'/>" },
+                    { data: "bitRate", className: "detail fit rightalign", visible: [[${model['visibility']?.bitRateVisible}]], title: [[#{personalsettings.bitrate}]] },
+                    { data: "playCount", className: "detail fit rightalign", visible: [[${model['visibility']?.playCountVisible}]], title: [[#{personalsettings.playcount}]] },
 	                { data: "lastPlayed",
 	                  className: "detail fit rightalign",
-	                  visible: ${model.visibility.lastPlayedVisible},
-	                  title: "<fmt:message key='personalsettings.lastplayed'/>",
+	                  visible: [[${model['visibility']?.lastPlayedVisible == true}]],
+	                  title: [[#{personalsettings.lastplayed}]],
 	                  render: function(data, type, row) {
 	                      if (data != null) {
 	                          if (type == "display") {
@@ -296,8 +295,8 @@
 	                },
 	                { data: "lastScanned",
 	                  className: "detail fit rightalign",
-	                  visible: ${model.visibility.lastScannedVisible},
-	                  title: "<fmt:message key='personalsettings.lastscanned'/>",
+	                  visible: [[${model['visibility']?.lastScannedVisible == true}]],
+	                  title: [[#{personalsettings.lastscanned}]],
 	                  render: function(data, type, row) {
 	                      if (data != null) {
 	                          if (type == "display") {
@@ -310,8 +309,8 @@
 	                },
 	                { data: "created",
 	                  className: "detail fit rightalign",
-	                  visible: ${model.visibility.createdVisible},
-	                  title: "<fmt:message key='personalsettings.created'/>",
+	                  visible: [[${model['visibility']?.createdVisible == true }]],
+	                  title: [[#{personalsettings.created}]],
 	                  render: function(data, type, row) {
 	                      if (data != null) {
 	                          if (type == "display") {
@@ -324,8 +323,8 @@
 	                },
 	                { data: "changed",
 	                  className: "detail fit rightalign",
-	                  visible: ${model.visibility.changedVisible},
-	                  title: "<fmt:message key='personalsettings.changed'/>",
+	                  visible: [[${model['visibility']?.changedVisible == true}]],
+	                  title: [[#{personalsettings.changed}]],
 	                  render: function(data, type, row) {
 	                      if (data != null) {
 	                          if (type == "display") {
@@ -367,9 +366,9 @@
                 }
             });
 
-            $("#playQueueHeading").html("<h2><fmt:message key='playlist.more.playlist'/></h2>");
+            $("#playQueueHeading").html("<h2>[(#{playlist.more.playlist})]</h2>");
 
-            top.StompClient.subscribe("playQueue.jsp", {
+            top.StompClient.subscribe("playQueue.html", {
                 // Now playing
                 '/topic/nowPlaying/current/add'(msg) {
                     var nowPlayingInfo = JSON.parse(msg.body);
@@ -389,10 +388,10 @@
                     pq.playlistSelectionCallback(JSON.parse(msg.body));
                 },
                 '/user/queue/playlists/files/append'(msg) {
-                    pq.playlistUpdatedCallback(JSON.parse(msg.body), "<fmt:message key='playlist.toast.appendtoplaylist'/>");
+                    pq.playlistUpdatedCallback(JSON.parse(msg.body), [[#{playlist.toast.appendtoplaylist}]]);
                 },
                 '/user/queue/playlists/create/playqueue'(msg) {
-                    pq.playlistUpdatedCallback(JSON.parse(msg.body), "<fmt:message key='playlist.toast.saveasplaylist'/>");
+                    pq.playlistUpdatedCallback(JSON.parse(msg.body), [[#{playlist.toast.saveasplaylist}]]);
                 },
 
                 // Players
@@ -425,10 +424,10 @@
             var dialogSize = getJQueryUiDialogPlaylistSize("playQueue");
             $("#dialog-select-playlist").dialog({resizable: true, height: dialogSize.height, width: dialogSize.width, autoOpen: false,
                 buttons: {
-                    "<fmt:message key="common.add"/>": function() {
+                    [[#{common.add}]]: function() {
                         pq.appendPlaylists();
                     },
-                    "<fmt:message key="common.cancel"/>"() {
+                    [[#{common.cancel}]]: function() {
                         $(this).dialog("close");
                     }
                 },
@@ -436,8 +435,9 @@
             });
 
             pq.createMediaElementPlayer();
-            <c:if test="${model.autoHide}">pq.initAutoHide();</c:if>
-            pq.onTogglePlayQueue(${!model.autoHide});
+            let initAutoHide = [[${model['autoHide'] == true}]]
+            if(initAutoHide) {pq.initAutoHide();}
+            pq.onTogglePlayQueue([[${model['autoHide'] != true}]]);
 
             // load default player
             pq.onPlayerChanged(null);
@@ -445,7 +445,7 @@
 
         onPlayerChanged(playerId) {
             var pq = this;
-            var playerUrl = "<c:url value='/playQueue/player'/>";
+            var playerUrl = [[@{/playQueue/player}]];
             if (playerId) {
                 playerUrl = playerUrl + "?player=" + playerId;
             }
@@ -488,7 +488,7 @@
 
         unsubscribePlayerSpecificCallbacks() {
             for (var topic in this.playerSpecificCallbacks) {
-                top.StompClient.unsubscribe(topic, "playQueue.jsp");
+                top.StompClient.unsubscribe(topic, "playQueue.html");
                 delete this.playerSpecificCallbacks[topic];
             }
         },
@@ -508,7 +508,7 @@
                     pq.playQueueSkipCallback(JSON.parse(msg.body));
                 };
                 pq.playerSpecificCallbacks['/user/queue/playqueues/' + this.player.id + '/save'] = function(msg) {
-                    $().toastmessage("showSuccessToast", "<fmt:message key='playlist.toast.saveplayqueue'/> (" + JSON.parse(msg.body) + ")");
+                    $().toastmessage("showSuccessToast",  "[(#{playlist.toast.saveplayqueue})] (" + JSON.parse(msg.body) + ")");
                 };
                 pq.playerSpecificCallbacks['/user/queue/playqueues/' + this.player.id + '/repeat'] = function(msg) {
                     pq.playQueueRepeatStatusCallback(JSON.parse(msg.body));
@@ -524,7 +524,7 @@
                     pq.playQueueCallback(JSON.parse(msg.body), true);
                 };
 
-                top.StompClient.subscribe("playQueue.jsp", pq.playerSpecificCallbacks);
+                top.StompClient.subscribe("playQueue.html", pq.playerSpecificCallbacks);
             }
         },
 
@@ -682,7 +682,7 @@
                 alwaysShowControls: true,
                 enableKeyboard: false,
                 useDefaultControls: true,
-                iconSprite: "<c:url value='/script/mediaelement/mejs-controls.svg'/>",
+                iconSprite: [[@{/script/mediaelement/mejs-controls.svg}]],
                 castAppID: "4FBFE470",
                 features: ["speed", "chromecast"],
                 defaultSpeed: "1.00",
@@ -711,9 +711,11 @@
 
         onClear() {
             var ok = true;
-        <c:if test="${model.partyMode}">
-            ok = confirm("<fmt:message key="playlist.confirmclear"/>");
-        </c:if>
+            var partyMode = [[${model['partyMode']}]];
+            if(partyMode) {
+                ok = confirm([[#{playlist.confirmclear}]]);
+            }
+
             if (ok) {
                 top.StompClient.send("/app/playqueues/" + this.player.id + "/clear", "");
             }
@@ -799,9 +801,10 @@
             this.updateWindowTitle(song);
             this.showMediaSessionMetadata(song);
 
-          <c:if test="${model.notify}">
-            this.showNotification(song);
-          </c:if>
+            let notify = [[${model['notify']}]];
+            if(notify) {
+                this.showNotification(song);
+            }
         },
 
         onSkip(index, offset, nobookmarks) {
@@ -1016,15 +1019,15 @@
             this.repeatStatus = incomingStatus;
             if ($("#toggleRepeat").length != 0) {
                 if (this.shuffleRadioEnabled) {
-                    $("#toggleRepeat").html("<fmt:message key="playlist.repeat_radio"/>");
+                    $("#toggleRepeat").html([[#{playlist.repeat_radio}]]);
                 } else if (this.repeatStatus == 'QUEUE') {
-                    $("#toggleRepeat").attr('src', '<spring:theme code="repeatAll"/>');
+                    $("#toggleRepeat").attr('src', [[${#themes.code('repeatAll')}]]);
                     $("#toggleRepeat").attr('alt', 'Repeat All/Queue');
                 } else if (this.repeatStatus == 'OFF') {
-                    $("#toggleRepeat").attr('src', '<spring:theme code="repeatOff"/>');
+                    $("#toggleRepeat").attr('src', [[${#themes.code('repeatOff')}]]);
                     $("#toggleRepeat").attr('alt', 'Repeat Off');
                 } else if (this.repeatStatus == 'TRACK') {
-                    $("#toggleRepeat").attr('src', '<spring:theme code="repeatOne"/>');
+                    $("#toggleRepeat").attr('src', [[${#themes.code('repeatOne')}]]);
                     $("#toggleRepeat").attr('alt', 'Repeat One/Track');
                 }
             }
@@ -1037,7 +1040,7 @@
 
             // If an internet radio has no sources, display a message to the user.
             if (this.internetRadioEnabled && this.songs.length == 0) {
-                top.main.$().toastmessage("showErrorToast", "<fmt:message key="playlist.toast.radioerror"/>");
+                top.main.$().toastmessage("showErrorToast", [[#{playlist.toast.radioerror}]]);
                 this.onStop();
             }
 
@@ -1072,7 +1075,7 @@
                 $("#playQueueInfo").text("");
             } else {
                 var totDuration = this.songs.map(s => s.duration).filter(d => d != null).reduce((a,b) => a + b, 0);
-                $("#playQueueInfo").html("&nbsp;|&nbsp;" + this.songs.length + " <fmt:message key='playlist2.songs'/> &nbsp;|&nbsp;" + formatDuration(Math.round(totDuration)));
+                $("#playQueueInfo").html("&nbsp;|&nbsp;" + this.songs.length + " [(#{playlist2.songs})] &nbsp;|&nbsp;" + formatDuration(Math.round(totDuration)));
             }
 
             if (this.internetRadioEnabled) {
@@ -1225,18 +1228,14 @@
     $(document).ready(() => playQueue.init());
 </script>
 
-<table class="music indent hover nowrap stripe compact <c:if test='${!model.visibility.headerVisible}'>hide-table-header</c:if>" id="playQueueMusic" style="cursor:pointer; width: 100%;"></table>
+<table class="music indent hover nowrap stripe compact" th:classappend="${model['visibility']?.headerVisible != true ? 'hide-table-header' : ''}" id="playQueueMusic" style="cursor:pointer; width: 100%;"></table>
 
 <div class="bgcolor2 playqueue-controlbar">
-  <c:if test="${model.user.settingsRole and model.players.size() > 1}">
-    <div style="padding-right: 5px">
+    <div th:if="${model['user']?.settingsRole == true and model.players.size() > 1}" style="padding-right: 5px">
         <select id="playerSelector" name="playerSelector" onchange="playQueue.onPlayerChanged(options[selectedIndex].value)">
-          <c:forEach items="${model.players}" var="player">
-            <option value="${player.id}">${player.shortDescription}</option>
-          </c:forEach>
+            <option th:each="player: ${model.players}" th:value="${player.id}" th:text="${player.shortDescription}"></option>
         </select>
     </div>
-  </c:if>
 
     <div class="player-tech player-tech-web" style="white-space:nowrap;flex:1 1 300px;">
         <div id="player" style="height:40px">
@@ -1244,15 +1243,13 @@
         </div>
     </div>
 
-  <c:if test="${model.user.streamRole}">
-    <div class="player-tech player-tech-non-web" style="white-space:nowrap;">
-        <img alt="Start" id="audioStart" src="<spring:theme code='castPlayImage'/>" onclick="playQueue.onStart()" style="cursor:pointer">
-        <img alt="Stop" id="audioStop" src="<spring:theme code='castPauseImage'/>" onclick="playQueue.onStop()" style="cursor:pointer; display:none">
+    <div th:if="${model['user']?.streamRole == true}" class="player-tech player-tech-non-web" style="white-space:nowrap;">
+        <img alt="Start" id="audioStart" th:src="${#themes.code('castPlayImage')}" onclick="playQueue.onStart()" style="cursor:pointer">
+        <img alt="Stop" id="audioStop" th:src="${#themes.code('castPauseImage')}" onclick="playQueue.onStop()" style="cursor:pointer; display:none">
     </div>
-  </c:if>
 
     <div class="player-tech player-tech-jukebox" style="white-space:nowrap;">
-        <img src="<spring:theme code='volumeImage'/>" alt="">
+        <img th:src="${#themes.code('volumeImage')}" alt="">
     </div>
     <div class="player-tech player-tech-jukebox" style="white-space:nowrap;">
         <div id="jukeboxVolume" style="width:80px;height:4px"></div>
@@ -1264,19 +1261,19 @@
 
     <div class="player-tech player-tech-web" style="white-space:nowrap;">
         <span class="header">
-            <img src="<spring:theme code='backImage'/>" alt="Play previous" title="Play previous" onclick="playQueue.onPrevious()" style="cursor:pointer">
+            <img th:src="${#themes.code('backImage')}"  alt="Play previous" title="Play previous" onclick="playQueue.onPrevious()" style="cursor:pointer">
         </span>
     </div>
     <div class="player-tech player-tech-web" style="white-space:nowrap;">
         <span class="header">
-            <img src="<spring:theme code='forwardImage'/>" alt="Play next" title="Play next" onclick="playQueue.onNext('OFF')" style="cursor:pointer">
+            <img th:src="${#themes.code('forwardImage')}" alt="Play next" title="Play next" onclick="playQueue.onNext('OFF')" style="cursor:pointer">
         </span> |
     </div>
 
     <div style="white-space:nowrap;">
         <span class="header">
             <a href="javascript:playQueue.onClear()" class="player-control">
-                <img src="<spring:theme code='clearImage'/>" alt="Clear playlist" title="Clear playlist" style="cursor:pointer; height:18px">
+                <img th:src="${#themes.code('clearImage')}" alt="Clear playlist" title="Clear playlist" style="cursor:pointer; height:18px">
             </a>
         </span> |
     </div>
@@ -1284,7 +1281,7 @@
     <div style="white-space:nowrap;">
         <span class="header">
             <a href="javascript:playQueue.onShuffle()" id="shuffleQueue" class="player-control">
-                <img src="<spring:theme code='shuffleImage'/>" alt="Shuffle" title="Shuffle" style="cursor:pointer; height:18px">
+                <img th:src="${#themes.code('shuffleImage')}" alt="Shuffle" title="Shuffle" style="cursor:pointer; height:18px">
             </a>
         </span> |
     </div>
@@ -1292,7 +1289,7 @@
     <div class="player-tech player-tech-web player-tech-jukebox player-tech-external" style="white-space:nowrap;">
         <span class="header">
             <a href="javascript:playQueue.onToggleRepeat()" id="repeatQueue" class="player-control">
-                <img id="toggleRepeat" src="<spring:theme code='repeatOff'/>" alt="Toggle repeat" title="Toggle repeat" style="cursor:pointer; height:18px">
+                <img id="toggleRepeat" th:src="${#themes.code('repeatOff')}" alt="Toggle repeat" title="Toggle repeat" style="cursor:pointer; height:18px">
             </a>
         </span> |
     </div>
@@ -1300,64 +1297,55 @@
     <div style="white-space:nowrap;">
         <span class="header">
             <a href="javascript:playQueue.onUndo()" id="undoQueue" class="player-control">
-                <img src="<spring:theme code='undoImage'/>" alt="Undo" title="Undo" style="cursor:pointer; height:18px">
+                <img th:src="${#themes.code('undoImage')}" alt="Undo" title="Undo" style="cursor:pointer; height:18px">
             </a>
         </span>  |
     </div>
 
-  <c:if test="${model.user.settingsRole}">
-    <div style="white-space:nowrap;">
+    <div th:if="${model['user']?.settingsRole == true}" style="white-space:nowrap;">
         <span class="header">
             <a href="javascript:playQueue.playerSettingsPage()" class="player-control">
-                <img src="<spring:theme code='settingsImage'/>" alt="Settings" title="Settings" style="cursor:pointer; height:18px">
+                <img th:src="${#themes.code('settingsImage')}" alt="Settings" title="Settings" style="cursor:pointer; height:18px">
             </a>
         </span> |
     </div>
-  </c:if>
 
     <div style="white-space:nowrap;">
         <span class="header">
             <select id="moreActions" onchange="playQueue.actionSelected(options[selectedIndex].id)">
-                <option id="top" selected="selected"><fmt:message key="playlist.more"/></option>
-                <optgroup label="<fmt:message key='playlist.more.playlist'/>">
-                    <option id="savePlayQueue"><fmt:message key="playlist.saveplayqueue"/></option>
-                    <option id="loadPlayQueue"><fmt:message key="playlist.loadplayqueue"/></option>
-                    <option id="savePlaylist"><fmt:message key="playlist.save"/></option>
-                  <c:if test="${model.user.downloadRole}">
-                    <option id="downloadPlaylist"><fmt:message key="common.download"/></option>
-                  </c:if>
-                  <c:if test="${model.user.shareRole}">
-                    <option id="sharePlaylist"><fmt:message key="main.more.share"/></option>
-                  </c:if>
-                    <option id="sortByTrack"><fmt:message key="playlist.more.sortbytrack"/></option>
-                    <option id="sortByAlbum"><fmt:message key="playlist.more.sortbyalbum"/></option>
-                    <option id="sortByArtist"><fmt:message key="playlist.more.sortbyartist"/></option>
+                <option id="top" selected="selected" th:text="#{playlist.more}">more</option>
+                <optgroup th:label="#{playlist.more.playlist}">
+                    <option id="savePlayQueue" th:text="#{playlist.saveplayqueue}"></option>
+                    <option id="loadPlayQueue" th:text="#{playlist.loadplayqueue}"></option>
+                    <option id="savePlaylist" th:text="#{playlist.save}"></option>
+                    <option th:if="${model['user']?.downloadRole == true}" id="downloadPlaylist" th:text="#{common.download}"></option>
+                    <option th:if="${model['user']?.shareRole == true}" id="sharePlaylist" th:text="#{main.more.share}"></option>
+                    <option id="sortByTrack" th:text="#{playlist.more.sortbytrack}"></option>
+                    <option id="sortByAlbum" th:text="#{playlist.more.sortbyalbum}"></option>
+                    <option id="sortByArtist" th:text="#{playlist.more.sortbyartist}"></option>
                 </optgroup>
-                <optgroup label="<fmt:message key='playlist.more.selection'/>">
-                    <option id="removeSelected"><fmt:message key="playlist.remove"/></option>
-                  <c:if test="${model.user.downloadRole}">
-                    <option id="download"><fmt:message key="common.download"/></option>
-                  </c:if>
-                    <option id="appendPlaylist"><fmt:message key="playlist.append"/></option>
-                    <option id="star"><fmt:message key="playlist.more.star"/></option>
-                    <option id="unstar"><fmt:message key="playlist.more.unstar"/></option>
+                <optgroup th:label="#{playlist.more.selection}">
+                    <option id="removeSelected" th:text="#{playlist.remove}"></option>
+
+                    <option th:if="${model['user']?.downloadRole == true}" id="download" th:text="#{common.download}"></option>
+                    <option id="appendPlaylist" th:text="#{playlist.append}"></option>
+                    <option id="star" th:text="#{playlist.more.star}"></option>
+                    <option id="unstar" th:text="#{playlist.more.unstar}"></option>
                 </optgroup>
             </select>
         </span>
     </div>
 
-  <c:if test="${not model.autoHide}">
-    <div style="white-space:nowrap; text-align:right; padding-left:1.5em; padding-right:1.5em">
+    <div th:if="${model['autoHide'] != true}" style="white-space:nowrap; text-align:right; padding-left:1.5em; padding-right:1.5em">
         <a href="javascript:playQueue.onTogglePlayQueue(!playQueue.isVisible)">
-            <img class="playqueue-shown" src="<spring:theme code='playQueueHide'/>" alt="Hide play queue" title="Hide play queue" style="cursor:pointer; height:18px;"/>
-            <img class="playqueue-hidden" src="<spring:theme code='playQueueShow'/>" alt="Show play queue" title="Show play queue" style="cursor:pointer; height:18px; display: none;"/>
+            <img class="playqueue-shown" th:src="${#themes.code('playQueueHide')}" alt="Hide play queue" title="Hide play queue" style="cursor:pointer; height:18px;"/>
+            <img class="playqueue-hidden" th:src="${#themes.code('playQueueShow')}" alt="Show play queue" title="Show play queue" style="cursor:pointer; height:18px; display: none;"/>
         </a>
     </div>
-  </c:if>
 
 </div>
 
-<div id="dialog-select-playlist" title="<fmt:message key='playlist.append'/>" style="display: none;">
-    <p><fmt:message key="main.addtoplaylist.text"/></p>
+<div id="dialog-select-playlist" th:title="#{playlist.append}" style="display: none;">
+    <p th:text="#{main.addtoplaylist.text}"></p>
     <div id="dialog-select-playlist-list"></div>
 </div>

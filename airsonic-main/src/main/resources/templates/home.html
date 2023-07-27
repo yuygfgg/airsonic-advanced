@@ -62,7 +62,7 @@
             coverArtSize=${model.coverArtSize}
         )" />
 
-        <th:block th:if="${!#strings.isEmpty(album.rating)}"><th:block th:replace="rating::rating(true,${album.rating})"></th:block></th:block>
+        <th:block th:if="${!#strings.isEmpty(album.rating)}"><th:block th:replace="rating::rating(${album.id},true,${album.rating})"></th:block></th:block>
 
     </div>
 </th:block>

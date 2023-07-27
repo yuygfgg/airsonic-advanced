@@ -31,7 +31,11 @@
             padding-left:3px;
         }
     </style>
-<script type="text/javascript">
+<script type="text/javascript" th:inline="javascript"
+        th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(model['initialPaginationSizeFiles'] ?: '') ) ?
+                            '' : ', '.concat(model['initialPaginationSizeFiles'] ?: '')},
+                paginationadditionFolders=${#strings.contains(' 10 20 50 100 -1', ' '.concat(model['initialPaginationSizeFolders'] ?: '') ) ?
+                            '' : ', '.concat(model['initialPaginationSizeFolders'] ?: '')}">
     var mediaDir = {files: [], subDirs: []};
     var filesTable = null;
     var subDirsTable = null;
@@ -40,14 +44,15 @@
     var viewAsList = [[${model.viewAsList == true}]];
     var topSongs = [];
     var artistTopSongsTable = null;
-    var initialIds = [[${model.initialIdsJSON}]];
-    var initialPaths = [[${model.initialPathsJSON}]];
+    var initialIds = [(${model.initialIdsJSON})];
+    var initialPaths = [(${model.initialPathsJSON})];
 
     function getMediaDirectory(mediaFileId) {
         getMediaDirectories([mediaFileId]);
     }
 
     function getMediaDirectories(ids, paths) {
+        console.log('getting dirs', JSON.stringify({ids: ids, paths: paths}))
         top.StompClient.send("/app/mediafile/directory/get", JSON.stringify({ids: ids, paths: paths}));
     }
 
@@ -154,14 +159,14 @@
     }
 
     function generateMediaDirThumb() {
-        var urlBase = [[@{/coverArtJsp}]];
+        var urlBase = '[(@{/coverArtJsp})]';
         $.get(urlBase + '?coverArtSize=[(${model.coverArtSizeLarge})]&showZoom=true&showChange=[(${model.user.coverArtRole})]&albumId=' + mediaDir.id, data => {
             $('#mediaDirThumb').html(data);
         });
     }
 
     function generateThumbs() {
-        var urlBase = [[@{/coverArtJsp}]];
+        var urlBase = '[(@{/coverArtJsp})]';
         $('#thumbs').html('');
 
         thumbsData.filter(t => t.entryType != 'VIDEO').forEach((t,i) => {
@@ -172,8 +177,8 @@
             });
         });
 
-        var videoUrlBase = [[@{/videoPlayer}]];
-        var covertArtUrlBase = [[@{/coverArt}]];
+        var videoUrlBase = '[(@{/videoPlayer})]';
+        var covertArtUrlBase = '[(@{/coverArt})]';
         thumbsData.filter(t => t.entryType == 'VIDEO').forEach(t => {
             var vidUrl = videoUrlBase + '?id=' + t.id;
             var vid = '' +
@@ -197,7 +202,7 @@
     }
 
     function getRatings() {
-        var urlBase = [[@{/ratingJsp}]];
+        var urlBase = '[(@{/ratingJsp})]';
         if (mediaDir.averageRating && mediaDir.averageRating > 0) {
             $.get(urlBase + '?readonly=true&rating=' + mediaDir.averageRating, data => {
                 $('#avgRating').html('&nbsp;&nbsp;'+data).show();
@@ -214,10 +219,10 @@
     function updatePlayCountData() {
         var playcount = '';
         if (mediaDir.playCount) {
-            playcount += '<fmt:message key="main.playcount"><fmt:param value="%v%"/></fmt:message>'.replace('%v%', mediaDir.playCount);
+            playcount += '[(#{main.playcount(${"%v%"})})]'.replace('%v%', mediaDir.playCount);
         }
         if (mediaDir.lastPlayed) {
-            playcount += ' <fmt:message key="main.lastplayed"><fmt:param value="%v%" /></fmt:message>'.replace('%v%', new Date(mediaDir.lastPlayed));
+            playcount += '[(#{main.lastplayed(${"%v%"})})]'.replace('%v%', new Date(mediaDir.lastPlayed));
         }
         $('#playCountData').text(playcount);
     }
@@ -245,18 +250,18 @@
         var dialogSize = getJQueryUiDialogPlaylistSize("mediaMain");
         $("#dialog-select-playlist").dialog({resizable: true, height: dialogSize.height, width: dialogSize.width, autoOpen: false,
             buttons: {
-                "<fmt:message key="common.add"/>": function() {
+                '[(#{common.add})]' : function() {
                     appendPlaylists();
                 },
-                "<fmt:message key="common.cancel"/>": function() {
+                '[(#{common.cancel})]' : function() {
                     $(this).dialog("close");
                 }
             },
             resizeStop: function (event, ui) { setJQueryUiDialogPlaylistSize("mediaMain", ui.size) }
         });
 
-        var ratingOnImage = "<spring:theme code='ratingOnImage'/>";
-        var ratingOffImage = "<spring:theme code='ratingOffImage'/>";
+        var ratingOnImage = [[${#themes.code('ratingOnImage')}]];
+        var ratingOffImage = [[${#themes.code('ratingOffImage')}]];
 
         /** FILES **/
         filesTable = $("#filesTable").DataTable( {
@@ -274,9 +279,8 @@
             order: [],
             //orderFixed: [ 0, 'asc' ],
             orderMulti: true,
-            pageLength: ${model.initialPaginationSizeFiles},
-          <c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSizeFiles)) ? '' : ', '.concat(model.initialPaginationSizeFiles)}" />
-            lengthMenu: [ [10, 20, 50, 100, -1 ${paginationaddition}], [10, 20, 50, 100, "All" ${paginationaddition}] ],
+            pageLength: [[${model.initialPaginationSizeFiles}]],
+            lengthMenu: [ [10, 20, 50, 100, -1 [(${paginationaddition})] ], [10, 20, 50, 100, "All" [(${paginationaddition})] ] ],
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -286,6 +290,7 @@
                 selector: ".songIndex"
             },
             ajax: function(ajaxData, callback) {
+                console.log('ajax', ajaxData)
                 for ( var i=0, len=mediaDir.files.length ; i<len ; i++ ) {
                   mediaDir.files[i].seq = i;
                 }
@@ -308,18 +313,18 @@
                 { data: null,
                   searchable: false,
                   name: "play",
-                  visible: ${model.user.streamRole and not model.partyMode},
+                  visible: [[${model.user.streamRole and !model.partyMode}]],
                   className: "fit not-draggable centeralign",
-                  defaultContent: "<img class='playSong' src=\"<spring:theme code='playImage'/>\" style='height:18px;' alt=\"<fmt:message key='common.play'/>\" title=\"<fmt:message key='common.play'/>\">"
+                  defaultContent: "<img class='playSong' src=\"[(${#themes.code('playImage')})]\" style='height:18px;' alt=\"[(#{common.play})]\" title=\"[(#{common.play})]\">"
                 },
                 { data: "entryType",
                   searchable: false,
                   name: "addLast",
-                  visible: ${model.user.streamRole and not model.partyMode},
+                  visible: [[${model.user.streamRole and !model.partyMode}]],
                   className: "fit not-draggable centeralign",
                   render: function(entryType, type, row) {
                       if (type == "display" && entryType != "VIDEO" && entryType != "DIRECTORY" && entryType != "ALBUM") {
-                          return "<img class='addSongLast' src=\"<spring:theme code='addImage'/>\" style='height:18px;' alt=\"<fmt:message key='common.add'/>\" title=\"<fmt:message key='common.add'/>\">";
+                          return "<img class='addSongLast' src=\"[(${#themes.code('addImage')})]\" style='height:18px;' alt=\"[(#{common.add})]\" title=\"[(#{common.add})]\">";
                       }
                       return "";
                   }
@@ -327,11 +332,11 @@
                 { data: "entryType",
                   searchable: false,
                   name: "addNext",
-                  visible: ${model.user.streamRole and not model.partyMode},
+                  visible: [[${model.user.streamRole and !model.partyMode}]],
                   className: "fit not-draggable centeralign",
                   render: function(entryType, type, row) {
                       if (type == "display" && entryType != "VIDEO" && entryType != "DIRECTORY" && entryType != "ALBUM") {
-                          return "<img class='addSongNext' src=\"<spring:theme code='addNextImage'/>\" style='height:18px;' alt=\"<fmt:message key='main.addnext'/>\" title=\"<fmt:message key='main.addnext'/>\">";
+                          return "<img class='addSongNext' src=\"[(${#themes.code('addNextImage')})]\" style='height:18px;' alt=\"[(#{main.addnext})]\" title=\"[(#{main.addnext})]\">";
                       }
                       return "";
                   }
@@ -342,11 +347,11 @@
                   className: "fit not-draggable songIndex centeralign",
                   defaultContent: "<input type='checkbox'>"
                 },
-                { data: "trackNumber", className: "detail fit", visible: ${model.visibility.trackNumberVisible}, title: "<fmt:message key='personalsettings.tracknumber'/>" },
-                { data: "discNumber", className: "detail fit", visible: ${model.visibility.discNumberVisible}, title: "<fmt:message key='personalsettings.discnumber'/>" },
+                { data: "trackNumber", className: "detail fit", visible: [[${model.visibility.trackNumberVisible}]], title: [[#{personalsettings.tracknumber}]] },
+                { data: "discNumber", className: "detail fit", visible: [[${model.visibility.discNumberVisible}]], title: [[#{personalsettings.discnumber}]] },
                 { data: "title",
                   className: "detail songTitle truncate",
-                  title: "<fmt:message key='edittags.songtitle'/>",
+                  title: [[#{edittags.songtitle}]],
                   render: function(title, type, row) {
                       if (type == "display" && title != null) {
                           return $("<span>", {title: title, alt: title, text: title})[0].outerHTML;
@@ -356,8 +361,8 @@
                 },
                 { data: "album",
                   className: "detail truncate",
-                  visible: ${model.visibility.albumVisible},
-                  title: "<fmt:message key='personalsettings.album'/>",
+                  visible: [[${model.visibility.albumVisible}]],
+                  title: [[#{personalsettings.album}]],
                   render: function(album, type, row) {
                       if (type == "display" && album != null) {
                           return $("<span>", {title: album, alt: album, text: album})[0].outerHTML;
@@ -367,8 +372,8 @@
                 },
                 { data: "artist",
                   className: "detail truncate",
-                  visible: ${model.visibility.artistVisible},
-                  title: "<fmt:message key='personalsettings.artist'/>",
+                  visible: [[${model.visibility.artistVisible}]],
+                  title: [[#{personalsettings.artist}]],
                   render: function(artist, type) {
                       if (type == "display" && artist != null) {
                           return $("<span>", {title: artist, alt: artist, text: artist})[0].outerHTML;
@@ -378,8 +383,8 @@
                 },
                 { data: "albumArtist",
                   className: "detail truncate",
-                  visible: ${model.visibility.albumArtistVisible},
-                  title: "<fmt:message key='personalsettings.albumartist'/>",
+                  visible: [[${model.visibility.albumArtistVisible}]],
+                  title: [[#{personalsettings.albumartist}]],
                   render: function(artist, type) {
                       if (type == "display" && artist != null) {
                           return $("<span>", {title: artist, alt: artist, text: artist})[0].outerHTML;
@@ -389,8 +394,8 @@
                 },
                 { data: "genre",
                   className: "detail truncate",
-                  visible: ${model.visibility.genreVisible},
-                  title: "<fmt:message key='personalsettings.genre'/>",
+                  visible: [[${model.visibility.genreVisible}]],
+                  title: [[#{personalsettings.genre}]],
                   render: function(genre, type) {
                       if (type == "display" && genre != null) {
                           return $("<span>", {title: genre, alt: genre, text: genre})[0].outerHTML;
@@ -398,13 +403,13 @@
                       return genre;
                   }
                 },
-                { data: "year", className: "detail fit rightalign", visible: ${model.visibility.yearVisible}, title: "<fmt:message key='personalsettings.year'/>" },
-                { data: "format", className: "detail fit rightalign", visible: ${model.visibility.formatVisible}, title: "<fmt:message key='personalsettings.format'/>" },
-                { data: "fileSize", className: "detail fit rightalign", visible: ${model.visibility.fileSizeVisible}, title: "<fmt:message key='personalsettings.filesize'/>" },
+                { data: "year", className: "detail fit rightalign", visible: [[${model.visibility.yearVisible}]], title: [[#{personalsettings.year}]] },
+                { data: "format", className: "detail fit rightalign", visible: [[${model.visibility.formatVisible}]], title: [[#{personalsettings.format}]] },
+                { data: "fileSize", className: "detail fit rightalign", visible: [[${model.visibility.fileSizeVisible}]], title: [[#{personalsettings.filesize}]] },
                 { data: "duration",
                   className: "detail fit rightalign",
-                  visible: ${model.visibility.durationVisible},
-                  title: "<fmt:message key='personalsettings.duration'/>",
+                  visible: [[${model.visibility.durationVisible}]],
+                  title: [[#{personalsettings.duration}]],
                   render: function(data, type, row) {
                       if (type == "display" && data != null) {
                           return formatDuration(Math.round(data));
@@ -412,12 +417,12 @@
                       return data;
                   }
                 },
-                { data: "bitRate", className: "detail fit rightalign", visible: ${model.visibility.bitRateVisible}, title: "<fmt:message key='personalsettings.bitrate'/>" },
-                { data: "playCount", className: "detail fit rightalign", visible: ${model.visibility.playCountVisible}, title: "<fmt:message key='personalsettings.playcount'/>" },
+                { data: "bitRate", className: "detail fit rightalign", visible: [[${model.visibility.bitRateVisible}]], title: [[#{personalsettings.bitrate}]] },
+                { data: "playCount", className: "detail fit rightalign", visible: [[${model.visibility.playCountVisible}]], title: [[#{personalsettings.playcount}]] },
                 { data: "lastPlayed",
                   className: "detail fit rightalign",
-                  visible: ${model.visibility.lastPlayedVisible},
-                  title: "<fmt:message key='personalsettings.lastplayed'/>",
+                  visible: [[${model.visibility.lastPlayedVisible}]],
+                  title: [[#{personalsettings.lastplayed}]],
                   render: function(data, type, row) {
                       if (data != null) {
                           if (type == "display") {
@@ -430,8 +435,8 @@
                 },
                 { data: "lastScanned",
                   className: "detail fit rightalign",
-                  visible: ${model.visibility.lastScannedVisible},
-                  title: "<fmt:message key='personalsettings.lastscanned'/>",
+                  visible: [[${model.visibility.lastScannedVisible}]],
+                  title: [[#{personalsettings.lastscanned}]],
                   render: function(data, type, row) {
                       if (data != null) {
                           if (type == "display") {
@@ -444,8 +449,8 @@
                 },
                 { data: "created",
                   className: "detail fit rightalign",
-                  visible: ${model.visibility.createdVisible},
-                  title: "<fmt:message key='personalsettings.created'/>",
+                  visible: [[${model.visibility.createdVisible}]],
+                  title: [[#{personalsettings.created}]],
                   render: function(data, type, row) {
                       if (data != null) {
                           if (type == "display") {
@@ -458,8 +463,8 @@
                 },
                 { data: "changed",
                   className: "detail fit rightalign",
-                  visible: ${model.visibility.changedVisible},
-                  title: "<fmt:message key='personalsettings.changed'/>",
+                  visible: [[${model.visibility.changedVisible}]],
+                  title: [[#{personalsettings.changed}]],
                   render: function(data, type, row) {
                       if (data != null) {
                           if (type == "display") {
@@ -472,8 +477,8 @@
                 },
                 { data: "entryType",
                   className: "detail fit rightalign truncate",
-                  visible: ${model.visibility.entryTypeVisible},
-                  title: "<fmt:message key='personalsettings.entrytype'/>",
+                  visible: [[${model.visibility.entryTypeVisible}]],
+                  title: [[#{personalsettings.entrytype}]],
                   render: function(entryType, type, row) {
                       if (type == "display" && entryType != null) {
                           var media = entryType.toLowerCase();
@@ -519,9 +524,8 @@
             order: [],
             orderFixed: [ 0, 'asc' ],
             orderMulti: false,
-            pageLength: ${model.initialPaginationSizeFolders},
-          <c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSizeFolders)) ? '' : ', '.concat(model.initialPaginationSizeFolders)}" />
-            lengthMenu: [ [10, 20, 50, 100, -1 ${paginationaddition}], [10, 20, 50, 100, "All" ${paginationaddition}] ],
+            pageLength: [[${model.initialPaginationSizeFolders}]],
+            lengthMenu: [ [10, 20, 50, 100, -1 [(${paginationadditionFolders})] ], [10, 20, 50, 100, "All" [(${paginationadditionFolders})] ] ],
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -540,18 +544,18 @@
                 { data: null,
                   searchable: false,
                   name: "play",
-                  visible: ${model.user.streamRole and not model.partyMode},
+                  visible: [[${model.user.streamRole and !model.partyMode}]],
                   className: "fit not-draggable centeralign",
-                  defaultContent: "<img class='playSong' src=\"<spring:theme code='playImage'/>\" style='height:18px;' alt=\"<fmt:message key='common.play'/>\" title=\"<fmt:message key='common.play'/>\">"
+                  defaultContent: "<img class='playSong' src=\"[(${#themes.code('playImage')})]\" style='height:18px;' alt=\"[(#{common.play})]\" title=\"[(#{common.play})]\">"
                 },
                 { data: "entryType",
                   searchable: false,
                   name: "addLast",
-                  visible: ${model.user.streamRole and not model.partyMode},
+                  visible: [[${model.user.streamRole and !model.partyMode}]],
                   className: "fit not-draggable centeralign",
                   render: function(entryType, type, row) {
                       if (type == "display") {
-                          return "<img class='addSongLast' src=\"<spring:theme code='addImage'/>\" style='height:18px;' alt=\"<fmt:message key='common.add'/>\" title=\"<fmt:message key='common.add'/>\">";
+                          return "<img class='addSongLast' src=\"[(${#themes.code('addImage')})]\" style='height:18px;' alt=\"[(#{common.add})]\" title=\"[(#{common.add})]\">";
                       }
                       return "";
                   }
@@ -559,11 +563,11 @@
                 { data: "entryType",
                   searchable: false,
                   name: "addNext",
-                  visible: ${model.user.streamRole and not model.partyMode},
+                  visible: [[${model.user.streamRole and !model.partyMode}]],
                   className: "fit not-draggable centeralign",
                   render: function(entryType, type, row) {
                       if (type == "display") {
-                          return "<img class='addSongNext' src=\"<spring:theme code='addNextImage'/>\" style='height:18px;' alt=\"<fmt:message key='main.addnext'/>\" title=\"<fmt:message key='main.addnext'/>\">";
+                          return "<img class='addSongNext' src=\"[(${#themes.code('addNextImage')})]\" style='height:18px;' alt=\"[(#{main.addnext})]\" title=\"[(#{main.addnext})]\">";
                       }
                       return "";
                   }
@@ -604,9 +608,8 @@
             order: [],
             orderFixed: [ 0, 'asc' ],
             orderMulti: false,
-            pageLength: ${model.initialPaginationSizeFolders},
-          <c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSizeFolders)) ? '' : ', '.concat(model.initialPaginationSizeFolders)}" />
-            lengthMenu: [ [10, 20, 50, 100, -1 ${paginationaddition}], [10, 20, 50, 100, "All" ${paginationaddition}] ],
+            pageLength: [[${model.initialPaginationSizeFolders}]],
+            lengthMenu: [ [10, 20, 50, 100, -1 [(${paginationadditionFolders})] ], [10, 20, 50, 100, "All" [(${paginationadditionFolders})] ] ],
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -636,19 +639,19 @@
                   searchable: false,
                   name: "play",
                   className: "fit not-draggable centeralign",
-                  defaultContent: "<img class='playSong' src=\"<spring:theme code='playImage'/>\" style='height:18px;' alt=\"<fmt:message key='common.play'/>\" title=\"<fmt:message key='common.play'/>\">"
+                  defaultContent: "<img class='playSong' src=\"[(${#themes.code('playImage')})]\" style='height:18px;' alt=\"[(#{common.play})]\" title=\"[(#{common.play})]\">"
                 },
                 { data: null,
                   searchable: false,
                   name: "addLast",
                   className: "fit not-draggable centeralign",
-                  defaultContent: "<img class='addSongLast' src=\"<spring:theme code='addImage'/>\" style='height:18px;' alt=\"<fmt:message key='common.add'/>\" title=\"<fmt:message key='common.add'/>\">"
+                  defaultContent: "<img class='addSongLast' src=\"[(${#themes.code('addImage')})]\" style='height:18px;' alt=\"[(#{common.add})]\" title=\"[(#{common.add})]\">"
                 },
                 { data: null,
                   searchable: false,
                   name: "addNext",
                   className: "fit not-draggable centeralign",
-                  defaultContent: "<img class='addSongNext' src=\"<spring:theme code='addNextImage'/>\" style='height:18px;' alt=\"<fmt:message key='main.addnext'/>\" title=\"<fmt:message key='main.addnext'/>\">"
+                  defaultContent: "<img class='addSongNext' src=\"[(${#themes.code('addNextImage')})]\" style='height:18px;' alt=\"[(#{main.addnext})]\" title=\"[(#{main.addnext})]\">"
                 },
                 { data: "title",
                   className: "detail songTitle truncate",
@@ -663,7 +666,7 @@
                   className: "detail truncate",
                   render: function(album, type, row) {
                       if (type == "display" && album != null) {
-                          return $("<a>", {title: album, alt: album, text: album, target: "main"}).attr("href", "main.view?id=" + row.id)[0].outerHTML;
+                          return $("<a>", {title: album, alt: album, text: album, target: "main"}).attr("href", "main?id=" + row.id)[0].outerHTML;
                       }
                       return album;
                   }
@@ -702,12 +705,11 @@
             onAddNext(artistTopSongsTable.row( $(this).parents('tr') ));
         } );
 
-        $("#topSongsHeader").html("<h2><fmt:message key='main.topsongs'/></h2>");
+        $("#topSongsHeader").html("<h2>[(#{main.topsongs})]</h2>");
         $("#artistTopSongsTable_wrapper").hide();
 
         viewSelectorRefresh();
-
-        top.StompClient.subscribe("mediaMain.html", {
+        let subs = {
             '/user/queue/mediafile/directory/get': function(msg) {
                 getMediaDirectoryCallback(JSON.parse(msg.body));
             },
@@ -715,24 +717,26 @@
                 playlistSelectionCallback(JSON.parse(msg.body));
             },
             '/user/queue/playlists/files/append': function(msg) {
-                $().toastmessage("showSuccessToast", "<fmt:message key='playlist.toast.appendtoplaylist'/>");
+                $().toastmessage("showSuccessToast", [[#{playlist.toast.appendtoplaylist}]]);
             },
             "/user/queue/settings/viewAsList": function(msg) {
                 viewChangedCallback(JSON.parse(msg.body));
             }
-          <c:if test="${model.showArtistInfo}">
-            ,"/user/queue/artist/info": function(msg) {
-                loadArtistInfoCallback(JSON.parse(msg.body));
-            }
-          </c:if>
-        }, function() {
+        }
+        let showArtistInfo = [[${model.showArtistInfo}]];
+        if(showArtistInfo) {
+           subs["/user/queue/artist/info"] = function(msg) {
+               loadArtistInfoCallback(JSON.parse(msg.body));
+           }
+        }
+
+        top.StompClient.subscribe("mediaMain.html", subs, function() {
             if (initialIds.length != 0 || initialPaths.length != 0) {
                 getMediaDirectories(initialIds, initialPaths);
             }
         });
     }
 
-  <c:if test="${model.showArtistInfo}">
     function loadArtistInfo() {
         top.StompClient.send("/app/artist/info", JSON.stringify({mediaFileId: mediaDir.id, maxSimilarArtists: 8, maxTopSongs: 100}));
     }
@@ -782,7 +786,6 @@
         artistTopSongsTable.ajax.reload().columns.adjust();
 
     }
-  </c:if>
 
     function populateAncestors() {
         var ancestors = $("#ancestors").empty();
@@ -809,9 +812,9 @@
 
     function updateStarImage() {
         if (mediaDir.starred) {
-            $("#starImage").attr("src", "<spring:theme code='ratingOnImage'/>");
+            $("#starImage").attr("src", [[${#themes.code('ratingOnImage')}]]);
         } else {
-            $("#starImage").attr("src", "<spring:theme code='ratingOffImage'/>");
+            $("#starImage").attr("src", [[${#themes.code('ratingOffImage')}]]);
         }
     }
 
@@ -834,7 +837,7 @@
     function onPlay(row) {
         var data = row.data();
         if (data.entryType == 'VIDEO') {
-            var urlBase = "<c:url value='/videoPlayer.view'/>";
+            var urlBase = [[@{/videoPlayer}]];
             var url = urlBase + "?id=" + data.id;
             top.main.location = url;
         } else {
@@ -843,11 +846,11 @@
     }
     function onAdd(row) {
         top.playQueue.onAdd(row.data().id);
-        $().toastmessage('showSuccessToast', '<fmt:message key="main.addlast.toast"/>')
+        $().toastmessage('showSuccessToast', [[#{main.addlast.toast}]])
     }
     function onAddNext(row) {
         top.playQueue.onAddNext(row.data().id);
-        $().toastmessage('showSuccessToast', '<fmt:message key="main.addnext.toast"/>')
+        $().toastmessage('showSuccessToast', [[#{main.addnext.toast}]])
     }
 
     function playAll() {
@@ -1062,7 +1065,7 @@
 <body class="mainframe bgcolor1" onload="init();">
 <div style="float:left">
     <h1>
-        <img id="starImage" src="<spring:theme code='ratingOffImage'/>"
+        <img id="starImage" th:src="${#themes.code('ratingOffImage')}"
              onclick="toggleMediaDirStar(!mediaDir.starred); return false;" style="cursor:pointer;height:18px;" alt="">
 
         <span id="ancestors" style="vertical-align: middle"></span>
@@ -1070,52 +1073,40 @@
         <div id="avgRating" style="display: inline-block"></div>
     </h1>
 
-    <c:if test="${not model.partyMode}">
-        <h2>
-            <c:if test="${model.user.streamRole}">
-                <div class="pagetype-dependent type-album type-artist" style="display: inline-block;">
-                    <span class="header"><a href="javascript:playAll()"><fmt:message key="main.playall"/></a></span> |
-                    <span class="header"><a href="javascript:playRandom()"><fmt:message key="main.playrandom"/></a></span> |
-                    <span class="header"><a href="javascript:addAll()"><fmt:message key="main.addall"/></a></span> |
-                </div>
-            </c:if>
+    <h2 th:if="${model.partyMode != true}">
+        <div th:if="${model.user.streamRole}" class="pagetype-dependent type-album type-artist" style="display: inline-block;">
+            <span class="header"><a href="javascript:playAll()" th:text="#{main.playall}"></a></span> |
+            <span class="header"><a href="javascript:playRandom()" th:text="#{main.playrandom}"></a></span> |
+            <span class="header"><a href="javascript:addAll()" th:text="#{main.addall}"></a></span> |
+        </div>
 
-            <c:if test="${model.user.downloadRole}">
-                <div class="pagetype-dependent type-album" style="display: inline-block;">
-                    <span class="header"><a href="javascript:downloadAll()"><fmt:message key="main.downloadall"/></a></span> |
-                </div>
-            </c:if>
+        <div th:if="${model.user.downloadRole}" class="pagetype-dependent type-album" style="display: inline-block;">
+            <span class="header"><a href="javascript:downloadAll()" th:text="#{main.downloadall}"></a></span> |
+        </div>
 
-            <c:if test="${model.user.coverArtRole}">
-                <div class="pagetype-dependent type-album" style="display: inline-block;">
-                    <span class="header"><a href="javascript:editTagsPage()"><fmt:message key="main.tags"/></a></span> |
-                </div>
-            </c:if>
+        <div th:if="${model.user.coverArtRole}" class="pagetype-dependent type-album" style="display: inline-block;">
+            <span class="header"><a href="javascript:editTagsPage()" th:text="#{main.tags}"></a></span> |
+        </div>
 
-            <c:if test="${model.user.commentRole}">
-                <span class="header"><a href="javascript:toggleComment()"><fmt:message key="main.comment"/></a></span> |
-            </c:if>
-        </h2>
-    </c:if>
+        <span th:if="${model.user.commentRole}" class="header"><a href="javascript:toggleComment()" th:text="#{main.comment}"></a></span> |
+    </h2>
 </div>
 
 <div style="float:right;padding-right:1em">
-    <img id="viewAsList" src="<spring:theme code='viewAsListImage'/>" alt="" class="headerSelected" style="margin-right:8px" onclick="setViewAsList(true)"/>
-    <img id="viewAsGrid" src="<spring:theme code='viewAsGridImage'/>" alt="" class="headerNotSelected" onclick="setViewAsList(false)"/>
+    <img id="viewAsList" th:src="${#themes.code('viewAsListImage')}" alt="" class="headerSelected" style="margin-right:8px" onclick="setViewAsList(true)"/>
+    <img id="viewAsGrid" th:src="${#themes.code('viewAsGridImage')}" alt="" class="headerNotSelected" onclick="setViewAsList(false)"/>
 </div>
 <div style="clear:both"></div>
 
 <div class="detail pagetype-dependent type-album">
-    <c:if test="${model.user.commentRole}">
-        <div id="userRating" style="display: inline-block;"></div>
-    </c:if>
+    <div th:if="${model.user.commentRole}" id="userRating" style="display: inline-block;"></div>
 
-    <c:if test="${model.user.shareRole}">
-        <span class="header"><a href="javascript:shareAlbum()"><img src="<spring:theme code='shareSmallImage'/>" style="height:18px;" alt=""></a>
-            <a href="javascript:shareAlbum()"><fmt:message key="main.sharealbum"/></a> </span> |
-    </c:if>
+    <th:block th:if="${model.user.shareRole}">
+        <span class="header"><a href="javascript:shareAlbum()"><img th:src="${#themes.code('shareSmallImage')}" style="height:18px;" alt=""></a>
+            <a href="javascript:shareAlbum()" th:text="#{main.sharealbum}"></a> </span> |
+    </th:block>
 
-        <span class="header external-search"><fmt:message key="top.search"/>: <a href="#" onclick="searchExternally('google')">Google</a> |</span>
+        <span class="header external-search"><span th:text="#{top.search}"></span>: <a href="#" onclick="searchExternally('google')">Google</a> |</span>
         <span class="header external-search"><a href="#" onclick="searchExternally('wikipedia')">Wikipedia</a> |</span>
         <span class="header external-search"><a href="#" onclick="searchExternally('allmusic')">allmusic</a> |</span>
         <span class="header external-search"><a href="#" onclick="searchExternally('lastfm')">Last.fm</a> |</span>
@@ -1128,33 +1119,32 @@
 <div id="comment" class="albumComment"></div>
 
 <div id="commentForm" style="display:none">
-    <form method="post" action="setMusicFileInfo.view">
-        <sec:csrfInput />
+    <form method="post" action="setMusicFileInfo">
+        <input
+                type="hidden"
+                th:name="${_csrf.parameterName}"
+                th:value="${_csrf.token}" />
         <input type="hidden" name="action" value="comment">
         <input type="hidden" id="commentFormId" name="id" value="">
         <textarea name="comment" rows="6" cols="70"></textarea>
-        <input type="submit" value="<fmt:message key='common.save'/>">
+        <input type="submit" th:value="#{common.save}">
     </form>
 </div>
 
 <div class="tableSpacer"></div>
 
-<table id="filesTable" class="music indent hover nowrap stripe compact <c:if test='${!model.visibility.headerVisible}'>hide-table-header</c:if>" style="width: 100%;">
+<table id="filesTable" class="music indent hover nowrap stripe compact" th:classappend="${model.visibility.headerVisible != true?'hide-table-header':''}" style="width: 100%;">
 </table>
 
 <select id="moreActions" class="pagetype-dependent type-album type-video" onchange="actionSelected(this.options[selectedIndex].id);" style="margin-bottom:1.0em">
-    <option id="top" selected="selected"><fmt:message key="main.more.selection"/></option>
-    <option id="selectAll">&nbsp;&nbsp;<fmt:message key="playlist.more.selectall"/></option>
-    <option id="selectNone">&nbsp;&nbsp;<fmt:message key="playlist.more.selectnone"/></option>
-    <c:if test="${model.user.downloadRole}">
-        <option id="download">&nbsp;&nbsp;<fmt:message key="common.download"/></option>
-    </c:if>
-    <c:if test="${model.user.shareRole}">
-        <option id="share">&nbsp;&nbsp;<fmt:message key="main.more.share"/></option>
-    </c:if>
-    <option id="appendPlaylist">&nbsp;&nbsp;<fmt:message key="playlist.append"/></option>
-    <option id="star">&nbsp;&nbsp;<fmt:message key="playlist.more.star"/></option>
-    <option id="unstar">&nbsp;&nbsp;<fmt:message key="playlist.more.unstar"/></option>
+    <option id="top" selected="selected" th:text="#{main.more.selection}"></option>
+    <option id="selectAll" th:text="|&nbsp;&nbsp;#{playlist.more.selectall}|"></option>
+    <option id="selectNone" th:text="|&nbsp;&nbsp;#{playlist.more.selectnone}|"></option>
+    <option th:if="${model.user.downloadRole}" id="download" th:text="|&nbsp;&nbsp;#{common.download}|"></option>
+    <option th:if="${model.user.shareRole}" id="share" th:text="|&nbsp;&nbsp;#{main.more.share}|">&nbsp;&nbsp;</option>
+    <option id="appendPlaylist" th:text="|&nbsp;&nbsp;#{playlist.append}|">&nbsp;&nbsp;</option>
+    <option id="star" th:text="|&nbsp;&nbsp;#{playlist.more.star}|"></option>
+    <option id="unstar" th:text="|&nbsp;&nbsp;#{playlist.more.unstar}|"></option>
 </select>
 
 <div class="tableSpacer"></div>
@@ -1181,13 +1171,13 @@
         <td id="artistBio" style="padding-bottom: 0.5em"></td>
     </tr>
     <tr id="similarArtistsContainer" class="pagetype-dependent type-album type-artist"><td style="padding-bottom: 0.5em">
-        <span style="padding-right: 0.5em; display: none"><fmt:message key="main.similarartists"/>:</span>
+        <span style="padding-right: 0.5em; display: none" th:text="|#{main.similarartists}:|"></span>
         <span id="similarArtists"></span>
     </td></tr>
     <tr><td style="text-align:center">
         <div>
-            <div class="pagetype-dependent type-album type-artist" style="display: inline-block"><button id="similarArtistsRadio" style="margin-top:1em;margin-right:0.3em;cursor:pointer" onclick="playSimilar()"><fmt:message key='main.startradio'/></button></div>
-            <div class="pagetype-dependent type-artist" style="display: inline-block"><button id="playTopSongs" style="margin-top:1em;margin-left:0.3em;cursor:pointer" onclick="playAllTopSongs()"><fmt:message key='main.playtopsongs'/></button></div>
+            <div class="pagetype-dependent type-album type-artist" style="display: inline-block"><button id="similarArtistsRadio" style="margin-top:1em;margin-right:0.3em;cursor:pointer" onclick="playSimilar()" th:text="#{main.startradio}"></button></div>
+            <div class="pagetype-dependent type-artist" style="display: inline-block"><button id="playTopSongs" style="margin-top:1em;margin-left:0.3em;cursor:pointer" onclick="playAllTopSongs()" th;text="#{main.playtopsongs}"></button></div>
         </div>
     </td></tr>
     <tr><td style="height: 100%"></td></tr>
@@ -1196,8 +1186,8 @@
 <table id="artistTopSongsTable" class="music indent hover nowrap stripe compact hide-table-header" style="width: 100%;">
 </table>
 
-<div id="dialog-select-playlist" title="<fmt:message key='playlist.append'/>" style="display: none;">
-    <p><fmt:message key="main.addtoplaylist.text"/></p>
+<div id="dialog-select-playlist" th:title="#{playlist.append}" style="display: none;">
+    <p th:text="#{main.addtoplaylist.text}"></p>
     <div id="dialog-select-playlist-list"></div>
 </div>
 

@@ -1,27 +1,25 @@
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
-
 <html><head>
-    <%@ include file="head.jsp" %>
-    <%@ include file="jquery.jsp" %>
-    <script type="text/javascript" src="<c:url value='/script/chart-3.5.0.min.js'/>"></script>
+    <th:block th:replace="head" />
+    <th:block th:replace="jquery" />
+    <script type="text/javascript" th:src="@{/script/chart-3.5.0.min.js}"></script>
     <meta http-equiv="CACHE-CONTROL" content="NO-CACHE">
     <style>
       #sessionsTable td, .cacheusage, .cachehits, .cachemiss, .cacheputs, .cacheremovals {
         text-align: center;
       }
     </style>
-<script>
+<script th:inline="javascript">
   const labels = {
-    null: '<fmt:message key="common.unknown"/>',
-    'download': '<fmt:message key="status.download"/>',
-    'upload': '<fmt:message key="status.upload"/>',
-    'stream': '<fmt:message key="status.stream"/>',
-    'never': '<fmt:message key="status.never"/>',
-    'incalculable': '<fmt:message key="status.incalculable"/>',
-    'RUN_ONCE': '<fmt:message key="status.scheduledrunonce"/>',
-    'FIXED_DELAY': '<fmt:message key="status.scheduledfixeddelay"/>',
-    'FIXED_RATE': '<fmt:message key="status.scheduledfixedrate"/>',
+    null: '[(#{common.unknown})]',
+    'download': '[(#{status.download})]',
+    'upload': '[(#{status.upload})]',
+    'stream': '[(#{status.stream})]',
+    'never': '[(#{status.never})]',
+    'incalculable': '[(#{status.incalculable})]',
+    'RUN_ONCE': '[(#{status.scheduledrunonce})]',
+    'FIXED_DELAY': '[(#{status.scheduledfixeddelay})]',
+    'FIXED_RATE': '[(#{status.scheduledfixedrate})]',
   };
 
   const transferTypeColors = {
@@ -65,7 +63,7 @@
 
   var transfersCharts = [];
 
-  var transfersUrl = "<c:url value='/statistics/transfers'/>";
+  var transfersUrl = "[(@{/statistics/transfers})]";
 
   function updateTransferData() {
    $.get(transfersUrl, data => {
@@ -127,7 +125,7 @@
     type: 'bar',
     data: {
       datasets: [{
-            label: '<fmt:message key="home.chart.stream"/>',
+            label: '[(#{home.chart.stream})]',
             data: [],
             backgroundColor: transferTypeColors['stream']['bg'],
             borderColor: transferTypeColors['stream']['bo'],
@@ -137,7 +135,7 @@
                 yAxisKey: 'user'
             }
         },{
-            label: '<fmt:message key="home.chart.download"/>',
+            label: '[(#{home.chart.download})]',
             data: [],
             backgroundColor: transferTypeColors['download']['bg'],
             borderColor: transferTypeColors['download']['bo'],
@@ -147,7 +145,7 @@
                 yAxisKey: 'user'
             }
         },{
-            label: '<fmt:message key="home.chart.upload"/>',
+            label: '[(#{home.chart.upload})]',
             data: [],
             backgroundColor: transferTypeColors['upload']['bg'],
             borderColor: transferTypeColors['upload']['bo'],
@@ -172,7 +170,7 @@
     }
   };
 
-  var userChartUrl = "<c:url value='/statistics/users'/>";
+  var userChartUrl = "[(@{/statistics/users})]";
   var userChart = null;
 
   function updateUserChartData() {
@@ -190,13 +188,13 @@
   }
 
   var airsonicCaches = [];
-  var cacheNamesUrl = "<c:url value='/actuator/metrics/cache.gets'/>";
+  var cacheNamesUrl = "[(@{/actuator/metrics/cache.gets})]";
 
-  var cacheMissUrl = "<c:url value='/actuator/metrics/cache.gets?tag=result:miss&'/>";
-  var cacheHitsUrl = "<c:url value='/actuator/metrics/cache.gets?tag=result:hit&'/>";
-  var cachePutsUrl = "<c:url value='/actuator/metrics/cache.puts?'/>";
-  var cacheRemovalsUrl = "<c:url value='/actuator/metrics/cache.removals?'/>";
-  var cacheEvictionssUrl = "<c:url value='/actuator/caches/'/>";
+  var cacheMissUrl = "[(@{/actuator/metrics/cache.gets?tag=result:miss&})]";
+  var cacheHitsUrl = "[(@{/actuator/metrics/cache.gets?tag=result:hit&})]";
+  var cachePutsUrl = "[(@{/actuator/metrics/cache.puts?})]";
+  var cacheRemovalsUrl = "[(@{/actuator/metrics/cache.removals?})]";
+  var cacheEvictionssUrl = "[(@{/actuator/caches/})]";
 
   var updateCacheUsage = c => {
     var hit = +($('#cachesTable > tbody .' + c + ' .cachehits').text());
@@ -249,7 +247,7 @@
     }
   };
 
-  var scheduledTasksUrl = "<c:url value='/actuator/customscheduledtasks'/>";
+  var scheduledTasksUrl = "[(@{/actuator/customscheduledtasks})]";
   function updateScheduledTasksData() {
     $.get(scheduledTasksUrl, data => {
       $('#scheduledTasksTable > tbody').empty();
@@ -271,7 +269,7 @@
     });
   }
 
-  var pathWatcherUrl = "<c:url value='/actuator/pathwatcher'/>";
+  var pathWatcherUrl = "[(@{/actuator/pathwatcher})]";
   function updatePathWatcherData() {
     $.get(pathWatcherUrl, data => {
       $('#pathWatcherTable > tbody').empty();
@@ -287,10 +285,10 @@
     });
   }
 
-  var sessionsCurrentUrl = "<c:url value='/actuator/metrics/tomcat.sessions.active.current'/>";
-  var sessionsCreatedUrl = "<c:url value='/actuator/metrics/tomcat.sessions.created'/>";
-  var sessionsExpiredUrl = "<c:url value='/actuator/metrics/tomcat.sessions.expired'/>";
-  var sessionsRejectedUrl = "<c:url value='/actuator/metrics/tomcat.sessions.rejected'/>";
+  var sessionsCurrentUrl = "[(@{/actuator/metrics/tomcat.sessions.active.current})]";
+  var sessionsCreatedUrl = "[(@{/actuator/metrics/tomcat.sessions.created})]";
+  var sessionsExpiredUrl = "[(@{/actuator/metrics/tomcat.sessions.expired})]";
+  var sessionsRejectedUrl = "[(@{/actuator/metrics/tomcat.sessions.rejected})]";
 
   var updateSessionsCurrentData = () => $.get(sessionsCurrentUrl, data => {
     $('#sessionsTable > tbody .sessionscurrent').text(data.measurements[0].value);
@@ -311,7 +309,7 @@
     updateSessionsRejectedData();
   };
 
-  var healthUrl = "<c:url value='/actuator/health'/>";
+  var healthUrl = "[(@{/actuator/health})]";
   function updateHealthData() {
     $.get(healthUrl).always(data => {
       $('#healthTable > tbody').empty();
@@ -348,7 +346,7 @@
         appendedRows +=   '<td class="cachemiss"></td>';
         appendedRows +=   '<td class="cacheputs"></td>';
         appendedRows +=   '<td class="cacheremovals"></td>';
-        appendedRows +=   '<td class="cacheevictions"><button onclick="evictCache(\''+row+'\')"><fmt:message key="status.cacheevict"/></button></td>';
+        appendedRows +=   '<td class="cacheevictions"><button onclick="evictCache(\''+row+'\')">[(#{status.cacheevict})]</button></td>';
         appendedRows += '</tr>';
       });
 
@@ -371,21 +369,20 @@
 <body class="mainframe bgcolor1" onload="init()">
 
 <h1>
-    <img src="<spring:theme code='statusImage'/>" alt="">
-    <span style="vertical-align: middle"><fmt:message key="status.title"/></span>
+    <img th:src="${#themes.code('statusImage')}" alt="">
+    <span style="vertical-align: middle" th:text="#{status.title}"></span>
 </h1>
-<h2>
-  <fmt:message key="status.currenttransfers"/>
+<h2 th:text="#{status.currenttransfers}">
 </h2>
 <table id="transfersTable" width="100%" class="ruleTable indent">
     <thead>
       <tr>
-        <th class="ruleTableHeader"><fmt:message key="status.type"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.player"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.user"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.current"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.transmitted"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.bitrate"/></th>
+        <th class="ruleTableHeader" th:text="#{status.type}"></th>
+        <th class="ruleTableHeader" th:text="#{status.player}"></th>
+        <th class="ruleTableHeader" th:text="#{status.user}"></th>
+        <th class="ruleTableHeader" th:text="#{status.current}"></th>
+        <th class="ruleTableHeader" th:text="#{status.transmitted}"></th>
+        <th class="ruleTableHeader" th:text="#{status.bitrate}"></th>
       </tr>
     </thead>
     <tbody>
@@ -393,25 +390,23 @@
 </table>
 <div style="padding-top:3em"></div>
 
-<h2>
-  <fmt:message key="status.usertransfers"/>
+<h2 th:text="#{status.usertransfers}">
 </h2>
 <canvas id="userChart"></canvas>
 <div style="padding-top:3em"></div>
 
-<h2>
-  <fmt:message key="status.caches"/>
+<h2 th:text="#{status.caches}">
 </h2>
 <table id="cachesTable" width="100%" class="ruleTable indent">
     <thead>
       <tr>
-        <th class="ruleTableHeader"><fmt:message key="status.cachename"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.cacheusage"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.cachehits"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.cachemiss"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.cacheputs"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.cacheremovals"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.cacheevict"/></th>
+        <th class="ruleTableHeader" th:text="#{status.cachename}"></th>
+        <th class="ruleTableHeader" th:text="#{status.cacheusage}"></th>
+        <th class="ruleTableHeader" th:text="#{status.cachehits}"></th>
+        <th class="ruleTableHeader" th:text="#{status.cachemiss}"></th>
+        <th class="ruleTableHeader" th:text="#{status.cacheputs}"></th>
+        <th class="ruleTableHeader" th:text="#{status.cacheremovals}"></th>
+        <th class="ruleTableHeader" th:text="#{status.cacheevict}"></th>
       </tr>
     </thead>
     <tbody>
@@ -419,19 +414,18 @@
 </table>
 <div style="padding-top:3em"></div>
 
-<h2>
-  <fmt:message key="status.scheduledtasks"/>
+<h2 th:text="#{status.scheduledtasks}">
 </h2>
 <table id="scheduledTasksTable" width="100%" class="ruleTable indent">
     <thead>
       <tr>
-        <th class="ruleTableHeader"><fmt:message key="status.name"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.scheduledtype"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.scheduledcreated"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.scheduledfirstrun"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.scheduledlastrun"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.schedulednextrun"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.scheduledby"/></th>
+        <th class="ruleTableHeader" th:text="#{status.name}"></th>
+        <th class="ruleTableHeader" th:text="#{status.scheduledtype}"></th>
+        <th class="ruleTableHeader" th:text="#{status.scheduledcreated}"></th>
+        <th class="ruleTableHeader" th:text="#{status.scheduledfirstrun}"></th>
+        <th class="ruleTableHeader" th:text="#{status.scheduledlastrun}"></th>
+        <th class="ruleTableHeader" th:text="#{status.schedulednextrun}"></th>
+        <th class="ruleTableHeader" th:text="#{status.scheduledby}"></th>
       </tr>
     </thead>
     <tbody>
@@ -439,14 +433,13 @@
 </table>
 <div style="padding-top:3em"></div>
 
-<h2>
-  <fmt:message key="status.pathwatcher"/>
+<h2 th:text="#{status.pathwatcher}">
 </h2>
 <table id="pathWatcherTable" width="100%" class="ruleTable indent">
     <thead>
       <tr>
-        <th class="ruleTableHeader"><fmt:message key="status.name"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.path"/></th>
+        <th class="ruleTableHeader" th:text="#{status.name}"></th>
+        <th class="ruleTableHeader" th:text="#{status.path}"></th>
       </tr>
     </thead>
     <tbody>
@@ -454,16 +447,15 @@
 </table>
 <div style="padding-top:3em"></div>
 
-<h2>
-  <fmt:message key="status.sessions"/>
+<h2 th:text="#{status.sessions}">
 </h2>
 <table id="sessionsTable" width="100%" class="ruleTable indent">
     <thead>
       <tr>
-        <th class="ruleTableHeader"><fmt:message key="status.sessionscurrent"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.sessionscreated"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.sessionsexpired"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.sessionsrejected"/></th>
+        <th class="ruleTableHeader" th:text="#{status.sessionscurrent}"></th>
+        <th class="ruleTableHeader" th:text="#{status.sessionscreated}"></th>
+        <th class="ruleTableHeader" th:text="#{status.sessionsexpired}"></th>
+        <th class="ruleTableHeader" th:text="#{status.sessionsrejected}"></th>
       </tr>
     </thead>
     <tbody>
@@ -478,21 +470,20 @@
 
 <div style="padding-top:3em"></div>
 
-<h2>
-  <fmt:message key="status.health"/>
+<h2 th:text="#{status.health}">
 </h2>
 <table id="healthTable" width="100%" class="ruleTable indent">
     <thead>
       <tr>
-        <th class="ruleTableHeader"><fmt:message key="status.component"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.status"/></th>
-        <th class="ruleTableHeader"><fmt:message key="status.details"/></th>
+        <th class="ruleTableHeader" th:text="#{status.component}"></th>
+        <th class="ruleTableHeader" th:text="#{status.status}"></th>
+        <th class="ruleTableHeader" th:text="#{status.details}"></th>
       </tr>
     </thead>
     <tbody>
     </tbody>
 </table>
 
-<div class="forward"><a href="status.view?"><fmt:message key="common.refresh"/> (<fmt:message key="status.autorefresh"><fmt:param>${40000/1000}</fmt:param></fmt:message>)</a></div>
+<div class="forward"><a href="status.view?"><span th:text="#{common.refresh}"></span> (<span th:text="#{status.autorefresh(${40000/1000})}"></span>)</a></div>
 
 </body></html>

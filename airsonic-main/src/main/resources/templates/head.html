@@ -12,7 +12,7 @@
 <link type="text/css" rel="stylesheet" th:href="@{/script/mediaelement/mediaelementplayer.min.css}" />
 <link rel="stylesheet" th:href="@{/{ss}(ss=${#themes.code('styleSheet')})}" type="text/css" />
 <title>Airsonic</title>
-<script type="text/javascript" th:inline="javascript">
+<script th:if="${model != null}" type="text/javascript" th:inline="javascript">
     [(${model['keyboardShortcutsEnabled'] == null ? '//' : ''})] var keyboardShortcutsEnabled = [[${model['keyboardShortcutsEnabled']}]];
 </script>
 <script defer type="text/javascript" th:src="@{/script/mousetrap-1.6.0.js}"></script>

@@ -23,6 +23,7 @@ import org.airsonic.player.domain.Avatar;
 import org.airsonic.player.service.PersonalSettingsService;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Controller;
@@ -43,6 +44,8 @@ public class AvatarController {
 
     @Autowired
     private ResourceLoader loader;
+    @Value("${reourceRootLocation:}")
+    private String resourceRootLocation = "";
 
     @Autowired
     private PersonalSettingsService personalSettingsService;
@@ -83,7 +86,7 @@ public class AvatarController {
         response.setContentType(avatar.getMimeType());
         Resource res = loader.getResource(avatar.getPath().toString());
         if (!res.exists()) {
-            res = loader.getResource("file:" + avatar.getPath().toString());
+            res = loader.getResource("file:"+resourceRootLocation + avatar.getPath().toString());
         }
         IOUtils.copy(res.getInputStream(), response.getOutputStream());
     }

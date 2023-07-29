@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html><head>
+    <th:block th:replace="head" />
+    <th:block th:replace="jquery" />
+    <script type="text/javascript" th:src="@{/script/utils.js}"></script>
+</head>
+
+<body class="mainframe bgcolor1">
+<script type="text/javascript" th:src="@{/script/wz_tooltip.js}"></script>
+<script type="text/javascript" th:src="@{/script/tip_balloon.js}"></script>
+
+<th:block th:replace="settingsHeader::header(cat='general',toast=${settings_toast})" />
+
+<form method="post" action="generalSettings.view">
+    <input
+            type="hidden"
+            th:name="${_csrf.parameterName}"
+            th:value="${_csrf.token}" />
+
+
+    <table style="white-space:nowrap" class="indent">
+        <tr>
+            <td th:text="#{generalsettings.musicmask}"></td>
+            <td>
+                <input name="musicFileTypes" th:value="${command.musicFileTypes}" size="70"/>
+                <th:block th:replace="helpToolTip(topic=musicmask)" />
+            </td>
+        </tr>
+
+        <tr>
+            <td th:text="#{generalsettings.videomask}"><</td>
+            <td>
+                <input name="videoFileTypes" th:value="${command.videoFileTypes}" size="70"/>
+                <th:block th:replace="helpToolTip(topic=videomask)" />
+            </td>
+        </tr>
+
+        <tr>
+            <td th:text="#{generalsettings.coverartmask}"></td>
+            <td>
+                <input name="coverArtFileTypes" th:value="${command.coverArtFileTypes}" size="70"/>
+                <th:block th:replace="helpToolTip(topic=coverartmask)" />
+            </td>
+        </tr>
+
+        <tr>
+            <td th:text="#{generalsettings.playlistfolder}"></td>
+            <td>
+                <input name="playlistFolder" th:value="${command.playlistFolder}" size="70"/>
+                <th:block th:replace="helpToolTip(topic=playlistfolder)" />
+            </td>
+        </tr>
+
+        <tr><td colspan="2">&nbsp;</td></tr>
+
+        <tr>
+            <td th:text="#{generalsettings.index}"></td>
+            <td>
+                <input name="index" th:value="${command.index}" size="70"/>
+                <th:block th:replace="helpToolTip(topic=index)" />
+            </td>
+        </tr>
+
+        <tr>
+            <td th:text="#{generalsettings.ignoredarticles}"></td>
+            <td>
+                <input name="ignoredArticles" th:value="${command.ignoredArticles}" size="70"/>
+                <th:block th:replace="helpToolTip(topic=ignoredarticles)" />
+            </td>
+        </tr>
+        
+        <tr>
+            <td th:text="#{generalsettings.genreseparators}"></td>
+            <td>
+                <input name="genreSeparators" th:value="${command.genreSeparators}" size="70"/>
+                <th:block th:replace="helpToolTip(topic=genreseparators)" />
+            </td>
+        </tr>
+
+        <tr>
+            <td th:text="#{generalsettings.shortcuts}"></td>
+            <td>
+                <input name="shortcuts" th:value="${command.shortcuts}" size="70"/>
+                <th:block th:replace="helpToolTip(topic=shortcuts)" />
+            </td>
+        </tr>
+
+        <tr><td colspan="2">&nbsp;</td></tr>
+
+        <tr>
+            <td th:text="#{generalsettings.language}"></td>
+            <td>
+                <select name="localeIndex" th:value="${command.localeIndex}" style="width:15em">
+                    <option th:each="locale,loopStatus: ${command.locales}" value="${loopStatus.count - 1}" th:text="${locale}"></option>
+                </select>
+                <th:block th:replace="helpToolTip(topic=language)" />
+            </td>
+        </tr>
+
+        <tr>
+            <td th:text="#{generalsettings.theme}"></td>
+            <td>
+                <select name="themeIndex" th:value="${command.themeIndex}" style="width:15em">
+                    <option th:each="theme,loopStatus: ${command.themes}" value="${loopStatus.count - 1}" th:text="${theme.name}"></option>
+                </select>
+                <th:block th:replace="helpToolTip(topic=theme)" />
+            </td>
+        </tr>
+
+        <tr><td colspan="2">&nbsp;</td></tr>
+        <tr>
+            <td th:text="#{generalsettings.coverartsource}"></td>
+            <td>
+                <select name="coverArtSource" th:value="${command.coverArtSource}" style="width:15em">
+                    <option th:value="${T(org.airsonic.player.domain.CoverArtSource).FILETAG}" th:text="#{generalsettings.coverartsource.option.filetag}"></option>
+                    <option th:value="${T(org.airsonic.player.domain.CoverArtSource).TAGFILE}" th:text="#{generalsettings.coverartsource.option.tagfile}"></option>>
+                    <option th:value="${T(org.airsonic.player.domain.CoverArtSource).FILE}" th:text="#{generalsettings.coverartsource.option.file}"></option>
+                    <option th:value="${T(org.airsonic.player.domain.CoverArtSource).TAG}" th:text="#{generalsettings.coverartsource.option.tag}"></option>
+                </select>
+                <th:block th:replace="helpToolTip(topic=coverartsource)" />
+            </td>
+        </tr>
+
+        <tr>
+            <td th:text="#{generalsettings.coverartquality}"></td>
+            <td>
+                <input name="coverArtQuality" th:value="${command.coverArtQuality}" size="15em"/>
+                <th:block th:replace="helpToolTip(topic=coverartquality)" />
+            </td>
+        </tr>
+
+        <tr>
+            <td th:text="#{generalsettings.coverartconcurrency}"></td>
+            <td>
+                <input name="coverArtConcurrency" th:value="${command.coverArtConcurrency}" size="15em"/>
+                <th:block th:replace="helpToolTip(topic=coverartconcurrency)" />
+            </td>
+        </tr>
+
+        <tr><td colspan="2">&nbsp;</td></tr>
+
+        <tr>
+            <td>
+            </td>
+            <td>
+                <input type="checkbox" name="sortAlbumsByYear" th:checked="${command.sortAlbumsByYear}" id="sortAlbumsByYear"/>
+                <label for="sortAlbumsByYear" th:text="#{generalsettings.sortalbumsbyyear}"></label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+            </td>
+            <td>
+                <input type="checkbox" name="gettingStartedEnabled" th:checked="${command.gettingStartedEnabled}" id="gettingStartedEnabled"/>
+                <label for="gettingStartedEnabled" th:text="#{generalsettings.showgettingstarted}"></label>
+            </td>
+        </tr>
+
+        <tr><td colspan="2">&nbsp;</td></tr>
+
+        <tr>
+            <td th:text="#{generalsettings.welcometitle}"></td>
+            <td>
+                <input name="welcomeTitle" th:value="${command.welcomeTitle}" size="70"/>
+                <th:block th:replace="helpToolTip(topic=welcomemessage)" />
+            </td>
+        </tr>
+        <tr>
+            <td th:text="#{generalsettings.welcomesubtitle}"></td>
+            <td>
+                <input name="welcomeSubtitle" th:value="${command.welcomeSubtitle}" size="70"/>
+                <th:block th:replace="helpToolTip(topic=welcomemessage)" />
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align:top;" th:text="#{generalsettings.welcomemessage}"></td>
+            <td>
+                <textarea name="welcomeMessage" rows="5" cols="70" th:text="${command.welcomeMessage}"></textarea>
+                <th:block th:replace="helpToolTip(topic=welcomemessage)" />
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align:top;" th:text="#{generalsettings.loginmessage}"></td>
+            <td>
+                <textarea name="loginMessage" rows="5" cols="70" th:text="${command.loginMessage}"></textarea>
+                <th:block th:replace="helpToolTip(topic=loginmessage)" />
+            </td>
+        </tr>
+        <tr>
+            <td th:text="#{generalsettings.sessionduration}"></td>
+            <td>
+                <input name="sessionDuration" th:value="${command.sessionDuration}" size="15em"/>
+                <th:block th:replace="helpToolTip(topic=sessionduration)" />
+            </td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="padding-top:1.5em">
+                <input type="submit" th:value="#{common.save}" style="margin-right:0.3em">
+                <a href='nowPlaying.view'><input type="button" th:value="#{common.cancel}"></a>
+            </td>
+        </tr>
+
+    </table>
+</form>
+
+</body></html>

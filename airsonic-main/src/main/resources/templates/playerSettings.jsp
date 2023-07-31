@@ -1,10 +1,8 @@
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="iso-8859-1" %>
-<%--@elvariable id="command" type="org.airsonic.player.command.PlayerSettingsCommand"--%>
 
 <html><head>
-    <%@ include file="head.jsp" %>
-    <%@ include file="jquery.jsp" %>
+    <th:block th:replace="head" />
+    <th:block th:replace="jquery" />
     <script type="text/javascript" src="<c:url value='/script/utils.js'/>"></script>
 </head>
 <body class="mainframe bgcolor1">

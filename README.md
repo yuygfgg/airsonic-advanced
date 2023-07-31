@@ -160,6 +160,13 @@ Vanilla Airsonic can be downloaded from
 
 Please use the [Airsonic documentation](https://airsonic.github.io/docs/) for instructions on running Airsonic. For the most part (currently) Airsonic-Advanced shares similar running instructions unless stated otherwise. Notable exceptions are available as comments or resolutions in the Issues page (please search).
 
+### Docker Compose
+
+To evaluate Airsonic in Docker Compose try our compose files in [install/compose](https://github.com/zc-devs/airsonic-advanced/tree/main/install/compose) directory. There are two variants: one uses embedded database (HSQLDB), another - external (PostgreSQL). You can run from within directory by command:
+```shell
+docker compose -p airsonic-hsqldb -f docker-compose.hsqldb.yaml up
+```
+
 ### Building/Compiling
 You may compile the code yourself by using maven. One of the repositories does not have https, so you may need to allow that for maven. A custom `settings.xml` has been put in `.mvn` folder for this purpose. A sample invocation would be (in the root):
 ```

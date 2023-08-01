@@ -13,7 +13,13 @@ PARAMETERS
   onPlay: Overrides the javascript used for the play action.
 -->
 
-<th:block th:fragment="buttons(id)" th:with="playEnabled=${true}, addEnabled=${true}, downloadEnabled=false, video=${false}, starEnabled=false, starred=false, onPlay=''">
+<th:block th:fragment="buttons(id)" th:with="playEnabled=${playEnabled ?: true},
+                addEnabled=${addEnabled ?: true},
+                downloadEnabled=${downloadEnabled ?: false},
+                video=${video ?: false},
+                starEnabled=${starEnabled ?: false},
+                starred=${starred ?: false},
+                onPlay=${onPlay ?: ''}">
     <th:block th:if="${starEnabled}">
         <img th:if="starred" th:id="|starImage${id}|" th:src="${#themes.code('ratingOnImage')}" alt="" style="cursor:pointer;height:18px;"
              th:onclick="|toggleStar(${id}, '#starImage${id}'); return false;|">
@@ -22,7 +28,6 @@ PARAMETERS
     </th:block>
 
     <th:block th:if="${playEnabled}">
-
         <a th:if="${video}" th:href="@{/videoPlayer(id=${id})}" target="main">
             <img th:src="${#themes.code('playImage')}" th:alt="#{common.play}" th:title="#{common.play}">
         </a>

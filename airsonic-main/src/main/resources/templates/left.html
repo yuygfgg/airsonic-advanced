@@ -187,8 +187,12 @@
 
 <p th:each="song : ${model.singleSongs}" class="dense truncate" style="padding-left:2px">
     <span class="songTitle" th:title="${song.title}">
-        <th:block th:replace="playButtons :: buttons(${song.id}, ${model.user.streamRole and not model.partyMode},
-        ${model.user.streamRole}, ${model.user.downloadRole and not model.partyMode}, ${song.video and model.player.web})" />
+        <th:block th:replace="playButtons :: buttons(
+        id=${song.id},
+        playEnabled=${model.user.streamRole and not model.partyMode},
+        addEnabled=${model.user.streamRole},
+        downloadEnabled=${model.user.downloadRole and not model.partyMode},
+        video=${song.video and model.player.web})" />
         <th:block th:text="${#strings.abbreviate(song.title, 35)}"></th:block>
     </span>
 </p>

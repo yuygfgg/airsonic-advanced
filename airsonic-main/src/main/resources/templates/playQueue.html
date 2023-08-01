@@ -435,9 +435,9 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
             });
 
             pq.createMediaElementPlayer();
-            let initAutoHide = [[${model['autoHide'] == true}]]
+            let initAutoHide = [[${model['autoHidePlayQueue'] == true}]]
             if(initAutoHide) {pq.initAutoHide();}
-            pq.onTogglePlayQueue([[${model['autoHide'] != true}]]);
+            pq.onTogglePlayQueue([[${model['autoHidePlayQueue'] != true}]]);
 
             // load default player
             pq.onPlayerChanged(null);

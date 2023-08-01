@@ -121,7 +121,7 @@
 </head>
 <body class="mainframe bgcolor1" onload="init()">
 <h1 th:text="#{edittags.title}"></h1>
-<div class="back"><a href="@{main.view(id=${model.id})}" th:text="#{common.back}"></a></div>
+<div class="back"><a th:href="@{main.view(id=${model.id})}" th:text="#{common.back}"></a></div>
 
 <table class="ruleTable indent">
     <tr>

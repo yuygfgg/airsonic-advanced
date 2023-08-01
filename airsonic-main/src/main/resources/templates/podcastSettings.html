@@ -24,9 +24,8 @@
     <tr th:each="rule, loopStatus:${command.rules}">
         <td>
             <span th:text="|${rule.id} - ${rule.name}|"></span>
-          <input type="hidden" th:path="|rules[${loopStatus.index}].id|" th:value="${rule.id}" />
+          <input type="hidden" th:name="|rules[${loopStatus.index}].id|" th:value="${rule.id}" />
         </td>
-        <td>
         <td>
             <select th:name="|rules[${loopStatus.index}].interval|" style="width:20em">
                 <option value="-1" th:text="#{podcastsettings.interval.manually}" th:selected="${rule.interval == -1}"></option>
@@ -41,7 +40,7 @@
                 <option value="1" th:selected="${rule.episodeRetentionCount == 1}" th:text="#{podcastsettings.keep.one}"></option>
 
                 <th:block th:each="count:${ {2, 3, 4, 5, 10, 20, 30, 50, 100, 125, 150, 200}}">
-                    <option value="${count}" th:selected="${rule.episodeRetentionCount == count}" th:text="#{podcastsettings.keep.many(${count})}"></option>
+                    <option th:value="${count}" th:selected="${rule.episodeRetentionCount == count}" th:text="#{podcastsettings.keep.many(${count})}"></option>
                 </th:block>
 
             </select>

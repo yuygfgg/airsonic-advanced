@@ -158,7 +158,7 @@
             order: [],
             //orderFixed: [ 0, 'asc' ],
             orderMulti: true,
-            pageLength: ${model.initialPaginationSize},
+            pageLength: [[${model.initialPaginationSize}]],
           //<c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSize)) ? '' : ', '.concat(model.initialPaginationSizeFiles)}" />
             lengthMenu: [ [10, 20, 50, 100, -1 ], [10, 20, 50, 100, "All" ] ],
             processing: true,
@@ -193,21 +193,21 @@
                 },
                 { data: null,
                   searchable: false,
-                  visible: ${model.user.streamRole and not model.partyMode},
+                  visible: [[${model.user.streamRole and model['partyMode'] != true}]],
                   name: "play",
                   className: "fit not-draggable centeralign",
                   defaultContent: "<img class='playSong' src=\"[(${#themes.code('playImage')})]\" style='height:18px;' alt=\"[(#{common.play})]\" title=\"[(#{common.play})]\">"
                 },
                 { data: null,
                   searchable: false,
-                  visible: ${model.user.streamRole and not model.partyMode},
+                  visible: [[${model.user.streamRole and model['partyMode'] != true}]],
                   name: "addLast",
                   className: "fit not-draggable centeralign",
                   defaultContent: "<img class='addSongLast' src=\"[(${#themes.code('addImage')})]\" style='height:18px;' alt=\"[(#{common.add})]\" title=\"[(#{common.add})]\">"
                 },
                 { data: null,
                   searchable: false,
-                  visible: ${model.user.streamRole and not model.partyMode},
+                  visible: [[${model.user.streamRole and model['partyMode'] != true}]],
                   name: "addNext",
                   className: "fit not-draggable centeralign",
                   defaultContent: "<img class='addSongNext' src=\"[(${#themes.code('addNextImage')})]\" style='height:18px;' alt=\"[(#{main.addnext})]\" title=\"[(#{main.addnext})]\">"
@@ -295,7 +295,7 @@
             order: [],
             //orderFixed: [ 0, 'asc' ],
             orderMulti: true,
-            pageLength: ${model.initialPaginationSize},
+            pageLength: [[${model.initialPaginationSize}]],
           //<c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSize)) ? '' : ', '.concat(model.initialPaginationSizeFiles)}" />
             lengthMenu: [ [10, 20, 50, 100, -1 ], [10, 20, 50, 100, "All" ] ],
             processing: true,
@@ -388,7 +388,7 @@
                 },
                 { data: "lastUpdateTime",
                   className: "detail fit centeralign",
-                  title: "[(#{podcastreceiver.updated})]",
+                  title: "[(#{credentialsettings.updated})]",
                   render: function(data, type, row) {
                       if (data != null) {
                           if (type == "display") {

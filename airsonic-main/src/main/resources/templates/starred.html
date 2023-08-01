@@ -81,7 +81,7 @@
                     starEnabled=${true},
                     starred=${!#strings.isEmpty(artist.starredDate)},
                     asTable=true
-                )" /> <!-- TODO CDC fix 'asTable' -->
+                )" />
                 </td>
                 <td class="truncate">
                     <a th:href="@{/main(id=${artist.id})}" th:text="${artist.name}"></a>

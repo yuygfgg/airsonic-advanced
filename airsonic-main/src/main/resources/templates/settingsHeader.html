@@ -17,7 +17,7 @@
     <th:block th:remove="all">
         <th:block th:fragment="links(categories)">
             <th:block th:each="category, loopStatus: ${categories}">
-                <th:block th:unless="${loopStatus.first or loopStatus.last}">&nbsp;|&nbsp;</th:block>
+                <th:block th:unless="${loopStatus.first}">&nbsp;|&nbsp;</th:block>
 
                 <span th:if="${cat eq category}" class="headerSelected" th:utext="#{settingsheader.__${category}__}"></span>
                 <span th:unless="${cat eq category}" class="header" ><a th:href="|${category}Settings|" th:utext="#{settingsheader.__${category}__}"></a></span>

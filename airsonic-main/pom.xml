@@ -143,8 +143,8 @@
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.70</version>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.76</version>
             <scope>runtime</scope>
         </dependency>
         <!-- END Spring -->
@@ -587,7 +587,7 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>8.0.32</version>
+            <version>8.0.33</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>

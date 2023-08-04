@@ -346,6 +346,8 @@ public class MediaScannerServiceTestCase {
     @Test
     public void testMusicInvalidCueWithLengthError() {
 
+        when(settingsService.getEnableCueIndexing()).thenReturn(true);
+
         // Add the "cue" folder to the database
         Path musicFolderFile = MusicFolderTestData.resolveMusicInvalidCue2FolderPath();
         MusicFolder musicFolder = new MusicFolder(1, musicFolderFile, "InvalidCue2", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));

@@ -5,7 +5,6 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.service.metadata.MetaDataParserFactory;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,13 +15,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,6 +31,8 @@ public class MediaFileServiceTest {
     private MetaDataParserFactory metaDataParserFactory;
     @Mock
     private MediaFileDao mediaFileDao;
+    @Mock
+    private CoverArtService coverArtService;
 
     @InjectMocks
     private MediaFileService mediaFileService;
@@ -45,7 +45,6 @@ public class MediaFileServiceTest {
     @BeforeEach
     public void setUp() {
         when(mockedFolder.getPath()).thenReturn(CLASS_PATH.resolve("MEDIAS"));
-        when(metaDataParserFactory.getParser(any())).thenReturn(null);
     }
 
     @Test
@@ -56,14 +55,15 @@ public class MediaFileServiceTest {
         base.setPath("valid/airsonic-test.wav");
         base.setMediaType(MediaType.MUSIC);
         base.setFormat("wav");
-        Map<Pair<String, Double>, MediaFile> storedChildren = new HashMap<Pair<String, Double>, MediaFile>();
 
         // execute
-        List<MediaFile> actual = ReflectionTestUtils.invokeMethod(mediaFileService, "createIndexedTracks", base, mockedFolder, storedChildren);
+        List<MediaFile> actual = ReflectionTestUtils.invokeMethod(mediaFileService, "createIndexedTracks", base, mockedFolder);
 
         // check empty list is returned
         assertTrue(actual.isEmpty());
         // verify updateMedia does not called
-        verify(mediaFileDao, times(0)).createOrUpdateMediaFile(any(), any());
+        verify(mediaFileDao).createOrUpdateMediaFile(any(), any());
+        verify(mediaFileDao).deleteMediaFiles(any(), anyInt());
+        verify(coverArtService).persistIfNeeded(eq(base));
     }
 }

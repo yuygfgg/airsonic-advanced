@@ -162,7 +162,7 @@ Please use the [Airsonic documentation](https://airsonic.github.io/docs/) for in
 
 ### Docker Compose
 
-To evaluate Airsonic in Docker Compose try our compose files in [install/compose](https://github.com/zc-devs/airsonic-advanced/tree/main/install/compose) directory. There are two variants: one uses embedded database (HSQLDB), another - external (PostgreSQL). You can run from within directory by command:
+To evaluate Airsonic in Docker Compose try our compose files in [install/compose](./install/compose) directory. There are two variants: one uses embedded database (HSQLDB), another - external (PostgreSQL). You can run from within directory by command:
 ```shell
 docker compose -p airsonic-hsqldb -f docker-compose.hsqldb.yaml up
 ```

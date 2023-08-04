@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+
+  airsonic-advanced:
+    image: ghcr.io/kagemomiji/airsonic-advanced
+    container_name: airsonic-advanced
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      # - CONTEXT_PATH= #optional
+      # - JAVA_OPTS= #optional
+    volumes:
+      - ./data/airsonic:/var/airsonic
+      - ./data/music:/var/music
+      - ./data/playlists:/var/playlists
+      - ./data/podcasts:/var/podcasts
+    ports:
+      - 4040:4040 # HTTP
+      # - 1900:1900 # DLNA/UPnP
+    # devices:
+    #   - /dev/snd:/dev/snd #optional
+    restart: unless-stopped
+    

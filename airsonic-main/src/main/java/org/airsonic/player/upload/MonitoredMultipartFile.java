@@ -2,6 +2,7 @@ package org.airsonic.player.upload;
 
 import com.google.re2j.Pattern;
 import org.apache.commons.io.FilenameUtils;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -67,10 +68,9 @@ public class MonitoredMultipartFile implements MultipartFile {
 
     @Override
     public void transferTo(File dest) throws IOException, IllegalStateException {
-        try (
-            FileOutputStream fos = new FileOutputStream(dest);
-            MonitoredOutputStream monitoredOutputStream = new MonitoredOutputStream(fos, listener)) {
-            monitoredOutputStream.write(file.getBytes());
-        }
+        InputStream inputStream = file.getInputStream();
+        FileOutputStream outputStream = new FileOutputStream(dest);
+        MonitoredOutputStream monitoredOutputStream = new MonitoredOutputStream(outputStream, listener);
+        FileCopyUtils.copy(inputStream, monitoredOutputStream);
     }
 }

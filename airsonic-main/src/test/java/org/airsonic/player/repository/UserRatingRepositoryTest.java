@@ -99,7 +99,6 @@ public class UserRatingRepositoryTest {
     public void setup() {
         jdbcTemplate.execute("delete from user_rating");
         jdbcTemplate.execute("delete from media_file");
-        jdbcTemplate.execute("delete from music_folder");
 
         // music folder
         MusicFolder musicFolder = new MusicFolder(Paths.get(TEST_FOLDER_PATH), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
@@ -138,7 +137,8 @@ public class UserRatingRepositoryTest {
     public void tearDown() {
         jdbcTemplate.execute("delete from user_rating");
         jdbcTemplate.execute("delete from media_file");
-        jdbcTemplate.execute("delete from music_folder");
+        MusicFolder folder = musicFolderDao.getMusicFolderForPath(TEST_FOLDER_PATH);
+        musicFolderDao.deleteMusicFolder(folder.getId());
         userDao.deleteUser(TEST_USER_NAME);
         userDao.deleteUser(TEST_USER_NAME_2);
     }

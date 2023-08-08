@@ -21,8 +21,8 @@ package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
-import org.airsonic.player.domain.Share;
 import org.airsonic.player.domain.User;
+import org.airsonic.player.domain.entity.Share;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.MediaFolderService;
 import org.airsonic.player.service.SecurityService;

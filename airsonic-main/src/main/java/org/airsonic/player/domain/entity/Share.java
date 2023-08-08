@@ -17,9 +17,19 @@
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
-package org.airsonic.player.domain;
+package org.airsonic.player.domain.entity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A collection of media files that is shared with someone, and accessible via a direct URL.
@@ -27,21 +37,44 @@ import java.time.Instant;
  * @author Sindre Mehus
  * @version $Id$
  */
+@Entity
+@Table(name = "share")
 public class Share {
 
-    private int id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(unique = true)
     private String name;
+
     private String description;
     private String username;
     private Instant created;
     private Instant expires;
+    @Column(name = "last_visited")
     private Instant lastVisited;
+    @Column(name = "visit_count")
     private int visitCount;
+
+    @OneToMany(mappedBy = "share")
+    private List<ShareFile> files = new ArrayList<>();
 
     public Share() {
     }
 
-    public Share(int id, String name, String description, String username, Instant created,
+    public Share(String name, String description, String username, Instant created,
+            Instant expires, Instant lastVisited, int visitCount) {
+        this.name = name;
+        this.description = description;
+        this.username = username;
+        this.created = created;
+        this.expires = expires;
+        this.lastVisited = lastVisited;
+        this.visitCount = visitCount;
+    }
+
+    public Share(Integer id, String name, String description, String username, Instant created,
             Instant expires, Instant lastVisited, int visitCount) {
         this.id = id;
         this.name = name;
@@ -53,7 +86,9 @@ public class Share {
         this.visitCount = visitCount;
     }
 
-    public int getId() {
+
+
+    public Integer getId() {
         return id;
     }
 
@@ -115,5 +150,13 @@ public class Share {
 
     public void setVisitCount(int visitCount) {
         this.visitCount = visitCount;
+    }
+
+    public List<ShareFile> getFiles() {
+        return files;
+    }
+
+    public void setFiles(List<ShareFile> files) {
+        this.files = files;
     }
 }

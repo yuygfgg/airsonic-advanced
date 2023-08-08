@@ -22,7 +22,8 @@ package org.airsonic.player.controller;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.Player;
-import org.airsonic.player.domain.Share;
+import org.airsonic.player.domain.User;
+import org.airsonic.player.domain.entity.Share;
 import org.airsonic.player.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -69,11 +70,13 @@ public class ShareManagementController {
             }
         }
 
+        User user = securityService.getCurrentUser(request);
+
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("dir", dir);
-        map.put("user", securityService.getCurrentUser(request));
+        map.put("user", user);
 
-        Share share = shareService.createShare(request, files);
+        Share share = shareService.createShare(user.getUsername(), files);
         String description = getDescription(request);
         if (description != null) {
             share.setDescription(description);

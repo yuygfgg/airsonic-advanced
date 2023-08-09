@@ -21,6 +21,7 @@ package org.airsonic.player.controller;
 
 import com.google.common.io.MoreFiles;
 import org.airsonic.player.domain.*;
+import org.airsonic.player.domain.entity.Share;
 import org.airsonic.player.security.JWTAuthenticationToken;
 import org.airsonic.player.service.*;
 import org.airsonic.player.util.NetworkUtil;

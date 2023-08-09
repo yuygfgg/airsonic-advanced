@@ -1834,7 +1834,7 @@ public class SubsonicRESTController {
         List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
 
         Shares result = new Shares();
-        for (org.airsonic.player.domain.Share share : shareService.getSharesForUser(user)) {
+        for (org.airsonic.player.domain.entity.Share share : shareService.getSharesForUser(user)) {
             org.subsonic.restapi.Share s = createJaxbShare(request, share);
             result.getShare().add(s);
 
@@ -1864,7 +1864,7 @@ public class SubsonicRESTController {
             files.add(mediaFileService.getMediaFile(id));
         }
 
-        org.airsonic.player.domain.Share share = shareService.createShare(request, files);
+        org.airsonic.player.domain.entity.Share share = shareService.createShare(username, files);
         share.setDescription(request.getParameter("description"));
         long expires = getLongParameter(request, "expires", 0L);
         if (expires != 0) {
@@ -1893,7 +1893,7 @@ public class SubsonicRESTController {
         org.airsonic.player.domain.User user = securityService.getCurrentUser(request);
         int id = getRequiredIntParameter(request, "id");
 
-        org.airsonic.player.domain.Share share = shareService.getShareById(id);
+        org.airsonic.player.domain.entity.Share share = shareService.getShareById(id);
         if (share == null) {
             error(request, response, ErrorCode.NOT_FOUND, "Shared media not found.");
             return;
@@ -1913,7 +1913,7 @@ public class SubsonicRESTController {
         org.airsonic.player.domain.User user = securityService.getCurrentUser(request);
         int id = getRequiredIntParameter(request, "id");
 
-        org.airsonic.player.domain.Share share = shareService.getShareById(id);
+        org.airsonic.player.domain.entity.Share share = shareService.getShareById(id);
         if (share == null) {
             error(request, response, ErrorCode.NOT_FOUND, "Shared media not found.");
             return;
@@ -1933,7 +1933,7 @@ public class SubsonicRESTController {
         writeEmptyResponse(request, response);
     }
 
-    private org.subsonic.restapi.Share createJaxbShare(HttpServletRequest request, org.airsonic.player.domain.Share share) {
+    private org.subsonic.restapi.Share createJaxbShare(HttpServletRequest request, org.airsonic.player.domain.entity.Share share) {
         org.subsonic.restapi.Share result = new org.subsonic.restapi.Share();
         result.setId(String.valueOf(share.getId()));
         result.setUrl(shareService.getShareUrl(request, share));

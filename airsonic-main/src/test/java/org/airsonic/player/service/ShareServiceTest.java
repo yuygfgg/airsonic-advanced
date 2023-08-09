@@ -18,11 +18,12 @@
  */
 package org.airsonic.player.service;
 
-import org.airsonic.player.dao.ShareDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
-import org.airsonic.player.domain.Share;
 import org.airsonic.player.domain.User;
+import org.airsonic.player.domain.entity.Share;
+import org.airsonic.player.domain.entity.ShareFile;
+import org.airsonic.player.repository.ShareRepository;
 import org.airsonic.player.util.NetworkUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +41,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -56,9 +57,7 @@ import static org.mockito.Mockito.when;
 public class ShareServiceTest {
 
     @Mock
-    private ShareDao shareDao;
-    @Mock
-    private SecurityService securityService;
+    private ShareRepository shareRepository;
     @Mock
     private MediaFileService mediaFileService;
     @Mock
@@ -80,11 +79,12 @@ public class ShareServiceTest {
         // given
         List<Share> allShares = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            Share share = new Share(i, "share" + i, "description", "user" + i, Instant.now(), Instant.now(), Instant.now(), i);
+            Share share = new Share("share" + i, "description", "user" + i, Instant.now(), Instant.now(), Instant.now(), i);
+            share.setId(i);
             allShares.add(share);
         }
         when(mockedUser.isAdminRole()).thenReturn(true);
-        when(shareDao.getAllShares()).thenReturn(allShares);
+        when(shareRepository.findAll()).thenReturn(allShares);
 
         // when
         List<Share> shares = shareService.getSharesForUser(mockedUser);
@@ -99,19 +99,21 @@ public class ShareServiceTest {
         // given
         List<Share> allShares = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            Share share = new Share(i, "share" + i, "description", "user" + i, Instant.now(), Instant.now(), Instant.now(), i);
+            Share share = new Share("share" + i, "description", "user" + i, Instant.now(), Instant.now(), Instant.now(), i);
+            share.setId(i);
             allShares.add(share);
         }
         when(mockedUser.isAdminRole()).thenReturn(false);
         when(mockedUser.getUsername()).thenReturn("user1");
-        when(shareDao.getAllShares()).thenReturn(allShares);
+        List<Share> expectedShares = Arrays.asList(allShares.get(1));
+        when(shareRepository.findByUsername("user1")).thenReturn(expectedShares);
 
         // when
         List<Share> shares = shareService.getSharesForUser(mockedUser);
 
         // then
-        List<Share> expectedShares = Arrays.asList(allShares.get(1));
         assertEquals(expectedShares, shares);
+        verify(shareRepository, never()).findAll();
     }
 
     @Test
@@ -126,46 +128,51 @@ public class ShareServiceTest {
         }
         String currentUsername = "testuser";
 
-        when(securityService.getCurrentUsername(mockedRequest)).thenReturn(currentUsername);
         doAnswer(invocation -> {
             Share share = invocation.getArgument(0);
             share.setId(1);
-            return null;
-        }).when(shareDao).createShare(any(Share.class));
+            return share;
+        }).when(shareRepository).save(any(Share.class));
 
         // テスト対象のメソッドを呼び出します
-        Share result = shareService.createShare(mockedRequest, files);
+        Share result = shareService.createShare(currentUsername, files);
 
         // 結果を検証します
-        verify(shareDao).createShare(any(Share.class));
-        verify(shareDao).createSharedFiles(1, files.stream().map(MediaFile::getId).collect(Collectors.toList()));
+        verify(shareRepository).save(any(Share.class));
         assertEquals(1, result.getId());
         assertEquals(currentUsername, result.getUsername());
         assertEquals(result.getCreated().plus(ChronoUnit.YEARS.getDuration()), result.getExpires());
         assertEquals(5, result.getName().length());
+        assertEquals(result.getFiles().size(), files.size());
     }
 
     @Test
     public void testGetSharedFiles() {
         // given
         int shareId = 1;
+        int folderId = 3;
         List<MusicFolder> musicFolders = new ArrayList<>();
+        MusicFolder folder = new MusicFolder(3, null, null, null, false, null);
+        musicFolders.add(folder);
         List<MediaFile> files = new ArrayList<>();
+        Share share = new Share();
+        share.setId(shareId);
         for (int i = 0; i < 10; i++) {
             MediaFile file = new MediaFile();
             file.setId(i);
+            file.setFolderId(folderId);
+            file.setPresent(true);
             files.add(file);
             when(mediaFileService.getMediaFile(i)).thenReturn(file);
+            share.getFiles().add(new ShareFile(share, i));
         }
-
-        when(shareDao.getSharedFiles(shareId, musicFolders)).thenReturn(files.stream().map(MediaFile::getId).collect(Collectors.toList()));
+        when(shareRepository.findById(shareId)).thenReturn(Optional.of(share));
 
         // when
         List<MediaFile> result = shareService.getSharedFiles(shareId, musicFolders);
 
         // then
         assertEquals(files.size(), result.size());
-        verify(shareDao).getSharedFiles(shareId, musicFolders);
         verify(mediaFileService, times(files.size())).getMediaFile(anyInt());
     }
 

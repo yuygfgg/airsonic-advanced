@@ -38,8 +38,10 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -347,6 +349,11 @@ public class SecurityService implements UserDetailsService {
      */
     @CacheEvict
     public void deleteUser(String username) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = getUserByName(authentication.getName());
+        if (currentUser.getUsername().equals(username)) {
+            throw new SelfDeletionException();
+        }
         userDao.deleteUser(username);
         LOG.info("Deleted user {}", username);
     }
@@ -463,6 +470,13 @@ public class SecurityService implements UserDetailsService {
         public void eraseCredentials() {
             super.eraseCredentials();
             creds = null;
+        }
+    }
+
+    public static class SelfDeletionException extends RuntimeException {
+
+        public SelfDeletionException() {
+            super("Can't delete yourself");
         }
     }
 }

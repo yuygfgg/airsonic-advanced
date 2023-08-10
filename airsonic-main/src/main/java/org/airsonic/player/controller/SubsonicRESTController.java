@@ -2171,12 +2171,12 @@ public class SubsonicRESTController {
         }
 
         String username = getRequiredStringParameter(request, "username");
-        if (org.airsonic.player.domain.User.USERNAME_ADMIN.equals(username)) {
-            error(request, response, ErrorCode.NOT_AUTHORIZED, "Not allowed to delete admin user");
+        try {
+            securityService.deleteUser(username);
+        } catch (SecurityService.SelfDeletionException sde) {
+            error(request, response, ErrorCode.NOT_AUTHORIZED, sde.getMessage());
             return;
         }
-
-        securityService.deleteUser(username);
 
         writeEmptyResponse(request, response);
     }

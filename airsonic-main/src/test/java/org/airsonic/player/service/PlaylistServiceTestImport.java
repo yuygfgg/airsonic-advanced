@@ -57,6 +57,9 @@ public class PlaylistServiceTestImport {
     SettingsService settingsService;
 
     @Mock
+    private UserService userService;
+
+    @Mock
     SecurityService securityService;
 
     @Mock
@@ -79,6 +82,7 @@ public class PlaylistServiceTestImport {
         playlistService = new PlaylistService(
                 mediaFileDao,
                 playlistDao,
+                userService,
                 securityService,
                 settingsService,
                 Collections.emptyList(),

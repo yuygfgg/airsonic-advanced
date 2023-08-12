@@ -54,6 +54,9 @@ public class PlaylistServiceTestExport {
     SettingsService settingsService;
 
     @Mock
+    private UserService userService;
+
+    @Mock
     SecurityService securityService;
 
     @Mock
@@ -79,6 +82,7 @@ public class PlaylistServiceTestExport {
         playlistService = new PlaylistService(
                 mediaFileDao,
                 playlistDao,
+                userService,
                 securityService,
                 settingsService,
                 Lists.newArrayList(defaultPlaylistExportHandler),

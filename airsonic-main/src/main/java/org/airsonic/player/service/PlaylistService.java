@@ -70,6 +70,7 @@ public class PlaylistService {
 
     private final MediaFileDao mediaFileDao;
     private final PlaylistDao playlistDao;
+    private final UserService userService;
     private final SecurityService securityService;
     private final SettingsService settingsService;
     private final List<PlaylistExportHandler> exportHandlers;
@@ -80,6 +81,7 @@ public class PlaylistService {
     @Autowired
     public PlaylistService(MediaFileDao mediaFileDao,
                            PlaylistDao playlistDao,
+                           UserService userService,
                            SecurityService securityService,
                            SettingsService settingsService,
                            List<PlaylistExportHandler> exportHandlers,
@@ -89,6 +91,7 @@ public class PlaylistService {
 
         this.mediaFileDao = mediaFileDao;
         this.playlistDao = playlistDao;
+        this.userService = userService;
         this.securityService = securityService;
         this.settingsService = settingsService;
         this.exportHandlers = exportHandlers;
@@ -372,8 +375,9 @@ public class PlaylistService {
             return;
         }
 
+        User sysAdmin = userService.getSysAdmin();
         try (InputStream in = Files.newInputStream(file)) {
-            importPlaylist(User.USERNAME_ADMIN, FilenameUtils.getBaseName(fileName), fileName, null, in, existingPlaylist);
+            importPlaylist(sysAdmin.getUsername(), FilenameUtils.getBaseName(fileName), fileName, null, in, existingPlaylist);
             LOG.info("Auto-imported playlist {}", file);
         }
     }

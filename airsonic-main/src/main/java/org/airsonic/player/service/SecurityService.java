@@ -377,7 +377,7 @@ public class SecurityService implements UserDetailsService {
 
         userDao.updateUserByteCounts(user.getUsername(), bytesStreamedDelta, bytesDownloadedDelta, bytesUploadedDelta);
 
-        User updated = userDao.getUserByName(user.getUsername(), true);
+        User updated = userDao.getUserByName(user.getUsername());
         user.setBytesStreamed(updated.getBytesStreamed());
         user.setBytesDownloaded(updated.getBytesDownloaded());
         user.setBytesUploaded(updated.getBytesUploaded());

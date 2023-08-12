@@ -40,7 +40,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 import javax.annotation.PostConstruct;
 
@@ -53,7 +52,6 @@ import java.nio.file.Paths;
 import java.nio.file.WatchEvent;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,43 +67,34 @@ import static java.util.concurrent.CompletableFuture.runAsync;
 public class PlaylistService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PlaylistService.class);
-    @Autowired
-    private MediaFileDao mediaFileDao;
-    @Autowired
-    private PlaylistDao playlistDao;
-    @Autowired
-    private SecurityService securityService;
-    @Autowired
-    private SettingsService settingsService;
-    @Autowired
-    private List<PlaylistExportHandler> exportHandlers;
-    @Autowired
-    private List<PlaylistImportHandler> importHandlers;
-    @Autowired
-    private SimpMessagingTemplate brokerTemplate;
-    @Autowired
-    private PathWatcherService pathWatcherService;
 
-    public PlaylistService(
-            MediaFileDao mediaFileDao,
-            PlaylistDao playlistDao,
-            SecurityService securityService,
-            SettingsService settingsService,
-            List<PlaylistExportHandler> exportHandlers,
-            List<PlaylistImportHandler> importHandlers
-    ) {
-        Assert.notNull(mediaFileDao, "mediaFileDao must not be null");
-        Assert.notNull(playlistDao, "playlistDao must not be null");
-        Assert.notNull(securityService, "securityservice must not be null");
-        Assert.notNull(settingsService, "settingsService must not be null");
-        Assert.notNull(exportHandlers, "exportHandlers must not be null");
-        Assert.notNull(importHandlers, "importHandlers must not be null");
+    private final MediaFileDao mediaFileDao;
+    private final PlaylistDao playlistDao;
+    private final SecurityService securityService;
+    private final SettingsService settingsService;
+    private final List<PlaylistExportHandler> exportHandlers;
+    private final List<PlaylistImportHandler> importHandlers;
+    private final SimpMessagingTemplate brokerTemplate;
+    private final PathWatcherService pathWatcherService;
+
+    @Autowired
+    public PlaylistService(MediaFileDao mediaFileDao,
+                           PlaylistDao playlistDao,
+                           SecurityService securityService,
+                           SettingsService settingsService,
+                           List<PlaylistExportHandler> exportHandlers,
+                           List<PlaylistImportHandler> importHandlers,
+                           SimpMessagingTemplate brokerTemplate,
+                           PathWatcherService pathWatcherService) {
+
         this.mediaFileDao = mediaFileDao;
         this.playlistDao = playlistDao;
         this.securityService = securityService;
         this.settingsService = settingsService;
         this.exportHandlers = exportHandlers;
         this.importHandlers = importHandlers;
+        this.brokerTemplate = brokerTemplate;
+        this.pathWatcherService = pathWatcherService;
     }
 
     @PostConstruct
@@ -113,20 +102,21 @@ public class PlaylistService {
         addPlaylistFolderWatcher();
     }
 
-    BiConsumer<Path, WatchEvent<Path>> playlistModified = (p, we) -> {
-        Path fullPath = p.resolve(we.context());
-        importPlaylist(fullPath, playlistDao.getAllPlaylists());
-    };
-
     public void addPlaylistFolderWatcher() {
         Path playlistFolder = Paths.get(settingsService.getPlaylistFolder());
         if (Files.exists(playlistFolder) && Files.isDirectory(playlistFolder)) {
             try {
-                pathWatcherService.setWatcher("Playlist folder watcher", playlistFolder, playlistModified, null, playlistModified, null);
+                pathWatcherService.setWatcher("Playlist folder watcher", playlistFolder,
+                        this::handleModifiedPlaylist, null, this::handleModifiedPlaylist, null);
             } catch (Exception e) {
                 LOG.warn("Issues setting watcher for folder: {}", playlistFolder);
             }
         }
+    }
+
+    private void handleModifiedPlaylist(Path path, WatchEvent<Path> event) {
+        Path fullPath = path.resolve(event.context());
+        importPlaylist(fullPath, playlistDao.getAllPlaylists());
     }
 
     public List<Playlist> getAllPlaylists() {
@@ -281,19 +271,17 @@ public class PlaylistService {
 
     private PlaylistImportHandler getImportHandler(SpecificPlaylist playlist) {
         return importHandlers.stream()
-                             .filter(handler -> handler.canHandle(playlist.getClass()))
-                             .findFirst()
-                             .orElseThrow(() -> new RuntimeException("No import handler for " + playlist.getClass()
-                                                                                                        .getName()));
+                .filter(handler -> handler.canHandle(playlist.getClass()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No import handler for " + playlist.getClass().getName()));
 
     }
 
     private PlaylistExportHandler getExportHandler(SpecificPlaylistProvider provider) {
         return exportHandlers.stream()
-                             .filter(handler -> handler.canHandle(provider.getClass()))
-                             .findFirst()
-                             .orElseThrow(() -> new RuntimeException("No export handler for " + provider.getClass()
-                                                                                                        .getName()));
+                .filter(handler -> handler.canHandle(provider.getClass()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No export handler for " + provider.getClass().getName()));
     }
 
     public void importPlaylists() {
@@ -327,7 +315,10 @@ public class PlaylistService {
     private void importPlaylist(Path f, List<Playlist> allPlaylists) {
         if (Files.isRegularFile(f) && Files.isReadable(f)) {
             try {
-                importPlaylistIfUpdated(f, allPlaylists.stream().filter(p -> f.getFileName().toString().equals(p.getImportedFrom())).findAny().orElse(null));
+                Playlist playlist = allPlaylists.stream()
+                        .filter(p -> f.getFileName().toString().equals(p.getImportedFrom()))
+                        .findAny().orElse(null);
+                importPlaylistIfUpdated(f, playlist);
             } catch (Exception x) {
                 LOG.warn("Failed to auto-import playlist {}", f, x);
             }

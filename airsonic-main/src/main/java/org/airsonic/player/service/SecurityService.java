@@ -38,10 +38,8 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -346,12 +344,11 @@ public class SecurityService implements UserDetailsService {
      * Deletes the user with the given username.
      *
      * @param username The username.
+     * @param currentUsername Name of current logged in user.
      */
-    @CacheEvict
-    public void deleteUser(String username) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = getUserByName(authentication.getName());
-        if (currentUser.getUsername().equals(username)) {
+    @CacheEvict(key = "#username")
+    public void deleteUser(String username, String currentUsername) {
+        if (currentUsername.equals(username)) {
             throw new SelfDeletionException();
         }
         userDao.deleteUser(username);

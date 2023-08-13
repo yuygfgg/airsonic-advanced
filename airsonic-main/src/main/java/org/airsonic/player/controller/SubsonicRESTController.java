@@ -2172,7 +2172,8 @@ public class SubsonicRESTController {
 
         String username = getRequiredStringParameter(request, "username");
         try {
-            securityService.deleteUser(username);
+            String currentUsername = securityService.getCurrentUsername(request);
+            securityService.deleteUser(username, currentUsername);
         } catch (SecurityService.SelfDeletionException sde) {
             error(request, response, ErrorCode.NOT_AUTHORIZED, sde.getMessage());
             return;

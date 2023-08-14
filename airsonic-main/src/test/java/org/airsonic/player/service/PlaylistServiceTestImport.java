@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -56,7 +57,16 @@ public class PlaylistServiceTestImport {
     SettingsService settingsService;
 
     @Mock
+    private UserService userService;
+
+    @Mock
     SecurityService securityService;
+
+    @Mock
+    private SimpMessagingTemplate brokerTemplate;
+
+    @Mock
+    private PathWatcherService pathWatcherService;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -72,10 +82,13 @@ public class PlaylistServiceTestImport {
         playlistService = new PlaylistService(
                 mediaFileDao,
                 playlistDao,
+                userService,
                 securityService,
                 settingsService,
                 Collections.emptyList(),
-                Lists.newArrayList(defaultPlaylistImportHandler));
+                Lists.newArrayList(defaultPlaylistImportHandler),
+                brokerTemplate,
+                pathWatcherService);
 
     }
 

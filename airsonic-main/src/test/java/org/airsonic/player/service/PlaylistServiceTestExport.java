@@ -18,6 +18,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -53,7 +54,16 @@ public class PlaylistServiceTestExport {
     SettingsService settingsService;
 
     @Mock
+    private UserService userService;
+
+    @Mock
     SecurityService securityService;
+
+    @Mock
+    private SimpMessagingTemplate brokerTemplate;
+
+    @Mock
+    private PathWatcherService pathWatcherService;
 
     @Mock
     MusicFolder mockedFolder;
@@ -69,13 +79,16 @@ public class PlaylistServiceTestExport {
 
     @Before
     public void setup() {
-        playlistService = new PlaylistService(mediaFileDao,
-                                              playlistDao,
-                                              securityService,
-                                              settingsService,
-                                              Lists.newArrayList(
-                                                      defaultPlaylistExportHandler),
-                                              Collections.emptyList());
+        playlistService = new PlaylistService(
+                mediaFileDao,
+                playlistDao,
+                userService,
+                securityService,
+                settingsService,
+                Lists.newArrayList(defaultPlaylistExportHandler),
+                Collections.emptyList(),
+                brokerTemplate,
+                pathWatcherService);
     }
 
     @Test

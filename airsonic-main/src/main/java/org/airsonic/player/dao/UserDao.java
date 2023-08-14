@@ -61,6 +61,16 @@ public class UserDao extends AbstractDao {
      * Returns the user with the given username.
      *
      * @param username The username used when logging in.
+     * @return The user, or <code>null</code> if not found.
+     */
+    public User getUserByName(String username) {
+        return getUserByName(username, true);
+    }
+
+    /**
+     * Returns the user with the given username.
+     *
+     * @param username The username used when logging in.
      * @param caseSensitive If false, perform a case-insensitive search
      * @return The user, or <code>null</code> if not found.
      */
@@ -187,10 +197,6 @@ public class UserDao extends AbstractDao {
      * @param username The username.
      */
     public void deleteUser(String username) {
-        if (User.USERNAME_ADMIN.equals(username)) {
-            throw new IllegalArgumentException("Can't delete admin user.");
-        }
-
         update("delete from player where username=?", username);
         update("delete from user_credentials where username=?", username);
         update("delete from users where username=?", username);

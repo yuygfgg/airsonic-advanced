@@ -144,11 +144,15 @@ public class UserSettingsController {
     }
 
     @PostMapping
-    protected String doSubmitAction(@ModelAttribute("command") @Validated UserSettingsCommand command, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+    protected String doSubmitAction(
+            @ModelAttribute("command") @Validated UserSettingsCommand command,
+            BindingResult bindingResult,
+            RedirectAttributes redirectAttributes,
+            HttpServletRequest request) {
 
         if (!bindingResult.hasErrors()) {
             if (command.isDeleteUser()) {
-                deleteUser(command);
+                deleteUser(command, request);
             } else if (command.isNewUser()) {
                 createUser(command);
             } else {
@@ -175,8 +179,9 @@ public class UserSettingsController {
         return null;
     }
 
-    private void deleteUser(UserSettingsCommand command) {
-        securityService.deleteUser(command.getUsername());
+    private void deleteUser(UserSettingsCommand command, HttpServletRequest request) {
+        String currentUsername = securityService.getCurrentUsername(request);
+        securityService.deleteUser(command.getUsername(), currentUsername);
     }
 
     public void createUser(UserSettingsCommand command) {

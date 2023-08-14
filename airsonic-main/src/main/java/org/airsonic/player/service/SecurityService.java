@@ -344,9 +344,13 @@ public class SecurityService implements UserDetailsService {
      * Deletes the user with the given username.
      *
      * @param username The username.
+     * @param currentUsername Name of current logged in user.
      */
-    @CacheEvict
-    public void deleteUser(String username) {
+    @CacheEvict(key = "#username")
+    public void deleteUser(String username, String currentUsername) {
+        if (currentUsername.equals(username)) {
+            throw new SelfDeletionException();
+        }
         userDao.deleteUser(username);
         LOG.info("Deleted user {}", username);
     }
@@ -377,7 +381,7 @@ public class SecurityService implements UserDetailsService {
 
         userDao.updateUserByteCounts(user.getUsername(), bytesStreamedDelta, bytesDownloadedDelta, bytesUploadedDelta);
 
-        User updated = userDao.getUserByName(user.getUsername(), true);
+        User updated = userDao.getUserByName(user.getUsername());
         user.setBytesStreamed(updated.getBytesStreamed());
         user.setBytesDownloaded(updated.getBytesDownloaded());
         user.setBytesUploaded(updated.getBytesUploaded());
@@ -463,6 +467,13 @@ public class SecurityService implements UserDetailsService {
         public void eraseCredentials() {
             super.eraseCredentials();
             creds = null;
+        }
+    }
+
+    public static class SelfDeletionException extends RuntimeException {
+
+        public SelfDeletionException() {
+            super("Can't delete yourself");
         }
     }
 }

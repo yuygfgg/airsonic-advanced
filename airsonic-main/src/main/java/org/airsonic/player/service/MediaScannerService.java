@@ -21,16 +21,17 @@ package org.airsonic.player.service;
 
 import org.airsonic.player.config.AirsonicScanConfig;
 import org.airsonic.player.dao.AlbumDao;
-import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.CoverArt.EntityType;
+import org.airsonic.player.repository.ArtistRepository;
 import org.airsonic.player.service.search.IndexManager;
 import org.apache.commons.lang.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.subsonic.restapi.ScanStatus;
 
 import java.io.IOException;
@@ -56,6 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Sindre Mehus
  */
 @Service
+@Transactional
 public class MediaScannerService {
 
     private static final Logger LOG = LoggerFactory.getLogger(MediaScannerService.class);
@@ -70,7 +72,7 @@ public class MediaScannerService {
         MediaFolderService mediaFolderService,
         CoverArtService coverArtService,
         MediaFileDao mediaFileDao,
-        ArtistDao artistDao,
+        ArtistRepository artistRepository,
         AlbumDao albumDao,
         TaskSchedulingService taskService,
         SimpMessagingTemplate messagingTemplate,
@@ -83,7 +85,7 @@ public class MediaScannerService {
         this.mediaFolderService = mediaFolderService;
         this.coverArtService = coverArtService;
         this.mediaFileDao = mediaFileDao;
-        this.artistDao = artistDao;
+        this.artistRepository = artistRepository;
         this.albumDao = albumDao;
         this.taskService = taskService;
         this.messagingTemplate = messagingTemplate;
@@ -98,7 +100,7 @@ public class MediaScannerService {
     private final MediaFolderService mediaFolderService;
     private final CoverArtService coverArtService;
     private final MediaFileDao mediaFileDao;
-    private final ArtistDao artistDao;
+    private final ArtistRepository artistRepository;
     private final AlbumDao albumDao;
     private final TaskSchedulingService taskService;
     private final SimpMessagingTemplate messagingTemplate;
@@ -274,13 +276,13 @@ public class MediaScannerService {
             CompletableFuture<Void> artistPersistence = CompletableFuture
                     .allOf(artists.values().parallelStream()
                             .map(a -> CompletableFuture.supplyAsync(() -> {
-                                artistDao.createOrUpdateArtist(a);
+                                artistRepository.save(a);
                                 return a;
                             }, pool).thenAcceptAsync(coverArtService::persistIfNeeded))
                             .toArray(CompletableFuture[]::new))
                     .thenRunAsync(() -> {
                         LOG.info("Marking non-present artists.");
-                        artistDao.markNonPresent(statistics.getScanDate());
+                        artistRepository.markNonPresent(statistics.getScanDate());
                     }, pool)
                     .thenRunAsync(() -> LOG.info("Artist persistence complete"), pool);
 
@@ -465,12 +467,7 @@ public class MediaScannerService {
             Artist a = v;
 
             if (a == null) {
-                a = artistDao.getArtist(k);
-            }
-
-            if (a == null) {
-                a = new Artist();
-                a.setName(k);
+                a = artistRepository.findByName(k).orElse(new Artist(k));
             }
 
             int n = Math.max(Optional.ofNullable(albumCount.get(a.getName())).map(x -> x.get()).orElse(0), Optional.ofNullable(a.getAlbumCount()).orElse(0));
@@ -496,6 +493,7 @@ public class MediaScannerService {
 
         if (firstEncounter.get()) {
             artist.setFolderId(musicFolder.getId());
+            artistRepository.saveAndFlush(artist);
             indexManager.index(artist, musicFolder);
         }
     }

@@ -22,7 +22,6 @@ package org.airsonic.player.controller;
 import com.google.common.io.MoreFiles;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.AlbumDao;
-import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.service.*;
@@ -92,7 +91,7 @@ public class CoverArtController {
     @Autowired
     private PodcastService podcastService;
     @Autowired
-    private ArtistDao artistDao;
+    private ArtistService artistService;
     @Autowired
     private AlbumDao albumDao;
     @Autowired
@@ -189,7 +188,7 @@ public class CoverArtController {
     }
 
     private CoverArtRequest createArtistCoverArtRequest(int id) {
-        Artist artist = artistDao.getArtist(id);
+        Artist artist = artistService.getArtist(id);
         return artist == null ? null : new ArtistCoverArtRequest(artist);
     }
 

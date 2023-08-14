@@ -22,9 +22,9 @@ package org.airsonic.player.service.search;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.AlbumDao;
-import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
+import org.airsonic.player.repository.ArtistRepository;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.Util;
 import org.apache.lucene.document.Document;
@@ -78,26 +78,26 @@ public class IndexManager {
             AnalyzerFactory analyzerFactory,
             DocumentFactory documentFactory,
             MediaFileDao mediaFileDao,
-            ArtistDao artistDao,
+            ArtistRepository artistRepository,
             AlbumDao albumDao,
             AirsonicHomeConfig homeConfig
     ) {
         this.analyzerFactory = analyzerFactory;
         this.documentFactory = documentFactory;
         this.mediaFileDao = mediaFileDao;
-        this.artistDao = artistDao;
+        this.artistRepository = artistRepository;
         this.albumDao = albumDao;
         this.homeConfig = homeConfig;
         this.rootIndexDirectory = homeConfig.getAirsonicHome().resolve(INDEX_ROOT_DIR_NAME.concat(Integer.toString(INDEX_VERSION)));
     }
 
 
-    private AnalyzerFactory analyzerFactory;
-    private DocumentFactory documentFactory;
-    private MediaFileDao mediaFileDao;
-    private ArtistDao artistDao;
-    private AlbumDao albumDao;
-    private AirsonicHomeConfig homeConfig;
+    private final AnalyzerFactory analyzerFactory;
+    private final DocumentFactory documentFactory;
+    private final MediaFileDao mediaFileDao;
+    private final ArtistRepository artistRepository;
+    private final AlbumDao albumDao;
+    private final AirsonicHomeConfig homeConfig;
 
     /**
      * Literal name of index top directory.
@@ -200,8 +200,8 @@ public class IndexManager {
             LOG.error("Failed to delete song doc.", e);
         }
 
-        primarykeys = artistDao.getExpungeCandidates().stream()
-                .map(m -> documentFactory.createPrimarykey(m))
+        primarykeys = artistRepository.findByPresentFalse().stream()
+                .map(m -> documentFactory.createPrimarykey(m.getId()))
                 .toArray(i -> new Term[i]);
         try {
             writers.get(IndexType.ARTIST_ID3).deleteDocuments(primarykeys);

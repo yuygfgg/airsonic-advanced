@@ -5,13 +5,13 @@ import de.umass.lastfm.Artist;
 import de.umass.lastfm.ImageSize;
 import de.umass.lastfm.Track;
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.AlbumNotes;
 import org.airsonic.player.domain.ArtistBio;
 import org.airsonic.player.domain.LastFmCoverArt;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
+import org.airsonic.player.repository.ArtistRepository;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -49,7 +50,7 @@ public class LastFmServiceTest {
     @Mock
     private AirsonicHomeConfig homeConfig;
     @Mock
-    private ArtistDao artistDao;
+    private ArtistRepository artistRepository;
     @Mock
     private MediaFileDao mediaFileDao;
     @Mock
@@ -98,7 +99,7 @@ public class LastFmServiceTest {
     @BeforeEach
     public void setUpBeforeAll() {
         when(homeConfig.getAirsonicHome()).thenReturn(tempDir);
-        lastFmService = new LastFmService(homeConfig, artistDao, mediaFileDao, mediaFileService);
+        lastFmService = new LastFmService(homeConfig, artistRepository, mediaFileDao, mediaFileService);
     }
 
     private void setupMockedMediaFileReturnNullArtist() {
@@ -177,7 +178,7 @@ public class LastFmServiceTest {
         when(mockedArtist.getName()).thenReturn("testArtist");
         when(mockedLastFmArtist1.getName()).thenReturn(similarArtists.get(0));
         when(mockedLastFmArtist2.getName()).thenReturn(similarArtistsWithNotPresent.get(0));
-        when(artistDao.getArtist(startsWith("artist"), any())).thenReturn(new org.airsonic.player.domain.Artist());
+        when(artistRepository.findByNameAndFolderIdIn(startsWith("artist"), any())).thenReturn(Optional.of(new org.airsonic.player.domain.Artist()));
         when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
 
         try (MockedStatic<Artist> mockedStaticArtist = org.mockito.Mockito.mockStatic(Artist.class)) {
@@ -229,7 +230,7 @@ public class LastFmServiceTest {
         when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
         org.airsonic.player.domain.Artist artist = new org.airsonic.player.domain.Artist();
         artist.setName("testArtist");
-        when(artistDao.getArtist(startsWith("artist"), any())).thenReturn(artist);
+        when(artistRepository.findByNameAndFolderIdIn(startsWith("artist"), any())).thenReturn(Optional.of(artist));
 
         try (MockedStatic<Artist> mockedStaticArtist = org.mockito.Mockito.mockStatic(Artist.class)) {
             mockedStaticArtist.when(() -> Artist.getSimilar(eq("testArtist"), anyString())).thenReturn(Arrays.asList(mockedLastFmArtist1, mockedLastFmArtist2));

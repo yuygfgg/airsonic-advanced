@@ -19,17 +19,20 @@
 */
 package org.airsonic.player.service.upnp;
 
-import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.MusicFolder;
-import org.airsonic.player.service.SearchService;
+import org.airsonic.player.repository.ArtistRepository;
 import org.fourthline.cling.support.model.DIDLContent;
 import org.fourthline.cling.support.model.container.Container;
 import org.fourthline.cling.support.model.container.MusicArtist;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -37,13 +40,11 @@ import java.util.List;
  * @version $Id$
  */
 @Service
+@Transactional(readOnly = true)
 public class ArtistUpnpProcessor extends UpnpContentProcessor <Artist, Album> {
 
     @Autowired
-    private ArtistDao artistDao;
-
-    @Autowired
-    SearchService searchService;
+    private ArtistRepository artistRepository;
 
     public ArtistUpnpProcessor() {
         setRootId(DispatchingContentDirectory.CONTAINER_ID_ARTIST_PREFIX);
@@ -64,7 +65,10 @@ public class ArtistUpnpProcessor extends UpnpContentProcessor <Artist, Album> {
     @Override
     public List<Artist> getAllItems() {
         List<MusicFolder> allFolders = getDispatcher().getMediaFolderService().getAllMusicFolders();
-        List<Artist> allArtists = getArtistDao().getAlphabetialArtists(0, Integer.MAX_VALUE, allFolders);
+        if (CollectionUtils.isEmpty(allFolders)) {
+            return Collections.emptyList();
+        }
+        List<Artist> allArtists = artistRepository.findByFolderIdInAndPresentTrue(MusicFolder.toIdList(allFolders), Sort.by(Sort.Direction.ASC, "name"));
         // alpha artists doesn't quite work :P
         allArtists.sort((Artist o1, Artist o2) -> o1.getName().replaceAll("\\W", "").compareToIgnoreCase(o2.getName().replaceAll("\\W", "")));
 
@@ -73,7 +77,11 @@ public class ArtistUpnpProcessor extends UpnpContentProcessor <Artist, Album> {
 
     @Override
     public Artist getItemById(String id) {
-        return getArtistDao().getArtist(Integer.parseInt(id));
+        try {
+            return artistRepository.findById(Integer.parseInt(id)).orElse(null);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Override
@@ -95,13 +103,6 @@ public class ArtistUpnpProcessor extends UpnpContentProcessor <Artist, Album> {
     @Override
     public void addChild(DIDLContent didl, Album album) {
         didl.addContainer(getAlbumProcessor().createContainer(album));
-    }
-
-    public ArtistDao getArtistDao() {
-        return artistDao;
-    }
-    public void setArtistDao(ArtistDao artistDao) {
-        this.artistDao = artistDao;
     }
 
     public AlbumUpnpProcessor getAlbumProcessor() {

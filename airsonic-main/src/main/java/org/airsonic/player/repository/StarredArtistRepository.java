@@ -16,28 +16,27 @@
 
  Copyright 2023 (C) Y.Tory
  */
-
 package org.airsonic.player.repository;
 
-import org.airsonic.player.domain.entity.UserRating;
-import org.airsonic.player.domain.entity.UserRatingKey;
+import org.airsonic.player.domain.entity.StarredArtist;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface UserRatingRepository extends JpaRepository<UserRating, UserRatingKey> {
+public interface StarredArtistRepository extends JpaRepository<StarredArtist, Integer> {
 
-    public Optional<UserRating> findOptByUsernameAndMediaFileId(String username, int mediaFileId);
+    public Optional<StarredArtist> findByArtistIdAndUsername(Integer artistId, String username);
 
-    @Query("SELECT AVG(u.rating) FROM UserRating u WHERE u.mediaFileId = :mediaFileId")
-    public Double getAverageRatingByMediaFileId(@Param("mediaFileId") int mediaFileId);
+    public List<StarredArtist> findByUsername(String username);
+
+    public List<StarredArtist> findByUsernameAndArtistFolderIdInAndArtistPresentTrue(String username, List<Integer> folderIds, Sort sort);
 
     @Transactional
-    public void deleteByUsernameAndMediaFileId(String username, int mediaFileId);
+    public void deleteByArtistIdAndUsername(Integer artistId, String username);
 
 }

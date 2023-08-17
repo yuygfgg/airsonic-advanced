@@ -5,12 +5,14 @@ import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.MusicFolderDao;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
+import org.airsonic.player.repository.MusicFolderRepository;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,6 +28,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 @Service
+@Transactional
 public class MediaFolderService {
     private static final Logger LOG = LoggerFactory.getLogger(MediaFolderService.class);
 
@@ -33,6 +36,8 @@ public class MediaFolderService {
     private MusicFolderDao musicFolderDao;
     @Autowired
     private MediaFileDao mediaFileDao;
+    @Autowired
+    private MusicFolderRepository musicFolderRepository;
 
     private List<MusicFolder> cachedMusicFolders;
     private final ConcurrentMap<String, List<MusicFolder>> cachedMusicFoldersPerUser = new ConcurrentHashMap<>();
@@ -109,14 +114,15 @@ public class MediaFolderService {
     }
 
     public void createMusicFolder(MusicFolder musicFolder) {
-        Triple<List<MusicFolder>, List<MusicFolder>, List<MusicFolder>> overlaps = getMusicFolderPathOverlaps(musicFolder, getAllMusicFolders(true, true, true));
+        List<MusicFolder> registeredMusicFolders = musicFolderRepository.findAll();
+        Triple<List<MusicFolder>, List<MusicFolder>, List<MusicFolder>> overlaps = getMusicFolderPathOverlaps(musicFolder, registeredMusicFolders);
 
         // deny same path music folders
         if (!overlaps.getLeft().isEmpty()) {
             throw new IllegalArgumentException("Music folder with path " + musicFolder.getPath() + " overlaps with existing music folder path(s) (" + logMusicFolderOverlap(overlaps) + ") and can therefore not be created.");
         }
 
-        musicFolderDao.createMusicFolder(musicFolder);
+        musicFolderRepository.save(musicFolder);
 
         // if new folder has ancestors, reassign portion of closest ancestor's tree to new folder
         if (!overlaps.getMiddle().isEmpty()) {

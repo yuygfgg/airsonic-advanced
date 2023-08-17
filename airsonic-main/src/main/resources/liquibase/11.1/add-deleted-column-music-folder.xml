@@ -1,0 +1,29 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet id="add-music-folder-deleted" author="kagemomiji">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="music_folder" columnName="delete"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="music_folder">
+            <column name="deleted" type="boolean" defaultValueBoolean="false"></column>
+        </addColumn>
+        <update tableName="music_folder">
+            <column name="deleted" valueBoolean="true"/>
+            <where> id < 0 </where>
+        </update>
+        <update tablename="music_folder">
+            <column name="id" valueComputed="-(id + 1)"/>
+            <where> deleted = true </where>
+        <rollback>
+            <update tableName="music_folder">
+                <column name="id" valueComputed="-id - 1"/>
+                <where> id >= 0 and deleted = true </where>
+            </update>
+            <dropColumn tableName="music_folder" columnName="deleted"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

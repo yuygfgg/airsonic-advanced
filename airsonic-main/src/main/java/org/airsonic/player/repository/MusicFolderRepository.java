@@ -18,21 +18,31 @@
  */
 package org.airsonic.player.repository;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import org.airsonic.player.domain.MusicFolder;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.List;
 
-@Converter(autoApply = true)
-public class PathConverter implements AttributeConverter<Path, String> {
+@Repository
+public interface MusicFolderRepository extends JpaRepository<MusicFolder, Integer>{
 
-    @Override
-    public String convertToDatabaseColumn(Path path) {
-        return path.toString();
-    }
+    public List<MusicFolder> findByDeletedFalse(Integer id);
 
-    @Override
-    public Path convertToEntityAttribute(String dbData) {
-        return Paths.get(dbData);
-    }
+    public List<MusicFolder> findByDeletedTrue(Integer id);
+
+    public MusicFolder findByPath(Path path);
+
+    @Transactional
+    public void deleteById(Integer id);
+
+    @Transactional
+    public void deleteAllByDeletedTrue();
+
+
+
+
+    
 }

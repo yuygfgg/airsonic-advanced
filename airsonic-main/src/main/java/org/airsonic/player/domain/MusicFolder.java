@@ -14,19 +14,28 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
-import com.google.common.base.Objects;
-
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
  * Represents a top level directory in which music or other media is stored.
@@ -34,14 +43,32 @@ import java.util.stream.Collectors;
  * @author Sindre Mehus
  * @version $Revision: 1.1 $ $Date: 2005/11/27 14:32:05 $
  */
+@Entity
+@Table(name = "music_folder")
 public class MusicFolder implements Serializable {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(name = "path", nullable = false, unique = true)
     private Path path;
+    
+    @Column(name = "name", nullable = false)
     private String name;
+    
+    @Column(name = "type", nullable = false)
+    @Enumerated(EnumType.STRING)
     private Type type = Type.MEDIA;
+    
+    @Column(name = "enabled", nullable = false)
     private boolean enabled;
+    
+    @Column(name = "changed", nullable = false)
     private Instant changed;
+
+    @Column(name = "deleted")
+    private boolean deleted;
 
     /**
      * Creates a new music folder.
@@ -166,6 +193,14 @@ public class MusicFolder implements Serializable {
         this.type = type;
     }
 
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -174,7 +209,7 @@ public class MusicFolder implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        return Objects.equal(id, ((MusicFolder) o).id);
+        return Objects.equals(id, ((MusicFolder) o).id);
     }
 
     @Override

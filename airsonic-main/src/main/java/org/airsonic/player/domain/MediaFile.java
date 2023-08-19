@@ -21,6 +21,16 @@ package org.airsonic.player.domain;
 
 import org.apache.commons.io.FilenameUtils;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -36,41 +46,112 @@ import java.util.stream.Collectors;
  * @author Sindre Mehus
  * @version $Id$
  */
+@Entity
+@Table(name = "media_file")
 public class MediaFile {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(name = "path", nullable = false)
     private String path;
+
+    @Column(name = "folder_id", nullable = false)
     private Integer folderId;
+
+    @Column(name = "media_type", nullable = false)
+    @Enumerated(EnumType.STRING)
     private MediaType mediaType;
+
+    @Column(name = "start_position", nullable = true)
     private Double startPosition = NOT_INDEXED; // i.e. not an indexed track
+
+    @Column(name = "format", nullable = true)
     private String format;
+
+    @Column(name = "title", nullable = true)
     private String title;
+
+    @Column(name = "album_name", nullable = true)
     private String albumName;
+
+    @Column(name = "artist", nullable = true)
     private String artist;
+
+    @Column(name = "album_artist", nullable = true)
     private String albumArtist;
+
+    @Column(name = "disc_number", nullable = true)
     private Integer discNumber;
+
+    @Column(name = "track_number", nullable = true)
     private Integer trackNumber;
+
+    @Column(name = "year", nullable = true)
     private Integer year;
+
+    @Column(name = "genre", nullable = true)
     private String genre;
+
+    @Column(name = "bit_rate", nullable = true)
     private Integer bitRate;
+
+    @Column(name = "variable_bit_rate", nullable = false)
     private boolean variableBitRate;
+
+    @Column(name = "duration", nullable = true)
     private Double duration;
+
+    @Column(name = "file_size", nullable = true)
     private Long fileSize;
+
+    @Column(name = "width", nullable = true)
     private Integer width;
+
+    @Column(name = "height", nullable = true)
     private Integer height;
+
+    @Column(name = "parent_path", nullable = true)
     private String parentPath;
+
+    @Column(name = "index_path", nullable = true)
     private String indexPath;
+
+    @Column(name = "play_count", nullable = false)
     private int playCount;
+
+    @Column(name = "last_played", nullable = true)
     private Instant lastPlayed;
+
+    @Column(name = "comment", nullable = true)
     private String comment;
+
+    @Column(name = "created", nullable = false)
     private Instant created;
+
+    @Column(name = "changed", nullable = false)
     private Instant changed;
+
+    @Column(name = "last_scanned", nullable = false)
     private Instant lastScanned;
+
+    @Transient
     private Instant starredDate;
+
+    @Column(name = "children_last_updated", nullable = false)
     private Instant childrenLastUpdated;
+
+    @Column(name = "present", nullable = false)
     private boolean present;
+
+    @Column(name = "version", nullable = false)
     private int version;
+
+    @Column(name = "mb_release_id", nullable = true)
     private String musicBrainzReleaseId;
+
+    @Column(name = "mb_recording_id", nullable = true)
     private String musicBrainzRecordingId;
 
     public MediaFile(Integer id, String path, Integer folderId, MediaType mediaType, Double startPosition, String format, String title,
@@ -436,6 +517,7 @@ public class MediaFile {
     }
 
     // placeholder to use prior to persistence
+    @Transient
     private CoverArt art;
 
     public CoverArt getArt() {

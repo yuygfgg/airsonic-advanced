@@ -59,6 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -91,7 +92,7 @@ public class CoverArtControllerTest {
     @MockBean
     private PodcastService podcastService;
 
-    @MockBean
+    @SpyBean
     private CoverArtService coverArtService;
 
     @Mock
@@ -172,11 +173,11 @@ public class CoverArtControllerTest {
         mockedMediaFile.setMediaType(MediaType.ALBUM);
 
         // set up mocked cover art
-        CoverArt mockedCoverArt = new CoverArt(1, EntityType.ALBUM, IMAGE_RESOURCE.getFile().getAbsolutePath(), null, false);
+        CoverArt mockedCoverArt = new CoverArt(MEDIA_ID, EntityType.ALBUM, IMAGE_RESOURCE.getFile().getAbsolutePath(), null, false);
 
         // set up mock bean
         when(mediaFileService.getMediaFile(anyInt())).thenReturn(mockedMediaFile);
-        when(coverArtService.get(any(), anyInt())).thenReturn(mockedCoverArt);
+        doReturn(mockedCoverArt).when(coverArtService).get(any(), eq(MEDIA_ID));
         when(coverArtService.getFullPath(any())).thenReturn(IMAGE_RESOURCE.getFile().toPath());
 
         // prepare expected
@@ -210,7 +211,7 @@ public class CoverArtControllerTest {
 
         // set up mock
         when(albumDao.getAlbum(anyInt())).thenReturn(mockedAlbum);
-        when(coverArtService.get(any(), anyInt())).thenReturn(mockedCoverArt);
+        doReturn(mockedCoverArt).when(coverArtService).get(any(), eq(ALBUM_ID));
         when(coverArtService.getFullPath(any())).thenReturn(IMAGE_RESOURCE.getFile().toPath());
 
         // prepare expected
@@ -241,7 +242,7 @@ public class CoverArtControllerTest {
 
         // set up mock
         when(artistDao.getArtist(anyInt())).thenReturn(mockedArtist);
-        when(coverArtService.get(any(), anyInt())).thenReturn(mockedCoverArt);
+        doReturn(mockedCoverArt).when(coverArtService).get(any(), eq(ARTIST_ID));
         when(coverArtService.getFullPath(any())).thenReturn(IMAGE_RESOURCE.getFile().toPath());
 
         // prepare expected

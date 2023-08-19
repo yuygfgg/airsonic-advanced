@@ -1,37 +1,35 @@
 package org.airsonic.player.service;
 
-import org.airsonic.player.dao.CoverArtDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.CoverArt;
 import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
+import org.airsonic.player.repository.CoverArtRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
-import java.util.Optional;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @CacheConfig(cacheNames = "coverArtCache")
+@Transactional
 public class CoverArtService {
     @Autowired
-    CoverArtDao coverArtDao;
-    @Autowired
     MediaFolderService mediaFolderService;
-
-    public void upsert(EntityType type, int id, String path, Integer folderId, boolean overridden) {
-        CoverArt art = new CoverArt(id, type, path, folderId, overridden);
-        upsert(art);
-    }
+    @Autowired
+    private CoverArtRepository coverArtRepository;
 
     @CacheEvict(key = "#art.entityType.toString().concat('-').concat(#art.entityId)")
     public void upsert(CoverArt art) {
-        coverArtDao.upsert(art);
+        coverArtRepository.save(art);
     }
 
     public void persistIfNeeded(MediaFile mediaFile) {
@@ -69,7 +67,7 @@ public class CoverArtService {
 
     @Cacheable(key = "#type.toString().concat('-').concat(#id)", unless = "#result == null") // 'unless' condition should never happen, because of null-object pattern
     public CoverArt get(EntityType type, int id) {
-        return Optional.ofNullable(coverArtDao.get(type, id)).orElse(CoverArt.NULL_ART);
+        return coverArtRepository.findByEntityTypeAndEntityId(type, id).orElse(CoverArt.NULL_ART);
     }
 
     public Path getFullPath(EntityType type, int id) {
@@ -95,11 +93,17 @@ public class CoverArtService {
 
     @CacheEvict(key = "#type.toString().concat('-').concat(#id)")
     public void delete(EntityType type, int id) {
-        coverArtDao.delete(type, id);
+        coverArtRepository.deleteByEntityTypeAndEntityId(type, id);
     }
 
     @CacheEvict(allEntries = true)
     public void expunge() {
-        coverArtDao.expunge();
+        List<CoverArt> expungeCoverArts = coverArtRepository.findAll().stream()
+            .filter(art ->
+                (art.getEntityType() == EntityType.ALBUM && art.getAlbum() == null) ||
+                (art.getEntityType() == EntityType.ARTIST && art.getArtist() == null) ||
+                (art.getEntityType() == EntityType.MEDIA_FILE && art.getMediaFile() == null))
+            .collect(Collectors.toList());
+        coverArtRepository.deleteAll(expungeCoverArts);
     }
 }

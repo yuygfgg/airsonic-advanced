@@ -1,5 +1,6 @@
 package org.airsonic.player.ajax;
 
+import org.airsonic.player.domain.CoverArt;
 import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.domain.LastFmCoverArt;
 import org.airsonic.player.domain.MediaFile;
@@ -104,7 +105,9 @@ public class CoverArtWSController {
             Files.copy(input, newCoverFile, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        coverArtService.upsert(EntityType.MEDIA_FILE, dir.getId(), folder.getPath().relativize(newCoverFile).toString(), dir.getFolderId(), true);
+        CoverArt coverArt = new CoverArt(dir.getId(), EntityType.MEDIA_FILE, folder.getPath().relativize(newCoverFile).toString(), dir.getFolderId(), true);
+        coverArtService.upsert(coverArt);
+
     }
 
     private void backup(Path newCoverFile, Path backup) {

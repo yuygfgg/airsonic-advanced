@@ -20,31 +20,79 @@
 package org.airsonic.player.domain;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import org.airsonic.player.repository.AtomicDoubleConverter;
+import org.airsonic.player.repository.AtomicIntegerConverter;
+
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
+
 
 /**
  * @author Sindre Mehus
  * @version $Id$
  */
+@Entity
+@Table(name = "album")
 public class Album {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Column(name = "path", nullable = false)
     private String path;
+
+    @Column(name = "name", nullable = false)
     private String name;
+
+    @Column(name = "artist", nullable = false)
     private String artist;
+
+    @Column(name = "song_count")
+    @Convert(converter = AtomicIntegerConverter.class)
     private final AtomicInteger songCount = new AtomicInteger(0);
+
+    @Convert(converter = AtomicDoubleConverter.class)
     private final AtomicDouble duration = new AtomicDouble(0);
+
+    @Column(name = "year", nullable = true)
     private Integer year;
+
+    @Column(name = "genre", nullable = true)
     private String genre;
+
+    @Column(name = "play_count")
+    @Convert(converter = AtomicIntegerConverter.class)
     private final AtomicInteger playCount = new AtomicInteger(0);
+
+    @Column(name = "last_played", nullable = true)
     private Instant lastPlayed;
+
+    @Column(name = "comment", nullable = true)
     private String comment;
+
+    @Column(name = "created")
     private Instant created;
+
+    @Column(name = "last_scanned")
     private Instant lastScanned;
+
+    @Column(name = "present")
     private boolean present;
+
+    @Column(name = "folder_id", nullable = true)
     private Integer folderId;
+
+    @Column(name = "mb_release_id", nullable = true)
     private String musicBrainzReleaseId;
 
     public Album() {
@@ -212,6 +260,7 @@ public class Album {
     }
 
     // placeholder for persistence later
+    @Transient
     private CoverArt art;
 
     public CoverArt getArt() {

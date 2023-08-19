@@ -31,6 +31,8 @@ import org.airsonic.player.domain.PodcastChannelRule;
 import org.airsonic.player.domain.PodcastEpisode;
 import org.airsonic.player.domain.PodcastExportOPML;
 import org.airsonic.player.domain.PodcastStatus;
+import org.airsonic.player.domain.entity.CoverArtKey;
+import org.airsonic.player.repository.CoverArtRepository;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
 import org.airsonic.player.service.metadata.MetaDataParserFactory;
@@ -105,7 +107,7 @@ public class PodcastService {
     private final SecurityService securityService;
     private final MediaFileService mediaFileService;
     private final MediaFolderService mediaFolderService;
-    private final CoverArtService coverArtService;
+    private final CoverArtRepository coverArtRepository;
     private final MetaDataParserFactory metaDataParserFactory;
     private final VersionService versionService;
     private final TaskSchedulingService taskService;
@@ -119,7 +121,7 @@ public class PodcastService {
         SecurityService securityService,
         MediaFileService mediaFileService,
         MediaFolderService mediaFolderService,
-        CoverArtService coverArtService,
+        CoverArtRepository coverArtRepository,
         MetaDataParserFactory metaDataParserFactory,
         VersionService versionService,
         TaskSchedulingService taskService,
@@ -130,7 +132,7 @@ public class PodcastService {
         this.securityService = securityService;
         this.mediaFileService = mediaFileService;
         this.mediaFolderService = mediaFolderService;
-        this.coverArtService = coverArtService;
+        this.coverArtRepository = coverArtRepository;
         this.metaDataParserFactory = metaDataParserFactory;
         this.versionService = versionService;
         this.taskService = taskService;
@@ -431,11 +433,11 @@ public class PodcastService {
             return;
         }
 
-        CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, channel.getMediaFileId());
-        // if its already there, no need to download it again
-        if (!CoverArt.NULL_ART.equals(art)) {
+        if (coverArtRepository.existsById(new CoverArtKey(channel.getMediaFileId(), EntityType.MEDIA_FILE))) {
+            // if its already there, no need to download it again
             return;
         }
+
         MediaFile channelMediaFile = mediaFileService.getMediaFile(channel.getMediaFileId());
         MusicFolder folder = mediaFolderService.getMusicFolderById(channelMediaFile.getFolderId());
         Path channelDir = channelMediaFile.getFullPath(folder.getPath());
@@ -447,7 +449,8 @@ public class PodcastService {
                 InputStream in = response.getEntity().getContent()) {
             Path filePath = channelDir.resolve("cover." + getCoverArtSuffix(response));
             Files.copy(in, filePath, StandardCopyOption.REPLACE_EXISTING);
-            coverArtService.upsert(EntityType.MEDIA_FILE, channelMediaFile.getId(), folder.getPath().relativize(filePath).toString(), channelMediaFile.getFolderId(), false);
+            CoverArt coverArt = new CoverArt(channelMediaFile.getId(), EntityType.MEDIA_FILE, folder.getPath().relativize(filePath).toString(), channelMediaFile.getFolderId(), false);
+            coverArtRepository.save(coverArt);
         } catch (Exception x) {
             LOG.warn("Failed to download cover art for podcast channel '{}'", channel.getTitle(), x);
         }

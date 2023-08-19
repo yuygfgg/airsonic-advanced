@@ -19,6 +19,17 @@
  */
 package org.airsonic.player.domain;
 
+import org.airsonic.player.repository.AtomicIntegerConverter;
+
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,13 +37,28 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Sindre Mehus
  * @version $Id$
  */
+@Entity
+@Table(name = "artist")
 public class Artist {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Column(name = "name", nullable = false, unique = true)
     private String name;
+
+    @Column(name = "album_count", nullable = false)
+    @Convert(converter = AtomicIntegerConverter.class)
     private final AtomicInteger albumCount = new AtomicInteger();
+
+    @Column(name = "last_scanned", nullable = false)
     private Instant lastScanned;
+
+    @Column(name = "present", nullable = false)
     private boolean present;
+
+    @Column(name = "folder_id", nullable = true)
     private Integer folderId;
 
     public Artist() {
@@ -96,6 +122,7 @@ public class Artist {
     }
 
     // placeholder for persistence later
+    @Transient
     private CoverArt art;
 
     public CoverArt getArt() {

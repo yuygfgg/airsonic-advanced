@@ -19,13 +19,13 @@
 
 package org.airsonic.player.service;
 
-import org.airsonic.player.dao.CoverArtDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.CoverArt;
 import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
+import org.airsonic.player.repository.CoverArtRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,6 +38,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -48,7 +51,7 @@ import static org.mockito.Mockito.*;
 public class CoverArtServiceTest {
 
     @Mock
-    private CoverArtDao coverArtDao;
+    private CoverArtRepository coverArtRepository;
 
     @Mock
     private MediaFolderService mediaFolderService;
@@ -71,22 +74,25 @@ public class CoverArtServiceTest {
     @Captor
     private ArgumentCaptor<CoverArt> coverArtCaptor;
 
+    @Captor
+    private ArgumentCaptor<List<CoverArt>> coverArtListCaptor;
+
 
     @Test
     public void testGetReturnsCachedCoverArt() {
         CoverArt coverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/image.jpg", null, false);
-        when(coverArtDao.get(EntityType.MEDIA_FILE, 1)).thenReturn(coverArt);
+        when(coverArtRepository.findByEntityTypeAndEntityId(EntityType.MEDIA_FILE, 1)).thenReturn(Optional.of(coverArt));
         CoverArt result = coverArtService.get(EntityType.MEDIA_FILE, 1);
         assertEquals(coverArt, result);
-        verify(coverArtDao, times(1)).get(EntityType.MEDIA_FILE, 1);
+        verify(coverArtRepository, times(1)).findByEntityTypeAndEntityId(EntityType.MEDIA_FILE, 1);
     }
 
     @Test
     public void testGetReturnsNullForNonexistentCoverArt() {
-        when(coverArtDao.get(EntityType.MEDIA_FILE, 1)).thenReturn(null);
+        when(coverArtRepository.findByEntityTypeAndEntityId(EntityType.MEDIA_FILE, 1)).thenReturn(Optional.ofNullable(null));
         CoverArt result = coverArtService.get(EntityType.MEDIA_FILE, 1);
         assertEquals(CoverArt.NULL_ART, result);
-        verify(coverArtDao, times(1)).get(EntityType.MEDIA_FILE, 1);
+        verify(coverArtRepository, times(1)).findByEntityTypeAndEntityId(EntityType.MEDIA_FILE, 1);
     }
 
     @ParameterizedTest
@@ -129,7 +135,7 @@ public class CoverArtServiceTest {
         CoverArt coverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/image.jpg", 1, false);
         when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedFolder);
         when(mockedFolder.getPath()).thenReturn(Paths.get("music"));
-        when(coverArtDao.get(EntityType.MEDIA_FILE, 1)).thenReturn(coverArt);
+        when(coverArtRepository.findByEntityTypeAndEntityId(EntityType.MEDIA_FILE, 1)).thenReturn(Optional.of(coverArt));
         Path result = coverArtService.getFullPath(EntityType.MEDIA_FILE, 1);
         assertEquals(Paths.get("music/path/to/image.jpg"), result);
         verify(mediaFolderService, times(1)).getMusicFolderById(1);
@@ -140,34 +146,53 @@ public class CoverArtServiceTest {
     }
 
     @Test
-    public void testUpsertWithCoverArt() {
+    public void testsaveWithCoverArt() {
         CoverArt coverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/image.jpg", 1, false);
         coverArtService.upsert(coverArt);
-        verify(coverArtDao, times(1)).upsert(coverArt);
-    }
-
-    @Test
-    public void testUpsertWithCoverArtProperties() {
-        coverArtService.upsert(EntityType.MEDIA_FILE, 1, "path/to/image.jpg", 1, false);
-        verify(coverArtDao, times(1)).upsert(coverArtCaptor.capture());
-        CoverArt coverArt = coverArtCaptor.getValue();
-        assertEquals(1, coverArt.getEntityId());
-        assertEquals(EntityType.MEDIA_FILE, coverArt.getEntityType());
-        assertEquals("path/to/image.jpg", coverArt.getPath());
-        assertEquals(1, coverArt.getFolderId());
-        assertEquals(false, coverArt.getOverridden());
+        verify(coverArtRepository, times(1)).save(coverArt);
     }
 
     @Test
     void testExpunge() {
+
+        List<CoverArt> coverArtList = Stream.of(
+                new CoverArt(1, EntityType.ALBUM, "path/to/image.jpg", null, false),
+                new CoverArt(2, EntityType.ARTIST, "path/to/image.jpg", null, false),
+                new CoverArt(3, EntityType.MEDIA_FILE, "path/to/image.jpg", null, false),
+                new CoverArt(4, EntityType.ALBUM, "path/to/image.jpg", null, false),
+                new CoverArt(5, EntityType.ARTIST, "path/to/image.jpg", null, false),
+                new CoverArt(6, EntityType.MEDIA_FILE, "path/to/image.jpg", null, false)
+        ).map(art -> {
+            if (art.getEntityId() < 4) {
+                switch (art.getEntityType()) {
+                    case ALBUM:
+                        art.setAlbum(new Album());
+                        break;
+                    case ARTIST:
+                        art.setArtist(new Artist());
+                        break;
+                    case MEDIA_FILE:
+                        art.setMediaFile(new MediaFile());
+                        break;
+                    case NONE:
+                        break;
+                }
+            }
+            return art;
+        }).collect(Collectors.toList());
+
+        when(coverArtRepository.findAll()).thenReturn(coverArtList);
         coverArtService.expunge();
-        verify(coverArtDao, times(1)).expunge();
+        verify(coverArtRepository, times(1)).deleteAll(coverArtListCaptor.capture());
+        List<CoverArt> deletedCoverArt = coverArtListCaptor.getValue();
+        assertEquals(3, deletedCoverArt.size());
+        assertTrue(deletedCoverArt.stream().allMatch(art -> art.getEntityId() > 3));
     }
 
     @Test
     void testDelete() {
         coverArtService.delete(EntityType.MEDIA_FILE, 1);
-        verify(coverArtDao, times(1)).delete(EntityType.MEDIA_FILE, 1);
+        verify(coverArtRepository, times(1)).deleteByEntityTypeAndEntityId(EntityType.MEDIA_FILE, 1);
     }
 
 
@@ -176,7 +201,7 @@ public class CoverArtServiceTest {
     void testPersistIfNeededWithMediaFileWithoutCoverArtShouldDoNothing(CoverArt coverArt) {
         when(mockedMediaFile.getArt()).thenReturn(coverArt);
         coverArtService.persistIfNeeded(mockedMediaFile);
-        verify(coverArtDao, never()).upsert(any());
+        verify(coverArtRepository, never()).save(any());
     }
 
     @Test
@@ -185,15 +210,15 @@ public class CoverArtServiceTest {
         mediaFile.setId(1);
 
         CoverArt existingCoverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/art.jpg", null, true);
-        when(coverArtDao.get(EntityType.MEDIA_FILE, 1)).thenReturn(existingCoverArt);
+        when(coverArtRepository.findByEntityTypeAndEntityId(EntityType.MEDIA_FILE, 1)).thenReturn(Optional.of(existingCoverArt));
 
         CoverArt artToPersist = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/updated-art.jpg", null, false);
         mediaFile.setArt(artToPersist);
 
         coverArtService.persistIfNeeded(mediaFile);
 
-        verify(coverArtDao).get(EntityType.MEDIA_FILE, 1);
-        verify(coverArtDao, never()).upsert(any(CoverArt.class));
+        verify(coverArtRepository).findByEntityTypeAndEntityId(EntityType.MEDIA_FILE, 1);
+        verify(coverArtRepository, never()).save(any(CoverArt.class));
         assertNull(mediaFile.getArt());
     }
 
@@ -203,15 +228,15 @@ public class CoverArtServiceTest {
         MediaFile mediaFile = new MediaFile();
         mediaFile.setId(1);
 
-        when(coverArtDao.get(EntityType.MEDIA_FILE, 1)).thenReturn(existingCoverArt);
+        when(coverArtRepository.findByEntityTypeAndEntityId(EntityType.MEDIA_FILE, 1)).thenReturn(Optional.of(existingCoverArt));
 
         CoverArt artToPersist = new CoverArt(-1, EntityType.MEDIA_FILE, "path/to/updated-art.jpg", null, false);
         mediaFile.setArt(artToPersist);
 
         coverArtService.persistIfNeeded(mediaFile);
 
-        verify(coverArtDao).get(EntityType.MEDIA_FILE, 1);
-        verify(coverArtDao).upsert(coverArtCaptor.capture());
+        verify(coverArtRepository).findByEntityTypeAndEntityId(EntityType.MEDIA_FILE, 1);
+        verify(coverArtRepository).save(coverArtCaptor.capture());
         assertNull(mediaFile.getArt());
         CoverArt persistedCoverArt = coverArtCaptor.getValue();
         assertEquals(EntityType.MEDIA_FILE, persistedCoverArt.getEntityType());
@@ -229,7 +254,7 @@ public class CoverArtServiceTest {
     void testPersistIfNeededWithAlbumWithoutCoverArtShouldDoNothing(CoverArt coverArt) {
         when(mockedAlbum.getArt()).thenReturn(coverArt);
         coverArtService.persistIfNeeded(mockedAlbum);
-        verify(coverArtDao, never()).upsert(any());
+        verify(coverArtRepository, never()).save(any());
     }
 
     @Test
@@ -238,15 +263,15 @@ public class CoverArtServiceTest {
         album.setId(1);
 
         CoverArt existingCoverArt = new CoverArt(1, EntityType.ALBUM, "path/to/art.jpg", null, true);
-        when(coverArtDao.get(EntityType.ALBUM, 1)).thenReturn(existingCoverArt);
+        when(coverArtRepository.findByEntityTypeAndEntityId(EntityType.ALBUM, 1)).thenReturn(Optional.of(existingCoverArt));
 
         CoverArt artToPersist = new CoverArt(1, EntityType.ALBUM, "path/to/updated-art.jpg", null, false);
         album.setArt(artToPersist);
 
         coverArtService.persistIfNeeded(album);
 
-        verify(coverArtDao).get(EntityType.ALBUM, 1);
-        verify(coverArtDao, never()).upsert(any(CoverArt.class));
+        verify(coverArtRepository).findByEntityTypeAndEntityId(EntityType.ALBUM, 1);
+        verify(coverArtRepository, never()).save(any(CoverArt.class));
         assertNull(album.getArt());
     }
 
@@ -256,15 +281,15 @@ public class CoverArtServiceTest {
         Album album = new Album();
         album.setId(1);
 
-        when(coverArtDao.get(EntityType.ALBUM, 1)).thenReturn(existingCoverArt);
+        when(coverArtRepository.findByEntityTypeAndEntityId(EntityType.ALBUM, 1)).thenReturn(Optional.of(existingCoverArt));
 
         CoverArt artToPersist = new CoverArt(-1, EntityType.ALBUM, "path/to/updated-art.jpg", null, false);
         album.setArt(artToPersist);
 
         coverArtService.persistIfNeeded(album);
 
-        verify(coverArtDao).get(EntityType.ALBUM, 1);
-        verify(coverArtDao).upsert(coverArtCaptor.capture());
+        verify(coverArtRepository).findByEntityTypeAndEntityId(EntityType.ALBUM, 1);
+        verify(coverArtRepository).save(coverArtCaptor.capture());
         assertNull(album.getArt());
         CoverArt persistedCoverArt = coverArtCaptor.getValue();
         assertEquals(EntityType.ALBUM, persistedCoverArt.getEntityType());
@@ -282,7 +307,7 @@ public class CoverArtServiceTest {
     void testPersistIfNeededWithArtistWithoutCoverArtShouldDoNothing(CoverArt coverArt) {
         when(mockedArtist.getArt()).thenReturn(coverArt);
         coverArtService.persistIfNeeded(mockedArtist);
-        verify(coverArtDao, never()).upsert(any());
+        verify(coverArtRepository, never()).save(any());
     }
 
     @Test
@@ -291,15 +316,15 @@ public class CoverArtServiceTest {
         artist.setId(1);
 
         CoverArt existingCoverArt = new CoverArt(1, EntityType.ARTIST, "path/to/art.jpg", null, true);
-        when(coverArtDao.get(EntityType.ARTIST, 1)).thenReturn(existingCoverArt);
+        when(coverArtRepository.findByEntityTypeAndEntityId(EntityType.ARTIST, 1)).thenReturn(Optional.of(existingCoverArt));
 
         CoverArt artToPersist = new CoverArt(1, EntityType.ARTIST, "path/to/updated-art.jpg", null, false);
         artist.setArt(artToPersist);
 
         coverArtService.persistIfNeeded(artist);
 
-        verify(coverArtDao).get(EntityType.ARTIST, 1);
-        verify(coverArtDao, never()).upsert(any(CoverArt.class));
+        verify(coverArtRepository).findByEntityTypeAndEntityId(EntityType.ARTIST, 1);
+        verify(coverArtRepository, never()).save(any(CoverArt.class));
         assertNull(artist.getArt());
     }
 
@@ -309,15 +334,15 @@ public class CoverArtServiceTest {
         Artist artist = new Artist();
         artist.setId(1);
 
-        when(coverArtDao.get(EntityType.ARTIST, 1)).thenReturn(existingCoverArt);
+        when(coverArtRepository.findByEntityTypeAndEntityId(EntityType.ARTIST, 1)).thenReturn(Optional.of(existingCoverArt));
 
         CoverArt artToPersist = new CoverArt(-1, EntityType.ARTIST, "path/to/updated-art.jpg", null, false);
         artist.setArt(artToPersist);
 
         coverArtService.persistIfNeeded(artist);
 
-        verify(coverArtDao).get(EntityType.ARTIST, 1);
-        verify(coverArtDao).upsert(coverArtCaptor.capture());
+        verify(coverArtRepository).findByEntityTypeAndEntityId(EntityType.ARTIST, 1);
+        verify(coverArtRepository).save(coverArtCaptor.capture());
         assertNull(artist.getArt());
         CoverArt persistedCoverArt = coverArtCaptor.getValue();
         assertEquals(EntityType.ARTIST, persistedCoverArt.getEntityType());

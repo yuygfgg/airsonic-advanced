@@ -1,33 +1,44 @@
 package org.airsonic.player.service;
 
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Transcoding;
-import org.airsonic.player.util.HomeRule;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.airsonic.player.repository.PlayerRepository;
+import org.airsonic.player.repository.TranscodingRepository;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
+import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
+@EnableConfigurationProperties({AirsonicHomeConfig.class})
 public class TranscodingServiceIntTest {
 
     @Autowired
     private TranscodingService transcodingService;
     @SpyBean
-    private PlayerService playerService;
+    private PlayerRepository playerRepository;
+    @SpyBean
+    private TranscodingRepository transcodingRepository;
 
-    @ClassRule
-    public static final HomeRule classRule = new HomeRule(); // sets airsonic.home to a temporary dir
+    @TempDir
+    private static Path tempDir;
+
+    @BeforeAll
+    public static void init() {
+        System.setProperty("airsonic.home", tempDir.toString());
+    }
+
 
     @Test
     public void defaultValueTest() {
@@ -92,6 +103,8 @@ public class TranscodingServiceIntTest {
                 true);
 
         transcodingService.createTranscoding(transcoding);
-        verify(playerService).getAllPlayers();
+        verify(playerRepository).findAll();
+        verify(transcodingRepository).save(transcoding);
+        verify(playerRepository).saveAll(any());
     }
 }

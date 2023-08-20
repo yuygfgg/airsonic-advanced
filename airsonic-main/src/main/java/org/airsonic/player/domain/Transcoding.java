@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -21,6 +22,16 @@ package org.airsonic.player.domain;
 
 import org.airsonic.player.util.StringUtil;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -32,16 +43,40 @@ import java.util.Objects;
  *
  * @author Sindre Mehus
  */
+@Entity
+@Table(name = "transcoding")
 public class Transcoding {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(nullable = false)
     private String name;
+
+    @Column(name = "source_formats", nullable = false)
     private String sourceFormats;
+
+    @Column(name = "target_format", nullable = false)
     private String targetFormat;
+
+    @Column(nullable = false)
     private String step1;
+
+    @Column(nullable = true)
     private String step2;
+
+    @Column(nullable = true)
     private String step3;
+
+    @Column(name = "default_active", nullable = false)
     private boolean defaultActive;
+
+    @ManyToMany(mappedBy = "transcodings")
+    private List<Player> players = new ArrayList<>();
+
+    public Transcoding() {
+    }
 
     /**
      * Creates a new transcoding specification.
@@ -204,6 +239,28 @@ public class Transcoding {
      */
     public void setDefaultActive(boolean defaultActive) {
         this.defaultActive = defaultActive;
+    }
+
+    /**
+     * Returns the players that use this transcoding
+     */
+    public List<Player> getPlayers() {
+        return players;
+    }
+
+    /**
+     * Adds a player that uses this transcoding
+     */
+    public void addPlayer(Player player) {
+        players.add(player);
+    }
+
+    /**
+     * Sets the players that use this transcoding
+     * @param players
+     */
+    public void setPlayers(List<Player> players) {
+        this.players = players;
     }
 
     public boolean equals(Object o) {

@@ -47,7 +47,7 @@ public class PlayerSettingsCommand {
     private boolean transcodingSupported;
     private String transcodeDirectory;
     private List<Transcoding> allTranscodings;
-    private int[] activeTranscodingIds;
+    private List<Integer> activeTranscodingIds;
     private EnumHolder[] technologyHolders;
     private EnumHolder[] transcodeSchemeHolders;
     private Player[] players;
@@ -149,11 +149,11 @@ public class PlayerSettingsCommand {
         this.allTranscodings = allTranscodings;
     }
 
-    public int[] getActiveTranscodingIds() {
+    public List<Integer> getActiveTranscodingIds() {
         return activeTranscodingIds;
     }
 
-    public void setActiveTranscodingIds(int[] activeTranscodingIds) {
+    public void setActiveTranscodingIds(List<Integer> activeTranscodingIds) {
         this.activeTranscodingIds = activeTranscodingIds;
     }
 

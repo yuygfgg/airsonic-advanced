@@ -97,11 +97,7 @@ public class PlayerSettingsController {
             command.setTechnologyName(player.getTechnology().name());
             command.setAllTranscodings(transcodingService.getAllTranscodings());
             List<Transcoding> activeTranscodings = transcodingService.getTranscodingsForPlayer(player);
-            int[] activeTranscodingIds = new int[activeTranscodings.size()];
-            for (int i = 0; i < activeTranscodings.size(); i++) {
-                activeTranscodingIds[i] = activeTranscodings.get(i).getId();
-            }
-            command.setActiveTranscodingIds(activeTranscodingIds);
+            command.setActiveTranscodingIds(activeTranscodings.stream().map(Transcoding::getId).toList());
         }
 
         command.setTranscodingSupported(transcodingService.isDownsamplingSupported(null));
@@ -157,7 +153,7 @@ public class PlayerSettingsController {
                 playerService.updatePlayer(player);
             }
 
-            transcodingService.setTranscodingsForPlayer(player, command.getActiveTranscodingIds());
+            transcodingService.setTranscodingsForPlayerByIds(player, command.getActiveTranscodingIds());
 
             redirectAttributes.addFlashAttribute("settings_toast", true);
             return "redirect:playerSettings.view?id=" + command.getPlayerId();

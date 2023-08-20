@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -21,17 +22,18 @@ package org.airsonic.player.service;
 
 import com.google.common.io.MoreFiles;
 import org.airsonic.player.controller.VideoPlayerController;
-import org.airsonic.player.dao.TranscodingDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.io.TranscodeInputStream;
+import org.airsonic.player.repository.PlayerRepository;
+import org.airsonic.player.repository.TranscodingRepository;
 import org.airsonic.player.util.StringUtil;
 import org.airsonic.player.util.Util;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.Dimension;
 import java.io.BufferedInputStream;
@@ -46,7 +48,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -60,20 +61,20 @@ import java.util.stream.IntStream;
  * @see TranscodeInputStream
  */
 @Service
+@Transactional
 public class TranscodingService {
 
     private static final Logger LOG = LoggerFactory.getLogger(TranscodingService.class);
     public static final String FORMAT_RAW = "raw";
 
     @Autowired
-    private TranscodingDao transcodingDao;
-    @Autowired
     private SettingsService settingsService;
     @Autowired
     private MediaFolderService mediaFolderService;
     @Autowired
-    @Lazy // used to deal with circular dependencies between PlayerService and TranscodingService
-    private PlayerService playerService;
+    private PlayerRepository playerRepository;;
+    @Autowired
+    private TranscodingRepository transcodingRepository;
 
     /**
      * Returns all transcodings.
@@ -81,7 +82,7 @@ public class TranscodingService {
      * @return Possibly empty list of all transcodings.
      */
     public List<Transcoding> getAllTranscodings() {
-        return transcodingDao.getAllTranscodings();
+        return transcodingRepository.findAll();
     }
 
     /**
@@ -91,7 +92,7 @@ public class TranscodingService {
      * @return All active transcodings for the player.
      */
     public List<Transcoding> getTranscodingsForPlayer(Player player) {
-        return transcodingDao.getTranscodingsForPlayer(player.getId());
+        return transcodingRepository.findByPlayersContaining(player);
     }
 
     /**
@@ -100,8 +101,9 @@ public class TranscodingService {
      * @param player         The player.
      * @param transcodingIds ID's of the active transcodings.
      */
-    public void setTranscodingsForPlayer(Player player, int[] transcodingIds) {
-        transcodingDao.setTranscodingsForPlayer(player.getId(), transcodingIds);
+    public void setTranscodingsForPlayerByIds(Player player, List<Integer> transcodingIds) {
+        List<Transcoding> transcodings = transcodingRepository.findByIdIn(transcodingIds);
+        setTranscodingsForPlayer(player, transcodings);
     }
 
     /**
@@ -111,13 +113,9 @@ public class TranscodingService {
      * @param transcodings The active transcodings.
      */
     public void setTranscodingsForPlayer(Player player, List<Transcoding> transcodings) {
-        int[] transcodingIds = new int[transcodings.size()];
-        for (int i = 0; i < transcodingIds.length; i++) {
-            transcodingIds[i] = transcodings.get(i).getId();
-        }
-        setTranscodingsForPlayer(player, transcodingIds);
+        player.setTranscodings(transcodings);
+        playerRepository.save(player);
     }
-
 
     /**
      * Creates a new transcoding.
@@ -125,15 +123,12 @@ public class TranscodingService {
      * @param transcoding The transcoding to create.
      */
     public void createTranscoding(Transcoding transcoding) {
-        transcodingDao.createTranscoding(transcoding);
-
         // Activate this transcoding for all players?
+        transcodingRepository.save(transcoding);
         if (transcoding.isDefaultActive()) {
-            playerService.getAllPlayers().parallelStream().filter(Objects::nonNull).forEach(player -> {
-                List<Transcoding> transcodings = getTranscodingsForPlayer(player);
-                transcodings.add(transcoding);
-                setTranscodingsForPlayer(player, transcodings);
-            });
+            List<Player> players = playerRepository.findAll();
+            players.forEach(player -> player.addTranscoding(transcoding));
+            playerRepository.saveAll(players);
         }
     }
 
@@ -143,7 +138,7 @@ public class TranscodingService {
      * @param id The transcoding ID.
      */
     public void deleteTranscoding(Integer id) {
-        transcodingDao.deleteTranscoding(id);
+        transcodingRepository.deleteById(id);
     }
 
     /**
@@ -152,7 +147,7 @@ public class TranscodingService {
      * @param transcoding The transcoding to update.
      */
     public void updateTranscoding(Transcoding transcoding) {
-        transcodingDao.updateTranscoding(transcoding);
+        transcodingRepository.save(transcoding);
     }
 
     /**
@@ -612,7 +607,7 @@ public class TranscodingService {
         return size + size % 2;
     }
 
-    public static int getSuitableAudioBitRate(int peakVideoBitRate) {
+    public static int getSuitableAudioBitRate(Integer peakVideoBitRate) {
         if (peakVideoBitRate < 1200)
             return 64;
         if (peakVideoBitRate < 5000)
@@ -620,7 +615,7 @@ public class TranscodingService {
         return 128;
     }
 
-    public static int getAverageVideoBitRate(int peakVideoBitRate) {
+    public static int getAverageVideoBitRate(Integer peakVideoBitRate) {
         switch (peakVideoBitRate) {
             case 200:
                 return 145;
@@ -640,18 +635,6 @@ public class TranscodingService {
                 return 6000;
         }
         return (int) (peakVideoBitRate * 0.9D);
-    }
-
-    public void setTranscodingDao(TranscodingDao transcodingDao) {
-        this.transcodingDao = transcodingDao;
-    }
-
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
-    }
-
-    public void setPlayerService(PlayerService playerService) {
-        this.playerService = playerService;
     }
 
     public static class Parameters {

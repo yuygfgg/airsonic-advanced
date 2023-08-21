@@ -689,7 +689,7 @@ public class SonosHelper {
 
             // @FIXME when a new transcoding choice can be set we can put the right transcoding here for Sonos player.
             // Now, we remove transcoding for Sonos player
-            transcodingService.setTranscodingsForPlayer(players.get(0), new int[0]);
+            transcodingService.setTranscodingsForPlayerByIds(players.get(0), new ArrayList<>());
         }
 
         return players.get(0);

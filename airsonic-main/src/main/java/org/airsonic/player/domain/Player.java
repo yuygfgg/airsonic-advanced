@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -21,7 +22,24 @@ package org.airsonic.player.domain;
 
 import org.apache.commons.lang.StringUtils;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a remote player. A player has a unique ID, a user-defined name, a
@@ -29,20 +47,58 @@ import java.time.Instant;
  *
  * @author Sindre Mehus
  */
+@Entity
+@Table(name = "player")
 public class Player {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(name = "name", nullable = true)
     private String name;
+
+    @Column(name = "technology", nullable = false)
+    @Enumerated(EnumType.STRING)
     private PlayerTechnology technology = PlayerTechnology.WEB;
+
+    @Column(name = "client_id", nullable = true)
     private String clientId;
+
+    @Column(name = "type", nullable = true)
     private String type;
+
+    @Column(name = "username", nullable = true)
     private String username;
+
+    @Column(name = "ip_address", nullable = true)
     private String ipAddress;
+
+    @Column(name = "dynamic_ip", nullable = false)
     private boolean dynamicIp = true;
+
+    @Column(name = "auto_control_enabled")
     private boolean autoControlEnabled = true;
+
+    @Column(name = "m3u_bom_enabled")
     private boolean m3uBomEnabled = true;
+
+    @Column(name = "last_seen", nullable = true)
     private Instant lastSeen;
+
+    @Column(name = "transcode_scheme", nullable = false)
+    @Enumerated(EnumType.STRING)
     private TranscodeScheme transcodeScheme = TranscodeScheme.OFF;
+
+    @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "player_transcoding",
+        joinColumns = {@JoinColumn(name = "player_id")},
+        inverseJoinColumns = {@JoinColumn(name = "transcoding_id")}
+    )
+    private List<Transcoding> transcodings = new ArrayList<>();
+
+    @Transient
     private PlayQueue playQueue;
 
     /**
@@ -324,6 +380,27 @@ public class Player {
             return name;
         }
         return "Player " + id;
+    }
+
+    /**
+     * Returns the transcodings for the player.
+     */
+    public List<Transcoding> getTranscodings() {
+        return transcodings;
+    }
+
+    /**
+     * Sets the transcodings for the player.
+     */
+    public void setTranscodings(List<Transcoding> transcodings) {
+        this.transcodings = transcodings;
+    }
+
+    /**
+     * Adds a transcoding to the player.
+     */
+    public void addTranscoding(Transcoding transcoding) {
+        transcodings.add(transcoding);
     }
 
     /**

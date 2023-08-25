@@ -19,7 +19,6 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.dao.AlbumDao;
-import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.dao.PlaylistDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
@@ -29,13 +28,13 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.Playlist;
 import org.airsonic.player.domain.PodcastChannel;
+import org.airsonic.player.service.ArtistService;
 import org.airsonic.player.service.CoverArtService;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.PodcastService;
-import org.airsonic.player.util.HomeRule;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +44,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -54,6 +52,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -69,7 +68,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Y.Tory
  * @version $Id$
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest
 @AutoConfigureMockMvc
 public class CoverArtControllerTest {
@@ -84,7 +82,7 @@ public class CoverArtControllerTest {
     private AlbumDao albumDao;
 
     @MockBean
-    private ArtistDao artistDao;
+    private ArtistService artistService;
 
     @MockBean
     private PlaylistDao playlistDao;
@@ -101,8 +99,9 @@ public class CoverArtControllerTest {
     @InjectMocks
     private CoverArtController coverArtController;
 
-    @ClassRule
-    public static final HomeRule classRule = new HomeRule(); // sets airsonic.home to a temporary dir
+    @TempDir
+    private static Path tempDir;
+
     /** authentication info */
     private final String AIRSONIC_USER = "admin";
     private final String AIRSONIC_PASSWORD = "admin";
@@ -111,6 +110,11 @@ public class CoverArtControllerTest {
     private final ClassPathResource IMAGE_RESOURCE = new ClassPathResource("MEDIAS/Music2/_DIR_ chrome hoof - 2004/Folder.jpg");
     private final ClassPathResource PLAYLIST_RESOURCE = new ClassPathResource("COVERARTS/playlist.png");
     private final ClassPathResource PODCAST_RESOURCE = new ClassPathResource("COVERARTS/podcast.png");
+
+    @BeforeAll
+    public static void setup() {
+        System.setProperty("airsonic.home", tempDir.toString());
+    }
 
     @Test
     @WithMockUser(username = AIRSONIC_USER, password = AIRSONIC_PASSWORD)
@@ -176,9 +180,9 @@ public class CoverArtControllerTest {
         CoverArt mockedCoverArt = new CoverArt(MEDIA_ID, EntityType.ALBUM, IMAGE_RESOURCE.getFile().getAbsolutePath(), null, false);
 
         // set up mock bean
-        when(mediaFileService.getMediaFile(anyInt())).thenReturn(mockedMediaFile);
-        doReturn(mockedCoverArt).when(coverArtService).get(any(), eq(MEDIA_ID));
-        when(coverArtService.getFullPath(any())).thenReturn(IMAGE_RESOURCE.getFile().toPath());
+        doReturn(mockedMediaFile).when(mediaFileService).getMediaFile(anyInt());
+        doReturn(mockedCoverArt).when(coverArtService).get(any(EntityType.class), anyInt());
+        doReturn(IMAGE_RESOURCE.getFile().toPath()).when(coverArtService).getFullPath(any());
 
         // prepare expected
         byte[] expected = IMAGE_RESOURCE.getInputStream().readAllBytes();
@@ -210,9 +214,9 @@ public class CoverArtControllerTest {
         mockedAlbum.setId(ALBUM_ID);
 
         // set up mock
-        when(albumDao.getAlbum(anyInt())).thenReturn(mockedAlbum);
-        doReturn(mockedCoverArt).when(coverArtService).get(any(), eq(ALBUM_ID));
-        when(coverArtService.getFullPath(any())).thenReturn(IMAGE_RESOURCE.getFile().toPath());
+        doReturn(mockedAlbum).when(albumDao).getAlbum(anyInt());
+        doReturn(mockedCoverArt).when(coverArtService).get(any(EntityType.class), anyInt());
+        doReturn(IMAGE_RESOURCE.getFile().toPath()).when(coverArtService).getFullPath(any());
 
         // prepare expected
         byte[] expected = IMAGE_RESOURCE.getInputStream().readAllBytes();
@@ -241,9 +245,9 @@ public class CoverArtControllerTest {
         mockedArtist.setId(ARTIST_ID);
 
         // set up mock
-        when(artistDao.getArtist(anyInt())).thenReturn(mockedArtist);
-        doReturn(mockedCoverArt).when(coverArtService).get(any(), eq(ARTIST_ID));
-        when(coverArtService.getFullPath(any())).thenReturn(IMAGE_RESOURCE.getFile().toPath());
+        doReturn(mockedArtist).when(artistService).getArtist(anyInt());
+        doReturn(mockedCoverArt).when(coverArtService).get(any(EntityType.class), anyInt());
+        doReturn(IMAGE_RESOURCE.getFile().toPath()).when(coverArtService).getFullPath(any());
 
         // prepare expected
         byte[] expected = IMAGE_RESOURCE.getInputStream().readAllBytes();

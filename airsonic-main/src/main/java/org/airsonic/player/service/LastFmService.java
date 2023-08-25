@@ -23,13 +23,14 @@ import de.umass.lastfm.*;
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Artist;
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
+import org.airsonic.player.repository.ArtistRepository;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
  * @version $Id$
  */
 @Service
+@Transactional(readOnly = true)
 public class LastFmService {
 
     private static final String LAST_FM_KEY = "ece4499898a9440896dfdce5dab26bbf";
@@ -52,16 +54,16 @@ public class LastFmService {
 
     private final MediaFileDao mediaFileDao;
     private final MediaFileService mediaFileService;
-    private final ArtistDao artistDao;
+    private final ArtistRepository artistRepository;
     private final AirsonicHomeConfig homeConfig;
 
     public LastFmService(
         AirsonicHomeConfig homeConfig,
-        ArtistDao artistDao,
+        ArtistRepository artistRepository,
         MediaFileDao mediaFileDao,
         MediaFileService mediaFileService) {
         this.homeConfig = homeConfig;
-        this.artistDao = artistDao;
+        this.artistRepository = artistRepository;
         this.mediaFileDao = mediaFileDao;
         this.mediaFileService = mediaFileService;
         init();
@@ -147,20 +149,17 @@ public class LastFmService {
             // First select artists that are present.
             Collection<Artist> similarArtists = Artist.getSimilar(getCanonicalArtistName(artist.getName()), LAST_FM_KEY);
             for (Artist lastFmArtist : similarArtists) {
-                org.airsonic.player.domain.Artist similarArtist = artistDao.getArtist(lastFmArtist.getName(), musicFolders);
-                if (similarArtist != null) {
-                    result.add(similarArtist);
-                    if (result.size() == count) {
-                        return result;
-                    }
+                artistRepository.findByNameAndFolderIdIn(lastFmArtist.getName(), MusicFolder.toIdList(musicFolders))
+                    .ifPresent(entity -> result.add(entity));
+                if (result.size() == count) {
+                    return result;
                 }
             }
 
             // Then fill up with non-present artists
             if (includeNotPresent) {
                 for (Artist lastFmArtist : similarArtists) {
-                    org.airsonic.player.domain.Artist similarArtist = artistDao.getArtist(lastFmArtist.getName());
-                    if (similarArtist == null) {
+                    if (!artistRepository.existsByName(lastFmArtist.getName())) {
                         org.airsonic.player.domain.Artist notPresentArtist = new org.airsonic.player.domain.Artist();
                         notPresentArtist.setId(-1);
                         notPresentArtist.setName(lastFmArtist.getName());

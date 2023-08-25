@@ -294,6 +294,7 @@
 				                <ignoredUsedUndeclaredDependency>org.junit.jupiter:junit-jupiter-params:*</ignoredUsedUndeclaredDependency>
                                 <ignoredUsedUndeclaredDependency>jakarta.transaction:jakarta.transaction-api:*</ignoredUsedUndeclaredDependency>
                                 <ignoredUsedUndeclaredDependency>org.springframework.data:spring-data-commons:*</ignoredUsedUndeclaredDependency>
+                                <ignoredUsedUndeclaredDependency>commons-collections:commons-collections:*</ignoredUsedUndeclaredDependency>
                             </ignoredUsedUndeclaredDependencies>
                             <ignoredUnusedDeclaredDependencies>
                                 <ignoredUnusedDeclaredDependency>com.google.code.findbugs:jsr305:*</ignoredUnusedDeclaredDependency>

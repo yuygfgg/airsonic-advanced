@@ -20,12 +20,12 @@
 package org.airsonic.player.service.search;
 
 import org.airsonic.player.dao.AlbumDao;
-import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.SearchCriteria;
 import org.airsonic.player.domain.SearchResult;
+import org.airsonic.player.repository.ArtistRepository;
 import org.airsonic.player.service.SearchService;
 import org.airsonic.player.util.MusicFolderTestData;
 import org.junit.AfterClass;
@@ -86,7 +86,7 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
     private MediaFileDao mediaFileDao;
 
     @Autowired
-    private ArtistDao artistDao;
+    private ArtistRepository artistRepository;
 
     @Autowired
     private AlbumDao albumDao;
@@ -164,13 +164,11 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
         assertEquals(1, result.getArtists().size());
         assertEquals("_DIR_ Ravel", result.getArtists().get(0).getName());
 
-        candidates = artistDao.getExpungeCandidates();
-        assertEquals(0, candidates.size());
+        assertEquals(0, artistRepository.findByPresentFalse().size());
 
-        artistDao.markNonPresent(Instant.now().truncatedTo(ChronoUnit.MICROS));
+        artistRepository.markNonPresent(Instant.now().truncatedTo(ChronoUnit.MICROS));
 
-        candidates = artistDao.getExpungeCandidates();
-        assertEquals(4, candidates.size());
+        assertEquals(4, artistRepository.findByPresentFalse().size());
 
         // albumId3
         result = searchService.search(criteriaAlbumId3, musicFolders, IndexType.ALBUM_ID3);

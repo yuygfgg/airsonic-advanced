@@ -21,17 +21,18 @@
 package org.airsonic.player.service.search;
 
 import org.airsonic.player.dao.AlbumDao;
-import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.ParamSearchResult;
 import org.airsonic.player.domain.SearchResult;
+import org.airsonic.player.repository.ArtistRepository;
 import org.airsonic.player.service.MediaFileService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.lucene.document.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.List;
@@ -51,11 +52,12 @@ import static org.springframework.util.ObjectUtils.isEmpty;
  * so do not include exception handling in this class.
  */
 @Component
+@Transactional(readOnly = true)
 public class SearchServiceUtilities {
 
     /* Search by id only. */
     @Autowired
-    private ArtistDao artistDao;
+    private ArtistRepository artistRepository;
 
     /* Search by id only. */
     @Autowired
@@ -91,10 +93,7 @@ public class SearchServiceUtilities {
 
     public final BiConsumer<List<Artist>, Integer> addArtistId3IfAnyMatch = (dist, id) -> {
         if (!dist.stream().anyMatch(a -> id.equals(a.getId()))) {
-            Artist artist = artistDao.getArtist(id);
-            if (!isEmpty(artist)) {
-                dist.add(artist);
-            }
+            artistRepository.findById(id).ifPresent(dist::add);
         }
     };
 
@@ -149,8 +148,7 @@ public class SearchServiceUtilities {
             MediaFile mediaFile = mediaFileService.getMediaFile(subjectId);
             addIgnoreNull(dist.getItems(), subjectClass.cast(mediaFile));
         } else if (indexType == IndexType.ARTIST_ID3) {
-            Artist artist = artistDao.getArtist(subjectId);
-            addIgnoreNull(dist.getItems(), subjectClass.cast(artist));
+            artistRepository.findById(subjectId).ifPresent(artist -> dist.getItems().add(subjectClass.cast(artist)));
         } else if (indexType == IndexType.ALBUM_ID3) {
             Album album = albumDao.getAlbum(subjectId);
             addIgnoreNull(dist.getItems(), subjectClass.cast(album));

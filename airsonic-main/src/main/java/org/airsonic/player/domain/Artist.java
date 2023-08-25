@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -33,6 +34,7 @@ import javax.persistence.Transient;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 
+
 /**
  * @author Sindre Mehus
  * @version $Id$
@@ -43,25 +45,24 @@ public class Artist {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
-    @Column(name = "name", nullable = false, unique = true)
+    private Integer id;
+    @Column(unique = true, nullable = false)
     private String name;
-
-    @Column(name = "album_count", nullable = false)
+    @Column(name = "album_count")
     @Convert(converter = AtomicIntegerConverter.class)
     private final AtomicInteger albumCount = new AtomicInteger();
-
     @Column(name = "last_scanned", nullable = false)
     private Instant lastScanned;
-
-    @Column(name = "present", nullable = false)
-    private boolean present;
-
+    @Column(name = "present")
+    private boolean present = true;
     @Column(name = "folder_id", nullable = true)
     private Integer folderId;
 
     public Artist() {
+    }
+
+    public Artist(String name) {
+        this.name = name;
     }
 
     public Artist(int id, String name, int albumCount, Instant lastScanned, boolean present, Integer folderId) {
@@ -73,11 +74,11 @@ public class Artist {
         this.folderId = folderId;
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

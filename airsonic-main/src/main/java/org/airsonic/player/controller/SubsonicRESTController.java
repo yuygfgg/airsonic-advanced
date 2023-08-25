@@ -24,7 +24,6 @@ import org.airsonic.player.ajax.LyricsInfo;
 import org.airsonic.player.ajax.LyricsWSController;
 import org.airsonic.player.command.UserSettingsCommand;
 import org.airsonic.player.dao.AlbumDao;
-import org.airsonic.player.dao.ArtistDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.PlayQueueDao;
 import org.airsonic.player.domain.*;
@@ -70,9 +69,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
 import static org.airsonic.player.security.RESTRequestParameterProcessingFilter.decrypt;
 import static org.springframework.web.bind.ServletRequestUtils.*;
 
@@ -142,7 +141,7 @@ public class SubsonicRESTController {
     @Autowired
     private MediaFileDao mediaFileDao;
     @Autowired
-    private ArtistDao artistDao;
+    private ArtistService artistService;
     @Autowired
     private AlbumDao albumDao;
     @Autowired
@@ -333,7 +332,7 @@ public class SubsonicRESTController {
         result.setIgnoredArticles(settingsService.getIgnoredArticles());
         List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
 
-        List<org.airsonic.player.domain.Artist> artists = artistDao.getAlphabetialArtists(0, Integer.MAX_VALUE, musicFolders);
+        List<org.airsonic.player.domain.Artist> artists = artistService.getAlphabeticalArtists(musicFolders);
         SortedMap<MusicIndex, List<MusicIndex.SortableArtistWithArtist>> indexedArtists = musicIndexService.getIndexedArtists(artists);
         for (Map.Entry<MusicIndex, List<MusicIndex.SortableArtistWithArtist>> entry : indexedArtists.entrySet()) {
             IndexID3 index = new IndexID3();
@@ -386,7 +385,7 @@ public class SubsonicRESTController {
 
         SimilarSongs2 result = new SimilarSongs2();
 
-        org.airsonic.player.domain.Artist artist = artistDao.getArtist(id);
+        org.airsonic.player.domain.Artist artist = artistService.getArtist(id);
         if (artist == null) {
             error(request, response, ErrorCode.NOT_FOUND, "Artist not found.");
             return;
@@ -473,7 +472,7 @@ public class SubsonicRESTController {
 
         ArtistInfo2 result = new ArtistInfo2();
 
-        org.airsonic.player.domain.Artist artist = artistDao.getArtist(id);
+        org.airsonic.player.domain.Artist artist = artistService.getArtist(id);
         if (artist == null) {
             error(request, response, ErrorCode.NOT_FOUND, "Artist not found.");
             return;
@@ -502,7 +501,7 @@ public class SubsonicRESTController {
     private <T extends ArtistID3> T createJaxbArtist(T jaxbArtist, org.airsonic.player.domain.Artist artist, String username) {
         jaxbArtist.setId(String.valueOf(artist.getId()));
         jaxbArtist.setName(artist.getName());
-        jaxbArtist.setStarred(jaxbWriter.convertDate(artistDao.getArtistStarredDate(artist.getId(), username)));
+        jaxbArtist.setStarred(jaxbWriter.convertDate(artistService.getStarredDate(artist.getId(), username)));
         jaxbArtist.setAlbumCount(artist.getAlbumCount());
         if (!CoverArt.NULL_ART.equals(coverArtService.get(EntityType.ARTIST, artist.getId()))) {
             jaxbArtist.setCoverArt(CoverArtController.ARTIST_COVERART_PREFIX + artist.getId());
@@ -525,7 +524,7 @@ public class SubsonicRESTController {
 
         String username = securityService.getCurrentUsername(request);
         int id = getRequiredIntParameter(request, "id");
-        org.airsonic.player.domain.Artist artist = artistDao.getArtist(id);
+        org.airsonic.player.domain.Artist artist = artistService.getArtist(id);
         if (artist == null) {
             error(request, response, ErrorCode.NOT_FOUND, "Artist not found.");
             return;
@@ -547,7 +546,7 @@ public class SubsonicRESTController {
         jaxbAlbum.setName(album.getName());
         if (album.getArtist() != null) {
             jaxbAlbum.setArtist(album.getArtist());
-            org.airsonic.player.domain.Artist artist = artistDao.getArtist(album.getArtist());
+            org.airsonic.player.domain.Artist artist = artistService.getArtist(album.getArtist());
             if (artist != null) {
                 jaxbAlbum.setArtistId(String.valueOf(artist.getId()));
             }
@@ -1286,11 +1285,9 @@ public class SubsonicRESTController {
                     child.setAlbumId(String.valueOf(album.getId()));
                 }
             }
-            if (mediaFile.getArtist() != null) {
-                org.airsonic.player.domain.Artist artist = artistDao.getArtist(mediaFile.getArtist());
-                if (artist != null) {
-                    child.setArtistId(String.valueOf(artist.getId()));
-                }
+            org.airsonic.player.domain.Artist artist = artistService.getArtist(mediaFile.getArtist());
+            if (artist != null) {
+                child.setArtistId(String.valueOf(artist.getId()));
             }
             switch (mediaFile.getMediaType()) {
                 case MUSIC:
@@ -1481,19 +1478,13 @@ public class SubsonicRESTController {
             }
         }
         for (int artistId : getIntParameters(request, "artistId")) {
-            org.airsonic.player.domain.Artist artist = artistDao.getArtist(artistId);
-            if (artist == null) {
+            if (artistService.starOrUnstar(artistId, username, star)) {
+                writeEmptyResponse(request, response);
+            } else {
                 error(request, response, ErrorCode.NOT_FOUND, "Artist not found: " + artistId);
                 return;
             }
-            if (star) {
-                artistDao.starArtist(artistId, username);
-            } else {
-                artistDao.unstarArtist(artistId, username);
-            }
         }
-
-        writeEmptyResponse(request, response);
     }
 
     @RequestMapping("/getStarred")
@@ -1528,7 +1519,7 @@ public class SubsonicRESTController {
         List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username, musicFolderId);
 
         Starred2 result = new Starred2();
-        for (org.airsonic.player.domain.Artist artist : artistDao.getStarredArtists(0, Integer.MAX_VALUE, username, musicFolders)) {
+        for (org.airsonic.player.domain.Artist artist : artistService.getStarredArtists(username, musicFolders)) {
             result.getArtist().add(createJaxbArtist(new ArtistID3(), artist, username));
         }
         for (Album album : albumDao.getStarredAlbums(0, Integer.MAX_VALUE, username, musicFolders)) {
@@ -1810,7 +1801,7 @@ public class SubsonicRESTController {
     public void savePlayQueue(HttpServletRequest request, HttpServletResponse response) throws Exception {
         request = wrapRequest(request);
         String username = securityService.getCurrentUsername(request);
-        List<Integer> mediaFileIds = Arrays.stream(getIntParameters(request, "id")).boxed().collect(toList());
+        List<Integer> mediaFileIds = Arrays.stream(getIntParameters(request, "id")).boxed().collect(Collectors.toList());
         Integer current = getIntParameter(request, "current");
         Long position = getLongParameter(request, "position");
         String changedBy = getRequiredStringParameter(request, "c");

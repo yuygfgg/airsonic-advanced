@@ -20,7 +20,14 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.*;
-import org.airsonic.player.service.*;
+import org.airsonic.player.service.MediaFileService;
+import org.airsonic.player.service.MediaFolderService;
+import org.airsonic.player.service.MediaScannerService;
+import org.airsonic.player.service.PersonalSettingsService;
+import org.airsonic.player.service.RatingService;
+import org.airsonic.player.service.SearchService;
+import org.airsonic.player.service.SecurityService;
+import org.airsonic.player.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -62,6 +69,8 @@ public class HomeController {
     private MediaFolderService mediaFolderService;
     @Autowired
     private SearchService searchService;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
 
     @GetMapping
     protected ModelAndView handleRequestInternal(HttpServletRequest request) throws Exception {
@@ -72,7 +81,7 @@ public class HomeController {
         }
         int listOffset = getIntParameter(request, "listOffset", 0);
         AlbumListType listType = AlbumListType.fromId(getStringParameter(request, "listType"));
-        UserSettings userSettings = settingsService.getUserSettings(user.getUsername());
+        UserSettings userSettings = personalSettingsService.getUserSettings(user.getUsername());
         if (listType == null) {
             listType = userSettings.getDefaultAlbumList();
         }

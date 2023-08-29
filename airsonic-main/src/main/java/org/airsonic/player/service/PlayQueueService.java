@@ -37,8 +37,6 @@ public class PlayQueueService {
     @Autowired
     private JukeboxService jukeboxService;
     @Autowired
-    private SettingsService settingsService;
-    @Autowired
     private MediaFileService mediaFileService;
     @Autowired
     private LastFmService lastFmService;
@@ -64,6 +62,8 @@ public class PlayQueueService {
     private InternetRadioService internetRadioService;
     @Autowired
     private AsyncWebSocketClient webSocketClient;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
 
     public void start(Player player) {
         player.getPlayQueue().setStatus(PlayQueue.Status.PLAYING);
@@ -159,7 +159,7 @@ public class PlayQueueService {
         List<MediaFile> songs;
 
         if (file.isFile()) {
-            boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
+            boolean queueFollowingSongs = personalSettingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
             if (queueFollowingSongs) {
                 MediaFile dir = mediaFileService.getParentOf(file);
                 songs = mediaFileService.getVisibleChildrenOf(dir, false, true);
@@ -196,7 +196,7 @@ public class PlayQueueService {
      * @param index Start playing at this index, or play whole playlist if {@code null}.
      */
     public void playPlaylist(Player player, int id, Integer index, String sessionId) {
-        boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
+        boolean queueFollowingSongs = personalSettingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
 
         List<MediaFile> files = playlistService.getFilesInPlaylist(id, true);
         if (!files.isEmpty() && index != null) {
@@ -216,7 +216,7 @@ public class PlayQueueService {
      * @param index Start playing at this index, or play all top songs if {@code null}.
      */
     public void playTopSong(Player player, int id, Integer index, String sessionId) {
-        boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
+        boolean queueFollowingSongs = personalSettingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
 
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(player.getUsername());
         List<MediaFile> files = lastFmService.getTopSongsByMediaFile(mediaFileService.getMediaFile(id), 50, musicFolders);
@@ -247,7 +247,7 @@ public class PlayQueueService {
     }
 
     public void playPodcastEpisode(Player player, int id, String sessionId) {
-        boolean queueFollowingSongs = settingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
+        boolean queueFollowingSongs = personalSettingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
 
         PodcastEpisode episode = podcastService.getEpisode(id, false);
         List<PodcastEpisode> allEpisodes = podcastService.getEpisodes(episode.getChannelId());
@@ -274,7 +274,7 @@ public class PlayQueueService {
 
     public void playShuffle(Player player, String albumListType, int offset, int count, String genre, String decade, String sessionId) {
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(player.getUsername(),
-                settingsService.getUserSettings(player.getUsername()).getSelectedMusicFolderId());
+                personalSettingsService.getUserSettings(player.getUsername()).getSelectedMusicFolderId());
         List<MediaFile> albums;
         if ("highest".equals(albumListType)) {
             albums = ratingService.getHighestRatedAlbums(offset, count, musicFolders);

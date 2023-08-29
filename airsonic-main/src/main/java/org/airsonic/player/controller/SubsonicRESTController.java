@@ -156,6 +156,8 @@ public class SubsonicRESTController {
     private CoverArtService coverArtService;
     @Autowired
     private LocaleResolver localeResolver;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
 
     private final JAXBWriter jaxbWriter = new JAXBWriter();
 
@@ -2024,7 +2026,7 @@ public class SubsonicRESTController {
     }
 
     private org.subsonic.restapi.User createJaxbUser(org.airsonic.player.domain.User user) {
-        UserSettings userSettings = settingsService.getUserSettings(user.getUsername());
+        UserSettings userSettings = personalSettingsService.getUserSettings(user.getUsername());
 
         org.subsonic.restapi.User result = new org.subsonic.restapi.User();
         result.setUsername(user.getUsername());
@@ -2105,7 +2107,7 @@ public class SubsonicRESTController {
 
         String username = getRequiredStringParameter(request, "username");
         org.airsonic.player.domain.User u = securityService.getUserByName(username);
-        UserSettings s = settingsService.getUserSettings(username);
+        UserSettings s = personalSettingsService.getUserSettings(username);
 
         if (u == null) {
             error(request, response, ErrorCode.NOT_FOUND, "No such user: " + username);

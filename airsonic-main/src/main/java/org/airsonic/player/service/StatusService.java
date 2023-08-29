@@ -21,10 +21,15 @@
 package org.airsonic.player.service;
 
 import org.airsonic.player.ajax.NowPlayingInfo;
+import org.airsonic.player.domain.AvatarScheme;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.PlayStatus;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.TransferStatus;
+import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.util.StringUtil;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -54,7 +59,7 @@ import java.util.stream.Stream;
 public class StatusService {
 
     private final MediaFileService mediaFileService;
-    private final SettingsService settingsService;
+    private final PersonalSettingsService personalSettingsService;
     private final SimpMessagingTemplate messagingTemplate;
     private final TaskSchedulingService taskService;
 
@@ -64,14 +69,14 @@ public class StatusService {
 
     public StatusService(
         MediaFileService mediaFileService,
-        SettingsService settingsService,
         SimpMessagingTemplate messagingTemplate,
-        TaskSchedulingService taskService
+        TaskSchedulingService taskService,
+        PersonalSettingsService personalSettingsService
     ) {
         this.mediaFileService = mediaFileService;
-        this.settingsService = settingsService;
         this.messagingTemplate = messagingTemplate;
         this.taskService = taskService;
+        this.personalSettingsService = personalSettingsService;
         this.cleanup();
     }
 
@@ -204,7 +209,7 @@ public class StatusService {
 
     private void broadcast(PlayStatus status, String location) {
         CompletableFuture.runAsync(() -> {
-            NowPlayingInfo info = NowPlayingInfo.createForBroadcast(status, settingsService);
+            NowPlayingInfo info = createForBroadcast(status);
 
             if (info != null) {
                 messagingTemplate.convertAndSend("/topic/nowPlaying/" + location, info);
@@ -214,7 +219,7 @@ public class StatusService {
 
     public List<NowPlayingInfo> getActivePlays() {
         return activeLocalPlays.parallelStream()
-                .map(s -> NowPlayingInfo.createForBroadcast(s, settingsService))
+                .map(s -> createForBroadcast(s))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
@@ -226,9 +231,68 @@ public class StatusService {
         inactivePlayStatuses.putAll(remotePlays);
 
         return inactivePlayStatuses.values().parallelStream()
-                .map(s -> NowPlayingInfo.createForBroadcast(s, settingsService))
+                .map(s -> createForBroadcast(s))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Creates a NowPlayingInfo object for the given play status.
+     *
+     * @param status the play status
+     * @return the NowPlayingInfo object, or null if the status is too old or the user has disabled now playing
+     */
+    private NowPlayingInfo createForBroadcast(PlayStatus status) {
+        String url = "";// NetworkService.getBaseUrl(request);
+
+        Player player = status.getPlayer();
+        MediaFile mediaFile = status.getMediaFile();
+        if (mediaFile == null) {
+            return null;
+        }
+        String username = player.getUsername();
+        if (username == null) {
+            return null;
+        }
+        long minutesAgo = status.getMinutesAgo();
+        if (minutesAgo > 60) {
+            return null;
+        }
+        UserSettings userSettings = personalSettingsService.getUserSettings(username);
+        if (!userSettings.getNowPlayingAllowed()) {
+            return null;
+        }
+
+        String artist = mediaFile.getArtist();
+        String title = mediaFile.getTitle();
+        String streamUrl = url + "stream?player=" + player.getId() + "&id=" + mediaFile.getId();
+        String albumUrl = url + "main.view?id=" + mediaFile.getId();
+        String lyricsUrl = null;
+        if (!mediaFile.isVideo()) {
+            lyricsUrl = url + "lyrics.view?artistUtf8Hex=" + StringUtil.utf8HexEncode(artist) + "&songUtf8Hex="
+                    + StringUtil.utf8HexEncode(title);
+        }
+        String coverArtUrl = url + "coverArt.view?size=60&id=" + mediaFile.getId();
+
+        String avatarUrl = null;
+        if (userSettings.getAvatarScheme() == AvatarScheme.SYSTEM) {
+            avatarUrl = url + "avatar.view?id=" + userSettings.getSystemAvatarId();
+        } else if (userSettings.getAvatarScheme() == AvatarScheme.CUSTOM
+                && personalSettingsService.getCustomAvatar(username) != null) {
+            avatarUrl = url + "avatar.view?usernameUtf8Hex=" + StringUtil.utf8HexEncode(username);
+        }
+
+        String tooltip = StringEscapeUtils.escapeHtml(artist) + " &ndash; " + StringEscapeUtils.escapeHtml(title);
+
+        if (StringUtils.isNotBlank(player.getName())) {
+            username += "@" + player.getName();
+        }
+        artist = StringEscapeUtils.escapeHtml(StringUtils.abbreviate(artist, 25));
+        title = StringEscapeUtils.escapeHtml(StringUtils.abbreviate(title, 25));
+        username = StringEscapeUtils.escapeHtml(StringUtils.abbreviate(username, 25));
+
+        return new NowPlayingInfo(status.getTransferId(), player.getId(), mediaFile.getId(), username, artist, title,
+                tooltip, streamUrl, albumUrl, lyricsUrl, coverArtUrl, avatarUrl, minutesAgo, status);
     }
 
 }

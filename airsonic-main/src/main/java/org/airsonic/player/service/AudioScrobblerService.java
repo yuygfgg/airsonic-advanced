@@ -44,7 +44,7 @@ public class AudioScrobblerService {
     @Autowired
     private ListenBrainzScrobbler listenBrainzScrobbler;
     @Autowired
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
     @Autowired
     private SecurityService securityService;
 
@@ -63,7 +63,7 @@ public class AudioScrobblerService {
             return;
         }
 
-        UserSettings userSettings = settingsService.getUserSettings(username);
+        UserSettings userSettings = personalSettingsService.getUserSettings(username);
 
         EnumSet<App> enabledApps = EnumSet.noneOf(App.class);
         if (userSettings.getLastFmEnabled()) {

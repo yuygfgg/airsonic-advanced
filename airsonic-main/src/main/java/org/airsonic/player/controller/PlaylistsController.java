@@ -20,8 +20,8 @@ package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
-import org.airsonic.player.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -46,14 +46,14 @@ public class PlaylistsController {
     private SecurityService securityService;
 
     @Autowired
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
 
     @GetMapping
     public String doGet(HttpServletRequest request, Model model) {
         Map<String, Object> map = new HashMap<>();
 
         User user = securityService.getCurrentUser(request);
-        UserSettings userSettings = settingsService.getUserSettings(user.getUsername());
+        UserSettings userSettings = personalSettingsService.getUserSettings(user.getUsername());
 
         map.put("username", user.getUsername());
         map.put("viewAsList", userSettings.getViewAsList());

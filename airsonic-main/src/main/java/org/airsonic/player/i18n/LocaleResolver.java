@@ -20,6 +20,7 @@
 package org.airsonic.player.i18n;
 
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,8 @@ public class LocaleResolver implements org.springframework.web.servlet.LocaleRes
     private SecurityService securityService;
     @Autowired
     private SettingsService settingsService;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
     private Set<Locale> locales;
 
     /**
@@ -74,7 +77,7 @@ public class LocaleResolver implements org.springframework.web.servlet.LocaleRes
     public Locale resolveLocale(String username) {
         Locale locale = null;
         if (username != null) {
-            UserSettings userSettings = settingsService.getUserSettings(username);
+            UserSettings userSettings = personalSettingsService.getUserSettings(username);
             if (userSettings != null) {
                 locale = userSettings.getLocale();
             }
@@ -106,13 +109,5 @@ public class LocaleResolver implements org.springframework.web.servlet.LocaleRes
     @Override
     public void setLocale(HttpServletRequest request, HttpServletResponse response, Locale locale) {
         throw new UnsupportedOperationException("Cannot change locale - use a different locale resolution strategy");
-    }
-
-    public void setSecurityService(SecurityService securityService) {
-        this.securityService = securityService;
-    }
-
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
     }
 }

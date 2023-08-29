@@ -1,7 +1,7 @@
 package org.airsonic.player.ajax;
 
 import org.airsonic.player.domain.UserSettings;
-import org.airsonic.player.service.SettingsService;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.annotation.SendToUser;
@@ -13,17 +13,18 @@ import java.time.Instant;
 @Controller
 @MessageMapping("/settings")
 public class UserSettingsWSController {
+
     @Autowired
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
 
     @MessageMapping("/sidebar")
     @SendToUser
     public boolean setShowSideBar(Principal p, boolean show) {
-        UserSettings userSettings = settingsService.getUserSettings(p.getName());
+        UserSettings userSettings = personalSettingsService.getUserSettings(p.getName());
         if (show != userSettings.getShowSideBar()) {
             userSettings.setShowSideBar(show);
             userSettings.setChanged(Instant.now());
-            settingsService.updateUserSettings(userSettings);
+            personalSettingsService.updateUserSettings(userSettings);
         }
         return show;
     }
@@ -31,16 +32,13 @@ public class UserSettingsWSController {
     @MessageMapping("/viewAsList")
     @SendToUser
     public boolean setViewAsList(Principal p, boolean viewAsList) {
-        UserSettings userSettings = settingsService.getUserSettings(p.getName());
+        UserSettings userSettings = personalSettingsService.getUserSettings(p.getName());
         if (viewAsList != userSettings.getViewAsList()) {
             userSettings.setViewAsList(viewAsList);
             userSettings.setChanged(Instant.now());
-            settingsService.updateUserSettings(userSettings);
+            personalSettingsService.updateUserSettings(userSettings);
         }
         return viewAsList;
     }
 
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
-    }
 }

@@ -21,6 +21,7 @@ package org.airsonic.player.theme;
 
 import org.airsonic.player.domain.Theme;
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,8 +42,12 @@ import java.util.Set;
 @Component("themeResolver")
 public class CustomThemeResolver implements ThemeResolver {
 
+    @Autowired
     private SecurityService securityService;
+    @Autowired
     private SettingsService settingsService;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
     private Set<String> themeIds;
 
     /**
@@ -70,7 +75,7 @@ public class CustomThemeResolver implements ThemeResolver {
         // Look for user-specific theme.
         String username = securityService.getCurrentUsername(request);
         if (username != null) {
-            UserSettings userSettings = settingsService.getUserSettings(username);
+            UserSettings userSettings = personalSettingsService.getUserSettings(username);
             if (userSettings != null) {
                 themeId = userSettings.getThemeId();
             }
@@ -116,13 +121,4 @@ public class CustomThemeResolver implements ThemeResolver {
         throw new UnsupportedOperationException("Cannot change theme - use a different theme resolution strategy");
     }
 
-    @Autowired
-    public void setSecurityService(SecurityService securityService) {
-        this.securityService = securityService;
-    }
-
-    @Autowired
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
-    }
 }

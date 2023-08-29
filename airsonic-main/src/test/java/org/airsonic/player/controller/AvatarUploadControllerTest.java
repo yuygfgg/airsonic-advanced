@@ -2,8 +2,8 @@ package org.airsonic.player.controller;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Avatar;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
-import org.airsonic.player.service.SettingsService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -44,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 @WebMvcTest
 @ContextConfiguration(classes = {AvatarUploadController.class}, initializers = ConfigDataApplicationContextInitializer.class)
-@EnableConfigurationProperties({AirsonicHomeConfig.class})
+@EnableConfigurationProperties(AirsonicHomeConfig.class)
 @SuppressWarnings("unchecked")
 public class AvatarUploadControllerTest {
 
@@ -55,7 +56,7 @@ public class AvatarUploadControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
 
     @MockBean
     private SecurityService securityService;
@@ -108,7 +109,7 @@ public class AvatarUploadControllerTest {
         byte[] imageData = resource.getInputStream().readAllBytes();
         MockMultipartFile multipartFile = new MockMultipartFile("file", FILE_NAME, "text/plain", imageData);
         Avatar expectedAvatar = new Avatar(0, USERNAME, Instant.now(), fileName, 0, 0, tempDir);
-        when(settingsService.getCustomAvatar(eq(USERNAME))).thenReturn(expectedAvatar);
+        when(personalSettingsService.getCustomAvatar(eq(USERNAME))).thenReturn(expectedAvatar);
 
         // when
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders.multipart("/avatarUpload")
@@ -125,6 +126,7 @@ public class AvatarUploadControllerTest {
         assertNull(actual.get("error"));
         assertEquals(expectedAvatar, actual.get("avatar"));
         assertEquals(USERNAME, actual.get("username"));
+        verify(personalSettingsService).createCustomAvatar(eq(FILE_NAME), eq(imageData), eq(USERNAME));
     }
 
 }

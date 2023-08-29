@@ -28,9 +28,9 @@ import org.airsonic.player.domain.UserSettings;
 import org.airsonic.player.service.BookmarkService;
 import org.airsonic.player.service.JWTSecurityService;
 import org.airsonic.player.service.MediaFileService;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.SecurityService;
-import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.util.NetworkUtil;
 import org.airsonic.player.util.StringUtil;
@@ -81,7 +81,7 @@ public class VideoPlayerController {
     @Autowired
     private BookmarkService bookmarkService;
     @Autowired
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
 
     @GetMapping
     protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -96,7 +96,7 @@ public class VideoPlayerController {
         if (position == null) {
             position = bookmarkService.getBookmark(user.getUsername(), id).map(Bookmark::getPositionMillis).orElse(0L);
         }
-        UserSettings settings = settingsService.getUserSettings(user.getUsername());
+        UserSettings settings = personalSettingsService.getUserSettings(user.getUsername());
 
         Integer playerId = playerService.getPlayer(request, response).getId();
         String url = NetworkUtil.getBaseUrl(request);

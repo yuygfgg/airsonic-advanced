@@ -19,6 +19,8 @@
  */
 package org.airsonic.player.domain;
 
+import org.airsonic.player.domain.entity.CustomAvatar;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -30,7 +32,7 @@ import java.time.Instant;
  */
 public class Avatar {
 
-    private int id;
+    private Integer id;
     private String name;
     private Instant createdDate;
     private String mimeType;
@@ -38,11 +40,15 @@ public class Avatar {
     private int height;
     private Path path;
 
-    public Avatar(int id, String name, Instant createdDate, String mimeType, int width, int height, String path) {
+    public Avatar(Integer id, String name, Instant createdDate, String mimeType, int width, int height, String path) {
         this(id, name, createdDate, mimeType, width, height, Paths.get(path));
     }
 
-    public Avatar(int id, String name, Instant createdDate, String mimeType, int width, int height, Path path) {
+    public Avatar(String name, Instant createdDate, String mimeType, int width, int height, Path path) {
+        this(null, name, createdDate, mimeType, width, height, path);
+    }
+
+    public Avatar(Integer id, String name, Instant createdDate, String mimeType, int width, int height, Path path) {
         this.id = id;
         this.name = name;
         this.createdDate = createdDate;
@@ -52,7 +58,7 @@ public class Avatar {
         this.path = path;
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -78,5 +84,13 @@ public class Avatar {
 
     public Path getPath() {
         return path;
+    }
+
+    public CustomAvatar toCustomAvatar(String username, Path airsonicHome) {
+        if (path != null && path.startsWith(airsonicHome)) {
+            Path normarizedPath = Paths.get("$[AIRSONIC_HOME]", airsonicHome.relativize(path).toString());
+            return new CustomAvatar(id, name, createdDate, mimeType, width, height, normarizedPath, username);
+        }
+        return new CustomAvatar(id, name, createdDate, mimeType, width, height, path, username);
     }
 }

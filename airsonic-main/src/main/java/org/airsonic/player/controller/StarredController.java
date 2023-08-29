@@ -23,9 +23,9 @@ import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.MediaFolderService;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.SecurityService;
-import org.airsonic.player.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,7 +56,7 @@ public class StarredController {
     @Autowired
     private SecurityService securityService;
     @Autowired
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
     @Autowired
     private MediaFileService mediaFileService;
     @Autowired
@@ -68,7 +68,7 @@ public class StarredController {
 
         User user = securityService.getCurrentUser(request);
         String username = user.getUsername();
-        UserSettings userSettings = settingsService.getUserSettings(username);
+        UserSettings userSettings = personalSettingsService.getUserSettings(username);
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
 
         List<MediaFile> artists = mediaFileDao.getStarredDirectories(0, Integer.MAX_VALUE, username, musicFolders);

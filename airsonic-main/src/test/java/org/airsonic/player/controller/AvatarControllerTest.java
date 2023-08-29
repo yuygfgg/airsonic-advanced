@@ -19,11 +19,9 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.AvatarDao;
 import org.airsonic.player.domain.Avatar;
-import org.airsonic.player.domain.AvatarScheme;
 import org.airsonic.player.domain.UserSettings;
-import org.airsonic.player.service.SettingsService;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -41,12 +39,15 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -70,7 +71,7 @@ public class AvatarControllerTest {
     private UserSettings userSettings;
 
     @MockBean
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
 
     @Mock
     private UserSettings mockedUserSettings;
@@ -95,12 +96,16 @@ public class AvatarControllerTest {
     private final String AIRSONIC_USER = "admin";
     private final String AIRSONIC_PASSWORD = "admin";
 
+    /** test resource  */
+    private static final Path TEST_RESOURCE_DIR = Paths.get("src/main/resources/org/airsonic/player/dao");
+
     @Test
     @WithMockUser(username = AIRSONIC_USER, password = AIRSONIC_PASSWORD)
     public void getAvatarWithoutParamFailureByNotFound() throws Exception {
 
         mvc.perform(get("/avatar"))
                 .andExpect(status().isNotFound());
+        verify(personalSettingsService, never()).getAvatar(any(), any(), anyBoolean());
     }
 
 
@@ -111,7 +116,7 @@ public class AvatarControllerTest {
         final Integer AVATAR_ID = 1;
 
         // setup mock
-        when(settingsService.getSystemAvatar(eq(AVATAR_ID))).thenReturn(null);
+        when(personalSettingsService.getAvatar(eq(AVATAR_ID), eq(AIRSONIC_USER), eq(false))).thenReturn(null);
 
         mvc.perform(get("/avatar")
                 .param("id", AVATAR_ID.toString()))
@@ -122,8 +127,7 @@ public class AvatarControllerTest {
     @WithMockUser(username = AIRSONIC_USER, password = AIRSONIC_PASSWORD)
     public void getAvatarByUsernameFailureByNotFound() throws Exception {
 
-        when(settingsService.getUserSettings(eq("user"))).thenReturn(mockedUserSettings);
-        when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.NONE);
+        when(personalSettingsService.getAvatar(isNull(), eq("user"), eq(false))).thenReturn(null);
 
         mvc.perform(get("/avatar")
                 .param("username", "user"))
@@ -138,7 +142,7 @@ public class AvatarControllerTest {
         final Integer AVATAR_ID = 1;
 
         // set up mock
-        when(settingsService.getSystemAvatar(eq(AVATAR_ID))).thenReturn(mockedAvatar);
+        when(personalSettingsService.getAvatar(eq(AVATAR_ID), isNull(), eq(false))).thenReturn(mockedAvatar);
         when(mockedAvatar.getMimeType()).thenReturn("img/png");
         when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","Engineer.png"));
 
@@ -148,12 +152,10 @@ public class AvatarControllerTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
 
-        // prepare expected
-        byte [] expected = AvatarDao.class.getResourceAsStream("schema/Engineer.png").readAllBytes();
+        byte [] expected = Files.readAllBytes(TEST_RESOURCE_DIR.resolve("schema/Engineer.png"));
 
         // assertion
         assertArrayEquals(expected, actual);
-        verify(settingsService).getSystemAvatar(eq(AVATAR_ID));
     }
 
     @Test
@@ -162,7 +164,7 @@ public class AvatarControllerTest {
         final Integer AVATAR_ID = 1;
 
         // set up mock
-        when(settingsService.getSystemAvatar(eq(AVATAR_ID))).thenReturn(mockedAvatar);
+        when(personalSettingsService.getAvatar(eq(AVATAR_ID), eq("user"), eq(false))).thenReturn(mockedAvatar);
         when(mockedAvatar.getMimeType()).thenReturn("img/png");
         when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","Engineer.png"));
 
@@ -175,91 +177,10 @@ public class AvatarControllerTest {
         byte[] actual = result.getResponse().getContentAsByteArray();
 
         // prepare expected
-        byte [] expected = AvatarDao.class.getResourceAsStream("schema/Engineer.png").readAllBytes();
+        byte [] expected = Files.readAllBytes(TEST_RESOURCE_DIR.resolve("schema/Engineer.png"));
 
         // assertion
         assertArrayEquals(expected, actual);
-        verify(settingsService).getSystemAvatar(eq(AVATAR_ID));
-        verify(settingsService, never()).getUserSettings(anyString());
-    }
-
-    @Test
-    @WithMockUser(username = AIRSONIC_USER, password = AIRSONIC_PASSWORD)
-    public void getAvatarByUsernameWithSystemAvatarTest() throws Exception {
-
-        final int AVATAR_ID = 1;
-        final String USER_NAME = "user";
-
-        // setup mock
-        when(settingsService.getUserSettings(anyString())).thenReturn(mockedUserSettings);
-        when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.SYSTEM);
-        when(mockedUserSettings.getSystemAvatarId()).thenReturn(AVATAR_ID);
-        when(settingsService.getSystemAvatar(eq(AVATAR_ID))).thenReturn(mockedAvatar);
-        when(mockedAvatar.getMimeType()).thenReturn("img/png");
-        when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","Engineer.png"));
-
-        // id = 1 is engineer avatar
-        MvcResult result = mvc.perform(get("/avatar")
-                .param("username", USER_NAME))
-                .andExpect(status().isOk())
-                .andReturn();
-        byte[] actual = result.getResponse().getContentAsByteArray();
-
-        // prepare expected
-        byte [] expected = AvatarDao.class.getResourceAsStream("schema/Engineer.png").readAllBytes();
-
-        // assertion
-        assertArrayEquals(expected, actual);
-        verify(settingsService).getSystemAvatar(eq(AVATAR_ID));
-        verify(settingsService).getUserSettings(eq(USER_NAME));
-    }
-
-    @Test
-    @WithMockUser(username = AIRSONIC_USER, password = AIRSONIC_PASSWORD)
-    public void getAvatarByUsernameWithNoneAvatarTest() throws Exception {
-
-        final String USER_NAME = "user";
-
-        // setup mock
-        when(settingsService.getUserSettings(anyString())).thenReturn(mockedUserSettings);
-        when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.NONE);
-
-        // id = 1 is engineer avatar
-        mvc.perform(get("/avatar")
-                .param("username", USER_NAME))
-                .andExpect(status().isNotFound())
-                .andReturn();
-
-        verify(settingsService).getUserSettings(eq(USER_NAME));
-    }
-
-    @Test
-    @WithMockUser(username = AIRSONIC_USER, password = AIRSONIC_PASSWORD)
-    public void getAvatarByUsernameWithCustomAvatarTest() throws Exception {
-
-        final String USER_NAME = "user";
-
-        // setup mock
-        when(settingsService.getUserSettings(anyString())).thenReturn(mockedUserSettings);
-        when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.CUSTOM);
-        when(settingsService.getCustomAvatar(anyString())).thenReturn(mockedAvatar);
-        when(mockedAvatar.getMimeType()).thenReturn("img/png");
-        when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","All-Caps.png"));
-
-        // id = 1 is engineer avatar
-        MvcResult result = mvc.perform(get("/avatar")
-                .param("username", USER_NAME))
-                .andExpect(status().isOk())
-                .andReturn();
-        byte[] actual = result.getResponse().getContentAsByteArray();
-
-        // prepare expected
-        byte [] expected = AvatarDao.class.getResourceAsStream("schema/All-Caps.png").readAllBytes();
-
-        // assertion
-        assertArrayEquals(expected, actual);
-        verify(settingsService).getUserSettings(eq(USER_NAME));
-        verify(settingsService).getCustomAvatar(eq(USER_NAME));
     }
 
     @Test
@@ -269,9 +190,7 @@ public class AvatarControllerTest {
         final String USER_NAME = "user";
 
         // setup mock
-        when(settingsService.getUserSettings(anyString())).thenReturn(mockedUserSettings);
-        when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.SYSTEM);
-        when(settingsService.getCustomAvatar(anyString())).thenReturn(mockedAvatar);
+        when(personalSettingsService.getAvatar(isNull(), eq(USER_NAME), eq(true))).thenReturn(mockedAvatar);
         when(mockedAvatar.getMimeType()).thenReturn("img/png");
         when(mockedAvatar.getPath()).thenReturn(Paths.get("icons","avatars","All-Caps.png"));
 
@@ -284,11 +203,9 @@ public class AvatarControllerTest {
         byte[] actual = result.getResponse().getContentAsByteArray();
 
         // prepare expected
-        byte [] expected = AvatarDao.class.getResourceAsStream("schema/All-Caps.png").readAllBytes();
+        byte [] expected = Files.readAllBytes(TEST_RESOURCE_DIR.resolve("schema/All-Caps.png"));
 
         // assertion
         assertArrayEquals(expected, actual);
-        verify(settingsService).getUserSettings(eq(USER_NAME));
-        verify(settingsService).getCustomAvatar(eq(USER_NAME));
     }
 }

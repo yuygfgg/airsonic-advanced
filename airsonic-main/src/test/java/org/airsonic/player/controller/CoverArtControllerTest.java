@@ -32,6 +32,7 @@ import org.airsonic.player.service.ArtistService;
 import org.airsonic.player.service.CoverArtService;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.PodcastService;
+import org.airsonic.player.util.ImageUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -154,7 +155,7 @@ public class CoverArtControllerTest {
             BufferedImage image = ImageIO.read(in);
 
             // scale expected image
-            BufferedImage thumbImage = CoverArtController.scale(image, 30, 30);
+            BufferedImage thumbImage = ImageUtil.scale(image, 30, 30);
 
             // create expected response body
             ImageIO.write(thumbImage, "jpeg", out);

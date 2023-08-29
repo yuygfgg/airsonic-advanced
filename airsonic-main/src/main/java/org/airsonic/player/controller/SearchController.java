@@ -24,10 +24,10 @@ import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.MediaFolderService;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.SearchService;
 import org.airsonic.player.service.SecurityService;
-import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.search.IndexType;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -63,8 +63,6 @@ public class SearchController {
     @Autowired
     private SecurityService securityService;
     @Autowired
-    private SettingsService settingsService;
-    @Autowired
     private PlayerService playerService;
     @Autowired
     private SearchService searchService;
@@ -74,6 +72,8 @@ public class SearchController {
     private MediaFileService mediaFileService;
     @Autowired
     private AlbumDao albumDao;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
 
     @GetMapping
     protected String displayForm() {
@@ -89,7 +89,7 @@ public class SearchController {
     protected String onSubmit(HttpServletRequest request, HttpServletResponse response,@ModelAttribute("command") SearchCommand command, Model model) throws Exception {
 
         User user = securityService.getCurrentUser(request);
-        UserSettings userSettings = settingsService.getUserSettings(user.getUsername());
+        UserSettings userSettings = personalSettingsService.getUserSettings(user.getUsername());
         command.setUser(user);
         command.setPartyModeEnabled(userSettings.getPartyModeEnabled());
 

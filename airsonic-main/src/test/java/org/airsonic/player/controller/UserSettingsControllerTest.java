@@ -6,6 +6,7 @@ import org.airsonic.player.domain.TranscodeScheme;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.UserSettings;
 import org.airsonic.player.service.MediaFolderService;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.TranscodingService;
@@ -47,6 +48,8 @@ public class UserSettingsControllerTest {
     private MediaFolderService mediaFolderService;
     @MockBean
     private TranscodingService transcodingService;
+    @MockBean
+    private PersonalSettingsService personalSettingsService;
 
     @Autowired
     private UserSettingsController userSettingsController;
@@ -70,7 +73,7 @@ public class UserSettingsControllerTest {
         final User newUser = new User("test", "test@example.com");
         when(securityService.getUserByName("test")).thenReturn(newUser);
         final UserSettings someSettings = new UserSettings();
-        when(settingsService.getUserSettings("test")).thenReturn(someSettings);
+        when(personalSettingsService.getUserSettings("test")).thenReturn(someSettings);
 
         // And I have a command for it
         final UserSettingsCommand command = new UserSettingsCommand();
@@ -95,7 +98,7 @@ public class UserSettingsControllerTest {
         final User newUser = new User("test", "test@example.com");
         when(securityService.getUserByName("test")).thenReturn(newUser);
         final UserSettings someSettings = new UserSettings();
-        when(settingsService.getUserSettings("test")).thenReturn(someSettings);
+        when(personalSettingsService.getUserSettings("test")).thenReturn(someSettings);
 
         // And I have a command for it, that does not contain any "allowedMediaFolderIds"
         final UserSettingsCommand command = new UserSettingsCommand();

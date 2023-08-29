@@ -14,12 +14,14 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.VersionService;
@@ -49,13 +51,15 @@ public class RightController {
     private SecurityService securityService;
     @Autowired
     private VersionService versionService;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
 
     @GetMapping
     protected ModelAndView handleRequestInternal(HttpServletRequest request) {
         Map<String, Object> map = new HashMap<>();
         ModelAndView result = new ModelAndView("right");
 
-        UserSettings userSettings = settingsService.getUserSettings(securityService.getCurrentUsername(request));
+        UserSettings userSettings = personalSettingsService.getUserSettings(securityService.getCurrentUsername(request));
         if (userSettings.getFinalVersionNotificationEnabled() && versionService.isNewFinalVersionAvailable()) {
             map.put("newVersionAvailable", true);
             map.put("latestVersion", versionService.getLatestFinalVersion());

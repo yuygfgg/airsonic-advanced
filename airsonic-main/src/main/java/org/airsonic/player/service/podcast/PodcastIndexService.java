@@ -3,8 +3,8 @@ package org.airsonic.player.service.podcast;
 import org.airsonic.player.domain.UserCredential;
 import org.airsonic.player.domain.UserCredential.App;
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
-import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.VersionService;
 import org.airsonic.player.util.Util;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -30,7 +30,7 @@ public class PodcastIndexService {
     private static final Logger LOG = LoggerFactory.getLogger(PodcastIndexService.class);
 
     @Autowired
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
     @Autowired
     private SecurityService securityService;
     @Autowired
@@ -39,7 +39,7 @@ public class PodcastIndexService {
     private static final String DEFAULT_URL = "https://api.podcastindex.org/api/1.0/search/byterm";
 
     public List<PodcastIndexResponse.PodcastIndexResult> search(String username, String search) throws Exception {
-        UserSettings userSettings = settingsService.getUserSettings(username);
+        UserSettings userSettings = personalSettingsService.getUserSettings(username);
 
         if (!userSettings.getPodcastIndexEnabled() || StringUtils.isBlank(search)) {
             return Collections.emptyList();

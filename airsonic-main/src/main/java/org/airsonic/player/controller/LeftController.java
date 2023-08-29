@@ -65,6 +65,8 @@ public class LeftController {
     private PlayerService playerService;
     @Autowired
     private MediaFolderService mediaFolderService;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
 
     /**
      * Note: This class intentionally does not implement org.springframework.web.servlet.mvc.LastModified
@@ -79,7 +81,7 @@ public class LeftController {
 
         long lastModified = LAST_COMPATIBILITY_TIME.toEpochMilli();
         String username = securityService.getCurrentUsername(request);
-        UserSettings userSettings = settingsService.getUserSettings(username);
+        UserSettings userSettings = personalSettingsService.getUserSettings(username);
 
         // When was settings last changed?
         lastModified = Math.max(lastModified, settingsService.getSettingsChanged());
@@ -130,7 +132,7 @@ public class LeftController {
         }
 
         String username = securityService.getCurrentUsername(request);
-        UserSettings userSettings = settingsService.getUserSettings(username);
+        UserSettings userSettings = personalSettingsService.getUserSettings(username);
         List<MusicFolder> allMusicFolders = mediaFolderService.getMusicFoldersForUser(username);
         List<MusicFolder> musicFoldersToUse = mediaFolderService.getMusicFoldersForUser(username, userSettings.getSelectedMusicFolderId());
         MusicFolder selectedMusicFolder = musicFoldersToUse.stream()
@@ -171,9 +173,9 @@ public class LeftController {
         }
         // Note: UserSettings.setChanged() is intentionally not called. This would break browser caching
         // of the left frame.
-        UserSettings settings = settingsService.getUserSettings(securityService.getCurrentUsername(request));
+        UserSettings settings = personalSettingsService.getUserSettings(securityService.getCurrentUsername(request));
         settings.setSelectedMusicFolderId(musicFolderId);
-        settingsService.updateUserSettings(settings);
+        personalSettingsService.updateUserSettings(settings);
 
         return true;
     }

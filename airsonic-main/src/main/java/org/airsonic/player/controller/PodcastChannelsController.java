@@ -20,8 +20,8 @@ package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
-import org.airsonic.player.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,14 +44,14 @@ import java.util.Map;
 public class PodcastChannelsController {
 
     @Autowired
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
     @Autowired
     private SecurityService securityService;
 
     @GetMapping
     protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) {
         User user = securityService.getCurrentUser(request);
-        UserSettings userSettings = settingsService.getUserSettings(user.getUsername());
+        UserSettings userSettings = personalSettingsService.getUserSettings(user.getUsername());
 
         Map<String, Object> map = new HashMap<>();
         ModelAndView result = new ModelAndView();

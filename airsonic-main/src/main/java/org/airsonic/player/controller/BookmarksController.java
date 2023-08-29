@@ -1,6 +1,6 @@
 package org.airsonic.player.controller;
 
-import org.airsonic.player.service.SettingsService;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,12 +16,12 @@ import java.util.Map;
 @RequestMapping("/bookmarks")
 public class BookmarksController {
     @Autowired
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
 
     @GetMapping
     public ModelAndView doGet(Principal user, HttpServletRequest request) {
         return new ModelAndView("bookmarks", "model",
                 Map.of("initialPaginationSize",
-                        settingsService.getUserSettings(user.getName()).getPaginationSizeBookmarks()));
+                        personalSettingsService.getUserSettings(user.getName()).getPaginationSizeBookmarks()));
     }
 }

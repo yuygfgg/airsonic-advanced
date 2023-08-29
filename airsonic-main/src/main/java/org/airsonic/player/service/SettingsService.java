@@ -27,9 +27,7 @@ import com.google.common.util.concurrent.RateLimiter;
 import org.airsonic.player.config.AirsonicCueConfig;
 import org.airsonic.player.config.AirsonicDefaultFolderConfig;
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.AvatarDao;
 import org.airsonic.player.dao.InternetRadioDao;
-import org.airsonic.player.dao.UserDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.service.sonos.SonosServiceRegistration;
 import org.airsonic.player.util.StringUtil;
@@ -38,8 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.logging.LogFile;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.PropertySource;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -49,7 +45,6 @@ import javax.annotation.PostConstruct;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -271,10 +266,6 @@ public class SettingsService {
     private List<Locale> locales;
     @Autowired
     private InternetRadioDao internetRadioDao;
-    @Autowired
-    private UserDao userDao;
-    @Autowired
-    private AvatarDao avatarDao;
     @Autowired
     private Environment env;
     @Autowired
@@ -1294,103 +1285,6 @@ public class SettingsService {
         internetRadioDao.updateInternetRadio(radio);
     }
 
-    /**
-     * Returns settings for the given user.
-     *
-     * @param username The username.
-     * @return User-specific settings. Never <code>null</code>.
-     */
-    @Cacheable(cacheNames = "userSettingsCache")
-    public UserSettings getUserSettings(String username) {
-        UserSettings settings = userDao.getUserSettings(username);
-        return settings == null ? createDefaultUserSettings(username) : settings;
-    }
-
-    private UserSettings createDefaultUserSettings(String username) {
-        UserSettings settings = new UserSettings(username);
-        settings.setFinalVersionNotificationEnabled(true);
-        settings.setBetaVersionNotificationEnabled(false);
-        settings.setSongNotificationEnabled(true);
-        settings.setShowNowPlayingEnabled(true);
-        settings.setPartyModeEnabled(false);
-        settings.setNowPlayingAllowed(true);
-        settings.setAutoHidePlayQueue(true);
-        settings.setKeyboardShortcutsEnabled(false);
-        settings.setShowSideBar(true);
-        settings.setShowArtistInfoEnabled(true);
-        settings.setViewAsList(false);
-        settings.setQueueFollowingSongs(true);
-        settings.setDefaultAlbumList(AlbumListType.RANDOM);
-        settings.setLastFmEnabled(false);
-        settings.setListenBrainzEnabled(false);
-        settings.setChanged(Instant.now());
-
-        UserSettings.Visibility playlist = settings.getPlaylistVisibility();
-        playlist.setArtistVisible(true);
-        playlist.setAlbumVisible(true);
-        playlist.setYearVisible(true);
-        playlist.setDurationVisible(true);
-        playlist.setBitRateVisible(true);
-        playlist.setFormatVisible(true);
-        playlist.setFileSizeVisible(true);
-
-        UserSettings.Visibility main = settings.getMainVisibility();
-        main.setTrackNumberVisible(true);
-        main.setArtistVisible(true);
-        main.setDurationVisible(true);
-
-        return settings;
-    }
-
-    /**
-     * Updates settings for the given username.
-     *
-     * @param settings The user-specific settings.
-     */
-    @CacheEvict(cacheNames = "userSettingsCache", key = "#settings.username")
-    public void updateUserSettings(UserSettings settings) {
-        userDao.updateUserSettings(settings);
-    }
-
-    /**
-     * Returns all system avatars.
-     *
-     * @return All system avatars.
-     */
-    public List<Avatar> getAllSystemAvatars() {
-        return avatarDao.getAllSystemAvatars();
-    }
-
-    /**
-     * Returns the system avatar with the given ID.
-     *
-     * @param id The system avatar ID.
-     * @return The avatar or <code>null</code> if not found.
-     */
-    public Avatar getSystemAvatar(int id) {
-        return avatarDao.getSystemAvatar(id);
-    }
-
-    /**
-     * Returns the custom avatar for the given user.
-     *
-     * @param username The username.
-     * @return The avatar or <code>null</code> if not found.
-     */
-    public Avatar getCustomAvatar(String username) {
-        return avatarDao.getCustomAvatar(username);
-    }
-
-    /**
-     * Sets the custom avatar for the given user.
-     *
-     * @param avatar   The avatar, or <code>null</code> to remove the avatar.
-     * @param username The username.
-     */
-    public void setCustomAvatar(Avatar avatar, String username) {
-        avatarDao.setCustomAvatar(avatar, username);
-    }
-
     public boolean isDlnaEnabled() {
         return getBoolean(KEY_DLNA_ENABLED, DEFAULT_DLNA_ENABLED);
     }
@@ -1470,14 +1364,6 @@ public class SettingsService {
 
     public void setInternetRadioDao(InternetRadioDao internetRadioDao) {
         this.internetRadioDao = internetRadioDao;
-    }
-
-    public void setUserDao(UserDao userDao) {
-        this.userDao = userDao;
-    }
-
-    public void setAvatarDao(AvatarDao avatarDao) {
-        this.avatarDao = avatarDao;
     }
 
     public String getSmtpServer() {

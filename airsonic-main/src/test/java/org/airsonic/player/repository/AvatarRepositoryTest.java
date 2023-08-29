@@ -1,10 +1,12 @@
-package org.airsonic.player.dao;
+package org.airsonic.player.repository;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.domain.Avatar;
+import org.airsonic.player.dao.UserDao;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.UserCredential;
 import org.airsonic.player.domain.UserCredential.App;
+import org.airsonic.player.domain.entity.CustomAvatar;
+import org.airsonic.player.domain.entity.SystemAvatar;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,33 +19,35 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @EnableConfigurationProperties({AirsonicHomeConfig.class})
 @ExtendWith(MockitoExtension.class)
-public class AvatarDaoTest {
+@Transactional
+public class AvatarRepositoryTest {
 
     @Autowired
-    private AvatarDao avatarDao;
+    private SystemAvatarRepository systemAvatarRepository;
+
+    @Autowired
+    private CustomAvatarRepository customAvatarRepository;
 
     @Autowired
     private UserDao userDao;
 
     @TempDir
     private static Path tempDir;
-
-    @SpyBean
-    private AirsonicHomeConfig homeConfig;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -69,14 +73,14 @@ public class AvatarDaoTest {
     @Test
     public void testSystemAvatars() {
         // Call the method to be tested
-        List<Avatar> result = avatarDao.getAllSystemAvatars();
+        List<SystemAvatar> result = systemAvatarRepository.findAll();
 
         // Assertions
         assertEquals(46, result.size());
 
         // test getSystemAvatar
-        Avatar expected = result.get(0);
-        Avatar actual = avatarDao.getSystemAvatar(expected.getId());
+        SystemAvatar expected = result.get(0);
+        SystemAvatar actual = systemAvatarRepository.findById(expected.getId()).get();
         assertEquals(expected.getId(), actual.getId());
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getMimeType(), actual.getMimeType());
@@ -104,13 +108,13 @@ public class AvatarDaoTest {
         @Test
         public void testCustomAvatar() throws Exception {
 
-            Avatar expected = new Avatar(1, "avatar1", Instant.now(), "image/jpeg", 100, 100, "/avatars/avatar1.jpg");
+            CustomAvatar expected = new CustomAvatar("avatar1", Instant.now(), "image/jpeg", 100, 100, Paths.get("$[AIRSONIC_HOME]/avatars/avatar1.jpg"), TEST_USER_NAME);
 
             // Call the method to be tested
-            avatarDao.setCustomAvatar(expected, TEST_USER_NAME);
+            customAvatarRepository.save(expected);
 
             // Call the method to be tested
-            Avatar actual = avatarDao.getCustomAvatar(TEST_USER_NAME);
+            CustomAvatar actual = customAvatarRepository.findByUsername(TEST_USER_NAME).get();
 
             // Assertions
             assertEquals(expected.getName(), actual.getName());
@@ -121,29 +125,22 @@ public class AvatarDaoTest {
         }
 
         @Test
-        public void testCustomAvatarWithAirsonicHomePath() throws Exception {
+        public void testDeleteAllByUsername() {
 
-            Avatar expected = new Avatar(1, "avatar1", Instant.now(), "image/jpeg", 100, 100, tempDir.resolve("avatars/avatar1.jpg"));
-
-            // Call the method to be tested
-            avatarDao.setCustomAvatar(expected, TEST_USER_NAME);
-
-            // Mock the AirsonicConfig to return a different path
-            when(homeConfig.getAirsonicHome()).thenReturn(Paths.get("/airsonic-home"));
+            CustomAvatar expected = new CustomAvatar("avatar1", Instant.now(), "image/jpeg", 100, 100, Paths.get("$[AIRSONIC_HOME]/avatars/avatar1.jpg"), TEST_USER_NAME);
 
             // Call the method to be tested
-            Avatar actual = avatarDao.getCustomAvatar(TEST_USER_NAME);
+            customAvatarRepository.save(expected);
+
+            // Call the method to be tested
+            customAvatarRepository.deleteAllByUsername(TEST_USER_NAME);
+
+            // Call the method to be tested
+            Optional<CustomAvatar> actual = customAvatarRepository.findByUsername(TEST_USER_NAME);
 
             // Assertions
-            assertEquals(expected.getName(), actual.getName());
-            assertEquals(expected.getMimeType(), actual.getMimeType());
-            assertEquals(Paths.get("/airsonic-home/avatars/avatar1.jpg"), actual.getPath());
-            assertEquals(expected.getHeight(), actual.getHeight());
-            assertEquals(expected.getWidth(), actual.getWidth());
+            assertTrue(actual.isEmpty());
+
         }
-
     }
-
-
-
 }

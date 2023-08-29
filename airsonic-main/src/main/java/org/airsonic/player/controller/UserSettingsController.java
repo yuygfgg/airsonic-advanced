@@ -30,6 +30,7 @@ import org.airsonic.player.domain.UserCredential;
 import org.airsonic.player.domain.UserCredential.App;
 import org.airsonic.player.domain.UserSettings;
 import org.airsonic.player.service.MediaFolderService;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.TranscodingService;
@@ -81,6 +82,8 @@ public class UserSettingsController {
     private TranscodingService transcodingService;
     @Autowired
     private AirsonicHomeConfig homeConfig;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
 
     @InitBinder
     protected void initBinder(WebDataBinder binder, HttpServletRequest request) {
@@ -97,7 +100,7 @@ public class UserSettingsController {
             if (user != null) {
                 command.setUser(user);
                 command.setEmail(user.getEmail());
-                UserSettings userSettings = settingsService.getUserSettings(user.getUsername());
+                UserSettings userSettings = personalSettingsService.getUserSettings(user.getUsername());
                 command.setTranscodeSchemeName(userSettings.getTranscodeScheme().name());
                 command.setAllowedMusicFolderIds(Util.toIntArray(getAllowedMusicFolderIds(user)));
                 command.setCurrentUser(securityService.getCurrentUser(request).getUsername().equals(user.getUsername()));
@@ -238,10 +241,10 @@ public class UserSettingsController {
             securityService.createCredential(uc);
         }
 
-        UserSettings userSettings = settingsService.getUserSettings(command.getUsername());
+        UserSettings userSettings = personalSettingsService.getUserSettings(command.getUsername());
         userSettings.setTranscodeScheme(TranscodeScheme.valueOf(command.getTranscodeSchemeName()));
         userSettings.setChanged(Instant.now());
-        settingsService.updateUserSettings(userSettings);
+        personalSettingsService.updateUserSettings(userSettings);
 
         // NOTE: This can happen if none of the configured media directories exist or if none are enabled.
         //       Primitive arrays are still behind a pointer technically, and that pointer is null if not initialized.

@@ -75,6 +75,8 @@ public class TranscodingService {
     private PlayerRepository playerRepository;;
     @Autowired
     private TranscodingRepository transcodingRepository;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
 
     /**
      * Returns all transcodings.
@@ -275,7 +277,7 @@ public class TranscodingService {
         }
         String username = player.getUsername();
         if (username != null) {
-            UserSettings userSettings = settingsService.getUserSettings(username);
+            UserSettings userSettings = personalSettingsService.getUserSettings(username);
             return player.getTranscodeScheme().strictest(userSettings.getTranscodeScheme());
         }
 

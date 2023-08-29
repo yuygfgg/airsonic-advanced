@@ -23,9 +23,9 @@ import com.google.common.collect.ImmutableMap;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.SecurityService;
-import org.airsonic.player.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,13 +53,13 @@ public class PlayQueueController {
     @Autowired
     private SecurityService securityService;
     @Autowired
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
 
     @GetMapping
     protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         User user = securityService.getCurrentUser(request);
-        UserSettings userSettings = settingsService.getUserSettings(user.getUsername());
+        UserSettings userSettings = personalSettingsService.getUserSettings(user.getUsername());
 
         Map<String, Object> map = new HashMap<>();
         map.put("user", user);

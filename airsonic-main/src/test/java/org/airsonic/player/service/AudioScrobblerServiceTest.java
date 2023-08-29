@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
 class AudioScrobblerServiceTest {
 
     @Mock
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
     @Mock
     private SecurityService securityService;
     @Mock
@@ -80,7 +80,7 @@ class AudioScrobblerServiceTest {
         audioScrobblerService.register(null, username, submission, time);
 
         // Assert
-        verify(settingsService, never()).getUserSettings(anyString());
+        verify(personalSettingsService, never()).getUserSettings(anyString());
     }
 
     @Test
@@ -95,7 +95,7 @@ class AudioScrobblerServiceTest {
         audioScrobblerService.register(mockedMediaFile, username, submission, time);
 
         // Assert
-        verify(settingsService, never()).getUserSettings(anyString());
+        verify(personalSettingsService, never()).getUserSettings(anyString());
     }
 
 
@@ -112,7 +112,7 @@ class AudioScrobblerServiceTest {
         boolean submission = true;
         Instant time = Instant.now();
         when(mockedMediaFile.isVideo()).thenReturn(false);
-        when(settingsService.getUserSettings(ArgumentMatchers.eq(username))).thenReturn(mockedUserSettings);
+        when(personalSettingsService.getUserSettings(ArgumentMatchers.eq(username))).thenReturn(mockedUserSettings);
         when(mockedUserSettings.getLastFmEnabled()).thenReturn(lastFmEnabled);
         when(mockedUserSettings.getListenBrainzEnabled()).thenReturn(listenBrainzEnabled);
         Map<App, UserCredential> creds = new HashMap<>();
@@ -146,7 +146,7 @@ class AudioScrobblerServiceTest {
         boolean submission = true;
         Instant time = Instant.now();
         when(mockedMediaFile.isVideo()).thenReturn(false);
-        when(settingsService.getUserSettings(ArgumentMatchers.eq(username))).thenReturn(mockedUserSettings);
+        when(personalSettingsService.getUserSettings(ArgumentMatchers.eq(username))).thenReturn(mockedUserSettings);
         when(mockedUserSettings.getLastFmEnabled()).thenReturn(lastFmEnabled);
         when(mockedUserSettings.getListenBrainzEnabled()).thenReturn(listenBrainzEnabled);
         Map<App, UserCredential> creds = new HashMap<>();

@@ -20,9 +20,7 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.Avatar;
-import org.airsonic.player.domain.AvatarScheme;
-import org.airsonic.player.domain.UserSettings;
-import org.airsonic.player.service.SettingsService;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -44,9 +42,11 @@ import javax.servlet.http.HttpServletResponse;
 public class AvatarController {
 
     @Autowired
-    private SettingsService settingsService;
-    @Autowired
     private ResourceLoader loader;
+
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
+
 
     /**
     private long getLastModified(Avatar avatar, String username) {
@@ -68,7 +68,12 @@ public class AvatarController {
             @RequestParam(defaultValue = "false") boolean forceCustom,
             HttpServletResponse response) throws Exception {
 
-        Avatar avatar = getAvatar(id, username, forceCustom);
+        if (id == null && username == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        Avatar avatar = personalSettingsService.getAvatar(id, username, forceCustom);
 
         if (avatar == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -82,25 +87,4 @@ public class AvatarController {
         }
         IOUtils.copy(res.getInputStream(), response.getOutputStream());
     }
-
-    private Avatar getAvatar(Integer id, String username, boolean forceCustom) {
-
-        if (id != null) {
-            return settingsService.getSystemAvatar(id);
-        }
-
-        if (username == null) {
-            return null;
-        }
-
-        UserSettings userSettings = settingsService.getUserSettings(username);
-        if (userSettings.getAvatarScheme() == AvatarScheme.CUSTOM || forceCustom) {
-            return settingsService.getCustomAvatar(username);
-        }
-        if (userSettings.getAvatarScheme() == AvatarScheme.NONE) {
-            return null;
-        }
-        return settingsService.getSystemAvatar(userSettings.getSystemAvatarId());
-    }
-
 }

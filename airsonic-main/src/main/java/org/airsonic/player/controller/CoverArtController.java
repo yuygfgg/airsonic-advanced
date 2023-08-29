@@ -27,6 +27,7 @@ import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.service.*;
 import org.airsonic.player.service.metadata.JaudiotaggerParser;
 import org.airsonic.player.util.FileUtil;
+import org.airsonic.player.util.ImageUtil;
 import org.airsonic.player.util.StringUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
@@ -234,7 +235,7 @@ public class CoverArtController {
         try (InputStream in = getClass().getResourceAsStream("default_cover.jpg")) {
             BufferedImage image = ImageIO.read(in);
             if (size != null) {
-                image = scale(image, size, size);
+                image = ImageUtil.scale(image, size, size);
             }
             ImageIO.write(image, "jpeg", response.getOutputStream());
         }
@@ -355,34 +356,6 @@ public class CoverArtController {
         return dir;
     }
 
-    public static BufferedImage scale(BufferedImage image, int width, int height) {
-        int w = image.getWidth();
-        int h = image.getHeight();
-        BufferedImage thumb = image;
-
-        // For optimal results, use step by step bilinear resampling - halfing the size at each step.
-        do {
-            w /= 2;
-            h /= 2;
-            if (w < width) {
-                w = width;
-            }
-            if (h < height) {
-                h = height;
-            }
-
-            BufferedImage temp = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-            Graphics2D g2 = temp.createGraphics();
-            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            g2.drawImage(thumb, 0, 0, temp.getWidth(), temp.getHeight(), null);
-            g2.dispose();
-
-            thumb = temp;
-        } while (w != width);
-
-        return thumb;
-    }
 
 
     private abstract class CoverArtRequest {
@@ -420,7 +393,7 @@ public class CoverArtController {
                         if (bimg == null) {
                             reason = "ImageIO.read";
                         } else {
-                            return scale(bimg, size, size);
+                            return ImageUtil.scale(bimg, size, size);
                         }
                     }
                     LOG.warn("Failed to process cover art {}: {} failed", coverArt, reason);

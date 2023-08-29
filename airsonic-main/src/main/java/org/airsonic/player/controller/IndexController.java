@@ -1,6 +1,7 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,10 +23,12 @@ public class IndexController {
     private SecurityService securityService;
     @Autowired
     private SettingsService settingsService;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
 
     @GetMapping
     public ModelAndView index(HttpServletRequest request) {
-        UserSettings userSettings = settingsService.getUserSettings(securityService.getCurrentUsername(request));
+        UserSettings userSettings = personalSettingsService.getUserSettings(securityService.getCurrentUsername(request));
 
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("showRight", userSettings.getShowNowPlayingEnabled());

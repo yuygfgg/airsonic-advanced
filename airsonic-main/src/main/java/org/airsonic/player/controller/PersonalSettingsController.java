@@ -22,6 +22,7 @@ package org.airsonic.player.controller;
 import org.airsonic.player.command.PersonalSettingsCommand;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.UserCredential.App;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.apache.commons.lang3.StringUtils;
@@ -53,21 +54,23 @@ public class PersonalSettingsController {
     private SettingsService settingsService;
     @Autowired
     private SecurityService securityService;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
 
     @ModelAttribute
     protected void formBackingObject(HttpServletRequest request,Model model) {
         PersonalSettingsCommand command = new PersonalSettingsCommand();
 
         User user = securityService.getCurrentUser(request);
-        UserSettings userSettings = settingsService.getUserSettings(user.getUsername());
+        UserSettings userSettings = personalSettingsService.getUserSettings(user.getUsername());
 
         command.setUser(user);
         command.setLocaleIndex("-1");
         command.setThemeIndex("-1");
         command.setAlbumLists(AlbumListType.values());
         command.setAlbumListId(userSettings.getDefaultAlbumList().getId());
-        command.setAvatars(settingsService.getAllSystemAvatars());
-        command.setCustomAvatar(settingsService.getCustomAvatar(user.getUsername()));
+        command.setAvatars(personalSettingsService.getSystemAvatars());
+        command.setCustomAvatar(personalSettingsService.getCustomAvatar(user.getUsername()));
         command.setAvatarId(getAvatarId(userSettings));
         command.setPartyModeEnabled(userSettings.getPartyModeEnabled());
         command.setQueueFollowingSongs(userSettings.getQueueFollowingSongs());
@@ -148,7 +151,7 @@ public class PersonalSettingsController {
         }
 
         String username = command.getUser().getUsername();
-        UserSettings settings = settingsService.getUserSettings(username);
+        UserSettings settings = personalSettingsService.getUserSettings(username);
 
         settings.setLocale(locale);
         settings.setThemeId(themeId);
@@ -184,7 +187,7 @@ public class PersonalSettingsController {
         settings.setSearchCount(command.getSearchCount());
 
         settings.setChanged(Instant.now());
-        settingsService.updateUserSettings(settings);
+        personalSettingsService.updateUserSettings(settings);
 
         redirectAttributes.addFlashAttribute("settings_reload", true);
         redirectAttributes.addFlashAttribute("settings_toast", true);

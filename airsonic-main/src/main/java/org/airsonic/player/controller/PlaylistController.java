@@ -23,10 +23,10 @@ import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.Playlist;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.PlaylistService;
 import org.airsonic.player.service.SecurityService;
-import org.airsonic.player.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.ServletRequestUtils;
@@ -55,7 +55,7 @@ public class PlaylistController {
     @Autowired
     private PlaylistService playlistService;
     @Autowired
-    private SettingsService settingsService;
+    private PersonalSettingsService personalSettingsService;
     @Autowired
     private PlayerService playerService;
 
@@ -66,7 +66,7 @@ public class PlaylistController {
         int id = ServletRequestUtils.getRequiredIntParameter(request, "id");
         User user = securityService.getCurrentUser(request);
         String username = user.getUsername();
-        UserSettings userSettings = settingsService.getUserSettings(username);
+        UserSettings userSettings = personalSettingsService.getUserSettings(username);
         Player player = playerService.getPlayer(request, response);
         Playlist playlist = playlistService.getPlaylist(id);
         if (playlist == null) {

@@ -53,13 +53,15 @@ public class MainController {
     private SecurityService securityService;
     @Autowired
     private SettingsService settingsService;
+    @Autowired
+    private PersonalSettingsService personalSettingsService;
 
     @GetMapping
     protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
         Map<String, Object> map = new HashMap<>();
 
         String username = securityService.getCurrentUsername(request);
-        UserSettings userSettings = settingsService.getUserSettings(username);
+        UserSettings userSettings = personalSettingsService.getUserSettings(username);
 
         map.put("coverArtSizeMedium", CoverArtScheme.MEDIUM.getSize());
         map.put("coverArtSizeLarge", CoverArtScheme.LARGE.getSize());

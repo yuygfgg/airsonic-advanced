@@ -20,8 +20,8 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.command.SearchCommand;
-import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.domain.*;
+import org.airsonic.player.service.AlbumService;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.MediaFolderService;
 import org.airsonic.player.service.PersonalSettingsService;
@@ -71,7 +71,7 @@ public class SearchController {
     @Autowired
     private MediaFileService mediaFileService;
     @Autowired
-    private AlbumDao albumDao;
+    private AlbumService albumService;
     @Autowired
     private PersonalSettingsService personalSettingsService;
 
@@ -104,12 +104,12 @@ public class SearchController {
 
             SearchResult artists = searchService.search(criteria, musicFolders, IndexType.ARTIST);
             SearchResult artistsId3 = searchService.search(criteria, musicFolders, IndexType.ARTIST_ID3);
-            artistsId3.getArtists().stream().map(Artist::getName).flatMap(ar -> albumDao.getAlbumsForArtist(ar, musicFolders).stream().map(al -> mediaFileService.getMediaFile(al.getPath(), al.getFolderId())).filter(Objects::nonNull).map(MediaFile::getId).map(m -> Pair.of(ar, m))).collect(groupingBy(p -> p.getKey(), mapping(p -> p.getValue(), toSet())));
+            artistsId3.getArtists().stream().map(Artist::getName).flatMap(ar -> albumService.getAlbumsByArtist(ar, musicFolders).stream().map(al -> mediaFileService.getMediaFile(al.getPath(), al.getFolderId())).filter(Objects::nonNull).map(MediaFile::getId).map(m -> Pair.of(ar, m))).collect(groupingBy(p -> p.getKey(), mapping(p -> p.getValue(), toSet())));
             artists.getMediaFiles().stream().map(m -> Pair.of(Optional.ofNullable(m.getArtist()).or(() -> Optional.ofNullable(m.getAlbumArtist())).orElse("(Unknown)"), m.getId()));
             command.setArtists(Stream.concat(
                     artistsId3.getArtists().stream()
                         .map(Artist::getName)
-                        .flatMap(ar -> albumDao.getAlbumsForArtist(ar, musicFolders).stream()
+                        .flatMap(ar -> albumService.getAlbumsByArtist(ar, musicFolders).stream()
                                 .map(al -> mediaFileService.getMediaFile(al.getPath(), al.getFolderId()))
                                     .filter(Objects::nonNull)
                                 .map(MediaFile::getId)

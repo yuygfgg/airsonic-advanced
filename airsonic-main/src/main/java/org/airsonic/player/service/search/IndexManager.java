@@ -21,9 +21,9 @@
 package org.airsonic.player.service.search;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
+import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.ArtistRepository;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.Util;
@@ -79,14 +79,14 @@ public class IndexManager {
             DocumentFactory documentFactory,
             MediaFileDao mediaFileDao,
             ArtistRepository artistRepository,
-            AlbumDao albumDao,
+            AlbumRepository albumRepository,
             AirsonicHomeConfig homeConfig
     ) {
         this.analyzerFactory = analyzerFactory;
         this.documentFactory = documentFactory;
         this.mediaFileDao = mediaFileDao;
         this.artistRepository = artistRepository;
-        this.albumDao = albumDao;
+        this.albumRepository = albumRepository;
         this.homeConfig = homeConfig;
         this.rootIndexDirectory = homeConfig.getAirsonicHome().resolve(INDEX_ROOT_DIR_NAME.concat(Integer.toString(INDEX_VERSION)));
     }
@@ -96,7 +96,7 @@ public class IndexManager {
     private final DocumentFactory documentFactory;
     private final MediaFileDao mediaFileDao;
     private final ArtistRepository artistRepository;
-    private final AlbumDao albumDao;
+    private final AlbumRepository albumRepository;
     private final AirsonicHomeConfig homeConfig;
 
     /**
@@ -209,8 +209,8 @@ public class IndexManager {
             LOG.error("Failed to delete artistId3 doc.", e);
         }
 
-        primarykeys = albumDao.getExpungeCandidates().stream()
-                .map(m -> documentFactory.createPrimarykey(m))
+        primarykeys = albumRepository.findByPresentFalse().stream()
+                .map(m -> documentFactory.createPrimarykey(m.getId()))
                 .toArray(i -> new Term[i]);
         try {
             writers.get(IndexType.ALBUM_ID3).deleteDocuments(primarykeys);

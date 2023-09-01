@@ -20,15 +20,14 @@
 
 package org.airsonic.player.service.search;
 
-import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.ParamSearchResult;
 import org.airsonic.player.domain.SearchResult;
+import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.ArtistRepository;
 import org.airsonic.player.service.MediaFileService;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.lucene.document.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -61,7 +60,7 @@ public class SearchServiceUtilities {
 
     /* Search by id only. */
     @Autowired
-    private AlbumDao albumDao;
+    private AlbumRepository albumRepository;
 
     /*
      * Search by id only.
@@ -123,22 +122,26 @@ public class SearchServiceUtilities {
 
     public final BiConsumer<List<Album>, Integer> addAlbumId3IfAnyMatch = (dist, subjectId) -> {
         if (!dist.stream().anyMatch(a -> subjectId == a.getId())) {
-            Album album = albumDao.getAlbum(subjectId);
-            if (!isEmpty(album)) {
-                dist.add(album);
-            }
+            albumRepository.findById(subjectId).ifPresent(dist::add);
         }
     };
 
-    public final boolean addIgnoreNull(Collection collection, Object object) {
-        return CollectionUtils.addIgnoreNull(collection, object);
-    }
-
-    public final boolean addIgnoreNull(Collection<?> collection, IndexType indexType, int subjectId) {
+    public final boolean addMediaFileIgnoreNull(Collection<MediaFile> collection, IndexType indexType, int subjectId) {
         if (indexType == IndexType.ALBUM || indexType == IndexType.SONG) {
-            return addIgnoreNull(collection, mediaFileService.getMediaFile(subjectId));
-        } else if (indexType == IndexType.ALBUM_ID3) {
-            return addIgnoreNull(collection, albumDao.getAlbum(subjectId));
+            MediaFile mediaFile = mediaFileService.getMediaFile(subjectId);
+            if (mediaFile != null) {
+                collection.add(mediaFile);
+                return true;
+            }
+        }
+        return false;
+    }
+    public final boolean addAlbumIgnoreNull(Collection<Album> collection, IndexType indexType, int subjectId) {
+        if (indexType == IndexType.ALBUM_ID3) {
+            return albumRepository.findById(subjectId).map(album -> {
+                collection.add(album);
+                return true;
+            }).orElse(false);
         }
         return false;
     }
@@ -146,12 +149,13 @@ public class SearchServiceUtilities {
     public final <T> void addIgnoreNull(ParamSearchResult<T> dist, IndexType indexType, int subjectId, Class<T> subjectClass) {
         if (indexType == IndexType.SONG) {
             MediaFile mediaFile = mediaFileService.getMediaFile(subjectId);
-            addIgnoreNull(dist.getItems(), subjectClass.cast(mediaFile));
+            if (mediaFile != null) {
+                dist.getItems().add(subjectClass.cast(mediaFile));
+            }
         } else if (indexType == IndexType.ARTIST_ID3) {
             artistRepository.findById(subjectId).ifPresent(artist -> dist.getItems().add(subjectClass.cast(artist)));
         } else if (indexType == IndexType.ALBUM_ID3) {
-            Album album = albumDao.getAlbum(subjectId);
-            addIgnoreNull(dist.getItems(), subjectClass.cast(album));
+            albumRepository.findById(subjectId).ifPresent(album -> dist.getItems().add(subjectClass.cast(album)));
         }
     }
 

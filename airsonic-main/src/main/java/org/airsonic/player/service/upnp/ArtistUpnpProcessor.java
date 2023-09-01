@@ -22,6 +22,7 @@ package org.airsonic.player.service.upnp;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.MusicFolder;
+import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.ArtistRepository;
 import org.fourthline.cling.support.model.DIDLContent;
 import org.fourthline.cling.support.model.container.Container;
@@ -45,6 +46,9 @@ public class ArtistUpnpProcessor extends UpnpContentProcessor <Artist, Album> {
 
     @Autowired
     private ArtistRepository artistRepository;
+
+    @Autowired
+    private AlbumRepository albumRepository;
 
     public ArtistUpnpProcessor() {
         setRootId(DispatchingContentDirectory.CONTAINER_ID_ARTIST_PREFIX);
@@ -87,7 +91,7 @@ public class ArtistUpnpProcessor extends UpnpContentProcessor <Artist, Album> {
     @Override
     public List<Album> getChildren(Artist artist) {
         List<MusicFolder> allFolders = getDispatcher().getMediaFolderService().getAllMusicFolders();
-        List<Album> allAlbums = getAlbumProcessor().getAlbumDao().getAlbumsForArtist(artist.getName(), allFolders);
+        List<Album> allAlbums = albumRepository.findByArtistAndFolderIdInAndPresentTrue(artist.getName(), MusicFolder.toIdList(allFolders));
         if (allAlbums.size() > 1) {
             // if the artist has more than one album, add in an option to
             // view the tracks in all the albums together

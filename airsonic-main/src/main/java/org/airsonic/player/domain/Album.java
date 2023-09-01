@@ -31,6 +31,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.persistence.UniqueConstraint;
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version $Id$
  */
 @Entity
-@Table(name = "album")
+@Table(name = "album", uniqueConstraints = @UniqueConstraint(columnNames = {"artist","name"}))
 public class Album {
 
     @Id
@@ -61,6 +62,7 @@ public class Album {
     @Convert(converter = AtomicIntegerConverter.class)
     private final AtomicInteger songCount = new AtomicInteger(0);
 
+    @Column(name = "duration")
     @Convert(converter = AtomicDoubleConverter.class)
     private final AtomicDouble duration = new AtomicDouble(0);
 

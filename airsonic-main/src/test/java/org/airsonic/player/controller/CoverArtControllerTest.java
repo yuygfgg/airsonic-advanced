@@ -18,7 +18,6 @@
  */
 package org.airsonic.player.controller;
 
-import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.dao.PlaylistDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
@@ -28,6 +27,7 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.Playlist;
 import org.airsonic.player.domain.PodcastChannel;
+import org.airsonic.player.service.AlbumService;
 import org.airsonic.player.service.ArtistService;
 import org.airsonic.player.service.CoverArtService;
 import org.airsonic.player.service.MediaFileService;
@@ -80,7 +80,7 @@ public class CoverArtControllerTest {
     private MediaFileService mediaFileService;
 
     @MockBean
-    private AlbumDao albumDao;
+    private AlbumService albumService;
 
     @MockBean
     private ArtistService artistService;
@@ -215,7 +215,7 @@ public class CoverArtControllerTest {
         mockedAlbum.setId(ALBUM_ID);
 
         // set up mock
-        doReturn(mockedAlbum).when(albumDao).getAlbum(anyInt());
+        doReturn(mockedAlbum).when(albumService).getAlbum(anyInt());
         doReturn(mockedCoverArt).when(coverArtService).get(any(EntityType.class), anyInt());
         doReturn(IMAGE_RESOURCE.getFile().toPath()).when(coverArtService).getFullPath(any());
 
@@ -230,7 +230,7 @@ public class CoverArtControllerTest {
 
         // assertion
         assertArrayEquals(expected, actual);
-        verify(albumDao).getAlbum(eq(ALBUM_ID));
+        verify(albumService).getAlbum(eq(ALBUM_ID));
         verify(coverArtService).get(eq(EntityType.ALBUM), eq(ALBUM_ID));
     }
 

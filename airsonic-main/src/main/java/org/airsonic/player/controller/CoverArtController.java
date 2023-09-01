@@ -21,7 +21,6 @@ package org.airsonic.player.controller;
 
 import com.google.common.io.MoreFiles;
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.service.*;
@@ -94,7 +93,7 @@ public class CoverArtController {
     @Autowired
     private ArtistService artistService;
     @Autowired
-    private AlbumDao albumDao;
+    private AlbumService albumService;
     @Autowired
     private JaudiotaggerParser jaudiotaggerParser;
     @Autowired
@@ -184,7 +183,7 @@ public class CoverArtController {
     }
 
     private CoverArtRequest createAlbumCoverArtRequest(int id) {
-        Album album = albumDao.getAlbum(id);
+        Album album = albumService.getAlbum(id);
         return album == null ? null : new AlbumCoverArtRequest(album);
     }
 

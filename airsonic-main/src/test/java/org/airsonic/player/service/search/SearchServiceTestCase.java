@@ -4,7 +4,6 @@ package org.airsonic.player.service.search;
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.dao.MusicFolderDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
@@ -15,6 +14,7 @@ import org.airsonic.player.domain.ParamSearchResult;
 import org.airsonic.player.domain.RandomSearchCriteria;
 import org.airsonic.player.domain.SearchCriteria;
 import org.airsonic.player.domain.SearchResult;
+import org.airsonic.player.service.AlbumService;
 import org.airsonic.player.service.SearchService;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 public class SearchServiceTestCase extends AbstractAirsonicHomeTest {
 
     @Autowired
-    private AlbumDao albumDao;
+    private AlbumService albumService;
 
     private final MetricRegistry metrics = new MetricRegistry();
 
@@ -262,7 +262,7 @@ public class SearchServiceTestCase extends AbstractAirsonicHomeTest {
         /*
          * Acquisition of maximum number(5).
          */
-        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, allMusicFolders);
+        List<Album> allAlbums = albumService.getAlphabeticalAlbums(true, true, allMusicFolders);
         Assert.assertEquals("(26) Get all albums with Dao.", 5, allAlbums.size());
         List<MediaFile> allRandomAlbums = searchService.getRandomAlbums(Integer.MAX_VALUE,
                 allMusicFolders);

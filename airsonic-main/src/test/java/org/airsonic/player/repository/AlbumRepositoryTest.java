@@ -47,6 +47,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
@@ -136,10 +137,11 @@ public class AlbumRepositoryTest {
             assertEquals(3, result.size());
             assertFalse(result.contains(album3));
         }
+
     }
 
     @Nested
-    public class NestedStarredAlbumTest {
+    public class NestedStarTest {
 
         @Autowired
         UserDao userDao;
@@ -196,6 +198,34 @@ public class AlbumRepositoryTest {
             assertEquals(1, result.size());
             assertEquals(starredAlbum1, result.get(0));
             assertEquals(album1, result.get(0).getAlbum());
+
+        }
+
+        @Test
+        public void testFindByIdAndStarredAlbumsUsername() {
+
+            Album album1 = new Album("path1", "name1", "artist1", Instant.now(), Instant.now(), true, 1);
+            Album album2 = new Album("path2", "name2", "artist1", Instant.now(), Instant.now(), false, 2);
+
+            albumRepository.saveAndFlush(album1);
+            albumRepository.saveAndFlush(album2);
+
+            StarredAlbum starredAlbum1 = new StarredAlbum(album1, TEST_USER_NAME, Instant.now());
+            StarredAlbum starredAlbum2 = new StarredAlbum(album2, TEST_USER_NAME2, Instant.now());
+
+            starredAlbumRepository.saveAndFlush(starredAlbum1);
+            starredAlbumRepository.saveAndFlush(starredAlbum2);
+
+            Album result = albumRepository.findByIdAndStarredAlbumsUsername(album1.getId(), TEST_USER_NAME).get();
+            assertEquals(album1, result);
+
+            Album result2 = albumRepository.findByIdAndStarredAlbumsUsername(album2.getId(), TEST_USER_NAME)
+                    .orElse(null);
+            assertNull(result2);
+
+            Album result3 = albumRepository.findByIdAndStarredAlbumsUsername(album1.getId(), TEST_USER_NAME2)
+                    .orElse(null);
+            assertNull(result3);
 
         }
     }

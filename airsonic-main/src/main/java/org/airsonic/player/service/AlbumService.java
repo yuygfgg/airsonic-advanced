@@ -223,14 +223,14 @@ public class AlbumService {
         }
         return albumRepository.findById(albumId).map(album -> {
             if (star) {
-                starredAlbumRepository.findByAlbumIdAndUsername(albumId, username).ifPresentOrElse(starredAlbum -> {
+                starredAlbumRepository.findByAlbumAndUsername(album, username).ifPresentOrElse(starredAlbum -> {
                     // already starred
                 }, () -> {
                     // not starred yet
-                        starredAlbumRepository.save(new StarredAlbum(albumId, username, Instant.now()));
+                        starredAlbumRepository.save(new StarredAlbum(album, username, Instant.now()));
                     });
             } else {
-                starredAlbumRepository.deleteByAlbumIdAndUsername(albumId, username);
+                starredAlbumRepository.deleteByAlbumAndUsername(album, username);
             }
             return true;
         }).orElse(false);
@@ -247,7 +247,8 @@ public class AlbumService {
         if (albumId == null || !StringUtils.hasLength(username)) {
             return null;
         }
-        return starredAlbumRepository.findByAlbumIdAndUsername(albumId, username).map(StarredAlbum::getCreated)
+        return albumRepository.findByIdAndStarredAlbumsUsername(albumId, username)
+                .map(album -> album.getStarredAlbums().isEmpty() ? null : album.getStarredAlbums().get(0).getCreated())
                 .orElse(null);
     }
 

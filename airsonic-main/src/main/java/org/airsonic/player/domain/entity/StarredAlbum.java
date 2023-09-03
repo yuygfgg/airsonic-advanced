@@ -22,9 +22,6 @@ public class StarredAlbum {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "album_id", nullable = false)
-    private Integer albumId;
-
     @Column(name = "username", nullable = false)
     private String username;
 
@@ -32,30 +29,20 @@ public class StarredAlbum {
     private Instant created;
 
     @ManyToOne
-    @JoinColumn(name = "album_id", insertable = false, updatable = false)
+    @JoinColumn(name = "album_id")
     private Album album;
 
     public StarredAlbum() {
     }
 
-    public StarredAlbum(Integer albumId, String username, Instant created) {
-        this.albumId = albumId;
-        this.username = username;
-        this.created = created;
-    }
-
     public StarredAlbum(Album album, String username, Instant created) {
-        this.albumId = album.getId();
         this.username = username;
         this.created = created;
+        this.album = album;
     }
 
     public Integer getId() {
         return id;
-    }
-
-    public Integer getAlbumId() {
-        return albumId;
     }
 
     public String getUsername() {
@@ -74,10 +61,6 @@ public class StarredAlbum {
         this.id = id;
     }
 
-    public void setAlbumId(Integer albumId) {
-        this.albumId = albumId;
-    }
-
     public void setUsername(String username) {
         this.username = username;
     }
@@ -87,7 +70,6 @@ public class StarredAlbum {
     }
 
     public void setAlbum(Album album) {
-        this.albumId = album.getId();
         this.album = album;
     }
 

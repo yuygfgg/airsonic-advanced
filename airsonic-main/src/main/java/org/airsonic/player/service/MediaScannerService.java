@@ -20,10 +20,10 @@
 package org.airsonic.player.service;
 
 import org.airsonic.player.config.AirsonicScanConfig;
-import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.CoverArt.EntityType;
+import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.ArtistRepository;
 import org.airsonic.player.service.search.IndexManager;
 import org.apache.commons.lang.ObjectUtils;
@@ -73,7 +73,7 @@ public class MediaScannerService {
         CoverArtService coverArtService,
         MediaFileDao mediaFileDao,
         ArtistRepository artistRepository,
-        AlbumDao albumDao,
+        AlbumRepository albumRepository,
         TaskSchedulingService taskService,
         SimpMessagingTemplate messagingTemplate,
         AirsonicScanConfig scanConfig
@@ -86,7 +86,7 @@ public class MediaScannerService {
         this.coverArtService = coverArtService;
         this.mediaFileDao = mediaFileDao;
         this.artistRepository = artistRepository;
-        this.albumDao = albumDao;
+        this.albumRepository = albumRepository;
         this.taskService = taskService;
         this.messagingTemplate = messagingTemplate;
         this.scanConfig = scanConfig;
@@ -101,7 +101,7 @@ public class MediaScannerService {
     private final CoverArtService coverArtService;
     private final MediaFileDao mediaFileDao;
     private final ArtistRepository artistRepository;
-    private final AlbumDao albumDao;
+    private final AlbumRepository albumRepository;
     private final TaskSchedulingService taskService;
     private final SimpMessagingTemplate messagingTemplate;
     private final AirsonicScanConfig scanConfig;
@@ -262,13 +262,13 @@ public class MediaScannerService {
                     .allOf(albums.values().parallelStream()
                             .distinct()
                             .map(a -> CompletableFuture.supplyAsync(() -> {
-                                albumDao.createOrUpdateAlbum(a);
+                                albumRepository.saveAndFlush(a);
                                 return a;
                             }, pool).thenAcceptAsync(coverArtService::persistIfNeeded))
                             .toArray(CompletableFuture[]::new))
                     .thenRunAsync(() -> {
                         LOG.info("Marking non-present albums.");
-                        albumDao.markNonPresent(statistics.getScanDate());
+                        albumRepository.markNonPresent(statistics.getScanDate());
                     }, pool)
                     .thenRunAsync(() -> LOG.info("Album persistence complete"), pool);
 
@@ -389,7 +389,7 @@ public class MediaScannerService {
             Album a = v;
 
             if (a == null) {
-                Album dbAlbum = albumDao.getAlbum(artist, file.getAlbumName());
+                Album dbAlbum = albumRepository.findByArtistAndName(artist, file.getAlbumName()).orElse(null);
                 if (dbAlbum != null) {
                     a = albumsInDb.computeIfAbsent(dbAlbum.getId(), aid -> {
                         // reset stats when first retrieve from the db for new scan
@@ -445,6 +445,7 @@ public class MediaScannerService {
 
         if (firstEncounter.get()) {
             album.setFolderId(musicFolder.getId());
+            albumRepository.saveAndFlush(album);
             albumCount.computeIfAbsent(artist, k -> new AtomicInteger(0)).incrementAndGet();
             indexManager.index(album);
         }

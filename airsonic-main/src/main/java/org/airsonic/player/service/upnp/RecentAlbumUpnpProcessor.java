@@ -20,11 +20,13 @@
 package org.airsonic.player.service.upnp;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.MusicFolder;
+import org.airsonic.player.service.AlbumService;
 import org.airsonic.player.util.Util;
 import org.fourthline.cling.support.model.BrowseResult;
 import org.fourthline.cling.support.model.DIDLContent;
 import org.fourthline.cling.support.model.SortCriterion;
-import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -32,9 +34,12 @@ import java.util.List;
  * @author Allen Petersen
  * @version $Id$
  */
-@Service
+@Component
 public class RecentAlbumUpnpProcessor extends AlbumUpnpProcessor {
     private final static int RECENT_COUNT = 50;
+
+    @Autowired
+    private AlbumService albumService;
 
     public RecentAlbumUpnpProcessor() {
         setRootId(DispatchingContentDirectory.CONTAINER_ID_RECENT_PREFIX);
@@ -67,7 +72,7 @@ public class RecentAlbumUpnpProcessor extends AlbumUpnpProcessor {
     @Override
     public List<Album> getAllItems() {
         List<MusicFolder> allFolders = getDispatchingContentDirectory().getMediaFolderService().getAllMusicFolders();
-        List<Album> recentAlbums = getAlbumDao().getNewestAlbums(0, RECENT_COUNT, allFolders);
+        List<Album> recentAlbums = albumService.getRecentlyAddedAlbums(0, RECENT_COUNT, allFolders);
         if (recentAlbums.size() > 1) {
             // if there is more than one recent album, add in an option to
             // view the tracks in all the recent albums together
@@ -83,7 +88,7 @@ public class RecentAlbumUpnpProcessor extends AlbumUpnpProcessor {
     @Override
     public int getAllItemsSize() {
         List<MusicFolder> allFolders = getDispatchingContentDirectory().getMediaFolderService().getAllMusicFolders();
-        int allAlbumCount = getAlbumDao().getAlbumCount(allFolders);
+        int allAlbumCount = albumService.getAlbumCount(allFolders);
         return Math.min(allAlbumCount, RECENT_COUNT);
     }
 }

@@ -20,6 +20,7 @@
 package org.airsonic.player.domain;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import org.airsonic.player.domain.entity.StarredAlbum;
 import org.airsonic.player.repository.AtomicDoubleConverter;
 import org.airsonic.player.repository.AtomicIntegerConverter;
 
@@ -29,10 +30,14 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.persistence.UniqueConstraint;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -41,12 +46,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version $Id$
  */
 @Entity
-@Table(name = "album")
+@Table(name = "album", uniqueConstraints = @UniqueConstraint(columnNames = {"artist","name"}))
 public class Album {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @Column(name = "path", nullable = false)
     private String path;
@@ -61,6 +66,7 @@ public class Album {
     @Convert(converter = AtomicIntegerConverter.class)
     private final AtomicInteger songCount = new AtomicInteger(0);
 
+    @Column(name = "duration")
     @Convert(converter = AtomicDoubleConverter.class)
     private final AtomicDouble duration = new AtomicDouble(0);
 
@@ -89,6 +95,10 @@ public class Album {
     @Column(name = "present")
     private boolean present;
 
+    @OneToMany(mappedBy = "album")
+    private List<StarredAlbum> starredAlbums = new ArrayList<>();
+
+    // TODO: add relation to music folder table
     @Column(name = "folder_id", nullable = true)
     private Integer folderId;
 
@@ -98,7 +108,17 @@ public class Album {
     public Album() {
     }
 
-    public Album(int id, String path, String name, String artist, int songCount, double duration,
+    public Album(String path, String name, String artist, Instant created, Instant lastScanned, boolean present, Integer folderIdInteger) {
+        this.path = path;
+        this.name = name;
+        this.artist = artist;
+        this.created = created;
+        this.lastScanned = lastScanned;
+        this.present = present;
+        this.folderId = folderIdInteger;
+    }
+
+    public Album(Integer id, String path, String name, String artist, int songCount, double duration,
             Integer year, String genre, int playCount, Instant lastPlayed, String comment, Instant created, Instant lastScanned,
             boolean present, Integer folderId, String musicBrainzReleaseId) {
         this.id = id;
@@ -119,11 +139,11 @@ public class Album {
         this.musicBrainzReleaseId = musicBrainzReleaseId;
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -257,6 +277,10 @@ public class Album {
 
     public void setMusicBrainzReleaseId(String musicBrainzReleaseId) {
         this.musicBrainzReleaseId = musicBrainzReleaseId;
+    }
+
+    public List<StarredAlbum> getStarredAlbums() {
+        return starredAlbums;
     }
 
     // placeholder for persistence later

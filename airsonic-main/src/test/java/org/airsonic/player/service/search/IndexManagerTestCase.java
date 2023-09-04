@@ -19,12 +19,13 @@
  */
 package org.airsonic.player.service.search;
 
-import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.dao.MediaFileDao;
+import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.SearchCriteria;
 import org.airsonic.player.domain.SearchResult;
+import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.ArtistRepository;
 import org.airsonic.player.service.SearchService;
 import org.airsonic.player.util.MusicFolderTestData;
@@ -89,7 +90,7 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
     private ArtistRepository artistRepository;
 
     @Autowired
-    private AlbumDao albumDao;
+    private AlbumRepository albumRepository;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -175,12 +176,12 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
         assertEquals(1, result.getAlbums().size());
         assertEquals("Complete Piano Works", result.getAlbums().get(0).getName());
 
-        candidates = albumDao.getExpungeCandidates();
+        candidates = albumRepository.findByPresentFalse().stream().map(Album::getId).toList();
         assertEquals(0, candidates.size());
 
-        albumDao.markNonPresent(Instant.now().truncatedTo(ChronoUnit.MICROS));
+        albumRepository.markNonPresent(Instant.now().truncatedTo(ChronoUnit.MICROS));
 
-        candidates = albumDao.getExpungeCandidates();
+        candidates = albumRepository.findByPresentFalse().stream().map(Album::getId).toList();
         assertEquals(4, candidates.size());
 
         /* Does not scan, only expunges the index. */

@@ -23,13 +23,13 @@ package org.airsonic.player.service;
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;
 import org.airsonic.player.ajax.MediaFileEntry;
-import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.i18n.LocaleResolver;
+import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.service.metadata.JaudiotaggerParser;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
@@ -85,7 +85,7 @@ public class MediaFileService {
     @Autowired
     private MediaFolderService mediaFolderService;
     @Autowired
-    private AlbumDao albumDao;
+    private AlbumRepository albumRepository;
     @Autowired
     private JaudiotaggerParser parser;
     @Autowired
@@ -1092,12 +1092,12 @@ public class MediaFileService {
             updateMediaFile(parent);
         }
 
-        Album album = albumDao.getAlbum(file.getAlbumArtist(), file.getAlbumName());
-        if (album != null) {
-            album.setLastPlayed(now);
-            album.incrementPlayCount();
-            albumDao.createOrUpdateAlbum(album);
-        }
+        albumRepository.findByArtistAndName(file.getAlbumArtist(), file.getAlbumName()).ifPresent(album -> {
+                album.setLastPlayed(now);
+                album.incrementPlayCount();
+                albumRepository.save(album);
+            }
+        );
     }
 
     public List<MediaFileEntry> toMediaFileEntryList(List<MediaFile> files, String username, boolean calculateStarred, boolean calculateFolderAccess,
@@ -1128,10 +1128,6 @@ public class MediaFileService {
 
     public int getStarredAlbumCount(String username, List<MusicFolder> musicFolders) {
         return mediaFileDao.getStarredAlbumCount(username, musicFolders);
-    }
-
-    public void setAlbumDao(AlbumDao albumDao) {
-        this.albumDao = albumDao;
     }
 
     public void setParser(JaudiotaggerParser parser) {

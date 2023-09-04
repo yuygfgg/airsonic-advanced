@@ -20,13 +20,13 @@
 package org.airsonic.player.service.upnp;
 
 import com.google.common.primitives.Ints;
-import org.airsonic.player.dao.AlbumDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.CoverArtScheme;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.User;
+import org.airsonic.player.service.AlbumService;
 import org.airsonic.player.service.SearchService;
 import org.fourthline.cling.support.model.BrowseResult;
 import org.fourthline.cling.support.model.DIDLContent;
@@ -35,7 +35,7 @@ import org.fourthline.cling.support.model.SortCriterion;
 import org.fourthline.cling.support.model.container.Container;
 import org.fourthline.cling.support.model.container.MusicAlbum;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -46,14 +46,14 @@ import java.util.List;
  * @author Allen Petersen
  * @version $Id$
  */
-@Service
+@Component
 public class AlbumUpnpProcessor extends UpnpContentProcessor <Album, MediaFile> {
 
     public static final String ALL_BY_ARTIST = "allByArtist";
     public static final String ALL_RECENT = "allRecent";
 
     @Autowired
-    AlbumDao albumDao;
+    private AlbumService albumService;
 
     @Autowired
     SearchService searchService;
@@ -71,7 +71,7 @@ public class AlbumUpnpProcessor extends UpnpContentProcessor <Album, MediaFile> 
         DIDLContent didl = new DIDLContent();
 
         List<MusicFolder> allFolders = getDispatchingContentDirectory().getMediaFolderService().getAllMusicFolders();
-        List<Album> selectedItems = getAlbumDao().getAlphabeticalAlbums(Ints.saturatedCast(firstResult), Ints.saturatedCast(maxResults), false, true, allFolders);
+        List<Album> selectedItems = albumService.getAlphabeticalAlbums(Ints.saturatedCast(firstResult), Ints.saturatedCast(maxResults), false, true, allFolders);
         for (Album item : selectedItems) {
             addItem(didl, item);
         }
@@ -101,7 +101,7 @@ public class AlbumUpnpProcessor extends UpnpContentProcessor <Album, MediaFile> 
     @Override
     public List<Album> getAllItems() {
         List<MusicFolder> allFolders = getDispatchingContentDirectory().getMediaFolderService().getAllMusicFolders();
-        return getAlbumDao().getAlphabeticalAlbums(0, Integer.MAX_VALUE, false, true, allFolders);
+        return albumService.getAlphabeticalAlbums(false, true, allFolders);
     }
 
     @Override
@@ -112,7 +112,7 @@ public class AlbumUpnpProcessor extends UpnpContentProcessor <Album, MediaFile> 
             returnValue.setId(-1);
             returnValue.setComment(id);
         } else {
-            returnValue = getAlbumDao().getAlbum(Integer.parseInt(id));
+            returnValue = albumService.getAlbum(Integer.parseInt(id));
         }
         return returnValue;
     }
@@ -144,7 +144,7 @@ public class AlbumUpnpProcessor extends UpnpContentProcessor <Album, MediaFile> 
     @Override
     public int getAllItemsSize() {
         List<MusicFolder> allFolders = getDispatchingContentDirectory().getMediaFolderService().getAllMusicFolders();
-        return getAlbumDao().getAlbumCount(allFolders);
+        return albumService.getAlbumCount(allFolders);
     }
 
 
@@ -168,13 +168,6 @@ public class AlbumUpnpProcessor extends UpnpContentProcessor <Album, MediaFile> 
 
     public PersonWithRole[] getAlbumArtists(String artist) {
         return new PersonWithRole[] { new PersonWithRole(artist) };
-    }
-
-    public AlbumDao getAlbumDao() {
-        return albumDao;
-    }
-    public void setAlbumDao(AlbumDao albumDao) {
-        this.albumDao = albumDao;
     }
 
     public MediaFileDao getMediaFileDao() {

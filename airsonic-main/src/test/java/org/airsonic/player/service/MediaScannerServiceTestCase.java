@@ -88,7 +88,7 @@ public class MediaScannerServiceTestCase {
     private ArtistService artistService;
 
     @Autowired
-    private AlbumDao albumDao;
+    private AlbumService albumService;
 
     @Autowired
     private MediaFolderService mediaFolderService;
@@ -147,7 +147,7 @@ public class MediaScannerServiceTestCase {
 
         System.out.println("--- List of all albums ---");
         System.out.println("name#artist");
-        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, testFolders);
+        List<Album> allAlbums = albumService.getAlphabeticalAlbums(true, true, testFolders);
         allAlbums.forEach(album -> System.out.println(album.getName() + "#" + album.getArtist()));
         Assert.assertEquals(5, allAlbums.size());
         System.out.println("--- *********************** ---");
@@ -210,7 +210,7 @@ public class MediaScannerServiceTestCase {
         Assert.assertEquals(1, artist.getAlbumCount());
 
         // Test that the album is correctly imported, along with its MusicBrainz release ID
-        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, folders);
+        List<Album> allAlbums = albumService.getAlphabeticalAlbums(true, true, folders);
         Assert.assertEquals(1, allAlbums.size());
         Album album = allAlbums.get(0);
         Assert.assertEquals("TestAlbum", album.getName());
@@ -261,7 +261,7 @@ public class MediaScannerServiceTestCase {
 
 
         // Test that the album is correctly imported
-        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, folders);
+        List<Album> allAlbums = albumService.getAlphabeticalAlbums(true, true, folders);
         assertEquals(1, allAlbums.size());
         Album album = allAlbums.get(0);
         assertEquals("AirsonicTest", album.getName());
@@ -320,7 +320,7 @@ public class MediaScannerServiceTestCase {
         assertEquals(0, allArtists.size());
 
         // Test that the album is correctly imported
-        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, folders);
+        List<Album> allAlbums = albumService.getAlphabeticalAlbums(true, true, folders);
         assertEquals(0, allAlbums.size());
 
         // Test that the music file is correctly imported
@@ -366,7 +366,7 @@ public class MediaScannerServiceTestCase {
 
 
         // Test that the album is correctly imported
-        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, folders);
+        List<Album> allAlbums = albumService.getAlphabeticalAlbums(true, true, folders);
         assertEquals(0, allAlbums.size());
 
         // Test that the music file is correctly imported
@@ -408,7 +408,7 @@ public class MediaScannerServiceTestCase {
 
 
         // Test that the album is correctly imported
-        List<Album> allAlbums = albumDao.getAlphabeticalAlbums(0, Integer.MAX_VALUE, true, true, folders);
+        List<Album> allAlbums = albumService.getAlphabeticalAlbums(true, true, folders);
         assertEquals(0, allAlbums.size());
 
         // Test that the music file is correctly imported

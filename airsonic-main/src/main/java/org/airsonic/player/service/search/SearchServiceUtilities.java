@@ -51,7 +51,7 @@ import static org.springframework.util.ObjectUtils.isEmpty;
  * so do not include exception handling in this class.
  */
 @Component
-@Transactional(readOnly = true)
+@Transactional
 public class SearchServiceUtilities {
 
     /* Search by id only. */

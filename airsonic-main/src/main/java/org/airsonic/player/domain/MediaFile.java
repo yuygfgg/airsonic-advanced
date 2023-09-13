@@ -60,7 +60,7 @@ public class MediaFile {
     @Column(name = "folder_id", nullable = false)
     private Integer folderId;
 
-    @Column(name = "media_type", nullable = false)
+    @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
     private MediaType mediaType;
 
@@ -73,7 +73,7 @@ public class MediaFile {
     @Column(name = "title", nullable = true)
     private String title;
 
-    @Column(name = "album_name", nullable = true)
+    @Column(name = "album", nullable = true)
     private String albumName;
 
     @Column(name = "artist", nullable = true)

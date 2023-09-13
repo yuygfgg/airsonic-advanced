@@ -257,7 +257,7 @@ public class StreamController {
 
         Supplier<TransferStatus> statusSupplier = () -> status;
         Consumer<TransferStatus> statusCloser = s -> {
-            securityService.updateUserByteCounts(user, s.getBytesTransferred(), 0L, 0L);
+            securityService.incrementBytesStreamed(user.getUsername(), s.getBytesTransferred());
             statusService.removeStreamStatus(s);
         };
 

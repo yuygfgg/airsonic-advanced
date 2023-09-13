@@ -7,6 +7,8 @@ import org.airsonic.player.domain.User.Role;
 import org.airsonic.player.domain.UserCredential;
 import org.airsonic.player.domain.UserCredential.App;
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.repository.UserCredentialRepository;
+import org.airsonic.player.repository.UserRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,12 @@ public class UserDaoTestCase extends DaoTestCaseBean2 {
     @Autowired
     UserDao userDao;
 
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    UserCredentialRepository userCredentialRepository;
+
     @Before
     public void setUp() {
         getJdbcTemplate().execute("delete from user_credentials");
@@ -46,52 +54,29 @@ public class UserDaoTestCase extends DaoTestCaseBean2 {
     @Test
     public void testCreateUser() {
         User user = new User("sindre", "sindre@activeobjects.no", false, 1000L, 2000L, 3000L, Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));
-        UserCredential uc = new UserCredential("sindre", "sindre", "secret", "noop", App.AIRSONIC);
-        userDao.createUser(user, uc);
+        UserCredential uc = new UserCredential(user, "sindre", "secret", "noop", App.AIRSONIC);
+        userRepository.save(user);
+        userCredentialRepository.save(uc);
 
-        User newUser = userDao.getAllUsers().get(0);
+        User newUser = userRepository.findAll().get(0);
         assertThat(newUser).usingRecursiveComparison().isEqualTo(user);
-        assertThat(userDao.getCredentials("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
+        assertThat(userCredentialRepository.findByUserUsernameAndApp("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
     }
 
-    @Test
-    public void testCreateUserTransactionalError() {
-        User user = new User("muff1nman5", "noemail") {
-            @Override
-            public Set<Role> getRoles() {
-                throw new RuntimeException();
-            }
-        };
-
-        user.setRoles(Set.of(Role.ADMIN));
-        UserCredential uc = new UserCredential("muff1nman5", "muff1nman5", "secret", "noop", App.AIRSONIC);
-
-        assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> createTestUser(user, uc));
-        assertThat(userDao.getUserByName("muff1nman5", true)).isNull();
-
-        User user2 = new User("muff1nman6", "noemail");
-        UserCredential uc2 = new UserCredential("muff1nman6", "muff1nman6", "secret", "noop", App.AIRSONIC) {
-            @Override
-            public String getCredential() {
-                throw new RuntimeException();
-            }
-        };
-
-        assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> createTestUser(user2, uc2));
-        assertThat(userDao.getUserByName("muff1nman6", true)).isNull();
-    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private void createTestUser(User user, UserCredential uc) {
-        userDao.createUser(user, uc);
+        userRepository.save(user);
+        userCredentialRepository.save(uc);
     }
 
     @Test
     public void testUpdateUser() {
         User user = new User("sindre", null);
         user.setRoles(Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));
-        UserCredential uc = new UserCredential("sindre", "sindre", "secret", "noop", App.AIRSONIC);
-        userDao.createUser(user, uc);
+        UserCredential uc = new UserCredential(user, "sindre", "secret", "noop", App.AIRSONIC);
+        userRepository.save(user);
+        userCredentialRepository.save(uc);
 
         user.setEmail("sindre@foo.bar");
         user.setLdapAuthenticated(true);
@@ -102,64 +87,65 @@ public class UserDaoTestCase extends DaoTestCaseBean2 {
 
         userDao.updateUser(user);
 
-        assertThat(userDao.getAllUsers().get(0)).usingRecursiveComparison().isEqualTo(user);
-        assertThat(userDao.getCredentials("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
+        assertThat(userRepository.findAll().get(0)).usingRecursiveComparison().isEqualTo(user);
+        assertThat(userCredentialRepository.findByUserUsernameAndApp("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
     }
 
     @Test
     public void testUpdateCredential() {
         User user = new User("sindre", null);
         user.setRoles(Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART));
-        UserCredential uc = new UserCredential("sindre", "sindre", "secret", "noop", App.AIRSONIC);
-        userDao.createUser(user, uc);
+        UserCredential uc = new UserCredential(user, "sindre", "secret", "noop", App.AIRSONIC);
+        userRepository.save(user);
+        userCredentialRepository.save(uc);
 
         UserCredential newCreds = new UserCredential(uc);
         newCreds.setCredential("foo");
 
-        userDao.updateCredential(uc, newCreds);
+        userCredentialRepository.save(newCreds);
 
-        assertThat(userDao.getAllUsers().get(0)).usingRecursiveComparison().isEqualTo(user);
-        assertThat(userDao.getCredentials("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(newCreds);
+        assertThat(userRepository.findAll().get(0)).usingRecursiveComparison().isEqualTo(user);
+        assertThat(userCredentialRepository.findByUserUsernameAndApp("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(newCreds);
     }
 
     @Test
     public void testGetUserByName() {
         User user = new User("sindre", null);
-        userDao.createUser(user, new UserCredential("sindre", "sindre", "secret", "noop", App.AIRSONIC));
+        userRepository.save(user);
 
-        assertThat(userDao.getUserByName("sindre", true)).usingRecursiveComparison().isEqualTo(user);
+        assertThat(userRepository.findByUsername("sindre").get()).usingRecursiveComparison().isEqualTo(user);
 
-        assertNull("Error in getUserByName().", userDao.getUserByName("sindre2", true));
-        // assertNull("Error in getUserByName().", userDao.getUserByName("Sindre ", true)); // depends on the collation of the DB
-        assertNull("Error in getUserByName().", userDao.getUserByName("bente", true));
-        assertNull("Error in getUserByName().", userDao.getUserByName("", true));
-        assertNull("Error in getUserByName().", userDao.getUserByName(null, true));
+        assertNull("Error in getUserByName().", userRepository.findByUsername("sindre2").get());
+        // assertNull("Error in getUserByName().", userRepository.findByUsername("Sindre ", true)); // depends on the collation of the DB
+        assertNull("Error in getUserByName().", userRepository.findByUsername("bente").get());
+        assertNull("Error in getUserByName().", userRepository.findByUsername("").get());
+        assertNull("Error in getUserByName().", userRepository.findByUsername(null).get());
     }
 
     @Test
     public void testDeleteUser() {
-        assertEquals("Wrong number of users.", 0, userDao.getAllUsers().size());
+        assertEquals("Wrong number of users.", 0, userRepository.findAll().size());
 
-        userDao.createUser(new User("sindre", null), new UserCredential("sindre", "sindre", "secret", "noop", App.AIRSONIC));
-        assertEquals("Wrong number of users.", 1, userDao.getAllUsers().size());
+        userRepository.save(new User("sindre", null));
+        assertEquals("Wrong number of users.", 1, userRepository.count());
 
-        userDao.createUser(new User("bente", null), new UserCredential("bente", "bente", "secret", "noop", App.AIRSONIC));
-        assertEquals("Wrong number of users.", 2, userDao.getAllUsers().size());
+        userRepository.save(new User("bente", null));
+        assertEquals("Wrong number of users.", 2, userRepository.count());
 
         userDao.deleteUser("sindre");
-        assertEquals("Wrong number of users.", 1, userDao.getAllUsers().size());
+        assertEquals("Wrong number of users.", 1, userRepository.count());
 
         userDao.deleteUser("bente");
-        assertEquals("Wrong number of users.", 0, userDao.getAllUsers().size());
+        assertEquals("Wrong number of users.", 0, userRepository.count());
     }
 
     @Test
     public void testGetRolesForUser() {
         User user = new User("sindre", null);
         user.setRoles(Set.of(Role.ADMIN, Role.COMMENT, Role.PODCAST, Role.STREAM, Role.SETTINGS));
-        userDao.createUser(user, new UserCredential("sindre", "sindre", "secret", "noop", App.AIRSONIC));
+        userRepository.save(user);
 
-        Set<Role> roles = userDao.getUserByName("sindre", true).getRoles();
+        Set<Role> roles = userRepository.findByUsername("sindre").get().getRoles();
         assertThat(roles).containsOnly(Role.ADMIN, Role.COMMENT, Role.PODCAST, Role.STREAM, Role.SETTINGS);
     }
 
@@ -169,8 +155,11 @@ public class UserDaoTestCase extends DaoTestCaseBean2 {
 
         assertThatExceptionOfType(DataIntegrityViolationException.class)
                 .isThrownBy(() -> updateUserSettings(new UserSettings("sindre")));
+        User user = new User("sindre", null);
 
-        userDao.createUser(new User("sindre", null), new UserCredential("sindre", "sindre", "secret", "noop", App.AIRSONIC));
+        userRepository.save(user);
+        userCredentialRepository.save(new UserCredential(user, "sindre", "secret", "noop", App.AIRSONIC));
+
         assertNull("Error in getUserSettings.", userDao.getUserSettings("sindre"));
 
         UserSettings settings = new UserSettings("sindre");

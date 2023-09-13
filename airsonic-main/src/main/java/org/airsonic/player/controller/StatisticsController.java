@@ -4,8 +4,8 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.TransferStatus;
 import org.airsonic.player.domain.TransferStatus.SampleHistory;
-import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.StatusService;
+import org.airsonic.player.service.UserService;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,14 +27,14 @@ import java.util.stream.Collectors;
 public class StatisticsController {
 
     @Autowired
-    private SecurityService securityService;
+    private StatusService statusService;
 
     @Autowired
-    private StatusService statusService;
+    private UserService userService;
 
     @GetMapping("/users")
     public List<UserDataTransferStatistics> getUserStatistics() {
-        return securityService.getAllUsers().stream().map(x -> new UserDataTransferStatistics(x.getUsername(), x.getBytesStreamed(), x.getBytesDownloaded(), x.getBytesUploaded())).collect(Collectors.toList());
+        return userService.getAllUsers().stream().map(x -> new UserDataTransferStatistics(x.getUsername(), x.getBytesStreamed(), x.getBytesDownloaded(), x.getBytesUploaded())).collect(Collectors.toList());
     }
 
     @GetMapping("/transfers")

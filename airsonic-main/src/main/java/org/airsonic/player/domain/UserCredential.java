@@ -1,24 +1,61 @@
 package org.airsonic.player.domain;
 
+import org.airsonic.player.security.GlobalSecurityConfig;
+import org.airsonic.player.security.PasswordDecoder;
+import org.springframework.util.StringUtils;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
+@Entity
+@Table(name = "user_credentials")
 public class UserCredential {
-    private String username;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "username", nullable = false)
+    private User user;
+    @Column(name = "app_username")
     private String appUsername;
+    @Column(name = "credential")
     private String credential;
+    @Column(name = "encoder")
     private String encoder;
+    @Column(name = "app")
+    @Enumerated(EnumType.STRING)
     private App app;
+    @Column(name = "comment", nullable = true)
     private String comment;
+    @Column(name = "expiration", nullable = true)
     private Instant expiration;
+    @Column(name = "created")
     private Instant created;
+    @Column(name = "updated")
     private Instant updated;
 
-    public UserCredential(String username, String appUsername, String credential, String encoder, App app,
+    public UserCredential() {
+        super();
+    }
+
+    public UserCredential(User user, String appUsername, String credential, String encoder, App app,
             String comment, Instant expiration, Instant created, Instant updated) {
         super();
-        this.username = username;
+        this.user = user;
         this.appUsername = appUsername;
         this.credential = credential;
         this.encoder = encoder;
@@ -29,34 +66,42 @@ public class UserCredential {
         this.updated = updated;
     }
 
-    public UserCredential(String username, String appUsername, String credential, String encoder, App app,
+    public UserCredential(User user, String appUsername, String credential, String encoder, App app,
             String comment, Instant expiration) {
-        this(username, appUsername, credential, encoder, app, comment, expiration, null, null);
+        this(user, appUsername, credential, encoder, app, comment, expiration, null, null);
         Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
         setCreated(now);
         setUpdated(now);
     }
 
-    public UserCredential(String username, String appUsername, String credential, String encoder, App app,
+    public UserCredential(User user, String appUsername, String credential, String encoder, App app,
             String comment) {
-        this(username, appUsername, credential, encoder, app, comment, null);
+        this(user, appUsername, credential, encoder, app, comment, null);
     }
 
-    public UserCredential(String username, String appUsername, String credential, String encoder, App app) {
-        this(username, appUsername, credential, encoder, app, null);
+    public UserCredential(User user, String appUsername, String credential, String encoder, App app) {
+        this(user, appUsername, credential, encoder, app, null);
     }
 
     public UserCredential(UserCredential uc) {
-        this(uc.getUsername(), uc.getAppUsername(), uc.getCredential(), uc.getEncoder(), uc.getApp(),
+        this(uc.getUser(), uc.getAppUsername(), uc.getCredential(), uc.getEncoder(), uc.getApp(),
                 uc.getComment(), uc.getExpiration(), uc.getCreated(), uc.getUpdated());
     }
 
-    public String getUsername() {
-        return username;
+    public Integer getId() {
+        return id;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getAppUsername() {
@@ -125,7 +170,7 @@ public class UserCredential {
 
     @Override
     public int hashCode() {
-        return Objects.hash(comment, created, credential, expiration, app, appUsername, encoder, updated, username);
+        return Objects.hash(comment, created, credential, expiration, app, appUsername, encoder, updated, user.getUsername());
     }
 
     @Override
@@ -177,11 +222,46 @@ public class UserCredential {
                 return false;
         } else if (!updated.equals(other.updated))
             return false;
-        if (username == null) {
-            if (other.username != null)
+        if (user == null) {
+            if (other.user != null)
                 return false;
-        } else if (!username.equals(other.username))
+        } else if (!user.getUsername().equals(other.user.getUsername()))
             return false;
+        return true;
+    }
+
+    /**
+     * Update the encoder and credential for this UserCredential.
+     *
+     * @param newEncoder                new encoder to use
+     * @param reencodePlaintextNewCreds if true, reencode the new credential using
+     *                                  the new encoder
+     * @return true if the update was successful, false otherwise
+     */
+    public boolean updateEncoder(String newEncoder, boolean reencodePlaintextNewCreds) {
+
+        if (!StringUtils.hasLength(this.encoder) || !StringUtils.hasLength(newEncoder)) {
+            return false;
+        }
+        if (!this.encoder.equals(newEncoder) || reencodePlaintextNewCreds) {
+            if (reencodePlaintextNewCreds) {
+                String newCredential = GlobalSecurityConfig.ENCODERS.get(newEncoder).encode(this.credential);
+                if (!this.credential.equals(newCredential)) {
+                    this.credential = newCredential;
+                    this.setUpdated(Instant.now().truncatedTo(ChronoUnit.MICROS));
+                }
+            } else if (GlobalSecurityConfig.DECODABLE_ENCODERS.contains(this.encoder)) {
+                try {
+                    PasswordDecoder decoder = (PasswordDecoder) GlobalSecurityConfig.ENCODERS.get(this.encoder);
+                    String decodedCredential = decoder.decode(this.credential);
+                    this.credential = GlobalSecurityConfig.ENCODERS.get(newEncoder).encode(decodedCredential);
+                    this.setUpdated(Instant.now().truncatedTo(ChronoUnit.MICROS));
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+        }
+        this.encoder = newEncoder;
         return true;
     }
 

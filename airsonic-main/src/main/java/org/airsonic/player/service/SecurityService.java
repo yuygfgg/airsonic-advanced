@@ -19,13 +19,18 @@
  */
 package org.airsonic.player.service;
 
-import org.airsonic.player.dao.UserDao;
+import org.airsonic.player.command.CredentialsManagementCommand;
+import org.airsonic.player.command.CredentialsManagementCommand.CredentialsCommand;
+import org.airsonic.player.command.UserSettingsCommand;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.User;
+import org.airsonic.player.domain.User.Role;
 import org.airsonic.player.domain.UserCredential;
 import org.airsonic.player.domain.UserCredential.App;
+import org.airsonic.player.repository.UserCredentialRepository;
+import org.airsonic.player.repository.UserRepository;
 import org.airsonic.player.security.GlobalSecurityConfig;
 import org.airsonic.player.security.PasswordDecoder;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -45,6 +50,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestWrapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -57,10 +63,14 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -76,19 +86,23 @@ public class SecurityService implements UserDetailsService {
     private static final Logger LOG = LoggerFactory.getLogger(SecurityService.class);
 
     @Autowired
-    private UserDao userDao;
-    @Autowired
     private SettingsService settingsService;
     @Autowired
     private MediaFolderService mediaFolderService;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private UserCredentialRepository userCredentialRepository;
 
     /**
      * Locates the user based on the username.
      *
      * @param username The username
      * @return A fully populated user record (never <code>null</code>)
-     * @throws UsernameNotFoundException if the user could not be found or the user has no GrantedAuthority.
-     * @throws DataAccessException       If user could not be found for a repository-specific reason.
+     * @throws UsernameNotFoundException if the user could not be found or the user
+     *                                   has no GrantedAuthority.
+     * @throws DataAccessException       If user could not be found for a
+     *                                   repository-specific reason.
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException, DataAccessException {
@@ -114,57 +128,184 @@ public class SecurityService implements UserDetailsService {
                 authorities);
     }
 
-    public boolean updateCredentials(UserCredential oldCreds, UserCredential newCreds, String comment,
-            boolean reencodePlaintextNewCreds) {
-        if (!StringUtils.equals(newCreds.getEncoder(), oldCreds.getEncoder()) || reencodePlaintextNewCreds) {
-            if (reencodePlaintextNewCreds) {
-                newCreds.setCredential(GlobalSecurityConfig.ENCODERS.get(newCreds.getEncoder()).encode(newCreds.getCredential()));
-            } else if (GlobalSecurityConfig.DECODABLE_ENCODERS.contains(oldCreds.getEncoder())) {
-                try {
-                    // decode using original creds decoder
-                    PasswordDecoder decoder = (PasswordDecoder) GlobalSecurityConfig.ENCODERS.get(oldCreds.getEncoder());
-                    newCreds.setCredential(decoder.decode(oldCreds.getCredential()));
-                    // reencode
-                    newCreds.setCredential(GlobalSecurityConfig.ENCODERS.get(newCreds.getEncoder()).encode(newCreds.getCredential()));
-                } catch (Exception e) {
-                    LOG.warn("Could not update credentials for user {}", oldCreds.getUsername(), e);
-                    // Do not try and save it
-                    return false;
-                }
+    /**
+     * Creates a credential for a user
+     *
+     * @param username The username to create the credential for
+     * @param command  The command containing the credential
+     * @param comment  The comment to add to the credential
+     * @return true if the credential was created successfully
+     */
+    @Transactional
+    public boolean createCredential(String username, CredentialsCommand command, String comment) {
+
+        Optional<User> user = userRepository.findByUsername(username);
+        return user.map(u -> {
+            try {
+                UserCredential userCredential = new UserCredential(
+                        u,
+                        command.getApp().getUsernameRequired() ? command.getUsername() : username,
+                        GlobalSecurityConfig.ENCODERS.get(command.getEncoder()).encode(command.getCredential()),
+                        command.getEncoder(),
+                        command.getApp(),
+                        comment,
+                        command.getExpirationInstant());
+                userCredentialRepository.save(userCredential);
+                return true;
+            } catch (Exception e) {
+                LOG.warn("Can't create a credential user {}", username, e);
+                return false;
             }
+        }).orElseGet(() -> {
+            LOG.warn("Can't create a credential for a non-existent user {}", username);
+            return false;
+        });
+    }
+
+    /**
+     * Updates credentials for a user
+     *
+     * @param username                  The username to update the credentials for
+     * @param command                   The command containing the credentials
+     * @param comment                   The comment to add to the credentials
+     * @param reencodePlaintextNewCreds if true, reencode the new credential using
+     *                                  the new encoder
+     * @return true if the credentials were updated successfully
+     */
+    @Transactional
+    public boolean updateCredentials(String username, CredentialsManagementCommand command, String comment,
+            boolean reencodePlaintextNewCreds) {
+
+        Optional<User> user = userRepository.findByUsername(username);
+
+        if (user.isEmpty()) {
+            LOG.warn("Can't update credentials for a non-existent user {}", username);
+            return false;
         }
 
-        if (!newCreds.equals(oldCreds)) {
-            newCreds.setComment(comment);
-            newCreds.setUpdated(Instant.now());
+        List<Boolean> failures = new ArrayList<>();
+        user.ifPresent(u -> {
+            List<UserCredential> userCredentials = userCredentialRepository.findByUserAndAppIn(u,
+                    List.of(App.values()));
 
-            return userDao.updateCredential(oldCreds, newCreds);
+            command.getCredentials().forEach(c -> {
+                userCredentials.stream().filter(sc -> StringUtils.equals(String.valueOf(sc.hashCode()), c.getHash()))
+                        .findFirst().ifPresent(dbCreds -> {
+                            if (c.getMarkedForDeletion()) {
+                                if (!deleteCredential(dbCreds)) {
+                                    LOG.warn("Can't delete credential for user {}", username);
+                                    failures.add(true);
+                                }
+                            } else {
+                                if (dbCreds.updateEncoder(c.getEncoder(),
+                                        reencodePlaintextNewCreds)) {
+                                    dbCreds.setComment(comment);
+                                    dbCreds.setExpiration(c.getExpirationInstant());
+                                    userCredentialRepository.save(dbCreds);
+                                } else {
+                                    LOG.warn("Can't update credential for user {}", username);
+                                    failures.add(true);
+                                }
+                            }
+                        });
+            });
+        });
+
+        return failures.isEmpty();
+    }
+
+    /**
+     * Recovers a credential for a user. Sets the user to non-ldap authenticated and
+     * creates a new airsonic credential
+     *
+     * @param username The username to recover the credential for
+     * @param password The password to create the credential for
+     * @param comment  The comment to add to the credential
+     */
+    @CacheEvict(key = "#username", condition = "#username != null")
+    public void recoverCredential(String username, String password, String comment) {
+        if (StringUtils.isBlank(username)) {
+            LOG.warn("Can't recover credential for a blank username");
+            return;
         }
+        userRepository.findByUsername(username).ifPresentOrElse(u -> {
+            u.setLdapAuthenticated(false);
+            userRepository.save(u);
+            createAirsonicCredentialToUser(u, password, comment);
+        }, () -> {
+                LOG.warn("Can't recover credential for a non-existent user {}", username);
+            }
+        );
+    }
 
+    /**
+     * Creates a credential for a user with the default encoder for the app
+     *
+     * @param username The username to create the credential for
+     * @param password The password to create the credential for
+     * @param comment  The comment to add to the credential
+     */
+    public boolean createAirsonicCredential(String username, String password, String comment) {
+        User user = getUserByName(username);
+        if (user == null) {
+            LOG.warn("Can't create a credential for a non-existent user {}", username);
+            return false;
+        } else {
+            return createAirsonicCredentialToUser(user, password, comment);
+        }
+    }
+
+    /**
+     * * Creates a credential for a user with the default encoder for the app *
+     * * @param user The user to create the credential for * @param password The
+     * password to create the credential for * @param comment The comment to add to
+     * the credential * @return true if the credential was created successfully
+     */
+    private boolean createAirsonicCredentialToUser(User user, String password, String comment) {
+        String encoder = getPreferredPasswordEncoder(true);
+        try {
+            UserCredential userCredential = new UserCredential(user, user.getUsername(),
+                    GlobalSecurityConfig.ENCODERS.get(encoder).encode(password), encoder, App.AIRSONIC, comment);
+            userCredentialRepository.save(userCredential);
+        } catch (Exception e) {
+            LOG.warn("Can't create a credential user {}", user.getUsername(), e);
+            return false;
+        }
         return true;
     }
 
-    public boolean createCredential(UserCredential newCreds) {
-        newCreds.setCredential(GlobalSecurityConfig.ENCODERS.get(newCreds.getEncoder()).encode(newCreds.getCredential()));
-        return userDao.createCredential(newCreds);
-    }
-
-    // ensure we can't delete all airsonic creds
-    private Predicate<UserCredential> retainOneAirsonicCred = c ->
-            App.AIRSONIC != c.getApp()
-            || !userDao.getCredentials(c.getUsername(), c.getApp()).isEmpty();
-
+    /**
+     * * Deletes a credential. Ensures we can't delete the last airsonic credential
+     * * * @param creds The credential to delete * @return true if the credential
+     * was deleted successfully
+     */
     public boolean deleteCredential(UserCredential creds) {
+        if (creds == null || creds.getUser() == null) {
+            LOG.warn("Can't delete a null credential");
+            return false;
+        }
+        if (App.AIRSONIC == creds.getApp()) {
+            if (userCredentialRepository.countByUserAndApp(creds.getUser(), App.AIRSONIC) == 1) {
+                LOG.warn("Can't delete the last airsonic credential for user {}", creds.getUser().getUsername());
+                return false;
+            }
+        }
         try {
-            return userDao.deleteCredential(creds, retainOneAirsonicCred);
+            userCredentialRepository.delete(creds);
         } catch (Exception e) {
             LOG.info("Can't delete a credential", e);
             return false;
         }
+        return true;
     }
 
     public List<UserCredential> getCredentials(String username, App... apps) {
-        return userDao.getCredentials(username, apps);
+        return userRepository.findByUsername(username).map(user -> {
+            return userCredentialRepository.findByUserAndAppIn(user, List.of(apps));
+        }).orElseGet(() -> {
+            LOG.warn("Can't get credentials for a non-existent user {}", username);
+            return Collections.emptyList();
+        });
     }
 
     public Map<App, UserCredential> getDecodableCredsForApps(String username, App... apps) {
@@ -178,20 +319,25 @@ public class SecurityService implements UserDetailsService {
     }
 
     public boolean checkDefaultAdminCredsPresent() {
-        return userDao.getCredentials(User.USERNAME_ADMIN, App.AIRSONIC).parallelStream()
-                .anyMatch(c -> GlobalSecurityConfig.ENCODERS.get(c.getEncoder()).matches(User.USERNAME_ADMIN, c.getCredential()));
+        return userCredentialRepository.findByUserUsernameAndApp(User.USERNAME_ADMIN, App.AIRSONIC).parallelStream()
+                .anyMatch(c -> GlobalSecurityConfig.ENCODERS.get(c.getEncoder()).matches(User.USERNAME_ADMIN,
+                        c.getCredential()));
     }
 
     public boolean checkOpenCredsPresent() {
-        return GlobalSecurityConfig.OPENTEXT_ENCODERS.parallelStream()
-                .mapToInt(userDao::getCredentialCountByEncoder)
-                .anyMatch(i -> i > 0);
+        return userCredentialRepository.existsByEncoderIn(GlobalSecurityConfig.OPENTEXT_ENCODERS);
     }
 
     public boolean checkLegacyCredsPresent() {
-        return userDao.getCredentialCountByEncoder("legacy%") != 0;
+        return userCredentialRepository.existsByEncoderStartsWith("legacy");
     }
 
+    /**
+     * Migrates legacy credentials to non-legacy credentials
+     *
+     * @param useDecodableOnly if true, only migrate to decodable encoders
+     * @return true if all credentials were migrated successfully
+     */
     public boolean migrateLegacyCredsToNonLegacy(boolean useDecodableOnly) {
         String decodableEncoder = settingsService.getDecodablePasswordEncoder();
         String nonDecodableEncoder = useDecodableOnly ? decodableEncoder
@@ -199,15 +345,14 @@ public class SecurityService implements UserDetailsService {
 
         List<UserCredential> failures = new ArrayList<>();
 
-        userDao.getCredentialsByEncoder("legacy%").forEach(c -> {
-            UserCredential newCreds = new UserCredential(c);
-            if (App.AIRSONIC == c.getApp()) {
-                newCreds.setEncoder(nonDecodableEncoder);
+        userCredentialRepository.findByEncoderStartsWith("legacy").forEach(c -> {
+            c.setComment(c.getComment() + " | Migrated to nonlegacy by admin");
+            String encoder = App.AIRSONIC == c.getApp() ? nonDecodableEncoder : decodableEncoder;
+            if (c.updateEncoder(encoder, false)) {
+                userCredentialRepository.save(c);
             } else {
-                newCreds.setEncoder(decodableEncoder);
-            }
-            if (!updateCredentials(c, newCreds, c.getComment() + " | Migrated to nonlegacy by admin", false)) {
-                LOG.warn("System failed to migrate creds created on {} for user {}", c.getCreated(), c.getUsername());
+                LOG.warn("System failed to migrate creds created on {} for user {}", c.getCreated(),
+                        c.getUser().getUsername());
                 failures.add(c);
             }
         });
@@ -237,7 +382,8 @@ public class SecurityService implements UserDetailsService {
         try {
             return decoder.decode(reversibleCred.getCredential());
         } catch (Exception e) {
-            LOG.warn("Could not decode credentials for user {}, app {}", reversibleCred.getUsername(), reversibleCred.getApp(), e);
+            LOG.warn("Could not decode credentials for user {}, app {}", reversibleCred.getUser().getUsername(),
+                    reversibleCred.getApp(), e);
             return null;
         }
     }
@@ -275,7 +421,8 @@ public class SecurityService implements UserDetailsService {
 
     /**
      * Returns the user with the given username<br>
-     * Cache note: Will only cache if case-sensitive. Otherwise, cache eviction is difficult
+     * Cache note: Will only cache if case-sensitive. Otherwise, cache eviction is
+     * difficult
      *
      * @param username      The username to look for
      * @param caseSensitive If false, will do a case insensitive search
@@ -283,7 +430,83 @@ public class SecurityService implements UserDetailsService {
      */
     @Cacheable(key = "#username", condition = "#caseSensitive", unless = "#result == null")
     public User getUserByName(String username, boolean caseSensitive) {
-        return userDao.getUserByName(username, caseSensitive);
+        if (StringUtils.isBlank(username)) {
+            return null;
+        }
+        if (caseSensitive) {
+            return userRepository.findByUsername(username).orElse(null);
+        } else {
+            return userRepository.findByUsernameIgnoreCase(username).orElse(null);
+        }
+    }
+
+    /**
+     * Increment the number of bytes downloaded by the given user.
+     *
+     * @param username             user name.
+     * @param deltaBytesDownloaded number of bytes downloaded.
+     * @return updated user.
+     */
+    // TODO: This is not security related. Move to a different service.
+    @Cacheable(key = "#username", unless = "#result == null")
+    public User incrementBytesStreamed(String username, long deltaBytesStreamed) {
+        User user = getUserByName(username);
+        if (Objects.nonNull(user)) {
+            user.setBytesStreamed(user.getBytesStreamed() + deltaBytesStreamed);
+            userRepository.save(user);
+        }
+        return user;
+    }
+
+    /**
+     * Increment the number of bytes streamed by the given user.
+     *
+     * @param username           user name.
+     * @param deltaBytesStreamed number of bytes streamed.
+     * @return updated user.
+     */
+    // TODO: This is not security related. Move to a different service.
+    @Cacheable(key = "#username", unless = "#result == null")
+    public User incrementBytesDownloaded(String username, long deltaBytesDownloaded) {
+        User user = getUserByName(username);
+        if (Objects.nonNull(user)) {
+            user.setBytesDownloaded(user.getBytesDownloaded() + deltaBytesDownloaded);
+            userRepository.save(user);
+        }
+        return user;
+    }
+
+    /**
+     * Increment the number of bytes uploaded by the given user.
+     *
+     * @param username           user name.
+     * @param deltaBytesUploaded number of bytes uploaded.
+     * @return updated user.
+     */
+    // TODO: This is not security related. Move to a different service.
+    @Cacheable(key = "#username", unless = "#result == null")
+    public User incrementBytesUploaded(String username, long deltaBytesUploaded) {
+        User user = getUserByName(username);
+        if (Objects.nonNull(user)) {
+            user.setBytesUploaded(user.getBytesUploaded() + deltaBytesUploaded);
+            userRepository.save(user);
+        }
+        return user;
+    }
+
+    /**
+     * delete user.
+     *
+     * @param username        user name.
+     * @param currentUsername current user name.
+     */
+    @CacheEvict(key = "#username", condition = "#username != null")
+    public void deleteUser(String username, String currentUsername) {
+        if (StringUtils.isNotBlank(username) && username.equals(currentUsername)) {
+            throw new SelfDeletionException();
+        }
+        userRepository.deleteById(username);
+        LOG.info("User {} deleted by {}", username, currentUsername);
     }
 
     /**
@@ -293,16 +516,11 @@ public class SecurityService implements UserDetailsService {
      * @return The user, or <code>null</code> if not found.
      */
     public User getUserByEmail(String email) {
-        return userDao.getUserByEmail(email);
-    }
-
-    /**
-     * Returns all users.
-     *
-     * @return Possibly empty array of all users.
-     */
-    public List<User> getAllUsers() {
-        return userDao.getAllUsers();
+        if (StringUtils.isBlank(email)) {
+            LOG.warn("Email is blank");
+            return null;
+        }
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     /**
@@ -325,66 +543,64 @@ public class SecurityService implements UserDetailsService {
     public void createUser(User user, String credential, String comment) {
         String defaultEncoder = getPreferredPasswordEncoder(true);
         UserCredential uc = new UserCredential(
-                user.getUsername(),
+                user,
                 user.getUsername(),
                 GlobalSecurityConfig.ENCODERS.get(defaultEncoder).encode(credential),
                 defaultEncoder,
                 App.AIRSONIC,
                 comment);
-        createUser(user, uc);
-    }
-
-    public void createUser(User user, UserCredential credential) {
-        userDao.createUser(user, credential);
-        mediaFolderService.setMusicFoldersForUser(user.getUsername(), MusicFolder.toIdList(mediaFolderService.getAllMusicFolders()));
+        userRepository.saveAndFlush(user);
+        userCredentialRepository.saveAndFlush(uc);
+        mediaFolderService.setMusicFoldersForUser(user.getUsername(),
+                MusicFolder.toIdList(mediaFolderService.getAllMusicFolders()));
         LOG.info("Created user {}", user.getUsername());
     }
 
     /**
-     * Deletes the user with the given username.
      *
-     * @param username The username.
-     * @param currentUsername Name of current logged in user.
      */
-    @CacheEvict(key = "#username")
-    public void deleteUser(String username, String currentUsername) {
-        if (currentUsername.equals(username)) {
-            throw new SelfDeletionException();
-        }
-        userDao.deleteUser(username);
-        LOG.info("Deleted user {}", username);
-    }
-
-    /**
-     * Updates the given user.
-     *
-     * @param user The user to update.
-     */
-    @CacheEvict(key = "#user.username")
-    public void updateUser(User user) {
-        userDao.updateUser(user);
-    }
-
-    /**
-     * Updates the byte counts for given user.
-     *
-     * @param user                 The user to update, may be <code>null</code>.
-     * @param bytesStreamedDelta   Increment bytes streamed count with this value.
-     * @param bytesDownloadedDelta Increment bytes downloaded count with this value.
-     * @param bytesUploadedDelta   Increment bytes uploaded count with this value.
-     */
-    @CacheEvict(key = "#user.username", condition = "#user != null")
-    public void updateUserByteCounts(User user, long bytesStreamedDelta, long bytesDownloadedDelta, long bytesUploadedDelta) {
-        if (user == null) {
-            return;
+    @Cacheable(key = "#command.username", unless = "#result == null", condition = "#command != null")
+    public User updateUserByUserSettingsCommand(UserSettingsCommand command) {
+        // check
+        if (Objects.isNull(command)) {
+            LOG.warn("Can't update a null command");
+            return null;
         }
 
-        userDao.updateUserByteCounts(user.getUsername(), bytesStreamedDelta, bytesDownloadedDelta, bytesUploadedDelta);
+        // get user
+        User user = getUserByName(command.getUsername());
 
-        User updated = userDao.getUserByName(user.getUsername());
-        user.setBytesStreamed(updated.getBytesStreamed());
-        user.setBytesDownloaded(updated.getBytesDownloaded());
-        user.setBytesUploaded(updated.getBytesUploaded());
+        // update
+        if (Objects.nonNull(user)) {
+            user.setEmail(StringUtils.trimToNull(command.getEmail()));
+            user.setLdapAuthenticated(command.isLdapAuthenticated());
+            Set<Role> roles = new HashSet<>();
+            if (command.isAdminRole())
+                roles.add(Role.ADMIN);
+            if (command.isDownloadRole())
+                roles.add(Role.DOWNLOAD);
+            if (command.isUploadRole())
+                roles.add(Role.UPLOAD);
+            if (command.isCoverArtRole())
+                roles.add(Role.COVERART);
+            if (command.isCommentRole())
+                roles.add(Role.COMMENT);
+            if (command.isPodcastRole())
+                roles.add(Role.PODCAST);
+            if (command.isStreamRole())
+                roles.add(Role.STREAM);
+            if (command.isJukeboxRole())
+                roles.add(Role.JUKEBOX);
+            if (command.isSettingsRole())
+                roles.add(Role.SETTINGS);
+            if (command.isShareRole())
+                roles.add(Role.SHARE);
+            user.setRoles(roles);
+            userRepository.save(user);
+            if (command.isPasswordChange())
+                createAirsonicCredentialToUser(user, command.getPassword(), "Created by admin");
+        }
+        return user;
     }
 
     public boolean isReadAllowed(MediaFile file, boolean checkExistence) {
@@ -397,7 +613,8 @@ public class SecurityService implements UserDetailsService {
 
     public boolean isWriteAllowed(Path relativePath, MusicFolder folder) {
         // Only allowed to write podcasts or cover art.
-        return folder.isEnabled() && (folder.getType() == Type.PODCAST || relativePath.getFileName().toString().startsWith("cover."));
+        return folder.isEnabled()
+                && (folder.getType() == Type.PODCAST || relativePath.getFileName().toString().startsWith("cover."));
     }
 
     /**
@@ -407,7 +624,8 @@ public class SecurityService implements UserDetailsService {
      */
     public void checkUploadAllowed(Path file, boolean checkFileExists) throws IOException {
         if (getMusicFolderForFile(file) == null) {
-            throw new AccessDeniedException(file.toString(), null, "Specified location is not in writable music folder");
+            throw new AccessDeniedException(file.toString(), null,
+                    "Specified location is not in writable music folder");
         }
 
         if (checkFileExists && Files.exists(file)) {
@@ -438,14 +656,6 @@ public class SecurityService implements UserDetailsService {
                 .startsWith(Paths.get(FilenameUtils.separatorsToUnix(folder.toString())).normalize());
     }
 
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
-    }
-
-    public void setUserDao(UserDao userDao) {
-        this.userDao = userDao;
-    }
-
     public static class UserDetail extends org.springframework.security.core.userdetails.User {
         private List<UserCredential> creds;
 
@@ -453,7 +663,9 @@ public class SecurityService implements UserDetailsService {
                 boolean credentialsNonExpired, boolean accountNonLocked,
                 Collection<? extends GrantedAuthority> authorities) {
             super(username,
-                    DigestUtils.md5Hex(creds.stream().map(x -> x.getEncoder() + "/" + x.getCredential() + "/" + x.getExpiration()).collect(Collectors.joining())),
+                    DigestUtils.md5Hex(
+                            creds.stream().map(x -> x.getEncoder() + "/" + x.getCredential() + "/" + x.getExpiration())
+                                    .collect(Collectors.joining())),
                     enabled, accountNonExpired, credentialsNonExpired, accountNonLocked, authorities);
 
             this.creds = creds;
@@ -476,4 +688,5 @@ public class SecurityService implements UserDetailsService {
             super("Can't delete yourself");
         }
     }
+
 }

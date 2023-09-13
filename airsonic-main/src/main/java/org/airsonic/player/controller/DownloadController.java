@@ -121,7 +121,7 @@ public class DownloadController {
 
         Consumer<TransferStatus> statusCloser = status -> {
             statusService.removeDownloadStatus(status);
-            securityService.updateUserByteCounts(user, 0L, status.getBytesTransferred(), 0L);
+            securityService.incrementBytesDownloaded(user.getUsername(), status.getBytesTransferred());
             LOG.info("Transferred {} bytes to user: {}, player: {}", status.getBytesTransferred(), user.getUsername(), transferPlayer);
         };
 

@@ -19,6 +19,7 @@
 package org.airsonic.player.service;
 
 import org.airsonic.player.domain.MediaFile;
+import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.UserCredential;
 import org.airsonic.player.domain.UserCredential.App;
 import org.airsonic.player.domain.UserSettings;
@@ -65,9 +66,9 @@ class AudioScrobblerServiceTest {
     @Mock
     private UserSettings mockedUserSettings;
 
-    private UserCredential lastFmCredential = new UserCredential("testUser", "lastFmUser", StringUtil.utf8HexEncode("lastFmPassword"), "hex", App.LASTFM);
+    private UserCredential lastFmCredential = new UserCredential(new User("testUser", "test@example.com"), "lastFmUser", StringUtil.utf8HexEncode("lastFmPassword"), "hex", App.LASTFM);
 
-    private UserCredential listenBreinzCredential = new UserCredential("testUser", "listenBreinz", StringUtil.utf8HexEncode("listenBrainzPassword"), "hex", App.LISTENBRAINZ);
+    private UserCredential listenBreinzCredential = new UserCredential(new User("testUser", "test@example.com"), "listenBreinz", StringUtil.utf8HexEncode("listenBrainzPassword"), "hex", App.LISTENBRAINZ);
 
     @Test
     void registerWithNullMediaFileShouldNotDoNothing() {

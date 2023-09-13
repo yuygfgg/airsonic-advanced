@@ -60,7 +60,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -1145,20 +1144,20 @@ public class MediaFileService {
     public String calcAlbumThirdCaption(HomeController.Album album, Locale locale) {
         String caption3 = "";
 
-        if(album.getPlayCount() != null) {
+        if (album.getPlayCount() != null) {
             caption3 = messageSource.getMessage("home.playcount", new Object[] {album.getPlayCount()}, locale);
         }
-        if(album.getLastPlayed() != null) {
+        if (album.getLastPlayed() != null) {
             DateTimeFormatter dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withZone(ZoneId.systemDefault()).withLocale(locale);
             String lastPlayedDate = dateFormat.format(album.getLastPlayed());
             caption3 = messageSource.getMessage("home.lastplayed", new Object[] {lastPlayedDate}, locale);
         }
-        if(album.getCreated() != null) {
+        if (album.getCreated() != null) {
             DateTimeFormatter dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withZone(ZoneId.systemDefault()).withLocale(locale);
             String creationDate = dateFormat.format(album.getCreated());
             caption3 = messageSource.getMessage("home.created", new Object[] {creationDate}, locale);
         }
-        if(album.getYear() != null) {
+        if (album.getYear() != null) {
             caption3 = album.getYear().toString();
         }
 

@@ -204,14 +204,14 @@
     function getRatings() {
         var urlBase = '[(@{/ratingJsp})]';
         if (mediaDir.averageRating && mediaDir.averageRating > 0) {
-            $.get(urlBase + '?readonly=true&rating=' + mediaDir.averageRating, data => {
+            $.get(urlBase + '?readOnly=true&rating=' + mediaDir.averageRating, data => {
                 $('#avgRating').html('&nbsp;&nbsp;'+data).show();
             });
         } else {
             $('#avgRating').html('').hide();
         }
 
-        $.get(urlBase + '?readonly=false&id=' + mediaDir.id + '&rating=' + mediaDir.userRating, data => {
+        $.get(urlBase + '?readOnly=false&id=' + mediaDir.id + '&rating=' + mediaDir.userRating, data => {
             $('#userRating').html(data);
         });
     }

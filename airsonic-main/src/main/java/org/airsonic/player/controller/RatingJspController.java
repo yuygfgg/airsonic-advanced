@@ -18,7 +18,8 @@ public class RatingJspController {
     public ModelAndView get(HttpServletRequest request, HttpServletResponse response) {
         Map<String, Object> model = new HashMap<>();
         model.put("rating", Integer.parseInt(request.getParameter("rating")));
-        model.put("readOnly", request.getParameter("readOnly"));
+        String readonlyParam = request.getParameter("readOnly");
+        model.put("readOnly", "true".equalsIgnoreCase(readonlyParam));
         model.put("id", request.getParameter("id"));
 
         return new ModelAndView("rating", model);

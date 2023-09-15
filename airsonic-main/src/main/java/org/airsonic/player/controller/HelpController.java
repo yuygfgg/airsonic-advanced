@@ -73,6 +73,8 @@ public class HelpController {
         } else if (versionService.isNewBetaVersionAvailable()) {
             map.put("newVersionAvailable", true);
             map.put("latestVersion", versionService.getLatestBetaVersion());
+        } else {
+            map.put("newVersionAvailable", false);
         }
 
         long totalMemory = Runtime.getRuntime().totalMemory();

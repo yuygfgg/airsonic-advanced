@@ -21,7 +21,7 @@
     </tr>
     <tr>
         <td class="ruleTableHeader" th:text="#{help.server.title}"></td>
-        <td class="ruleTableCell" th:text="|${model.serverInfo} (${#numbers.formatInteger(model.usedMemory,1,'DEFAULT')} bytes / ${#numbers.formatInteger(model.totalMemory,1,'DEFAULT')} bytes)|"></td>
+        <td class="ruleTableCell" th:text="|${model.serverInfo} (${model.usedMemory} / ${model.totalMemory})|"></td>
     </tr>
     <tr>
         <td class="ruleTableHeader" th;text="#{help.license.title}"></td>

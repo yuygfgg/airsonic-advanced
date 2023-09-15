@@ -10,6 +10,7 @@ import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.TranscodingService;
+import org.airsonic.player.service.UserService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,8 @@ public class UserSettingsControllerTest {
     private TranscodingService transcodingService;
     @MockBean
     private PersonalSettingsService personalSettingsService;
+    @MockBean
+    private UserService userService;
 
     @Autowired
     private UserSettingsController userSettingsController;
@@ -71,9 +74,6 @@ public class UserSettingsControllerTest {
     void testUsersCanBeUpdated() {
         // Given I have a freshly created user
         final User newUser = new User("test", "test@example.com");
-        when(securityService.getUserByName("test")).thenReturn(newUser);
-        final UserSettings someSettings = new UserSettings();
-        when(personalSettingsService.getUserSettings("test")).thenReturn(someSettings);
 
         // And I have a command for it
         final UserSettingsCommand command = new UserSettingsCommand();
@@ -86,6 +86,10 @@ public class UserSettingsControllerTest {
         command.setSettingsRole(true);
         command.setAllowedMusicFolderIds(new int[] {1, 2, 3});
 
+        when(securityService.updateUserByUserSettingsCommand(command)).thenReturn(newUser);
+        final UserSettings someSettings = new UserSettings();
+        when(personalSettingsService.getUserSettings("test")).thenReturn(someSettings);
+
         // When I run the update
         // Then the update succeeds
         assertDoesNotThrow(() -> userSettingsController.updateUser(command));
@@ -96,9 +100,6 @@ public class UserSettingsControllerTest {
     void testUsersCanBeUpdatedWithoutAllowedMusicFolderIds() {
         // Given I have a freshly created user
         final User newUser = new User("test", "test@example.com");
-        when(securityService.getUserByName("test")).thenReturn(newUser);
-        final UserSettings someSettings = new UserSettings();
-        when(personalSettingsService.getUserSettings("test")).thenReturn(someSettings);
 
         // And I have a command for it, that does not contain any "allowedMediaFolderIds"
         final UserSettingsCommand command = new UserSettingsCommand();
@@ -109,8 +110,12 @@ public class UserSettingsControllerTest {
         command.setLdapAuthenticated(false);
         command.setStreamRole(true);
         command.setSettingsRole(true);
+
         // v~~~ Special case for when the system doesn't have any enabled or existing folders.
         command.setAllowedMusicFolderIds(null);
+        when(securityService.updateUserByUserSettingsCommand(command)).thenReturn(newUser);
+        final UserSettings someSettings = new UserSettings();
+        when(personalSettingsService.getUserSettings("test")).thenReturn(someSettings);
 
         // When I run the update
         // Then the update succeeds

@@ -52,23 +52,6 @@ public class UserDao extends AbstractDao {
         update("delete from users where username=?", username);
     }
 
-    /**
-     * Updates the given user.
-     *
-     * @param user The user to update.
-     */
-    public void updateUser(User user) {
-        String sql = "update users set email=?, ldap_authenticated=?, bytes_streamed=?, bytes_downloaded=?, bytes_uploaded=?, roles=? where username=?";
-        update(sql, user.getEmail(), user.isLdapAuthenticated(),
-                user.getBytesStreamed(), user.getBytesDownloaded(), user.getBytesUploaded(),
-                Util.toJson(user.getRoles()),
-                user.getUsername());
-    }
-
-    public void updateUserByteCounts(String user, long bytesStreamedDelta, long bytesDownloadedDelta, long bytesUploadedDelta) {
-        String sql = "update users set bytes_streamed=bytes_streamed+?, bytes_downloaded=bytes_downloaded+?, bytes_uploaded=bytes_uploaded+? where username=?";
-        update(sql, bytesStreamedDelta, bytesDownloadedDelta, bytesUploadedDelta, user);
-    }
 
     /**
      * Returns settings for the given user.

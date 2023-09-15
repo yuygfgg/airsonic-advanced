@@ -1,5 +1,6 @@
 package org.airsonic.player.dao;
 
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.AvatarScheme;
 import org.airsonic.player.domain.TranscodeScheme;
 import org.airsonic.player.domain.User;
@@ -9,14 +10,19 @@ import org.airsonic.player.domain.UserCredential.App;
 import org.airsonic.player.domain.UserSettings;
 import org.airsonic.player.repository.UserCredentialRepository;
 import org.airsonic.player.repository.UserRepository;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.comparator.NullSafeComparator;
 
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
@@ -25,8 +31,9 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -34,7 +41,9 @@ import static org.junit.Assert.assertNull;
  *
  * @author Sindre Mehus
  */
-public class UserDaoTestCase extends DaoTestCaseBean2 {
+@SpringBootTest
+@EnableConfigurationProperties({ AirsonicHomeConfig.class })
+public class UserDaoTestCase {
 
     @Autowired
     UserDao userDao;
@@ -45,10 +54,19 @@ public class UserDaoTestCase extends DaoTestCaseBean2 {
     @Autowired
     UserCredentialRepository userCredentialRepository;
 
-    @Before
-    public void setUp() {
-        getJdbcTemplate().execute("delete from user_credentials");
-        getJdbcTemplate().execute("delete from users");
+    @TempDir
+    private static Path tempDir;
+
+
+    @BeforeAll
+    public static void setUp() {
+        System.setProperty("airsonic.home", tempDir.toString());
+    }
+
+    @BeforeEach
+    public void clear() {
+        userRepository.deleteAll();
+        userCredentialRepository.deleteAll();
     }
 
     @Test
@@ -85,7 +103,7 @@ public class UserDaoTestCase extends DaoTestCaseBean2 {
         user.setBytesUploaded(3);
         user.setRoles(Set.of(Role.DOWNLOAD, Role.UPLOAD));
 
-        userDao.updateUser(user);
+        userRepository.save(user);
 
         assertThat(userRepository.findAll().get(0)).usingRecursiveComparison().isEqualTo(user);
         assertThat(userCredentialRepository.findByUserUsernameAndApp("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
@@ -99,13 +117,12 @@ public class UserDaoTestCase extends DaoTestCaseBean2 {
         userRepository.save(user);
         userCredentialRepository.save(uc);
 
-        UserCredential newCreds = new UserCredential(uc);
-        newCreds.setCredential("foo");
+        uc.setCredential("foo");
 
-        userCredentialRepository.save(newCreds);
+        userCredentialRepository.save(uc);
 
         assertThat(userRepository.findAll().get(0)).usingRecursiveComparison().isEqualTo(user);
-        assertThat(userCredentialRepository.findByUserUsernameAndApp("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(newCreds);
+        assertThat(userCredentialRepository.findByUserUsernameAndApp("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
     }
 
     @Test
@@ -115,28 +132,29 @@ public class UserDaoTestCase extends DaoTestCaseBean2 {
 
         assertThat(userRepository.findByUsername("sindre").get()).usingRecursiveComparison().isEqualTo(user);
 
-        assertNull("Error in getUserByName().", userRepository.findByUsername("sindre2").get());
+        assertTrue(userRepository.findByUsername("sindre2").isEmpty());
         // assertNull("Error in getUserByName().", userRepository.findByUsername("Sindre ", true)); // depends on the collation of the DB
-        assertNull("Error in getUserByName().", userRepository.findByUsername("bente").get());
-        assertNull("Error in getUserByName().", userRepository.findByUsername("").get());
-        assertNull("Error in getUserByName().", userRepository.findByUsername(null).get());
+        assertTrue(userRepository.findByUsername("bente").isEmpty());
+        assertTrue(userRepository.findByUsername("").isEmpty());
+        assertTrue(userRepository.findByUsername(null).isEmpty());
     }
 
     @Test
     public void testDeleteUser() {
-        assertEquals("Wrong number of users.", 0, userRepository.findAll().size());
+        assertEquals(0, userRepository.findAll().size());
 
         userRepository.save(new User("sindre", null));
-        assertEquals("Wrong number of users.", 1, userRepository.count());
+        assertEquals(1, userRepository.count());
 
         userRepository.save(new User("bente", null));
-        assertEquals("Wrong number of users.", 2, userRepository.count());
+        assertEquals(2, userRepository.count());
 
-        userDao.deleteUser("sindre");
-        assertEquals("Wrong number of users.", 1, userRepository.count());
+        userRepository.deleteById("sindre");
 
-        userDao.deleteUser("bente");
-        assertEquals("Wrong number of users.", 0, userRepository.count());
+        assertEquals(1, userRepository.count());
+
+        userRepository.deleteById("bente");
+        assertEquals(0, userRepository.count());
     }
 
     @Test
@@ -151,16 +169,16 @@ public class UserDaoTestCase extends DaoTestCaseBean2 {
 
     @Test
     public void testUserSettings() {
-        assertNull("Error in getUserSettings.", userDao.getUserSettings("sindre"));
+        assertNull(userDao.getUserSettings("sindre"));
 
         assertThatExceptionOfType(DataIntegrityViolationException.class)
                 .isThrownBy(() -> updateUserSettings(new UserSettings("sindre")));
         User user = new User("sindre", null);
 
-        userRepository.save(user);
-        userCredentialRepository.save(new UserCredential(user, "sindre", "secret", "noop", App.AIRSONIC));
+        userRepository.saveAndFlush(user);
+        userCredentialRepository.saveAndFlush(new UserCredential(user, "sindre", "secret", "noop", App.AIRSONIC));
 
-        assertNull("Error in getUserSettings.", userDao.getUserSettings("sindre"));
+        assertNull(userDao.getUserSettings("sindre"));
 
         UserSettings settings = new UserSettings("sindre");
         userDao.updateUserSettings(settings);
@@ -206,8 +224,8 @@ public class UserDaoTestCase extends DaoTestCaseBean2 {
         userSettings = userDao.getUserSettings("sindre");
         assertThat(userSettings).usingRecursiveComparison().isEqualTo(settings);
 
-        userDao.deleteUser("sindre");
-        assertNull("Error in cascading delete.", userDao.getUserSettings("sindre"));
+        userRepository.deleteById("sindre");
+        assertNull(userDao.getUserSettings("sindre"));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

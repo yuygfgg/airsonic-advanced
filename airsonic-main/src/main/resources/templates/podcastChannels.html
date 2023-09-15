@@ -583,7 +583,7 @@
         //append container first to keep order intact when async callback happens
         $('#thumbs').append('<div class="albumThumb" id="podcastThumb-' + podcast.id + '"></div>');
         var delayString = delay ? ("&appearAfter=" + delay) : "";
-        $.get(urlBase + '?hideOverflow=true&showLink=true' + delayString + '&coverArtSize=160&captionCount=2&caption2=' + encodeURIComponent(podcast.fileCount + ' [(#{podcastreceiver.episodes})] ') + '&caption1=' + encodeURIComponent(podcast.title) +'&podcastChannelId=' + podcast.id, data => {
+        $.get(urlBase + '?hideOverflow=true&showLink=true' + delayString + '&coverArtSize=160&captionCount=2&caption2=' + encodeURIComponent(podcast.fileCount + ' [(#{podcastreceiver.episodes('')})] ') + '&caption1=' + encodeURIComponent(podcast.title) +'&podcastChannelId=' + podcast.id, data => {
             $('#podcastThumb-' + podcast.id).append(data);
         });
       }

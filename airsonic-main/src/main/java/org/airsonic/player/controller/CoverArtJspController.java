@@ -21,6 +21,7 @@ public class CoverArtJspController {
         model.put("showLink", "true".equalsIgnoreCase(request.getParameter("showLink")));
         model.put("coverArtSize", Integer.parseInt(request.getParameter("coverArtSize")));
         model.put("playlistId", request.getParameter("playlistId"));
+        model.put("podcastChannelId", request.getParameter("podcastChannelId"));
         model.put("caption1", request.getParameter("caption1"));
         model.put("caption2", request.getParameter("caption2"));
         model.put("caption3", request.getParameter("caption3"));

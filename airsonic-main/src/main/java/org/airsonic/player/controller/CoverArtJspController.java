@@ -20,6 +20,7 @@ public class CoverArtJspController {
         model.put("hideOverflow", "true".equalsIgnoreCase(request.getParameter("hideOverflow")));
         model.put("showLink", "true".equalsIgnoreCase(request.getParameter("showLink")));
         model.put("coverArtSize", Integer.parseInt(request.getParameter("coverArtSize")));
+        model.put("albumId", request.getParameter("albumId"));
         model.put("playlistId", request.getParameter("playlistId"));
         model.put("podcastChannelId", request.getParameter("podcastChannelId"));
         model.put("caption1", request.getParameter("caption1"));

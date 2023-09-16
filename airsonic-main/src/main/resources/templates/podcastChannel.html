@@ -136,7 +136,7 @@
                         id=${episode.mediaFileId},
                         playEnabled=${model.user.streamRole and model['partyModeEnabled'] != true},
                         addEnabled=${model.user.streamRole and model['partyModeEnabled'] != true},
-                        onPlay=${'top.playQueue.onPlayPodcastEpisode('+episode.id+')'}
+                        podcastId=${episode.id}
                     )" />
                 </td>
 

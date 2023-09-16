@@ -43,6 +43,7 @@ public interface AlbumRepository extends JpaRepository<Album, Integer> {
 
     public Optional<Album> findByIdAndStarredAlbumsUsername(Integer id, String username);
 
+    @Transactional
     public void deleteAllByPresentFalse();
 
     @Transactional

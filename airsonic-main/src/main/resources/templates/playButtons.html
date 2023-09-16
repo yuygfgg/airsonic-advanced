@@ -19,7 +19,7 @@ PARAMETERS
                 video=${video ?: false},
                 starEnabled=${starEnabled ?: false},
                 starred=${starred ?: false},
-                onPlay=${onPlay ?: ''}">
+                podcastId=${podcastId ?: ''}">
     <th:block th:if="${starEnabled}">
         <img th:if="starred" th:id="|starImage${id}|" th:src="${#themes.code('ratingOnImage')}" alt="" style="cursor:pointer;height:18px;"
              th:onclick="|toggleStar(${id}, '#starImage${id}'); return false;|">
@@ -32,11 +32,12 @@ PARAMETERS
             <img th:src="${#themes.code('playImage')}" th:alt="#{common.play}" th:title="#{common.play}">
         </a>
 
-        <img th:if="${!#strings.isEmpty(onPlay)}" th:src="${#themes.code('playImage')}"
+        <img th:if="${!#strings.isEmpty(podcastId)}" th:src="${#themes.code('playImage')}"
              th:alt="#{common.play}" style="cursor:pointer; height:18px;"
-             th:onclick="|${onPlay}; return false;|" th:title="#{common.play}">
+             th:data-podcast-id="${podcastId}"
+             onclick="top.playQueue.onPlayPodcastEpisode(this.getAttribute('data-podcast-id')); return false;" th:title="#{common.play}">
 
-        <img th:if="${!video && #strings.isEmpty(onPlay)}" th:src="${#themes.code('playImage')}" th:alt="#{common.play}" style="cursor:pointer; height:18px;"
+        <img th:if="${!video && #strings.isEmpty(podcastId)}" th:src="${#themes.code('playImage')}" th:alt="#{common.play}" style="cursor:pointer; height:18px;"
              th:data-id="${id}" onclick="top.playQueue.onPlay(this.getAttribute('data-id')); return false;" th:title="#{common.play}">
     </th:block>
 

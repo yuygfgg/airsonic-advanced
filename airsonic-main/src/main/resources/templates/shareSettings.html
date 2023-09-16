@@ -40,7 +40,7 @@
                     th:text="${#strings.abbreviate(shareInfo.dir.name, 30)}"></a></td>
                 <td style="padding-left:1em" th:text="${share.expires}"><javatime:format value="${share.expires}" style="M-"/></td>
                 <td style="padding-left:1em">
-                    <label><input type="radio" th:name="|expireIn[${share.id}]|" th:checked="${share.expire}" value="7" ><span th:text="#{sharesettings.expirein.week}"></span></label>
+                    <label><input type="radio" th:name="|expireIn[${share.id}]|" value="7" ><span th:text="#{sharesettings.expirein.week}"></span></label>
                     <label><input type="radio" th:name="|expireIn[${share.id}]|" value="30"><span th:text="#{sharesettings.expirein.month}"></span></label>
                     <label><input type="radio" th:name="|expireIn[${share.id}]|" value="365"><span th:text="#{sharesettings.expirein.year}"></span></label>
                     <label><input type="radio" th:name="|expireIn[${share.id}]|" value="0"><span th:text="#{sharesettings.expirein.never}"></span></label>

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 
 import java.nio.file.Path;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -31,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -85,6 +88,33 @@ public class SecurityServiceTest {
         assertFalse(result);
         verify(userRepository).findByUsername("nonExistingUser");
         verifyNoInteractions(userCredentialRepository);
+    }
+
+    @Test
+    public void testCreateCredentialWithExistingUserShouldReturnTrue() {
+
+        // given
+        CredentialsCommand command = new CredentialsCommand();
+        command.setEncoder("hex");
+        command.setCredential("testPassword");
+        command.setApp(App.LASTFM);
+        command.setExpiration(new Date());
+        command.setUsername(TEST_USER_NAME);
+
+        // when
+        boolean result = securityService.createCredential(TEST_USER_NAME, command, "testComment");
+
+        // then
+        ArgumentCaptor<UserCredential> argumentCaptor = ArgumentCaptor.forClass(UserCredential.class);
+        assertTrue(result);
+        verify(userRepository).findByUsername(TEST_USER_NAME);
+        verify(userCredentialRepository).save(argumentCaptor.capture());
+        UserCredential uc = argumentCaptor.getValue();
+        assertEquals(TEST_USER_NAME, uc.getUser().getUsername());
+        assertEquals("hex", uc.getEncoder());
+        assertEquals(GlobalSecurityConfig.ENCODERS.get("hex").encode("testPassword"), uc.getCredential());
+        assertEquals(App.LASTFM, uc.getApp());
+        assertEquals("testComment", uc.getComment());
     }
 
     @Test
@@ -154,5 +184,75 @@ public class SecurityServiceTest {
         assertEquals("hex", actual.getEncoder());
         assertEquals(GlobalSecurityConfig.ENCODERS.get("hex").encode("testPassword"), actual.getCredential());
         assertEquals("test", actual.getComment());
+    }
+
+    @Test
+    public void recoverCredentialWithNonExistingUser() {
+
+        // when
+        securityService.recoverCredential("nonExistingUser", "testPassword", null);
+
+        // then
+        verify(userRepository).findByUsername("nonExistingUser");
+        verify(userRepository, never()).save(any(User.class));
+        verifyNoInteractions(userCredentialRepository);
+    }
+
+    @Test
+    public void recoverCredentialWithExistingUser() {
+
+        // given
+        UserCredential userCredential = new UserCredential(testUser, TEST_USER_NAME, GlobalSecurityConfig.ENCODERS.get("hex").encode("testPassword"), "hex", App.AIRSONIC);
+        userCredentialRepository.saveAndFlush(userCredential);
+
+        // when
+        securityService.recoverCredential(TEST_USER_NAME, "testPassword", null);
+
+        // then
+        verify(userRepository).findByUsername(TEST_USER_NAME);
+        verify(userRepository).save(any(User.class));
+        verify(userCredentialRepository).save(any(UserCredential.class));
+
+        UserCredential actual = userCredentialRepository.findByUserUsernameAndApp(TEST_USER_NAME, App.AIRSONIC).get(0);
+        assertEquals("hex", actual.getEncoder());
+        assertEquals(GlobalSecurityConfig.ENCODERS.get("hex").encode("testPassword"), actual.getCredential());
+
+        User actualUser = userRepository.findByUsername(TEST_USER_NAME).get();
+        assertFalse(actualUser.isLdapAuthenticated());
+
+    }
+
+    @Test
+    public void deleteCredentialWithLastAirsonicCredsShouldReturnFalse() {
+
+        // given
+        UserCredential userCredential = new UserCredential(testUser, TEST_USER_NAME, GlobalSecurityConfig.ENCODERS.get("hex").encode("testPassword"), "hex", App.AIRSONIC);
+        userCredentialRepository.saveAndFlush(userCredential);
+
+        // when
+        boolean result = securityService.deleteCredential(userCredential);
+
+        // then
+        assertFalse(result);
+        verify(userCredentialRepository, never()).delete(any(UserCredential.class));
+    }
+
+    @Test
+    public void deleteCredentialSuccessShouldReturnTrue() {
+
+        // given
+        UserCredential userCredential = new UserCredential(testUser, TEST_USER_NAME, GlobalSecurityConfig.ENCODERS.get("hex").encode("testPassword"), "hex", App.LASTFM);
+        userCredentialRepository.saveAndFlush(userCredential);
+        UserCredential userCredential2 = new UserCredential(testUser, TEST_USER_NAME, GlobalSecurityConfig.ENCODERS.get("hex").encode("testPassword"), "hex", App.AIRSONIC);
+        userCredentialRepository.saveAndFlush(userCredential2);
+
+        // when
+        boolean result = securityService.deleteCredential(userCredential);
+
+        // then
+        assertTrue(result);
+        verify(userCredentialRepository).delete(any(UserCredential.class));
+        assertEquals(1, userCredentialRepository.countByUserAndApp(testUser, App.AIRSONIC));
+
     }
 }

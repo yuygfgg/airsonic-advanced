@@ -81,6 +81,7 @@ import java.util.stream.Stream;
  */
 @Service
 @CacheConfig(cacheNames = "userCache")
+@Transactional
 public class SecurityService implements UserDetailsService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SecurityService.class);
@@ -136,7 +137,6 @@ public class SecurityService implements UserDetailsService {
      * @param comment  The comment to add to the credential
      * @return true if the credential was created successfully
      */
-    @Transactional
     public boolean createCredential(String username, CredentialsCommand command, String comment) {
 
         Optional<User> user = userRepository.findByUsername(username);
@@ -172,7 +172,6 @@ public class SecurityService implements UserDetailsService {
      *                                  the new encoder
      * @return true if the credentials were updated successfully
      */
-    @Transactional
     public boolean updateCredentials(String username, CredentialsManagementCommand command, String comment,
             boolean reencodePlaintextNewCreds) {
 

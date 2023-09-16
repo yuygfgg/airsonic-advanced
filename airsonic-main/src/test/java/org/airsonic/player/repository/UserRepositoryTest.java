@@ -1,4 +1,4 @@
-package org.airsonic.player.dao;
+package org.airsonic.player.repository;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.AvatarScheme;
@@ -7,9 +7,8 @@ import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.User.Role;
 import org.airsonic.player.domain.UserCredential;
 import org.airsonic.player.domain.UserCredential.App;
-import org.airsonic.player.domain.UserSettings;
-import org.airsonic.player.repository.UserCredentialRepository;
-import org.airsonic.player.repository.UserRepository;
+import org.airsonic.player.domain.entity.UserSetting;
+import org.airsonic.player.domain.entity.UserSettingDetail;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -43,16 +42,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @SpringBootTest
 @EnableConfigurationProperties({ AirsonicHomeConfig.class })
-public class UserDaoTestCase {
-
-    @Autowired
-    UserDao userDao;
+public class UserRepositoryTest {
 
     @Autowired
     UserRepository userRepository;
 
     @Autowired
     UserCredentialRepository userCredentialRepository;
+
+    @Autowired
+    UserSettingRepository userSettingRepository;
 
     @TempDir
     private static Path tempDir;
@@ -169,21 +168,21 @@ public class UserDaoTestCase {
 
     @Test
     public void testUserSettings() {
-        assertNull(userDao.getUserSettings("sindre"));
+        assertFalse(userSettingRepository.findById("sindre").isPresent());
 
         assertThatExceptionOfType(DataIntegrityViolationException.class)
-                .isThrownBy(() -> updateUserSettings(new UserSettings("sindre")));
+                .isThrownBy(() -> updateUserSettings(new UserSetting("sindre")));
         User user = new User("sindre", null);
 
         userRepository.saveAndFlush(user);
         userCredentialRepository.saveAndFlush(new UserCredential(user, "sindre", "secret", "noop", App.AIRSONIC));
 
-        assertNull(userDao.getUserSettings("sindre"));
+        assertFalse(userSettingRepository.findById("sindre").isPresent());
 
-        UserSettings settings = new UserSettings("sindre");
-        userDao.updateUserSettings(settings);
-        UserSettings userSettings = userDao.getUserSettings("sindre");
-        assertThat(userSettings).usingComparatorForType(new NullSafeComparator<Instant>(new Comparator<Instant>() {
+        UserSetting setting = new UserSetting("sindre");
+        userSettingRepository.save(setting);
+        UserSetting userSetting = userSettingRepository.findById("sindre").orElse(null);
+        assertThat(userSetting).usingComparatorForType(new NullSafeComparator<Instant>(new Comparator<Instant>() {
             // use a custom comparator to account for micro second differences
             // (Mysql only stores floats in json to a certain value)
             @Override
@@ -194,42 +193,42 @@ public class UserDaoTestCase {
                 return o1.compareTo(o2);
             }
         }, true), Instant.class)
-                .usingRecursiveComparison().isEqualTo(settings);
+                .usingRecursiveComparison().isEqualTo(setting);
 
-        settings = new UserSettings("sindre");
-        settings.setLocale(Locale.SIMPLIFIED_CHINESE);
-        settings.setThemeId("midnight");
-        settings.setBetaVersionNotificationEnabled(true);
-        settings.setSongNotificationEnabled(false);
-        settings.setShowSideBar(true);
-        settings.getMainVisibility().setBitRateVisible(true);
-        settings.getPlaylistVisibility().setYearVisible(true);
-        settings.setLastFmEnabled(true);
-        settings.setListenBrainzEnabled(true);
-        settings.setTranscodeScheme(TranscodeScheme.MAX_192);
-        settings.setShowNowPlayingEnabled(false);
-        settings.setSelectedMusicFolderId(3);
-        settings.setPartyModeEnabled(true);
-        settings.setNowPlayingAllowed(true);
-        settings.setAvatarScheme(AvatarScheme.SYSTEM);
-        settings.setSystemAvatarId(1);
-        settings.setChanged(Instant.ofEpochMilli(9412L));
-        settings.setKeyboardShortcutsEnabled(true);
-        settings.setPaginationSizeFiles(120);
-        settings.setPaginationSizeFolders(9);
-        settings.setPaginationSizePlayqueue(121);
-        settings.setPaginationSizePlaylist(122);
+        UserSettingDetail detail = userSetting.getSettings();
+        detail.setLocale(Locale.SIMPLIFIED_CHINESE);
+        detail.setThemeId("midnight");
+        detail.setBetaVersionNotificationEnabled(true);
+        detail.setSongNotificationEnabled(false);
+        detail.setShowSideBar(true);
+        detail.getMainVisibility().setBitRateVisible(true);
+        detail.getPlaylistVisibility().setYearVisible(true);
+        detail.setLastFmEnabled(true);
+        detail.setListenBrainzEnabled(true);
+        detail.setTranscodeScheme(TranscodeScheme.MAX_192);
+        detail.setShowNowPlayingEnabled(false);
+        detail.setSelectedMusicFolderId(3);
+        detail.setPartyModeEnabled(true);
+        detail.setNowPlayingAllowed(true);
+        detail.setAvatarScheme(AvatarScheme.SYSTEM);
+        detail.setSystemAvatarId(1);
+        detail.setChanged(Instant.ofEpochMilli(9412L));
+        detail.setKeyboardShortcutsEnabled(true);
+        detail.setPaginationSizeFiles(120);
+        detail.setPaginationSizeFolders(9);
+        detail.setPaginationSizePlayqueue(121);
+        detail.setPaginationSizePlaylist(122);
 
-        userDao.updateUserSettings(settings);
-        userSettings = userDao.getUserSettings("sindre");
-        assertThat(userSettings).usingRecursiveComparison().isEqualTo(settings);
+        userSettingRepository.save(userSetting);
+        UserSetting actual = userSettingRepository.findById("sindre").orElse(null);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(userSetting);
 
         userRepository.deleteById("sindre");
-        assertNull(userDao.getUserSettings("sindre"));
+        assertTrue(userSettingRepository.findById("sindre").isEmpty());
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private void updateUserSettings(UserSettings settings) {
-        userDao.updateUserSettings(settings);
+    private void updateUserSettings(UserSetting setting) {
+        userSettingRepository.save(setting);
     }
 }

@@ -54,7 +54,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -212,10 +211,7 @@ public class UserSettingsController {
                     .filter(mf -> mf.getType() == Type.PODCAST).map(mf -> mf.getId()).collect(toSet()));
         }
 
-        UserSettings userSettings = personalSettingsService.getUserSettings(command.getUsername());
-        userSettings.setTranscodeScheme(TranscodeScheme.valueOf(command.getTranscodeSchemeName()));
-        userSettings.setChanged(Instant.now());
-        personalSettingsService.updateUserSettings(userSettings);
+        personalSettingsService.updateTranscodeScheme(command.getUsername(), TranscodeScheme.valueOf(command.getTranscodeSchemeName()));
 
         // NOTE: This can happen if none of the configured media directories exist or if none are enabled.
         //       Primitive arrays are still behind a pointer technically, and that pointer is null if not initialized.

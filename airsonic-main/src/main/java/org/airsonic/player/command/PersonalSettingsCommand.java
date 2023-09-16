@@ -40,9 +40,9 @@ public class PersonalSettingsCommand {
     private int avatarId;
     private List<Avatar> avatars;
     private Avatar customAvatar;
-    private UserSettings.Visibility mainVisibility;
-    private UserSettings.Visibility playlistVisibility;
-    private UserSettings.Visibility playqueueVisibility;
+    private UserSettingVisibility mainVisibility;
+    private UserSettingVisibility playlistVisibility;
+    private UserSettingVisibility playqueueVisibility;
     private boolean partyModeEnabled;
     private boolean showNowPlayingEnabled;
     private boolean showArtistInfoEnabled;
@@ -148,27 +148,27 @@ public class PersonalSettingsCommand {
         this.customAvatar = customAvatar;
     }
 
-    public UserSettings.Visibility getMainVisibility() {
+    public UserSettingVisibility getMainVisibility() {
         return mainVisibility;
     }
 
-    public void setMainVisibility(UserSettings.Visibility mainVisibility) {
+    public void setMainVisibility(UserSettingVisibility mainVisibility) {
         this.mainVisibility = mainVisibility;
     }
 
-    public UserSettings.Visibility getPlaylistVisibility() {
+    public UserSettingVisibility getPlaylistVisibility() {
         return playlistVisibility;
     }
 
-    public void setPlaylistVisibility(UserSettings.Visibility playlistVisibility) {
+    public void setPlaylistVisibility(UserSettingVisibility playlistVisibility) {
         this.playlistVisibility = playlistVisibility;
     }
 
-    public UserSettings.Visibility getPlayqueueVisibility() {
+    public UserSettingVisibility getPlayqueueVisibility() {
         return playqueueVisibility;
     }
 
-    public void setPlayqueueVisibility(UserSettings.Visibility playqueueVisibility) {
+    public void setPlayqueueVisibility(UserSettingVisibility playqueueVisibility) {
         this.playqueueVisibility = playqueueVisibility;
     }
 

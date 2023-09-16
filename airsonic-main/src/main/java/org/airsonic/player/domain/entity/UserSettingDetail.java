@@ -18,22 +18,18 @@
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
-package org.airsonic.player.domain;
+package org.airsonic.player.domain.entity;
 
-import org.airsonic.player.domain.entity.UserSetting;
-import org.airsonic.player.domain.entity.UserSettingDetail;
+import org.airsonic.player.domain.AlbumListType;
+import org.airsonic.player.domain.AvatarScheme;
+import org.airsonic.player.domain.TranscodeScheme;
+import org.airsonic.player.domain.UserSettingVisibility;
 
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Objects;
 
-/**
- * Represent user-specific settings.
- *
- * @author Sindre Mehus
- */
-public class UserSettings {
-
-    private String username;
+public class UserSettingDetail {
     private Locale locale;
     private String themeId;
     private boolean showNowPlayingEnabled;
@@ -46,7 +42,7 @@ public class UserSettings {
     private boolean showSideBar;
     private boolean viewAsList;
     private boolean queueFollowingSongs;
-    private AlbumListType defaultAlbumList = AlbumListType.RANDOM;
+    private AlbumListType defaultAlbumList;
     private UserSettingVisibility mainVisibility = new UserSettingVisibility();
     private UserSettingVisibility playlistVisibility = new UserSettingVisibility();
     private UserSettingVisibility playqueueVisibility = new UserSettingVisibility();
@@ -72,31 +68,10 @@ public class UserSettings {
     private int audioBookmarkFrequency = 10;
     private int searchCount = 25;
 
-    public UserSettings() {
+    public UserSettingDetail() {
     }
 
-    public UserSettings(String username) {
-        this.username = username;
-    }
-
-    /**
-     * Creates a new instance based on the given {@link UserSetting}.
-     * @param username The username.
-     * @param setting The user setting. not <code>null</code>.
-     */
-    public UserSettings(String username, UserSettingDetail setting) {
-        this.username = username;
-        this.updateByDetail(setting);
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
+    // getters and setters
     public Locale getLocale() {
         return locale;
     }
@@ -403,47 +378,55 @@ public class UserSettings {
         this.searchCount = searchCount;
     }
 
-    /**
-     * Updates this instance based on the given {@link UserSettingDetail}.
-     * @param settingDetail The user setting detail. not <code>null</code>.
-     */
-    public void updateByDetail(UserSettingDetail settingDetail) {
-        this.locale = settingDetail.getLocale();
-        this.themeId = settingDetail.getThemeId();
-        this.showNowPlayingEnabled = settingDetail.getShowNowPlayingEnabled();
-        this.showArtistInfoEnabled = settingDetail.getShowArtistInfoEnabled();
-        this.finalVersionNotificationEnabled = settingDetail.getFinalVersionNotificationEnabled();
-        this.betaVersionNotificationEnabled = settingDetail.getBetaVersionNotificationEnabled();
-        this.songNotificationEnabled = settingDetail.getSongNotificationEnabled();
-        this.keyboardShortcutsEnabled = settingDetail.getKeyboardShortcutsEnabled();
-        this.autoHidePlayQueue = settingDetail.getAutoHidePlayQueue();
-        this.showSideBar = settingDetail.getShowSideBar();
-        this.viewAsList = settingDetail.getViewAsList();
-        this.queueFollowingSongs = settingDetail.getQueueFollowingSongs();
-        this.defaultAlbumList = settingDetail.getDefaultAlbumList();
-        this.mainVisibility = settingDetail.getMainVisibility();
-        this.playlistVisibility = settingDetail.getPlaylistVisibility();
-        this.playqueueVisibility = settingDetail.getPlayqueueVisibility();
-        this.lastFmEnabled = settingDetail.getLastFmEnabled();
-        this.listenBrainzEnabled = settingDetail.getListenBrainzEnabled();
-        this.listenBrainzUrl = settingDetail.getListenBrainzUrl();
-        this.podcastIndexEnabled = settingDetail.getPodcastIndexEnabled();
-        this.podcastIndexUrl = settingDetail.getPodcastIndexUrl();
-        this.transcodeScheme = settingDetail.getTranscodeScheme();
-        this.selectedMusicFolderId = settingDetail.getSelectedMusicFolderId();
-        this.partyModeEnabled = settingDetail.getPartyModeEnabled();
-        this.nowPlayingAllowed = settingDetail.getNowPlayingAllowed();
-        this.avatarScheme = settingDetail.getAvatarScheme();
-        this.systemAvatarId = settingDetail.getSystemAvatarId();
-        this.changed = Instant.now();
-        this.paginationSizeFiles = settingDetail.getPaginationSizeFiles();
-        this.paginationSizeFolders = settingDetail.getPaginationSizeFolders();
-        this.paginationSizePlaylist = settingDetail.getPaginationSizePlaylist();
-        this.paginationSizePlayqueue = settingDetail.getPaginationSizePlayqueue();
-        this.paginationSizeBookmarks = settingDetail.getPaginationSizeBookmarks();
-        this.autoBookmark = settingDetail.getAutoBookmark();
-        this.videoBookmarkFrequency = settingDetail.getVideoBookmarkFrequency();
-        this.audioBookmarkFrequency = settingDetail.getAudioBookmarkFrequency();
-        this.searchCount = settingDetail.getSearchCount();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        UserSettingDetail that = (UserSettingDetail) o;
+        return showNowPlayingEnabled == that.showNowPlayingEnabled &&
+                showArtistInfoEnabled == that.showArtistInfoEnabled &&
+                finalVersionNotificationEnabled == that.finalVersionNotificationEnabled &&
+                betaVersionNotificationEnabled == that.betaVersionNotificationEnabled &&
+                songNotificationEnabled == that.songNotificationEnabled &&
+                keyboardShortcutsEnabled == that.keyboardShortcutsEnabled &&
+                autoHidePlayQueue == that.autoHidePlayQueue &&
+                showSideBar == that.showSideBar &&
+                viewAsList == that.viewAsList &&
+                queueFollowingSongs == that.queueFollowingSongs &&
+                lastFmEnabled == that.lastFmEnabled &&
+                listenBrainzEnabled == that.listenBrainzEnabled &&
+                podcastIndexEnabled == that.podcastIndexEnabled &&
+                partyModeEnabled == that.partyModeEnabled &&
+                nowPlayingAllowed == that.nowPlayingAllowed &&
+                autoBookmark == that.autoBookmark &&
+                videoBookmarkFrequency == that.videoBookmarkFrequency &&
+                audioBookmarkFrequency == that.audioBookmarkFrequency &&
+                searchCount == that.searchCount &&
+                Objects.equals(locale, that.locale) &&
+                Objects.equals(themeId, that.themeId) &&
+                Objects.equals(mainVisibility, that.mainVisibility) &&
+                Objects.equals(playlistVisibility, that.playlistVisibility) &&
+                Objects.equals(playqueueVisibility, that.playqueueVisibility) &&
+                Objects.equals(listenBrainzUrl, that.listenBrainzUrl) &&
+                Objects.equals(podcastIndexUrl, that.podcastIndexUrl) &&
+                transcodeScheme == that.transcodeScheme &&
+                selectedMusicFolderId == that.selectedMusicFolderId &&
+                avatarScheme == that.avatarScheme &&
+                Objects.equals(systemAvatarId, that.systemAvatarId) &&
+                Objects.equals(changed, that.changed);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(locale, themeId, showNowPlayingEnabled, showArtistInfoEnabled,
+                finalVersionNotificationEnabled,
+                betaVersionNotificationEnabled, songNotificationEnabled, mainVisibility, playlistVisibility,
+                playqueueVisibility, lastFmEnabled, listenBrainzEnabled, listenBrainzUrl, podcastIndexEnabled,
+                podcastIndexUrl, transcodeScheme, selectedMusicFolderId, partyModeEnabled, nowPlayingAllowed,
+                keyboardShortcutsEnabled, autoHidePlayQueue, showSideBar, viewAsList, queueFollowingSongs,
+                avatarScheme, systemAvatarId, changed, videoBookmarkFrequency, audioBookmarkFrequency, searchCount);
+    }
+
 }

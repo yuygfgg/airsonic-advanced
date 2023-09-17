@@ -90,8 +90,10 @@
         <tr>
             <td th:text="#{generalsettings.language}"></td>
             <td>
-                <select name="localeIndex" th:value="${command.localeIndex}" style="width:15em">
-                    <option th:each="locale,loopStatus: ${command.locales}" value="${loopStatus.count - 1}" th:text="${locale}"></option>
+                <select name="localeIndex" style="width:15em">
+                    <option th:each="locale,loopStatus: ${command.locales}"
+                            th:selected="${#strings.equals(command.localeIndex, #strings.toString(loopStatus.count - 1))}"
+                            th:value="${loopStatus.count - 1}" th:text="${locale}"></option>
                 </select>
                 <th:block th:replace="helpToolTip(topic=language)" />
             </td>
@@ -100,8 +102,10 @@
         <tr>
             <td th:text="#{generalsettings.theme}"></td>
             <td>
-                <select name="themeIndex" th:value="${command.themeIndex}" style="width:15em">
-                    <option th:each="theme,loopStatus: ${command.themes}" value="${loopStatus.count - 1}" th:text="${theme.name}"></option>
+                <select name="themeIndex" style="width:15em">
+                    <option th:each="theme,loopStatus: ${command.themes}"
+                            th:selected="${#strings.equals(command.themeIndex, #strings.toString(loopStatus.count - 1))}"
+                            th:value="${loopStatus.count - 1}" th:text="${theme.name}"></option>
                 </select>
                 <th:block th:replace="helpToolTip(topic=theme)" />
             </td>

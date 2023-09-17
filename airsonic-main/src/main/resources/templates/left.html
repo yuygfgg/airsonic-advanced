@@ -206,10 +206,11 @@ th:utext="#{left.statistics(${model.statistics.artistCount}, ${model.statistics.
 
 <div style="height:5em"></div>
 
-
-<div class="bgcolor2" style="opacity: 1.0; clear: both; position: fixed; bottom: 0; right: 0; left: 0;
+<div class="bgcolor2" style="opacity: 1.0; clear: both; position: fixed; bottom: 0px; right: 0; left: 0;
       padding: 0.25em 0.75em 0.25em 0.75em; border-top:1px solid black; max-width: 850px;">
-    <a th:each="index: ${model.indexes}" th:href="|#${index.index}|" th:text="${index.index}">A</a>
+    <th:block th:each="index: ${model.indexes}">
+        <a th:href="|#${index.index}|" th:text="${index.index}">A</a>
+    </th:block>
 </div>
 
 </body></html>

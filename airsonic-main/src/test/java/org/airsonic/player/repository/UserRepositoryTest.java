@@ -56,6 +56,7 @@ public class UserRepositoryTest {
     @TempDir
     private static Path tempDir;
 
+    private final String TEST_USER_NAME = "sindre";
 
     @BeforeAll
     public static void setUp() {
@@ -64,20 +65,19 @@ public class UserRepositoryTest {
 
     @BeforeEach
     public void clear() {
-        userRepository.deleteAll();
-        userCredentialRepository.deleteAll();
+        userRepository.findByUsername(TEST_USER_NAME).ifPresent(user -> userRepository.delete(user));
     }
 
     @Test
     public void testCreateUser() {
-        User user = new User("sindre", "sindre@activeobjects.no", false, 1000L, 2000L, 3000L, Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));
-        UserCredential uc = new UserCredential(user, "sindre", "secret", "noop", App.AIRSONIC);
+        User user = new User(TEST_USER_NAME, "sindre@activeobjects.no", false, 1000L, 2000L, 3000L, Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));
+        UserCredential uc = new UserCredential(user, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
         userRepository.save(user);
         userCredentialRepository.save(uc);
 
-        User newUser = userRepository.findAll().get(0);
+        User newUser = userRepository.findByUsername(TEST_USER_NAME).get();
         assertThat(newUser).usingRecursiveComparison().isEqualTo(user);
-        assertThat(userCredentialRepository.findByUserUsernameAndApp("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
+        assertThat(userCredentialRepository.findByUserUsernameAndApp(TEST_USER_NAME, App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
     }
 
 
@@ -89,9 +89,9 @@ public class UserRepositoryTest {
 
     @Test
     public void testUpdateUser() {
-        User user = new User("sindre", null);
+        User user = new User(TEST_USER_NAME, null);
         user.setRoles(Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));
-        UserCredential uc = new UserCredential(user, "sindre", "secret", "noop", App.AIRSONIC);
+        UserCredential uc = new UserCredential(user, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
         userRepository.save(user);
         userCredentialRepository.save(uc);
 
@@ -104,15 +104,15 @@ public class UserRepositoryTest {
 
         userRepository.save(user);
 
-        assertThat(userRepository.findAll().get(0)).usingRecursiveComparison().isEqualTo(user);
-        assertThat(userCredentialRepository.findByUserUsernameAndApp("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
+        assertThat(userRepository.findByUsername(TEST_USER_NAME).get()).usingRecursiveComparison().isEqualTo(user);
+        assertThat(userCredentialRepository.findByUserUsernameAndApp(TEST_USER_NAME, App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
     }
 
     @Test
     public void testUpdateCredential() {
-        User user = new User("sindre", null);
+        User user = new User(TEST_USER_NAME, null);
         user.setRoles(Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART));
-        UserCredential uc = new UserCredential(user, "sindre", "secret", "noop", App.AIRSONIC);
+        UserCredential uc = new UserCredential(user, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
         userRepository.save(user);
         userCredentialRepository.save(uc);
 
@@ -120,16 +120,16 @@ public class UserRepositoryTest {
 
         userCredentialRepository.save(uc);
 
-        assertThat(userRepository.findAll().get(0)).usingRecursiveComparison().isEqualTo(user);
-        assertThat(userCredentialRepository.findByUserUsernameAndApp("sindre", App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
+        assertThat(userRepository.findByUsername(TEST_USER_NAME).get()).usingRecursiveComparison().isEqualTo(user);
+        assertThat(userCredentialRepository.findByUserUsernameAndApp(TEST_USER_NAME, App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
     }
 
     @Test
     public void testGetUserByName() {
-        User user = new User("sindre", null);
+        User user = new User(TEST_USER_NAME, null);
         userRepository.save(user);
 
-        assertThat(userRepository.findByUsername("sindre").get()).usingRecursiveComparison().isEqualTo(user);
+        assertThat(userRepository.findByUsername(TEST_USER_NAME).get()).usingRecursiveComparison().isEqualTo(user);
 
         assertTrue(userRepository.findByUsername("sindre2").isEmpty());
         // assertNull("Error in getUserByName().", userRepository.findByUsername("Sindre ", true)); // depends on the collation of the DB
@@ -140,48 +140,49 @@ public class UserRepositoryTest {
 
     @Test
     public void testDeleteUser() {
-        assertEquals(0, userRepository.findAll().size());
+        long count = userRepository.count();
 
-        userRepository.save(new User("sindre", null));
-        assertEquals(1, userRepository.count());
+        userRepository.save(new User(TEST_USER_NAME, null));
+        assertEquals(count + 1L, userRepository.count());
 
         userRepository.save(new User("bente", null));
-        assertEquals(2, userRepository.count());
+        assertEquals(count + 2L, userRepository.count());
 
-        userRepository.deleteById("sindre");
-
-        assertEquals(1, userRepository.count());
+        userRepository.deleteById(TEST_USER_NAME);
+        assertEquals(count + 1L, userRepository.count());
+        assertFalse(userRepository.findByUsername(TEST_USER_NAME).isPresent());
 
         userRepository.deleteById("bente");
-        assertEquals(0, userRepository.count());
+        assertEquals(count, userRepository.count());
+        assertFalse(userRepository.findByUsername("bente").isPresent());
     }
 
     @Test
     public void testGetRolesForUser() {
-        User user = new User("sindre", null);
+        User user = new User(TEST_USER_NAME, null);
         user.setRoles(Set.of(Role.ADMIN, Role.COMMENT, Role.PODCAST, Role.STREAM, Role.SETTINGS));
         userRepository.save(user);
 
-        Set<Role> roles = userRepository.findByUsername("sindre").get().getRoles();
+        Set<Role> roles = userRepository.findByUsername(TEST_USER_NAME).get().getRoles();
         assertThat(roles).containsOnly(Role.ADMIN, Role.COMMENT, Role.PODCAST, Role.STREAM, Role.SETTINGS);
     }
 
     @Test
     public void testUserSettings() {
-        assertFalse(userSettingRepository.findById("sindre").isPresent());
+        assertFalse(userSettingRepository.findById(TEST_USER_NAME).isPresent());
 
         assertThatExceptionOfType(DataIntegrityViolationException.class)
-                .isThrownBy(() -> updateUserSettings(new UserSetting("sindre")));
-        User user = new User("sindre", null);
+                .isThrownBy(() -> updateUserSettings(new UserSetting(TEST_USER_NAME)));
+        User user = new User(TEST_USER_NAME, null);
 
         userRepository.saveAndFlush(user);
-        userCredentialRepository.saveAndFlush(new UserCredential(user, "sindre", "secret", "noop", App.AIRSONIC));
+        userCredentialRepository.saveAndFlush(new UserCredential(user, TEST_USER_NAME, "secret", "noop", App.AIRSONIC));
 
-        assertFalse(userSettingRepository.findById("sindre").isPresent());
+        assertFalse(userSettingRepository.findById(TEST_USER_NAME).isPresent());
 
-        UserSetting setting = new UserSetting("sindre");
+        UserSetting setting = new UserSetting(TEST_USER_NAME);
         userSettingRepository.save(setting);
-        UserSetting userSetting = userSettingRepository.findById("sindre").orElse(null);
+        UserSetting userSetting = userSettingRepository.findById(TEST_USER_NAME).orElse(null);
         assertThat(userSetting).usingComparatorForType(new NullSafeComparator<Instant>(new Comparator<Instant>() {
             // use a custom comparator to account for micro second differences
             // (Mysql only stores floats in json to a certain value)
@@ -220,11 +221,11 @@ public class UserRepositoryTest {
         detail.setPaginationSizePlaylist(122);
 
         userSettingRepository.save(userSetting);
-        UserSetting actual = userSettingRepository.findById("sindre").orElse(null);
+        UserSetting actual = userSettingRepository.findById(TEST_USER_NAME).orElse(null);
         assertThat(actual).usingRecursiveComparison().isEqualTo(userSetting);
 
-        userRepository.deleteById("sindre");
-        assertTrue(userSettingRepository.findById("sindre").isEmpty());
+        userRepository.deleteById(TEST_USER_NAME);
+        assertTrue(userSettingRepository.findById(TEST_USER_NAME).isEmpty());
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

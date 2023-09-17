@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!--
+<!--/*
   ~ This file is part of Airsonic.
   ~
   ~  Airsonic is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
   ~  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
   ~
   ~  Copyright 2015 (C) Sindre Mehus
-  -->
+  */-->
 
 <html>
 <head>
@@ -97,7 +97,7 @@
         <input name="callbackHostAddress" id="callbackHostAddress" size="80"
                th:value="${model.callbackHostAddress}"/>
     </div>
-    <p class="detail" style="width:60%;white-space:normal;padding-top:0" th:text="#{sonossettings.callbackHostAddress.description}">
+    <p class="detail" style="width:60%;white-space:normal;padding-top:0" th:utext="#{sonossettings.callbackHostAddress.description}">
     </p>
     <p></p>
 
@@ -116,10 +116,10 @@
 
     <p></p>
     <th:block th:if="${!#lists.isEmpty(model['returnCodes'])}">
-    <h2> th:text=#{sonossettings.returnCodes}></h2>
+    <h2 th:text="#{sonossettings.returnCodes}"></h2>
     <p></p>
     <div style="padding:5px" class="log indent">
-        <p th:each="returnCode:${model.returnCodes}" th:text="${returnCode}"></p>
+        <p th:each="returnCode:${model.returnCodes}" th:utext="#{${returnCode}}"></p>
     </div>
     </th:block>
 

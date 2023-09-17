@@ -184,7 +184,7 @@ public class UploadController {
                 statusService.removeUploadStatus(status);
                 brokerTemplate.convertAndSendToUser(status.getPlayer().getUsername(), "/queue/uploads/status",
                         new UploadInfo(status.getId(), status.getBytesTotal() + 1, status.getBytesTotal()));
-                securityService.updateUserByteCounts(user, 0L, 0L, status.getBytesTransferred());
+                securityService.incrementBytesUploaded(user.getUsername(), status.getBytesTransferred());
             }
             if (callback != null && dir != null) {
                 try {

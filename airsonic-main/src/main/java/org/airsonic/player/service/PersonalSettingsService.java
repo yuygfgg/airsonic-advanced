@@ -20,15 +20,20 @@
  */
 package org.airsonic.player.service;
 
+import org.airsonic.player.command.PersonalSettingsCommand;
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.UserDao;
 import org.airsonic.player.domain.AlbumListType;
 import org.airsonic.player.domain.Avatar;
 import org.airsonic.player.domain.AvatarScheme;
+import org.airsonic.player.domain.TranscodeScheme;
+import org.airsonic.player.domain.UserSettingVisibility;
 import org.airsonic.player.domain.UserSettings;
 import org.airsonic.player.domain.entity.SystemAvatar;
+import org.airsonic.player.domain.entity.UserSetting;
+import org.airsonic.player.domain.entity.UserSettingDetail;
 import org.airsonic.player.repository.CustomAvatarRepository;
 import org.airsonic.player.repository.SystemAvatarRepository;
+import org.airsonic.player.repository.UserSettingRepository;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.ImageUtil;
 import org.airsonic.player.util.StringUtil;
@@ -53,6 +58,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -64,15 +70,15 @@ public class PersonalSettingsService {
 
     private final SystemAvatarRepository systemAvatarRepository;
     private final CustomAvatarRepository customAvatarRepository;
+    private final UserSettingRepository userSettingRepository;
     private final AirsonicHomeConfig homeConfig;
-    private final UserDao userDao;
 
     public PersonalSettingsService(SystemAvatarRepository systemAvatarRepository,
-            CustomAvatarRepository customAvatarRepository, AirsonicHomeConfig homeConfig, UserDao userDao) {
+            CustomAvatarRepository customAvatarRepository, AirsonicHomeConfig homeConfig, UserSettingRepository userSettingRepository) {
         this.systemAvatarRepository = systemAvatarRepository;
         this.customAvatarRepository = customAvatarRepository;
         this.homeConfig = homeConfig;
-        this.userDao = userDao;
+        this.userSettingRepository = userSettingRepository;
     }
 
     public List<Avatar> getSystemAvatars() {
@@ -115,16 +121,16 @@ public class PersonalSettingsService {
             return null;
         }
 
-        UserSettings settings = getUserSettings(username);
+        UserSetting setting = getUserSetting(username);
 
-        if (forceCustom || settings.getAvatarScheme() == AvatarScheme.CUSTOM) {
+        if (forceCustom || setting.getSettings().getAvatarScheme() == AvatarScheme.CUSTOM) {
             return getCustomAvatar(username);
         }
 
-        if (settings.getAvatarScheme() == AvatarScheme.NONE) {
+        if (setting.getSettings().getAvatarScheme() == AvatarScheme.NONE) {
             return null;
         }
-        return getSystemAvatar(settings.getSystemAvatarId());
+        return getSystemAvatar(setting.getSettings().getSystemAvatarId());
     }
 
     /**
@@ -185,33 +191,41 @@ public class PersonalSettingsService {
      */
     @Cacheable(cacheNames = "userSettingsCache")
     public UserSettings getUserSettings(String username) {
-        UserSettings settings = userDao.getUserSettings(username);
-        if (settings == null) {
-            settings = createDefaultUserSettings(username);
-        }
-        return settings;
+
+        UserSetting userSetting = getUserSetting(username);
+        return new UserSettings(username, userSetting.getSettings());
     }
 
-    private UserSettings createDefaultUserSettings(String username) {
-        UserSettings settings = new UserSettings(username);
-        settings.setFinalVersionNotificationEnabled(true);
-        settings.setBetaVersionNotificationEnabled(false);
-        settings.setSongNotificationEnabled(true);
-        settings.setShowNowPlayingEnabled(true);
-        settings.setPartyModeEnabled(false);
-        settings.setNowPlayingAllowed(true);
-        settings.setAutoHidePlayQueue(true);
-        settings.setKeyboardShortcutsEnabled(false);
-        settings.setShowSideBar(true);
-        settings.setShowArtistInfoEnabled(true);
-        settings.setViewAsList(false);
-        settings.setQueueFollowingSongs(true);
-        settings.setDefaultAlbumList(AlbumListType.RANDOM);
-        settings.setLastFmEnabled(false);
-        settings.setListenBrainzEnabled(false);
-        settings.setChanged(Instant.now());
+    /**
+     * Returns settings for the given user.
+     * @param username The username.
+     * @return User-specific settings. Never <code>null</code>.
+     */
+    private UserSetting getUserSetting(String username) {
+        return userSettingRepository.findById(username).orElseGet(() -> new UserSetting(username, createDefaultUserSetting()));
+    }
 
-        UserSettings.Visibility playlist = settings.getPlaylistVisibility();
+    private UserSettingDetail createDefaultUserSetting() {
+
+        UserSettingDetail detail = new UserSettingDetail();
+        detail.setFinalVersionNotificationEnabled(true);
+        detail.setBetaVersionNotificationEnabled(false);
+        detail.setSongNotificationEnabled(true);
+        detail.setShowNowPlayingEnabled(true);
+        detail.setPartyModeEnabled(false);
+        detail.setNowPlayingAllowed(true);
+        detail.setAutoHidePlayQueue(true);
+        detail.setKeyboardShortcutsEnabled(false);
+        detail.setShowSideBar(true);
+        detail.setShowArtistInfoEnabled(true);
+        detail.setViewAsList(false);
+        detail.setQueueFollowingSongs(true);
+        detail.setDefaultAlbumList(AlbumListType.RANDOM);
+        detail.setLastFmEnabled(false);
+        detail.setListenBrainzEnabled(false);
+        detail.setChanged(Instant.now());
+
+        UserSettingVisibility playlist = detail.getPlaylistVisibility();
         playlist.setArtistVisible(true);
         playlist.setAlbumVisible(true);
         playlist.setYearVisible(true);
@@ -220,22 +234,150 @@ public class PersonalSettingsService {
         playlist.setFormatVisible(true);
         playlist.setFileSizeVisible(true);
 
-        UserSettings.Visibility main = settings.getMainVisibility();
+        UserSettingVisibility main = detail.getMainVisibility();
         main.setTrackNumberVisible(true);
         main.setArtistVisible(true);
         main.setDurationVisible(true);
 
-        return settings;
+        return detail;
+    }
+
+    @CacheEvict(cacheNames = "userSettingsCache", key = "#username")
+    public void updateByCommand(String username, Locale locale, String themeId, PersonalSettingsCommand command) {
+
+        UserSetting userSetting = getUserSetting(username);
+        UserSettingDetail settingDetail = userSetting.getSettings();
+
+        settingDetail.setLocale(locale);
+        settingDetail.setThemeId(themeId);
+        settingDetail.setDefaultAlbumList(AlbumListType.fromId(command.getAlbumListId()));
+        settingDetail.setPartyModeEnabled(command.isPartyModeEnabled());
+        settingDetail.setQueueFollowingSongs(command.isQueueFollowingSongs());
+        settingDetail.setShowNowPlayingEnabled(command.isShowNowPlayingEnabled());
+        settingDetail.setShowArtistInfoEnabled(command.isShowArtistInfoEnabled());
+        settingDetail.setNowPlayingAllowed(command.isNowPlayingAllowed());
+        settingDetail.setMainVisibility(command.getMainVisibility());
+        settingDetail.setPlaylistVisibility(command.getPlaylistVisibility());
+        settingDetail.setPlayqueueVisibility(command.getPlayqueueVisibility());
+        settingDetail.setFinalVersionNotificationEnabled(command.isFinalVersionNotificationEnabled());
+        settingDetail.setBetaVersionNotificationEnabled(command.isBetaVersionNotificationEnabled());
+        settingDetail.setSongNotificationEnabled(command.isSongNotificationEnabled());
+        settingDetail.setAutoHidePlayQueue(command.isAutoHidePlayQueue());
+        settingDetail.setKeyboardShortcutsEnabled(command.isKeyboardShortcutsEnabled());
+        settingDetail.setLastFmEnabled(command.getLastFmEnabled());
+        settingDetail.setListenBrainzEnabled(command.getListenBrainzEnabled());
+        settingDetail.setListenBrainzUrl(StringUtils.trimToNull(command.getListenBrainzUrl()));
+        settingDetail.setPodcastIndexEnabled(command.getPodcastIndexEnabled());
+        settingDetail.setPodcastIndexUrl(StringUtils.trimToNull(command.getPodcastIndexUrl()));
+        settingDetail.setSystemAvatarId(getSystemAvatarId(command));
+        settingDetail.setAvatarScheme(getAvatarScheme(command));
+        settingDetail.setPaginationSizeFiles(command.getPaginationSizeFiles());
+        settingDetail.setPaginationSizeFolders(command.getPaginationSizeFolders());
+        settingDetail.setPaginationSizePlaylist(command.getPaginationSizePlaylist());
+        settingDetail.setPaginationSizePlayqueue(command.getPaginationSizePlayqueue());
+        settingDetail.setPaginationSizeBookmarks(command.getPaginationSizeBookmarks());
+        settingDetail.setAutoBookmark(command.getAutoBookmark());
+        settingDetail.setAudioBookmarkFrequency(command.getAudioBookmarkFrequency());
+        settingDetail.setVideoBookmarkFrequency(command.getVideoBookmarkFrequency());
+        settingDetail.setSearchCount(command.getSearchCount());
+        settingDetail.setChanged(Instant.now());
+
+        userSettingRepository.save(userSetting);
+    }
+
+    private AvatarScheme getAvatarScheme(PersonalSettingsCommand command) {
+        if (command.getAvatarId() == AvatarScheme.NONE.getCode()) {
+            return AvatarScheme.NONE;
+        }
+        if (command.getAvatarId() == AvatarScheme.CUSTOM.getCode()) {
+            return AvatarScheme.CUSTOM;
+        }
+        return AvatarScheme.SYSTEM;
+    }
+
+    private Integer getSystemAvatarId(PersonalSettingsCommand command) {
+        int avatarId = command.getAvatarId();
+        if (avatarId == AvatarScheme.NONE.getCode() ||
+            avatarId == AvatarScheme.CUSTOM.getCode()) {
+            return null;
+        }
+        return avatarId;
+    }
+
+
+    /**
+     * Updates the transcode scheme for the given user.
+     *
+     * @param username The username.
+     * @param scheme The transcode scheme.
+     */
+    @CacheEvict(cacheNames = "userSettingsCache", key = "#username")
+    public void updateTranscodeScheme(String username, TranscodeScheme scheme) {
+
+        UserSetting userSetting = getUserSetting(username);
+        UserSettingDetail settingDetail = userSetting.getSettings();
+        if (settingDetail.getTranscodeScheme() == scheme) {
+            return;
+        }
+        settingDetail.setTranscodeScheme(scheme);
+        settingDetail.setChanged(Instant.now());
+        userSettingRepository.save(userSetting);
     }
 
     /**
-     * Updates the user settings.
+     * Updates the selected music folder id for the given user.
      *
-     * @param settings The settings.
+     * @param username The username.
+     * @param musicFolderId The music folder id.
      */
-    @CacheEvict(cacheNames = "userSettingsCache", key = "#settings.username")
-    public void updateUserSettings(UserSettings settings) {
-        userDao.updateUserSettings(settings);
+    @CacheEvict(cacheNames = "userSettingsCache", key = "#username")
+    public void updateSelectedMusicFolderId(String username, Integer musicFolderId) {
+
+        UserSetting userSetting = getUserSetting(username);
+        UserSettingDetail settingDetail = userSetting.getSettings();
+        if (settingDetail.getSelectedMusicFolderId() == musicFolderId) {
+            return;
+        }
+        settingDetail.setSelectedMusicFolderId(musicFolderId);
+        userSettingRepository.save(userSetting);
     }
+
+    /**
+     * Updates the show side bar status for the given user.
+     * @param username The username.
+     * @param showSideBar The show side bar status.
+     */
+    @CacheEvict(cacheNames = "userSettingsCache", key = "#username")
+    public void updateShowSideBarStatus(String username, boolean showSideBar) {
+
+        UserSetting userSetting = getUserSetting(username);
+        UserSettingDetail settingDetail = userSetting.getSettings();
+        if (settingDetail.getShowSideBar() == showSideBar) {
+            return;
+        }
+        settingDetail.setShowSideBar(showSideBar);
+        // Note: setChanged() is intentionally not called. This would break browser caching
+        // of the left frame.
+        userSettingRepository.save(userSetting);
+    }
+
+    /**
+     * Updates the show side bar status for the given user.
+     * @param username The username.
+     * @parama viewAsList The view as list status.
+     */
+    @CacheEvict(cacheNames = "userSettingsCache", key = "#username")
+    public void updateViewAsListStatus(String username, boolean viewAsList) {
+
+        UserSetting userSetting = getUserSetting(username);
+        UserSettingDetail settingDetail = userSetting.getSettings();
+        if (settingDetail.getViewAsList() == viewAsList) {
+            return;
+        }
+        settingDetail.setViewAsList(viewAsList);
+        settingDetail.setChanged(Instant.now());
+        userSettingRepository.save(userSetting);
+    }
+
 
 }

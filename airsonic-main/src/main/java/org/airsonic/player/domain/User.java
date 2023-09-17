@@ -19,7 +19,14 @@
  */
 package org.airsonic.player.domain;
 
+import org.airsonic.player.repository.RolesConverter;
 import org.airsonic.player.util.Util;
+
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 import java.util.Collections;
 import java.util.Set;
@@ -29,19 +36,39 @@ import java.util.Set;
  *
  * @author Sindre Mehus
  */
+@Entity
+@Table(name = "users")
 public class User {
 
     public static final String USERNAME_ADMIN = "admin";
     public static final String USERNAME_GUEST = "guest";
     public static final String USERNAME_ANONYMOUS = "anonymous";
 
-    private final String username;
+    @Id
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
+
+    @Column(name = "email", nullable = true, unique = true)
     private String email;
+
+    @Column(name = "ldap_authenticated")
     private boolean ldapAuthenticated;
+
+    @Column(name = "bytes_streamed")
     private long bytesStreamed;
+
+    @Column(name = "bytes_downloaded")
     private long bytesDownloaded;
+
+    @Column(name = "bytes_uploaded")
     private long bytesUploaded;
+
+    @Column(name = "roles")
+    @Convert(converter = RolesConverter.class)
     private Set<Role> roles;
+
+    public User() {
+    }
 
     public User(String username, String email, boolean ldapAuthenticated,
             long bytesStreamed, long bytesDownloaded, long bytesUploaded, Set<Role> roles) {
@@ -60,6 +87,10 @@ public class User {
 
     public String getUsername() {
         return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getEmail() {
@@ -160,6 +191,7 @@ public class User {
     }
 
     public enum Role {
+
         ADMIN, SETTINGS, DOWNLOAD, UPLOAD, PLAYLIST, COVERART, COMMENT, PODCAST, STREAM, JUKEBOX, SHARE
     }
 }

@@ -22,7 +22,6 @@ package org.airsonic.player.repository;
 import org.airsonic.player.dao.DaoTestCaseBean2;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.MusicFolderDao;
-import org.airsonic.player.dao.UserDao;
 import org.airsonic.player.domain.Bookmark;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
@@ -55,7 +54,10 @@ public class BookmarkRepositoryTest extends DaoTestCaseBean2 {
     private BookmarkRepository bookmarkRepository;
 
     @Autowired
-    private UserDao userDao;
+    private UserRepository userRepository;
+
+    @Autowired
+    private UserCredentialRepository userCredentialRepository;
 
     @Autowired
     MediaFileDao mediaFileDao;
@@ -103,12 +105,13 @@ public class BookmarkRepositoryTest extends DaoTestCaseBean2 {
 
         // user
         User user = new User(TEST_USER_NAME, "sindre@activeobjects.no", false, 1000L, 2000L, 3000L, Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));
-        UserCredential uc = new UserCredential(TEST_USER_NAME, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
-        userDao.createUser(user, uc);
+        UserCredential uc = new UserCredential(user, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
+        userRepository.saveAndFlush(user);
+        userCredentialRepository.saveAndFlush(uc);
     }
     @After
     public void clean() {
-        userDao.deleteUser(TEST_USER_NAME);
+        userRepository.deleteById(TEST_USER_NAME);
         getJdbcTemplate().execute("delete from media_file");
         MusicFolder folder = musicFolderDao.getMusicFolderForPath(TEST_FOLDER_PATH);
         musicFolderDao.deleteMusicFolder(folder.getId());

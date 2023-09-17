@@ -21,14 +21,15 @@
 package org.airsonic.player.service;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.UserDao;
 import org.airsonic.player.domain.Avatar;
 import org.airsonic.player.domain.AvatarScheme;
-import org.airsonic.player.domain.UserSettings;
 import org.airsonic.player.domain.entity.CustomAvatar;
 import org.airsonic.player.domain.entity.SystemAvatar;
+import org.airsonic.player.domain.entity.UserSetting;
+import org.airsonic.player.domain.entity.UserSettingDetail;
 import org.airsonic.player.repository.CustomAvatarRepository;
 import org.airsonic.player.repository.SystemAvatarRepository;
+import org.airsonic.player.repository.UserSettingRepository;
 import org.airsonic.player.util.StringUtil;
 import org.apache.commons.compress.utils.FileNameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -82,10 +83,13 @@ public class PersonalSettingsServiceTest {
     private AirsonicHomeConfig homeConfig;
 
     @Mock
-    private UserDao userDao;
+    private UserSettingRepository userSettingRepository;
 
     @Mock
-    private UserSettings mockedUserSettings;
+    private UserSetting mockedUserSetting;
+
+    @Mock
+    private UserSettingDetail mockedUserSettingDetail;
 
     @TempDir
     private Path tempDir;
@@ -186,7 +190,7 @@ public class PersonalSettingsServiceTest {
         assertEquals(avatar.getPath(), actual.getPath());
         assertEquals(avatar.getCreatedDate(), actual.getCreatedDate());
         verifyNoInteractions(customAvatarRepository);
-        verifyNoInteractions(userDao);
+        verifyNoInteractions(userSettingRepository);
     }
 
     @Test
@@ -195,8 +199,9 @@ public class PersonalSettingsServiceTest {
                 Paths.get("$[AIRSONIC_HOME]/icons/avatars/avatar.png"), "user");
         when(customAvatarRepository.findByUsername("user")).thenReturn(Optional.of(avatar));
         when(homeConfig.getAirsonicHome()).thenReturn(Paths.get("/airsonic_home"));
-        when(userDao.getUserSettings("user")).thenReturn(mockedUserSettings);
-        when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.CUSTOM);
+        when(userSettingRepository.findById("user")).thenReturn(Optional.of(mockedUserSetting));
+        when(mockedUserSetting.getSettings()).thenReturn(mockedUserSettingDetail);
+        when(mockedUserSettingDetail.getAvatarScheme()).thenReturn(AvatarScheme.CUSTOM);
 
         Avatar actual = service.getAvatar(null, "user", false);
         assertEquals(avatar.getId(), actual.getId());
@@ -215,7 +220,7 @@ public class PersonalSettingsServiceTest {
                 Paths.get("$[AIRSONIC_HOME]/icons/avatars/avatar.png"), "user");
         when(customAvatarRepository.findByUsername("user")).thenReturn(Optional.of(avatar));
         when(homeConfig.getAirsonicHome()).thenReturn(Paths.get("/airsonic_home"));
-        when(userDao.getUserSettings("user")).thenReturn(mockedUserSettings);
+        when(userSettingRepository.findById("user")).thenReturn(Optional.of(mockedUserSetting));
 
         Avatar actual = service.getAvatar(null, "user", true);
         assertEquals(avatar.getId(), actual.getId());
@@ -226,15 +231,16 @@ public class PersonalSettingsServiceTest {
         assertEquals(Paths.get("/airsonic_home/icons/avatars/avatar.png"), actual.getPath());
         assertEquals(avatar.getCreatedDate(), actual.getCreatedDate());
         verifyNoInteractions(systemAvatarRepository);
-        verifyNoInteractions(mockedUserSettings);
+        verifyNoInteractions(mockedUserSetting);
     }
 
     @Test
     public void testGetAvatarWhenSchemeIsNoneReturnNull() throws Exception {
 
         // given
-        when(userDao.getUserSettings("user")).thenReturn(mockedUserSettings);
-        when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.NONE);
+        when(userSettingRepository.findById("user")).thenReturn(Optional.of(mockedUserSetting));
+        when(mockedUserSetting.getSettings()).thenReturn(mockedUserSettingDetail);
+        when(mockedUserSettingDetail.getAvatarScheme()).thenReturn(AvatarScheme.NONE);
 
         // when
         Avatar actual = service.getAvatar(null, "user", false);
@@ -250,9 +256,10 @@ public class PersonalSettingsServiceTest {
         SystemAvatar avatar = new SystemAvatar(10, "avatar", Instant.now(), "image/png", 60, 70,
                 Paths.get("icons/avatars/avatar.png"));
         when(systemAvatarRepository.findById(10)).thenReturn(Optional.of(avatar));
-        when(userDao.getUserSettings("user")).thenReturn(mockedUserSettings);
-        when(mockedUserSettings.getAvatarScheme()).thenReturn(AvatarScheme.SYSTEM);
-        when(mockedUserSettings.getSystemAvatarId()).thenReturn(10);
+        when(userSettingRepository.findById("user")).thenReturn(Optional.of(mockedUserSetting));
+        when(mockedUserSetting.getSettings()).thenReturn(mockedUserSettingDetail);
+        when(mockedUserSettingDetail.getAvatarScheme()).thenReturn(AvatarScheme.SYSTEM);
+        when(mockedUserSettingDetail.getSystemAvatarId()).thenReturn(10);
 
         Avatar actual = service.getAvatar(null, "user", false);
         assertEquals(avatar.getId(), actual.getId());

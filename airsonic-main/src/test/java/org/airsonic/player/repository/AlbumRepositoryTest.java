@@ -19,7 +19,6 @@
 package org.airsonic.player.repository;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.UserDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.User.Role;
@@ -144,7 +143,11 @@ public class AlbumRepositoryTest {
     public class NestedStarTest {
 
         @Autowired
-        UserDao userDao;
+        UserRepository userRepository;
+
+        @Autowired
+        UserCredentialRepository userCredentialRepository;
+
 
         private final String TEST_USER_NAME = "testUserForAlbumRepo";
         private final String TEST_USER_NAME2 = "testUserForAlbumRepo2";
@@ -155,18 +158,21 @@ public class AlbumRepositoryTest {
             User user = new User(TEST_USER_NAME, "albumrepo@activeobjects.no", false, 1000L, 2000L, 3000L,
                     Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM,
                             Role.JUKEBOX, Role.SETTINGS));
-            UserCredential uc = new UserCredential(TEST_USER_NAME, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
-            userDao.createUser(user, uc);
+            UserCredential uc = new UserCredential(user, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
+            userRepository.saveAndFlush(user);
+            userCredentialRepository.saveAndFlush(uc);
             User user2 = new User(TEST_USER_NAME2, "albumrepo2@activeobjects.no", false, 1000L, 2000L, 3000L,
                     Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM,
                             Role.JUKEBOX, Role.SETTINGS));
-            UserCredential uc2 = new UserCredential(TEST_USER_NAME2, TEST_USER_NAME2, "secret", "noop", App.AIRSONIC);
-            userDao.createUser(user2, uc2);
+            UserCredential uc2 = new UserCredential(user2, TEST_USER_NAME2, "secret", "noop", App.AIRSONIC);
+            userRepository.saveAndFlush(user2);
+            userCredentialRepository.saveAndFlush(uc2);
         }
 
         @AfterEach
         public void clean() {
-            userDao.deleteUser(TEST_USER_NAME);
+            userRepository.deleteById(TEST_USER_NAME);
+            userRepository.deleteById(TEST_USER_NAME2);
         }
 
         @Test

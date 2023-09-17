@@ -1,7 +1,6 @@
 package org.airsonic.player.repository;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.UserDao;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.UserCredential;
 import org.airsonic.player.domain.UserCredential.App;
@@ -44,7 +43,10 @@ public class AvatarRepositoryTest {
     private CustomAvatarRepository customAvatarRepository;
 
     @Autowired
-    private UserDao userDao;
+    UserRepository userRepository;
+
+    @Autowired
+    UserCredentialRepository userCredentialRepository;
 
     @TempDir
     private static Path tempDir;
@@ -96,13 +98,14 @@ public class AvatarRepositoryTest {
         @BeforeEach
         public void beforeEach() {
             User user = new User(TEST_USER_NAME, "avatar_dao_test@example.com");
-            UserCredential uc = new UserCredential(TEST_USER_NAME, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
-            userDao.createUser(user, uc);
+            UserCredential uc = new UserCredential(user, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
+            userRepository.save(user);
+            userCredentialRepository.save(uc);
         }
 
         @AfterEach
         public void afterEach() {
-            userDao.deleteUser(TEST_USER_NAME);
+            userRepository.deleteById(TEST_USER_NAME);
         }
 
         @Test

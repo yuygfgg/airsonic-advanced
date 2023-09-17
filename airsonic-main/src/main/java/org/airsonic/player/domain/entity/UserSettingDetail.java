@@ -20,6 +20,7 @@
  */
 package org.airsonic.player.domain.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.airsonic.player.domain.AlbumListType;
 import org.airsonic.player.domain.AvatarScheme;
 import org.airsonic.player.domain.TranscodeScheme;
@@ -29,6 +30,7 @@ import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserSettingDetail {
     private Locale locale;
     private String themeId;

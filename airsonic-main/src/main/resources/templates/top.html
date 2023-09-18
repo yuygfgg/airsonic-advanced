@@ -127,43 +127,43 @@
         </td>
         <td style="min-width:3em;padding-right:1em;text-align: center">
             <a href="home" target="main"><img th:src="${#themes.code('homeImage')}" th:title="#{top.home}" th:alt="#{top.home}"></a>
-            <div class="topHeader"><a href="home" target="main" th:text="#{top.home}">Home</a></div>
+            <div class="topHeader"><a href="home" target="main" th:utext="#{top.home}">Home</a></div>
         </td>
         <td style="min-width:3em;padding-right:1em;text-align: center">
             <a href="nowPlaying" target="main"><img th:src="${#themes.code('nowPlayingImage')}" th:title="#{top.now_playing}" th:alt="#{top.now_playing}"></a>
-            <div class="topHeader"><a href="nowPlaying" target="main" th:text="#{top.now_playing}">Top Now Playing</a></div>
+            <div class="topHeader"><a href="nowPlaying" target="main" th:utext="#{top.now_playing}">Top Now Playing</a></div>
         </td>
         <td style="min-width:3em;padding-right:1em;text-align: center">
             <a href="starred" target="main"><img th:src="${#themes.code('starredImage')}" th:title="#{top.starred}" th:alt="#{top.starred}"></a>
-            <div class="topHeader"><a href="starred" target="main" th:text="#{top.starred}">Starred</a></div>
+            <div class="topHeader"><a href="starred" target="main" th:utext="#{top.starred}">Starred</a></div>
         </td>
         <td style="min-width:3em;padding-right:1em;text-align: center">
             <a href="playlists" target="main"><img th:src="${#themes.code('playlistImage')}" th:title="#{left.playlists}" th:alt="#{left.playlists}"></a>
-            <div class="topHeader"><a href="playlists" target="main" th:text="#{left.playlists}">Playlists</a></div>
+            <div class="topHeader"><a href="playlists" target="main" th:utext="#{left.playlists}">Playlists</a></div>
         </td>
         <td style="min-width:4em;padding-right:1em;text-align: center">
             <a href="podcastChannels" target="main"><img th:src="${#themes.code('podcastLargeImage')}" th:title="#{top.podcast}" th:alt="#{top.podcast}"></a>
-            <div class="topHeader"><a href="podcastChannels" target="main" th:text="#{top.podcast}">Podcast</a></div>
+            <div class="topHeader"><a href="podcastChannels" target="main" th:utext="#{top.podcast}">Podcast</a></div>
         </td>
         <td style="min-width:4em;padding-right:1em;text-align: center">
             <a href="bookmarks" target="main"><img th:src="${#themes.code('bookmarkImage')}" th:title="#{top.bookmarks}" th:alt="#{top.bookmarks}"></a>
-            <div class="topHeader"><a href="bookmarks" target="main" th:text="#{top.bookmarks}">Bookmarks</a></div>
+            <div class="topHeader"><a href="bookmarks" target="main" th:utext="#{top.bookmarks}">Bookmarks</a></div>
         </td>
         <td th:if="${model.user.settingsRole}" style="min-width:3em;padding-right:1em;text-align: center">
             <a href="settings" target="main"><img th:src="${#themes.code('settingsImage')}" th:title="#{top.settings}" th:alt="#{top.settings}"></a>
-            <div class="topHeader"><a href="settings" target="main" th:text="#{top.settings}">Settings</a></div>
+            <div class="topHeader"><a href="settings" target="main" th:utext="#{top.settings}">Settings</a></div>
         </td>
         <td style="min-width:3em;padding-right:1em;text-align: center">
             <a href="status" target="main"><img th:src="${#themes.code('statusImage')}" th:title="#{top.status}" th:alt="#{top.status}"></a>
-            <div class="topHeader"><a href="status" target="main" th:text="#{top.status}">Status</a></div>
+            <div class="topHeader"><a href="status" target="main" th:utext="#{top.status}">Status</a></div>
         </td>
         <td style="min-width:3em;padding-right:1em;text-align: center">
             <a href="more" target="main"><img th:src="${#themes.code('moreImage')}" th:title="#{top.more}" th:alt="#{top.more}"></a>
-            <div class="topHeader"><a href="more" target="main" th:text="#{top.more}">More</a></div>
+            <div class="topHeader"><a href="more" target="main" th:utext="#{top.more}">More</a></div>
         </td>
         <td style="min-width:3em;padding-right:1em;text-align: center">
             <a href="help" target="main"><img th:src="${#themes.code('helpImage')}" th:title="#{top.help}" th:alt="#{top.help}"></a>
-            <div class="topHeader"><a href="help" target="main" th:text="#{top.help}">Help</a></div>
+            <div class="topHeader"><a href="help" target="main" th:utext="#{top.help}">Help</a></div>
         </td>
 
         <td style="padding-left:1em">
@@ -194,14 +194,14 @@
         <td style="padding-left:15pt;padding-right:5pt;width: 100%;text-align: center">
             <a id="connectionStatus" href="javascript:void(0)" onclick="toggleConnectionStatus();">
                 <img th:src="${#themes.code('disconnectedImage')}" alt="connect" height="24">
-                <div class="detail" th:text="#{top.disconnected}">Disconnected</div>
+                <div class="detail" th:utext="#{top.disconnected}">Disconnected</div>
             </a>
         </td>
 
         <td style="padding-left:15pt;padding-right:5pt;width: 100%;text-align: center">
             <a href="#" onclick="airsonicLogout();">
                 <img th:src="${#themes.code('logoutImage')}" alt="logout" height="24">
-                <div class="detail" th:text="#{top.logout}">Logout</div>
+                <div class="detail" th:utext="#{top.logout}">Logout</div>
             </a>
         </td>
 

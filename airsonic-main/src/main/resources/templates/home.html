@@ -38,8 +38,8 @@
     <th:block th:each="cat, loopStatus : ${tokens}">
         <span th:if="${loopStatus.count > 1}">&nbsp;|&nbsp;</span>
 
-        <span th:if="${model.listType eq cat}" class="headerSelected" th:text="#{home.__${cat}__.title}">category</span>
-        <span th:if="${model.listType ne cat}" class="header"><a th:href="@{/home(listType=${cat})}" th:text="#{home.__${cat}__.title}">category</a></span>
+        <span th:if="${model.listType eq cat}" class="headerSelected" th:utext="#{home.__${cat}__.title}">category</span>
+        <span th:if="${model.listType ne cat}" class="header"><a th:href="@{/home(listType=${cat})}" th:utext="#{home.__${cat}__.title}">category</a></span>
     </th:block>
 </p>
 

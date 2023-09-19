@@ -136,7 +136,7 @@ public class CredentialsManagementController {
         return "redirect:credentialsSettings.view";
     }
 
-    @PutMapping
+    @PostMapping("update")
     protected String updateCreds(Principal user,
             @ModelAttribute("command") @Validated(value = { Default.class, CredentialUpdateChecks.class }) CredentialsManagementCommand cmc,
             BindingResult br, RedirectAttributes redirectAttributes) {
@@ -148,7 +148,7 @@ public class CredentialsManagementController {
 
         redirectAttributes.addFlashAttribute("settings_toast", result);
 
-        return "redirect:credentialsSettings.view";
+        return "redirect:/credentialsSettings.view";
     }
 
     @PostMapping(path = "/admin")

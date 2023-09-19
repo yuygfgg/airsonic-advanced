@@ -48,6 +48,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.ws.Holder;
 import javax.xml.ws.WebServiceContext;
@@ -69,6 +70,7 @@ import static org.airsonic.player.service.sonos.SonosServiceRegistration.Authent
  * @version $Id$
  */
 @Service
+@Transactional
 public class SonosService implements SonosSoap {
 
     private static final Logger LOG = LoggerFactory.getLogger(SonosService.class);

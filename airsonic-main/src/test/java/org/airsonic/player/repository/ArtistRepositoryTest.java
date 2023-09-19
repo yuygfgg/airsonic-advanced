@@ -19,7 +19,6 @@
 package org.airsonic.player.repository;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.UserDao;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.User.Role;
@@ -165,7 +164,9 @@ public class ArtistRepositoryTest {
     @Nested
     class StarredArtistTest {
 
-        @Autowired UserDao userDao;
+        @Autowired UserRepository userRepository;
+
+        @Autowired UserCredentialRepository userCredentialRepository;
 
         private final String TEST_USER_NAME = "testUserForArtistRepo";
 
@@ -173,13 +174,14 @@ public class ArtistRepositoryTest {
         public void setup() {
 
             User user = new User(TEST_USER_NAME, "artistrepo@activeobjects.no", false, 1000L, 2000L, 3000L, Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));
-            UserCredential uc = new UserCredential(TEST_USER_NAME, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
-            userDao.createUser(user, uc);
+            UserCredential uc = new UserCredential(user, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
+            userRepository.saveAndFlush(user);
+            userCredentialRepository.saveAndFlush(uc);
         }
 
         @AfterEach
         public void clean() {
-            userDao.deleteUser(TEST_USER_NAME);
+            userRepository.deleteById(TEST_USER_NAME);
         }
 
         @Test

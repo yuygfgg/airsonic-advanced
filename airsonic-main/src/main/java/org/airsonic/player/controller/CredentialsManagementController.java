@@ -5,7 +5,6 @@ import org.airsonic.player.command.CredentialsManagementCommand;
 import org.airsonic.player.command.CredentialsManagementCommand.AdminControls;
 import org.airsonic.player.command.CredentialsManagementCommand.CredentialsCommand;
 import org.airsonic.player.domain.User;
-import org.airsonic.player.domain.UserCredential;
 import org.airsonic.player.domain.UserCredential.App;
 import org.airsonic.player.security.GlobalSecurityConfig;
 import org.airsonic.player.service.SecurityService;
@@ -14,9 +13,6 @@ import org.airsonic.player.util.Util;
 import org.airsonic.player.validator.CredentialsManagementValidators.CredentialCreateChecks;
 import org.airsonic.player.validator.CredentialsManagementValidators.CredentialUpdateChecks;
 import org.apache.commons.beanutils.BeanMap;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -33,7 +29,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.validation.groups.Default;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -45,7 +40,6 @@ import static java.util.stream.Collectors.toMap;
 @Controller
 @RequestMapping("/credentialsSettings")
 public class CredentialsManagementController {
-    private static final Logger LOG = LoggerFactory.getLogger(CredentialsManagementController.class);
 
     @Autowired
     private SecurityService securityService;
@@ -135,18 +129,7 @@ public class CredentialsManagementController {
             return "credentialsSettings";
         }
 
-        UserCredential uc = new UserCredential(user.getName(), cc.getUsername(), cc.getCredential(), cc.getEncoder(), cc.getApp(), "Created by user", cc.getExpirationInstant());
-
-        // set airsonic account username if username not required
-        if (!uc.getApp().getUsernameRequired()) {
-            uc.setAppUsername(user.getName());
-        }
-
-        boolean success = true;
-        if (!securityService.createCredential(uc)) {
-            LOG.warn("Could not create creds for user {}", user.getName());
-            success = false;
-        }
+        boolean success = securityService.createCredential(user.getName(), cc, "Created by user");
 
         redirectAttributes.addFlashAttribute("settings_toast", success);
 
@@ -161,31 +144,9 @@ public class CredentialsManagementController {
             return "credentialsSettings";
         }
 
-        List<Boolean> failures = new ArrayList<>();
-        List<UserCredential> creds = securityService.getCredentials(user.getName(), App.values());
+        boolean result = securityService.updateCredentials(user.getName(), cmc, "User updated", false);
 
-        cmc.getCredentials().forEach(c -> {
-            creds.parallelStream().filter(sc -> StringUtils.equals(String.valueOf(sc.hashCode()), c.getHash()))
-                    .findAny().ifPresent(dbCreds -> {
-                        if (c.getMarkedForDeletion()) {
-                            if (!securityService.deleteCredential(dbCreds)) {
-                                LOG.warn("Could not delete creds for user {}", dbCreds.getUsername());
-                                failures.add(true);
-                            }
-                        } else {
-                            UserCredential newCreds = new UserCredential(dbCreds);
-                            newCreds.setEncoder(c.getEncoder());
-                            newCreds.setExpiration(c.getExpirationInstant());
-
-                            if (!securityService.updateCredentials(dbCreds, newCreds, "User updated", false)) {
-                                LOG.warn("Could not update creds for user {}", dbCreds.getUsername());
-                                failures.add(true);
-                            }
-                        }
-                    });
-        });
-
-        redirectAttributes.addFlashAttribute("settings_toast", failures.isEmpty());
+        redirectAttributes.addFlashAttribute("settings_toast", result);
 
         return "redirect:credentialsSettings.view";
     }

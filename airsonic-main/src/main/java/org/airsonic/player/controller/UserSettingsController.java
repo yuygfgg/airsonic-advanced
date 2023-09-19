@@ -25,18 +25,18 @@ import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.TranscodeScheme;
 import org.airsonic.player.domain.User;
-import org.airsonic.player.domain.User.Role;
-import org.airsonic.player.domain.UserCredential;
-import org.airsonic.player.domain.UserCredential.App;
 import org.airsonic.player.domain.UserSettings;
 import org.airsonic.player.service.MediaFolderService;
 import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.TranscodingService;
+import org.airsonic.player.service.UserService;
 import org.airsonic.player.util.Util;
 import org.airsonic.player.validator.UserSettingsValidator;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -54,7 +54,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -84,6 +83,10 @@ public class UserSettingsController {
     private AirsonicHomeConfig homeConfig;
     @Autowired
     private PersonalSettingsService personalSettingsService;
+    @Autowired
+    private UserService userService;
+
+    private static final Logger LOG = LoggerFactory.getLogger(UserSettingsController.class);
 
     @InitBinder
     protected void initBinder(WebDataBinder binder, HttpServletRequest request) {
@@ -113,7 +116,7 @@ public class UserSettingsController {
         } else {
             command = (UserSettingsCommand) model.asMap().get("command");
         }
-        command.setUsers(securityService.getAllUsers());
+        command.setUsers(userService.getAllUsers());
         command.setTranscodingSupported(transcodingService.isDownsamplingSupported(null));
         command.setTranscodeDirectory(homeConfig.getTranscodeDirectory().toString());
         command.setTranscodeSchemes(TranscodeScheme.values());
@@ -126,7 +129,7 @@ public class UserSettingsController {
     private User getUser(HttpServletRequest request) throws ServletRequestBindingException {
         Integer userIndex = ServletRequestUtils.getIntParameter(request, "userIndex");
         if (userIndex != null) {
-            List<User> allUsers = securityService.getAllUsers();
+            List<User> allUsers = userService.getAllUsers();
             if (userIndex >= 0 && userIndex < allUsers.size()) {
                 return allUsers.get(userIndex);
             }
@@ -173,7 +176,7 @@ public class UserSettingsController {
     }
 
     private Integer getUserIndex(UserSettingsCommand command) {
-        List<User> allUsers = securityService.getAllUsers();
+        List<User> allUsers = userService.getAllUsers();
         for (int i = 0; i < allUsers.size(); i++) {
             if (StringUtils.equalsIgnoreCase(allUsers.get(i).getUsername(), command.getUsername())) {
                 return i;
@@ -195,56 +198,20 @@ public class UserSettingsController {
     }
 
     public void updateUser(UserSettingsCommand command) {
-        User user = securityService.getUserByName(command.getUsername());
-        user.setEmail(StringUtils.trimToNull(command.getEmail()));
-        user.setLdapAuthenticated(command.isLdapAuthenticated());
+        User user = securityService.updateUserByUserSettingsCommand(command);
+
+        if (user == null) {
+            LOG.warn("User {} not found", command.getUsername());
+            return;
+        }
+
         Set<Integer> allowedMusicFolderIds = new HashSet<>();
-        Set<Role> roles = new HashSet<>();
-        if (command.isAdminRole()) {
-            roles.add(Role.ADMIN);
-        }
-        if (command.isDownloadRole()) {
-            roles.add(Role.DOWNLOAD);
-        }
-        if (command.isUploadRole()) {
-            roles.add(Role.UPLOAD);
-        }
-        if (command.isCoverArtRole()) {
-            roles.add(Role.COVERART);
-        }
-        if (command.isCommentRole()) {
-            roles.add(Role.COMMENT);
-        }
         if (command.isPodcastRole()) {
-            roles.add(Role.PODCAST);
             allowedMusicFolderIds.addAll(mediaFolderService.getAllMusicFolders().stream()
                     .filter(mf -> mf.getType() == Type.PODCAST).map(mf -> mf.getId()).collect(toSet()));
         }
-        if (command.isStreamRole()) {
-            roles.add(Role.STREAM);
-        }
-        if (command.isJukeboxRole()) {
-            roles.add(Role.JUKEBOX);
-        }
-        if (command.isSettingsRole()) {
-            roles.add(Role.SETTINGS);
-        }
-        if (command.isShareRole()) {
-            roles.add(Role.SHARE);
-        }
-        user.setRoles(roles);
 
-        securityService.updateUser(user);
-
-        if (command.isPasswordChange()) {
-            UserCredential uc = new UserCredential(user.getUsername(), user.getUsername(), command.getPassword(), securityService.getPreferredPasswordEncoder(true), App.AIRSONIC, "Created by admin");
-            securityService.createCredential(uc);
-        }
-
-        UserSettings userSettings = personalSettingsService.getUserSettings(command.getUsername());
-        userSettings.setTranscodeScheme(TranscodeScheme.valueOf(command.getTranscodeSchemeName()));
-        userSettings.setChanged(Instant.now());
-        personalSettingsService.updateUserSettings(userSettings);
+        personalSettingsService.updateTranscodeScheme(command.getUsername(), TranscodeScheme.valueOf(command.getTranscodeSchemeName()));
 
         // NOTE: This can happen if none of the configured media directories exist or if none are enabled.
         //       Primitive arrays are still behind a pointer technically, and that pointer is null if not initialized.

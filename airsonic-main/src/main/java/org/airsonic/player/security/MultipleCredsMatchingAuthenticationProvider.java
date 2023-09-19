@@ -3,7 +3,7 @@ package org.airsonic.player.security;
 import org.airsonic.player.controller.SubsonicRESTController.APIException;
 import org.airsonic.player.controller.SubsonicRESTController.ErrorCode;
 import org.airsonic.player.domain.UserCredential;
-import org.airsonic.player.service.SecurityService;
+import org.airsonic.player.repository.UserCredentialRepository;
 import org.airsonic.player.service.SecurityService.UserDetail;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -23,7 +23,8 @@ import java.util.Optional;
 @Component
 public class MultipleCredsMatchingAuthenticationProvider extends DaoAuthenticationProvider {
     public static final String SALT_TOKEN_MECHANISM_SPECIALIZATION = "salttoken";
-    private SecurityService securityService;
+
+    private UserCredentialRepository userCredentialRepository;
 
     @Override
     protected void additionalAuthenticationChecks(UserDetails userDetails,
@@ -72,17 +73,20 @@ public class MultipleCredsMatchingAuthenticationProvider extends DaoAuthenticati
 
         // perform upgrade if needed for password-based auth
         if ("".equals(encoderSpecialization) && getPasswordEncoder().upgradeEncoding("{" + matchedCred.get().getEncoder() + "}" + matchedCred.get().getCredential())) {
-            UserCredential upgraded = new UserCredential(matchedCred.get());
-            upgraded.setCredential(authentication.getCredentials().toString());
-            if (!securityService.updateCredentials(matchedCred.get(), upgraded, upgraded.getComment() + " | Automatically upgraded by system", true)) {
-                logger.debug("Password needs to be upgraded, but failed");
-            }
+            matchedCred.ifPresent(c -> {
+                c.setComment(c.getComment() + " | Automatically upgraded by system");
+                if (c.updateEncoder(c.getEncoder(), true)) {
+                    userCredentialRepository.save(c);
+                } else {
+                    logger.debug("Password needs to be upgraded, but failed");
+                }
+            });
         }
     }
 
     @Autowired
-    public void setSecurityService(SecurityService securityService) {
-        this.securityService = securityService;
+    public void setUserCredentialRepository(UserCredentialRepository userCredentialRepository) {
+        this.userCredentialRepository = userCredentialRepository;
     }
 
     @Override

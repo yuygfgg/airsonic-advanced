@@ -173,10 +173,7 @@ public class LeftController {
         }
         // Note: UserSettings.setChanged() is intentionally not called. This would break browser caching
         // of the left frame.
-        UserSettings settings = personalSettingsService.getUserSettings(securityService.getCurrentUsername(request));
-        settings.setSelectedMusicFolderId(musicFolderId);
-        personalSettingsService.updateUserSettings(settings);
-
+        personalSettingsService.updateSelectedMusicFolderId(securityService.getCurrentUsername(request), musicFolderId);
         return true;
     }
 }

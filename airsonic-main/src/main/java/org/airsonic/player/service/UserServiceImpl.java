@@ -18,31 +18,36 @@
  */
 package org.airsonic.player.service;
 
-import org.airsonic.player.dao.UserDao;
 import org.airsonic.player.domain.User;
+import org.airsonic.player.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
 
-    private final UserDao userDao;
+    private final UserRepository userRepository;
 
-    public UserServiceImpl(UserDao userDao) {
-        this.userDao = userDao;
+    public UserServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
     @Override
     public User getSysAdmin() {
-        List<User> admins = userDao.getAllUsers().stream()
-                .filter(User::isAdminRole)
-                .collect(Collectors.toList());
+        List<User> admins = userRepository.findAll().stream()
+                .filter(User::isAdminRole).toList();
 
         return admins.stream()
                 .filter(user -> User.USERNAME_ADMIN.equals(user.getUsername()))
                 .findAny()
                 .orElseGet(() -> admins.iterator().next());
     }
+
+
 }

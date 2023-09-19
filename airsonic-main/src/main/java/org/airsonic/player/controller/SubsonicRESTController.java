@@ -30,7 +30,6 @@ import org.airsonic.player.domain.Bookmark;
 import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.User;
-import org.airsonic.player.domain.UserCredential.App;
 import org.airsonic.player.i18n.LocaleResolver;
 import org.airsonic.player.service.*;
 import org.airsonic.player.service.search.IndexType;
@@ -155,6 +154,8 @@ public class SubsonicRESTController {
     private CoverArtService coverArtService;
     @Autowired
     private LocaleResolver localeResolver;
+    @Autowired
+    private UserService userService;
     @Autowired
     private PersonalSettingsService personalSettingsService;
 
@@ -1967,9 +1968,7 @@ public class SubsonicRESTController {
             return;
         }
 
-        org.airsonic.player.domain.User user = securityService.getUserByName(username);
-        UserCredential uc = new UserCredential(user.getUsername(), user.getUsername(), password, securityService.getPreferredPasswordEncoder(true), App.AIRSONIC, "Created via Subsonic REST API");
-        securityService.createCredential(uc);
+        securityService.createAirsonicCredential(username, password, "Created via Subsonic REST API");
 
         writeEmptyResponse(request, response);
     }
@@ -2008,7 +2007,7 @@ public class SubsonicRESTController {
         }
 
         Users result = new Users();
-        for (org.airsonic.player.domain.User user : securityService.getAllUsers()) {
+        for (org.airsonic.player.domain.User user : userService.getAllUsers()) {
             result.getUser().add(createJaxbUser(user));
         }
 

@@ -25,7 +25,6 @@ import org.airsonic.player.domain.UserCredential.App;
 import org.airsonic.player.service.PersonalSettingsService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -37,7 +36,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 
-import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
 
@@ -151,43 +149,7 @@ public class PersonalSettingsController {
         }
 
         String username = command.getUser().getUsername();
-        UserSettings settings = personalSettingsService.getUserSettings(username);
-
-        settings.setLocale(locale);
-        settings.setThemeId(themeId);
-        settings.setDefaultAlbumList(AlbumListType.fromId(command.getAlbumListId()));
-        settings.setPartyModeEnabled(command.isPartyModeEnabled());
-        settings.setQueueFollowingSongs(command.isQueueFollowingSongs());
-        settings.setShowNowPlayingEnabled(command.isShowNowPlayingEnabled());
-        settings.setShowArtistInfoEnabled(command.isShowArtistInfoEnabled());
-        settings.setNowPlayingAllowed(command.isNowPlayingAllowed());
-        settings.setMainVisibility(command.getMainVisibility());
-        settings.setPlaylistVisibility(command.getPlaylistVisibility());
-        settings.setPlayqueueVisibility(command.getPlayqueueVisibility());
-        settings.setFinalVersionNotificationEnabled(command.isFinalVersionNotificationEnabled());
-        settings.setBetaVersionNotificationEnabled(command.isBetaVersionNotificationEnabled());
-        settings.setSongNotificationEnabled(command.isSongNotificationEnabled());
-        settings.setAutoHidePlayQueue(command.isAutoHidePlayQueue());
-        settings.setKeyboardShortcutsEnabled(command.isKeyboardShortcutsEnabled());
-        settings.setLastFmEnabled(command.getLastFmEnabled());
-        settings.setListenBrainzEnabled(command.getListenBrainzEnabled());
-        settings.setListenBrainzUrl(StringUtils.trimToNull(command.getListenBrainzUrl()));
-        settings.setPodcastIndexEnabled(command.getPodcastIndexEnabled());
-        settings.setPodcastIndexUrl(StringUtils.trimToNull(command.getPodcastIndexUrl()));
-        settings.setSystemAvatarId(getSystemAvatarId(command));
-        settings.setAvatarScheme(getAvatarScheme(command));
-        settings.setPaginationSizeFiles(command.getPaginationSizeFiles());
-        settings.setPaginationSizeFolders(command.getPaginationSizeFolders());
-        settings.setPaginationSizePlaylist(command.getPaginationSizePlaylist());
-        settings.setPaginationSizePlayqueue(command.getPaginationSizePlayqueue());
-        settings.setPaginationSizeBookmarks(command.getPaginationSizeBookmarks());
-        settings.setAutoBookmark(command.getAutoBookmark());
-        settings.setAudioBookmarkFrequency(command.getAudioBookmarkFrequency());
-        settings.setVideoBookmarkFrequency(command.getVideoBookmarkFrequency());
-        settings.setSearchCount(command.getSearchCount());
-
-        settings.setChanged(Instant.now());
-        personalSettingsService.updateUserSettings(settings);
+        personalSettingsService.updateByCommand(username, locale, themeId, command);
 
         redirectAttributes.addFlashAttribute("settings_reload", true);
         redirectAttributes.addFlashAttribute("settings_toast", true);
@@ -200,23 +162,6 @@ public class PersonalSettingsController {
         return avatarScheme == AvatarScheme.SYSTEM ? userSettings.getSystemAvatarId() : avatarScheme.getCode();
     }
 
-    private AvatarScheme getAvatarScheme(PersonalSettingsCommand command) {
-        if (command.getAvatarId() == AvatarScheme.NONE.getCode()) {
-            return AvatarScheme.NONE;
-        }
-        if (command.getAvatarId() == AvatarScheme.CUSTOM.getCode()) {
-            return AvatarScheme.CUSTOM;
-        }
-        return AvatarScheme.SYSTEM;
-    }
 
-    private Integer getSystemAvatarId(PersonalSettingsCommand command) {
-        int avatarId = command.getAvatarId();
-        if (avatarId == AvatarScheme.NONE.getCode() ||
-            avatarId == AvatarScheme.CUSTOM.getCode()) {
-            return null;
-        }
-        return avatarId;
-    }
 
 }

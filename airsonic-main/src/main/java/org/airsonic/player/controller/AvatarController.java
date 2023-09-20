@@ -44,7 +44,7 @@ public class AvatarController {
 
     @Autowired
     private ResourceLoader loader;
-    @Value("${reourceRootLocation:}")
+    @Value("${resourceRootLocation:}")
     private String resourceRootLocation = "";
 
     @Autowired
@@ -88,9 +88,9 @@ public class AvatarController {
         if (!res.exists()) {
             res = loader.getResource("file:" + resourceRootLocation + avatar.getPath().toString());
         }
-        if (!res.exists()) {
-            res = loader.getResource("file:" + avatar.getPath().toString());
-        }
+//        if (!res.exists()) {
+//            res = loader.getResource("file:" + avatar.getPath().toString());
+//        }
         IOUtils.copy(res.getInputStream(), response.getOutputStream());
     }
 }

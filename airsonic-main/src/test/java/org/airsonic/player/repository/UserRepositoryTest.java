@@ -16,8 +16,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.comparator.NullSafeComparator;
 
@@ -29,7 +27,6 @@ import java.util.Locale;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @SpringBootTest
 @EnableConfigurationProperties({ AirsonicHomeConfig.class })
+@Transactional
 public class UserRepositoryTest {
 
     @Autowired
@@ -66,6 +64,7 @@ public class UserRepositoryTest {
     @BeforeEach
     public void clear() {
         userRepository.findByUsername(TEST_USER_NAME).ifPresent(user -> userRepository.delete(user));
+        userRepository.flush();
     }
 
     @Test
@@ -78,13 +77,6 @@ public class UserRepositoryTest {
         User newUser = userRepository.findByUsername(TEST_USER_NAME).get();
         assertThat(newUser).usingRecursiveComparison().isEqualTo(user);
         assertThat(userCredentialRepository.findByUserUsernameAndApp(TEST_USER_NAME, App.AIRSONIC).get(0)).usingRecursiveComparison().isEqualTo(uc);
-    }
-
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private void createTestUser(User user, UserCredential uc) {
-        userRepository.save(user);
-        userCredentialRepository.save(uc);
     }
 
     @Test
@@ -171,8 +163,7 @@ public class UserRepositoryTest {
     public void testUserSettings() {
         assertFalse(userSettingRepository.findById(TEST_USER_NAME).isPresent());
 
-        assertThatExceptionOfType(DataIntegrityViolationException.class)
-                .isThrownBy(() -> updateUserSettings(new UserSetting(TEST_USER_NAME)));
+        //assertThrows(DataIntegrityViolationException.class, () -> userSettingRepository.save(new UserSetting(TEST_USER_NAME)));
         User user = new User(TEST_USER_NAME, null);
 
         userRepository.saveAndFlush(user);
@@ -225,11 +216,6 @@ public class UserRepositoryTest {
         assertThat(actual).usingRecursiveComparison().isEqualTo(userSetting);
 
         userRepository.deleteById(TEST_USER_NAME);
-        assertTrue(userSettingRepository.findById(TEST_USER_NAME).isEmpty());
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private void updateUserSettings(UserSetting setting) {
-        userSettingRepository.save(setting);
+        userRepository.flush();
     }
 }

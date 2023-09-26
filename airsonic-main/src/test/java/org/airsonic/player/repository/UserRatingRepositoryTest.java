@@ -21,15 +21,12 @@ package org.airsonic.player.repository;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.MediaFileDao;
-import org.airsonic.player.dao.MusicFolderDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.User.Role;
-import org.airsonic.player.domain.UserCredential;
-import org.airsonic.player.domain.UserCredential.App;
 import org.airsonic.player.domain.entity.UserRating;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -48,15 +45,14 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import javax.validation.ConstraintViolationException;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -72,7 +68,7 @@ public class UserRatingRepositoryTest {
     private MediaFileDao mediaFileDao;
 
     @Autowired
-    private MusicFolderDao musicFolderDao;
+    private MusicFolderRepository musicFolderRepository;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -80,15 +76,16 @@ public class UserRatingRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private UserCredentialRepository userCredentialRepository;
-
     @TempDir
     private static Path tempDir;
 
+    @TempDir
+    private Path musicFolderDir;
+
     private MediaFile mediaFile;
 
-    private final String TEST_FOLDER_PATH = "testFolderPath";
+    private MusicFolder testFolder;
+
     private final String TEST_USER_NAME = "testUserForRating";
     private final String TEST_USER_NAME_2 = "testUserForRating2";
 
@@ -103,13 +100,12 @@ public class UserRatingRepositoryTest {
         jdbcTemplate.execute("delete from media_file");
 
         // music folder
-        MusicFolder musicFolder = new MusicFolder(Paths.get(TEST_FOLDER_PATH), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
-        musicFolderDao.createMusicFolder(musicFolder);
+        testFolder = new MusicFolder(musicFolderDir, "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        musicFolderRepository.save(testFolder);
 
         // media file
-        MusicFolder folder = musicFolderDao.getAllMusicFolders().get(0);
         MediaFile baseFile = new MediaFile();
-        baseFile.setFolderId(folder.getId());
+        baseFile.setFolderId(testFolder.getId());
         baseFile.setPath("userrating.wav");
         baseFile.setMediaType(MediaType.MUSIC);
         baseFile.setIndexPath("test.cue");
@@ -123,26 +119,21 @@ public class UserRatingRepositoryTest {
         baseFile.setPath("userrating2.wav");
         baseFile.setIndexPath("test2.cue");
         mediaFileDao.createOrUpdateMediaFile(baseFile, file -> {});
-        mediaFile = mediaFileDao.getMediaFilesByRelativePathAndFolderId("userrating.wav", folder.getId()).get(0);
+        mediaFile = mediaFileDao.getMediaFilesByRelativePathAndFolderId("userrating.wav", testFolder.getId()).get(0);
 
         // user
         User user = new User(TEST_USER_NAME, "rating@activeobjects.no", false, 1000L, 2000L, 3000L, Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));
-        UserCredential uc = new UserCredential(user, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
         userRepository.saveAndFlush(user);
-        userCredentialRepository.saveAndFlush(uc);
 
         User user2 = new User(TEST_USER_NAME_2, "rating2@activeobjects.no", false, 1000L, 2000L, 3000L, Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));
-        UserCredential uc2 = new UserCredential(user2, TEST_USER_NAME_2, "secret", "noop", App.AIRSONIC);
         userRepository.saveAndFlush(user2);
-        userCredentialRepository.saveAndFlush(uc2);
     }
 
     @AfterEach
     public void tearDown() {
         jdbcTemplate.execute("delete from user_rating");
         jdbcTemplate.execute("delete from media_file");
-        MusicFolder folder = musicFolderDao.getMusicFolderForPath(TEST_FOLDER_PATH);
-        musicFolderDao.deleteMusicFolder(folder.getId());
+        musicFolderRepository.delete(testFolder);
         userRepository.deleteById(TEST_USER_NAME);
         userRepository.deleteById(TEST_USER_NAME_2);
     }

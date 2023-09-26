@@ -19,30 +19,29 @@
 package org.airsonic.player.repository;
 
 import org.airsonic.player.domain.MusicFolder;
+import org.airsonic.player.domain.MusicFolder.Type;
+import org.airsonic.player.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface MusicFolderRepository extends JpaRepository<MusicFolder, Integer>{
+public interface MusicFolderRepository extends JpaRepository<MusicFolder, Integer> {
 
-    public List<MusicFolder> findByDeletedFalse(Integer id);
+    public List<MusicFolder> findByDeleted(boolean deleted);
 
-    public List<MusicFolder> findByDeletedTrue(Integer id);
+    public List<MusicFolder> findByUsersAndDeletedFalseAndEnabledTrue(User user);
 
-    public MusicFolder findByPath(Path path);
+    public Optional<MusicFolder> findByIdAndDeletedFalse(Integer id);
 
-    @Transactional
-    public void deleteById(Integer id);
+    public Optional<MusicFolder> findByIdAndTypeAndDeletedFalse(Integer id, Type type);
+
+    public List<MusicFolder> findByIdNotAndTypeAndDeletedFalse(Integer id, Type type);
 
     @Transactional
     public void deleteAllByDeletedTrue();
 
-
-
-
-    
 }

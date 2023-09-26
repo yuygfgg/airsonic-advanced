@@ -20,22 +20,16 @@
  */
 package org.airsonic.player.domain;
 
+import javax.persistence.*;
+
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
 
 /**
  * Represents a top level directory in which music or other media is stored.
@@ -53,22 +47,28 @@ public class MusicFolder implements Serializable {
 
     @Column(name = "path", nullable = false, unique = true)
     private Path path;
-    
+
     @Column(name = "name", nullable = false)
     private String name;
-    
+
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
     private Type type = Type.MEDIA;
-    
+
     @Column(name = "enabled", nullable = false)
     private boolean enabled;
-    
+
     @Column(name = "changed", nullable = false)
     private Instant changed;
 
     @Column(name = "deleted")
     private boolean deleted;
+
+    @ManyToMany(mappedBy = "musicFolders")
+    private List<User> users = new ArrayList<>();
+
+    public MusicFolder() {
+    }
 
     /**
      * Creates a new music folder.

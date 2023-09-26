@@ -74,6 +74,9 @@ public class MediaFolderServiceTest {
     @TempDir
     private Path tempMusicFolder;
 
+    @TempDir
+    private Path tempMusicFolder2;
+
     private final String TEST_USER_NAME = "testUserForMediaFolder";
 
     @BeforeAll
@@ -103,7 +106,7 @@ public class MediaFolderServiceTest {
         Mockito.reset(musicFolderRepository);
 
         // when
-        List<MusicFolder> musicFolders = mediaFolderService.getAllMusicFolders();
+        List<MusicFolder> musicFolders = mediaFolderService.getAllMusicFolders(true, true);
 
         // then
         assertEquals(count, musicFolders.size());
@@ -312,8 +315,10 @@ public class MediaFolderServiceTest {
         // given
         MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
         musicFolderRepository.save(existingFolder);
+        MusicFolder existingFolder2 = new MusicFolder(tempMusicFolder2, "Existing Folder2", MusicFolder.Type.MEDIA, true, Instant.now());
+        musicFolderRepository.save(existingFolder2);
         MusicFolderInfo musicFolderInfo = new MusicFolderInfo(existingFolder, false, "");
-        musicFolderInfo.setPath(tempDefaultMusicFolder.resolve("child").toString());
+        musicFolderInfo.setPath(tempMusicFolder2.resolve("child").toString());
         Mockito.reset(musicFolderRepository);
         // when and then
         assertThrows(IllegalArgumentException.class, () -> {
@@ -330,8 +335,10 @@ public class MediaFolderServiceTest {
         // given
         MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
         musicFolderRepository.save(existingFolder);
+        MusicFolder existingFolder2 = new MusicFolder(tempMusicFolder2, "Existing Folder2", MusicFolder.Type.MEDIA, true, Instant.now());
+        musicFolderRepository.save(existingFolder2);
         MusicFolderInfo musicFolderInfo = new MusicFolderInfo(existingFolder, false, "");
-        musicFolderInfo.setPath(tempDefaultMusicFolder.getParent().toString());
+        musicFolderInfo.setPath(tempMusicFolder2.getParent().toString());
         Mockito.reset(musicFolderRepository);
         // when and then
         assertThrows(IllegalArgumentException.class, () -> {

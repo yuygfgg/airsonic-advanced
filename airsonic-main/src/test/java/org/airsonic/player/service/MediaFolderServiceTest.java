@@ -296,8 +296,10 @@ public class MediaFolderServiceTest {
         // given
         MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
         musicFolderRepository.save(existingFolder);
+        MusicFolder existingFolder2 = new MusicFolder(tempMusicFolder2, "Existing Folder2", MusicFolder.Type.MEDIA, true, Instant.now());
+        musicFolderRepository.save(existingFolder2);
         MusicFolderInfo musicFolderInfo = new MusicFolderInfo(existingFolder, false, "");
-        musicFolderInfo.setPath(tempDefaultMusicFolder.toString());
+        musicFolderInfo.setPath(tempMusicFolder2.toString());
         Mockito.reset(musicFolderRepository);
         // when and then
         assertThrows(IllegalArgumentException.class, () -> {

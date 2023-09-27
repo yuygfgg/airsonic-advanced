@@ -22,13 +22,12 @@ package org.airsonic.player.domain;
 import org.airsonic.player.repository.RolesConverter;
 import org.airsonic.player.util.Util;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -65,7 +64,13 @@ public class User {
 
     @Column(name = "roles")
     @Convert(converter = RolesConverter.class)
-    private Set<Role> roles;
+    private Set<Role> roles = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(name = "music_folder_user",
+            joinColumns = @JoinColumn(name = "username"),
+            inverseJoinColumns = @JoinColumn(name = "music_folder_id", referencedColumnName = "id"))
+    private List<MusicFolder> musicFolders = new ArrayList<>();
 
     public User() {
     }
@@ -183,6 +188,18 @@ public class User {
 
     public boolean isShareRole() {
         return roles.contains(Role.SHARE);
+    }
+
+    public List<MusicFolder> getMusicFolders() {
+        return musicFolders;
+    }
+
+    public void setMusicFolders(List<MusicFolder> musicFolders) {
+        this.musicFolders = musicFolders;
+    }
+
+    public void addMusicFolder(MusicFolder musicFolder) {
+        musicFolders.add(musicFolder);
     }
 
     @Override

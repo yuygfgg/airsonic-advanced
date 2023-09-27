@@ -168,14 +168,11 @@ public class MusicFolderSettingsController {
                     mediaFolderService.deleteMusicFolder(musicFolderInfo.getId());
                 }
             } else {
-                MusicFolder musicFolder = musicFolderInfo.toMusicFolder();
-                if (musicFolder != null) {
-                    try {
-                        mediaFolderService.updateMusicFolder(musicFolder);
-                    } catch (Exception e) {
-                        LOG.warn("Could not update music folder id {} ({})", musicFolder.getId(), musicFolder.getName(), e);
-                        success = false;
-                    }
+                try {
+                    mediaFolderService.updateMusicFolderByInfo(musicFolderInfo);
+                } catch (Exception e) {
+                    LOG.warn("Could not update music folder id {} ({})", musicFolderInfo.getId(), musicFolderInfo.getName(), e);
+                    success = false;
                 }
             }
         }

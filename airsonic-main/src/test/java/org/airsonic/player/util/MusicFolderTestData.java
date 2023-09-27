@@ -68,11 +68,11 @@ public class MusicFolderTestData {
     public static List<MusicFolder> getTestMusicFolders() {
         List<MusicFolder> liste = new ArrayList<>();
         Path musicDir = resolveMusicFolderPath();
-        MusicFolder musicFolder = new MusicFolder(1, musicDir, "MusicTest", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        MusicFolder musicFolder = new MusicFolder(musicDir, "MusicTest", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         liste.add(musicFolder);
 
         Path music2Dir = resolveMusic2FolderPath();
-        MusicFolder musicFolder2 = new MusicFolder(2, music2Dir, "MusicTest2", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        MusicFolder musicFolder2 = new MusicFolder(music2Dir, "MusicTest2", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
         liste.add(musicFolder2);
         return liste;
     }

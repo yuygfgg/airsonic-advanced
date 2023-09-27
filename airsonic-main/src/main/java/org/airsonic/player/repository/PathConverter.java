@@ -19,19 +19,21 @@
 package org.airsonic.player.repository;
 
 import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
+@Converter(autoApply = true)
 public class PathConverter implements AttributeConverter<Path, String> {
 
     @Override
-    public String convertToDatabaseColumn(Path attribute) {
-        return attribute.toString();
+    public String convertToDatabaseColumn(Path path) {
+        return path.toString();
     }
 
     @Override
     public Path convertToEntityAttribute(String dbData) {
-        return Path.of(dbData);
+        return Paths.get(dbData);
     }
-
 }

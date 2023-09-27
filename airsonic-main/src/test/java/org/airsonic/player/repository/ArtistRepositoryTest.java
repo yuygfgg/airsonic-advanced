@@ -132,13 +132,11 @@ public class ArtistRepositoryTest {
 
         @Test
         public void testMarkNonPresent() {
-            assertTrue(artistRepository.findByPresentFalse().isEmpty());
-
+            long count = artistRepository.findByPresentFalse().size();
             Artist artist = new Artist("name");
             artist.setLastScanned(Instant.now().minusSeconds(86400));
             artist.setPresent(true);
             artistRepository.saveAndFlush(artist);
-            long count = artistRepository.findByPresentFalse().size();
             assertTrue(artistRepository.findByName("name").isPresent());
 
             artistRepository.markNonPresent(Instant.now().minusSeconds(86400));

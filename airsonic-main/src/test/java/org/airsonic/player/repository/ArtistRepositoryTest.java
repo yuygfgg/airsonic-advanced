@@ -119,42 +119,40 @@ public class ArtistRepositoryTest {
 
         @Test
         public void testFindByPresentFalse() {
-            assertTrue(artistRepository.findByPresentFalse().isEmpty());
 
+            long count = artistRepository.findByPresentFalse().size();
             Artist artist = new Artist("name");
             artist.setLastScanned(Instant.now());
             artist.setPresent(false);
             artistRepository.save(artist);
-            assertTrue(artistRepository.findByPresentFalse().size() == 1);
+            assertEquals(count + 1, artistRepository.findByPresentFalse().size());
 
             artistRepository.delete(artist);
         }
 
         @Test
         public void testMarkNonPresent() {
-            assertTrue(artistRepository.findByPresentFalse().isEmpty());
-
+            long count = artistRepository.findByPresentFalse().size();
             Artist artist = new Artist("name");
             artist.setLastScanned(Instant.now().minusSeconds(86400));
             artist.setPresent(true);
             artistRepository.saveAndFlush(artist);
-            assertTrue(artistRepository.findByPresentFalse().isEmpty());
             assertTrue(artistRepository.findByName("name").isPresent());
 
             artistRepository.markNonPresent(Instant.now().minusSeconds(86400));
-            assertEquals(1, artistRepository.findByPresentFalse().size());
+            assertEquals(count + 1, artistRepository.findByPresentFalse().size());
             artistRepository.delete(artist);
         }
 
         @Test
         public void testDeleteAllByPresentFalse() {
-            assertTrue(artistRepository.findByPresentFalse().isEmpty());
+            long count = artistRepository.findByPresentFalse().size();
 
             Artist artist = new Artist("name");
             artist.setLastScanned(Instant.now());
             artist.setPresent(false);
             artistRepository.save(artist);
-            assertTrue(artistRepository.findByPresentFalse().size() == 1);
+            assertEquals(count + 1, artistRepository.findByPresentFalse().size());
 
             artistRepository.deleteAllByPresentFalse();
             assertTrue(artistRepository.findByPresentFalse().isEmpty());

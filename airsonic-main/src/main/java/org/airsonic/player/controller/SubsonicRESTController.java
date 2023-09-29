@@ -767,6 +767,8 @@ public class SubsonicRESTController {
         SearchResult3 searchResult = new SearchResult3();
 
         String query = request.getParameter("query");
+        // replace empty string with null
+        query = "\"\"".equals(query) ? null : query;
         SearchCriteria criteria = new SearchCriteria();
         criteria.setQuery(StringUtils.trimToEmpty(query));
         criteria.setCount(getIntParameter(request, "artistCount", 20));

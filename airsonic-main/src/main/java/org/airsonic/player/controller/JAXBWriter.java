@@ -63,6 +63,8 @@ public class JAXBWriter {
     private final DatatypeFactory datatypeFactory;
     private static final String restProtocolVersion = parseRESTProtocolVersion();
 
+    private final String SERVER_TYPE = "Airsonic-Advanced";
+
     public JAXBWriter() {
         try {
             jaxbContext = JAXBContext.newInstance(Response.class);
@@ -116,6 +118,7 @@ public class JAXBWriter {
         Response response = new ObjectFactory().createResponse();
         response.setStatus(ok ? ResponseStatus.OK : ResponseStatus.FAILED);
         response.setVersion(restProtocolVersion);
+        response.setType(SERVER_TYPE);
         return response;
     }
 

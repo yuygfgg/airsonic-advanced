@@ -326,13 +326,14 @@ public class SubsonicRESTController {
     }
 
     @RequestMapping("/getArtists")
-    public void getArtists(HttpServletRequest request, HttpServletResponse response) {
+    public void getArtists(HttpServletRequest request, HttpServletResponse response) throws Exception {
         request = wrapRequest(request);
         String username = securityService.getCurrentUsername(request);
 
         ArtistsID3 result = new ArtistsID3();
         result.setIgnoredArticles(settingsService.getIgnoredArticles());
-        List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
+        Integer musicFolderId = getIntParameter(request, "musicFolderId");
+        List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username, musicFolderId);
 
         List<org.airsonic.player.domain.Artist> artists = artistService.getAlphabeticalArtists(musicFolders);
         SortedMap<MusicIndex, List<MusicIndex.SortableArtistWithArtist>> indexedArtists = musicIndexService.getIndexedArtists(artists);

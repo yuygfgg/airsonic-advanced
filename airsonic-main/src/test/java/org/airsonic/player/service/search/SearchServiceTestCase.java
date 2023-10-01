@@ -4,7 +4,6 @@ package org.airsonic.player.service.search;
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import org.airsonic.player.dao.MusicFolderDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.MediaFile;
@@ -14,6 +13,7 @@ import org.airsonic.player.domain.ParamSearchResult;
 import org.airsonic.player.domain.RandomSearchCriteria;
 import org.airsonic.player.domain.SearchCriteria;
 import org.airsonic.player.domain.SearchResult;
+import org.airsonic.player.repository.MusicFolderRepository;
 import org.airsonic.player.service.AlbumService;
 import org.airsonic.player.service.SearchService;
 import org.junit.AfterClass;
@@ -37,7 +37,7 @@ public class SearchServiceTestCase extends AbstractAirsonicHomeTest {
     private final MetricRegistry metrics = new MetricRegistry();
 
     @Autowired
-    private MusicFolderDao musicFolderDao;
+    private MusicFolderRepository musicFolderRepository;
 
     @Autowired
     private SearchService searchService;
@@ -66,7 +66,7 @@ public class SearchServiceTestCase extends AbstractAirsonicHomeTest {
          * Complete route coverage and data coverage in this case alone are not conscious.
          */
 
-        List<MusicFolder> allMusicFolders = musicFolderDao.getAllMusicFolders();
+        List<MusicFolder> allMusicFolders = musicFolderRepository.findByDeleted(false);
         Assert.assertEquals(3, allMusicFolders.size());
 
         // *** testSearch() ***

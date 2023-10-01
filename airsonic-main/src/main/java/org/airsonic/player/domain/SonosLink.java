@@ -1,20 +1,40 @@
 package org.airsonic.player.domain;
 
-import org.springframework.util.Assert;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 import java.time.Instant;
 
+@Entity
+@Table(name = "sonoslink")
 public class SonosLink {
-    private final String username;
-    private final String linkcode;
-    private final String householdId;
-    private final String initiator;
-    private final Instant initiated;
+
+    @Id
+    @NotNull
+    @Column(name = "linkcode")
+    private String linkcode;
+
+    @NotNull
+    @Column(name = "username")
+    private String username;
+
+    @NotNull
+    @Column(name = "householdid")
+    private String householdId;
+
+    @Column(name = "initiator")
+    private String initiator;
+
+    @Column(name = "initiated")
+    private Instant initiated;
+
+    public SonosLink() {
+    }
 
     public SonosLink(String username, String linkcode, String householdId, String initiator, Instant initiated) {
-        Assert.notNull(username, "The username must be provided");
-        Assert.notNull(householdId, "The householdId must be provided");
-        Assert.notNull(linkcode, "The linkcode must be provided");
         this.username = username;
         this.linkcode = linkcode;
         this.householdId = householdId;

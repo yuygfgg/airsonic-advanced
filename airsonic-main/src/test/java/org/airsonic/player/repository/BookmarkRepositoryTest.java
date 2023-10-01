@@ -19,9 +19,8 @@
 
 package org.airsonic.player.repository;
 
-import org.airsonic.player.dao.DaoTestCaseBean2;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.MediaFileDao;
-import org.airsonic.player.dao.MusicFolderDao;
 import org.airsonic.player.domain.Bookmark;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
@@ -29,14 +28,20 @@ import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.User.Role;
-import org.airsonic.player.domain.UserCredential;
-import org.airsonic.player.domain.UserCredential.App;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -44,11 +49,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class BookmarkRepositoryTest extends DaoTestCaseBean2 {
+@SpringBootTest
+@EnableConfigurationProperties({AirsonicHomeConfig.class})
+@ExtendWith(SpringExtension.class)
+@Transactional
+public class BookmarkRepositoryTest {
 
     @Autowired
     private BookmarkRepository bookmarkRepository;
@@ -57,35 +66,46 @@ public class BookmarkRepositoryTest extends DaoTestCaseBean2 {
     private UserRepository userRepository;
 
     @Autowired
-    private UserCredentialRepository userCredentialRepository;
+    private MusicFolderRepository musicFolderRepository;
 
     @Autowired
     MediaFileDao mediaFileDao;
 
     @Autowired
-    MusicFolderDao musicFolderDao;
+    JdbcTemplate jdbcTemplate;
 
-    private final String TEST_FOLDER_PATH = "testFolderPath";
+    @TempDir
+    private static Path tempDir;
+
+    @TempDir
+    private Path musicFolderDir;
 
     private final String TEST_USER_NAME = "testUserForBookmark";
 
     private MediaFile mediaFile;
+
+    private MusicFolder testFolder;
+
     private List<MediaFile> mediaFileList = new ArrayList<MediaFile>();
 
-    @Before
+    @BeforeAll
+    public static void beforeAll() {
+        System.setProperty("airsonic.home", tempDir.toString());
+    }
+
+    @BeforeEach
     public void setup() {
         // clean
-        getJdbcTemplate().execute("delete from media_file");
-        getJdbcTemplate().execute("delete from bookmark");
+        jdbcTemplate.execute("delete from media_file");
+        jdbcTemplate.execute("delete from bookmark");
 
         // music folder
-        MusicFolder musicFolder = new MusicFolder(Paths.get(TEST_FOLDER_PATH), "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
-        musicFolderDao.createMusicFolder(musicFolder);
+        testFolder = new MusicFolder(musicFolderDir, "name", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        musicFolderRepository.save(testFolder);
 
         // media file
-        MusicFolder folder = musicFolderDao.getAllMusicFolders().get(0);
         MediaFile baseFile = new MediaFile();
-        baseFile.setFolderId(folder.getId());
+        baseFile.setFolderId(testFolder.getId());
         baseFile.setPath("bookmark.wav");
         baseFile.setMediaType(MediaType.MUSIC);
         baseFile.setIndexPath("test.cue");
@@ -99,23 +119,21 @@ public class BookmarkRepositoryTest extends DaoTestCaseBean2 {
         baseFile.setPath("bookmark2.wav");
         baseFile.setIndexPath("test2.cue");
         mediaFileDao.createOrUpdateMediaFile(baseFile, file -> {});
-        mediaFile = mediaFileDao.getMediaFilesByRelativePathAndFolderId("bookmark.wav", folder.getId()).get(0);
+        mediaFile = mediaFileDao.getMediaFilesByRelativePathAndFolderId("bookmark.wav", testFolder.getId()).get(0);
         mediaFileList.add(mediaFile);
-        mediaFileList.add(mediaFileDao.getMediaFilesByRelativePathAndFolderId("bookmark2.wav", folder.getId()).get(0));
+        mediaFileList.add(mediaFileDao.getMediaFilesByRelativePathAndFolderId("bookmark2.wav", testFolder.getId()).get(0));
 
         // user
         User user = new User(TEST_USER_NAME, "sindre@activeobjects.no", false, 1000L, 2000L, 3000L, Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));
-        UserCredential uc = new UserCredential(user, TEST_USER_NAME, "secret", "noop", App.AIRSONIC);
         userRepository.saveAndFlush(user);
-        userCredentialRepository.saveAndFlush(uc);
     }
-    @After
+
+    @AfterEach
     public void clean() {
         userRepository.deleteById(TEST_USER_NAME);
-        getJdbcTemplate().execute("delete from media_file");
-        MusicFolder folder = musicFolderDao.getMusicFolderForPath(TEST_FOLDER_PATH);
-        musicFolderDao.deleteMusicFolder(folder.getId());
-        getJdbcTemplate().execute("delete from bookmark");
+        jdbcTemplate.execute("delete from media_file");
+        musicFolderRepository.delete(testFolder);
+        jdbcTemplate.execute("delete from bookmark");
     }
 
 

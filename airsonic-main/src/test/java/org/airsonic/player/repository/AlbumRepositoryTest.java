@@ -116,6 +116,8 @@ public class AlbumRepositoryTest {
         public void testMarkNonPresent() {
 
             // given
+
+            long count = albumRepository.findByPresentFalse().size();
             Instant now = Instant.now().minusSeconds(3600);
             Album album1 = new Album("path1", "name1", "artist1", Instant.now(), now, true, 1);
             Album album2 = new Album("path2", "name2", "artist1", Instant.now(), now, false, 2);
@@ -126,14 +128,14 @@ public class AlbumRepositoryTest {
             albumRepository.save(album2);
             albumRepository.save(album3);
             albumRepository.save(album4);
-            assertEquals(2, albumRepository.findByPresentFalse().size());
+            assertEquals(count + 2, albumRepository.findByPresentFalse().size());
 
             // when
             albumRepository.markNonPresent(now.plusSeconds(1));
 
             // then
             List<Album> result = albumRepository.findByPresentFalse();
-            assertEquals(3, result.size());
+            assertEquals(count + 3, result.size());
             assertFalse(result.contains(album3));
         }
 

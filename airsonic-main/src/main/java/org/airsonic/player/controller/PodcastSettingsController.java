@@ -21,15 +21,12 @@ package org.airsonic.player.controller;
 
 import org.airsonic.player.command.PodcastSettingsCommand;
 import org.airsonic.player.command.PodcastSettingsCommand.PodcastRule;
-import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.PodcastChannel;
 import org.airsonic.player.domain.PodcastChannelRule;
 import org.airsonic.player.service.MediaFolderService;
 import org.airsonic.player.service.PodcastService;
 import org.airsonic.player.service.SettingsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -53,7 +50,6 @@ import static java.util.stream.Collectors.toMap;
 @Controller
 @RequestMapping("/podcastSettings")
 public class PodcastSettingsController {
-    private static final Logger LOG = LoggerFactory.getLogger(PodcastSettingsController.class);
 
     @Autowired
     private SettingsService settingsService;
@@ -108,24 +104,7 @@ public class PodcastSettingsController {
         settingsService.save();
         podcastService.scheduleDefault();
 
-        boolean success = true;
-        MusicFolder podcastFolder = mediaFolderService.getMusicFolderById(command.getFolderId(), true, true);
-        if (podcastFolder != null && podcastFolder.getType() == Type.PODCAST) {
-            try {
-                mediaFolderService.getAllMusicFolders(true, true).stream()
-                        .filter(f -> f.getType() == Type.PODCAST)
-                        .filter(f -> !f.getId().equals(podcastFolder.getId()))
-                        .forEach(f -> {
-                            f.setEnabled(false);
-                            mediaFolderService.updateMusicFolder(f);
-                        });
-                podcastFolder.setEnabled(true);
-                mediaFolderService.updateMusicFolder(podcastFolder);
-            } catch (Exception e) {
-                LOG.warn("Could not enable podcast music folder id {} ({})", podcastFolder.getId(), podcastFolder.getName(), e);
-                success = false;
-            }
-        }
+        boolean success = mediaFolderService.enablePodcastFolder(command.getFolderId());
 
         command.getRules().stream().filter(r -> !r.getId().equals(-1)).forEach(r -> {
             if (r.getDelete()) {

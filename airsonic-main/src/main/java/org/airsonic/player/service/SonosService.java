@@ -24,11 +24,11 @@ import com.google.common.cache.CacheBuilder;
 import com.sonos.services._1.*;
 import com.sonos.services._1_1.CustomFault;
 import com.sonos.services._1_1.SonosSoap;
-import org.airsonic.player.dao.SonosLinkDao;
 import org.airsonic.player.domain.AlbumListType;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.Playlist;
 import org.airsonic.player.domain.SonosLink;
+import org.airsonic.player.repository.SonosLinkRepository;
 import org.airsonic.player.service.search.IndexType;
 import org.airsonic.player.service.sonos.SonosHelper;
 import org.airsonic.player.service.sonos.SonosLinkSecurityInterceptor;
@@ -48,6 +48,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.ws.Holder;
 import javax.xml.ws.WebServiceContext;
@@ -69,6 +70,7 @@ import static org.airsonic.player.service.sonos.SonosServiceRegistration.Authent
  * @version $Id$
  */
 @Service
+@Transactional
 public class SonosService implements SonosSoap {
 
     private static final Logger LOG = LoggerFactory.getLogger(SonosService.class);
@@ -114,7 +116,7 @@ public class SonosService implements SonosSoap {
     @Autowired
     private SonosServiceRegistration registration;
     @Autowired
-    private SonosLinkDao sonosLinkDao;
+    private SonosLinkRepository sonosLinkRepository;
 
     /**
      * The context for the request. This is used to get the Auth information
@@ -153,7 +155,7 @@ public class SonosService implements SonosSoap {
                     messagesCodes.add("sonossettings.sonoslink.success");
                     // Remove old links.
                     if (!enabled) {
-                        sonosLinkDao.removeAll();
+                        sonosLinkRepository.deleteAll();
                         messagesCodes.add("sonossettings.sonoslink.removed");
                     }
                     break;
@@ -588,17 +590,17 @@ public class SonosService implements SonosSoap {
     }
 
     public boolean addSonosAuthorization(String username, String linkcode, String householdId, String sonosApp, Instant initiated) {
-        if (sonosLinkDao.findByLinkcode(linkcode) != null) {
+        if (sonosLinkRepository.findById(linkcode).isPresent()) {
             return false;
         }
 
-        sonosLinkDao.create(new SonosLink(username, linkcode, householdId, sonosApp, initiated));
+        sonosLinkRepository.save(new SonosLink(username, linkcode, householdId, sonosApp, initiated));
         sonosLinkCache.invalidate(linkcode);
         return true;
     }
 
     public List<SonosLink> getExistingSonosLinks() {
-        return sonosLinkDao.getAll();
+        return sonosLinkRepository.findAll();
     }
 
     public Map<String, Triple<String, String, Instant>> getPendingSonosLinks() {
@@ -649,12 +651,10 @@ public class SonosService implements SonosSoap {
     public DeviceAuthTokenResult getDeviceAuthToken(String householdId, String linkCode, String linkDeviceId, String callbackPath) throws CustomFault {
         LOG.debug("Get device auth token for householdid {} and linkcode {}.", householdId, linkCode);
 
-        SonosLink sonosLink = sonosLinkDao.findByLinkcode(linkCode);
-        if (sonosLink != null && householdId.equals(sonosLink.getHouseholdId())) {
-            return createAuthToken(sonosLink, getRequest());
-        } else {
-            throw new SonosSoapFault.NotLinkedRetry();
-        }
+        Optional<DeviceAuthTokenResult> result = sonosLinkRepository.findById(linkCode)
+            .filter(sonosLink -> sonosLink.getHouseholdId().equals(householdId))
+            .map(link -> createAuthToken(link, getRequest()));
+        return result.orElseThrow(() -> new SonosSoapFault.NotLinkedRetry());
     }
 
     @Override
@@ -692,7 +692,7 @@ public class SonosService implements SonosSoap {
         Pair<SonosLink, String> jwtSonosLink = sonosHelper.getSonosLinkFromJWT(expiredCreds.getLoginToken().getToken());
         if (StringUtils.equals(jwtSonosLink.getRight(), expiredCreds.getLoginToken().getKey())
                 && StringUtils.equals(jwtSonosLink.getLeft().getHouseholdId(), expiredCreds.getLoginToken().getHouseholdId())
-                && jwtSonosLink.getLeft().equals(sonosLinkDao.findByLinkcode(jwtSonosLink.getLeft().getLinkcode()))) {
+                && jwtSonosLink.getLeft().equals(sonosLinkRepository.findById(jwtSonosLink.getLeft().getLinkcode()).orElse(null))) {
             return createAuthToken(jwtSonosLink.getLeft(), request);
         } else {
             throw new SonosSoapFault.LoginInvalid();
@@ -718,21 +718,5 @@ public class SonosService implements SonosSoap {
         UserInfo info = new UserInfo();
         info.setNickname(getUsername());
         return info;
-    }
-
-    public void setMediaFileService(MediaFileService mediaFileService) {
-        this.mediaFileService = mediaFileService;
-    }
-
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
-    }
-
-    public void setUpnpService(UPnPService upnpService) {
-        this.upnpService = upnpService;
-    }
-
-    public void setPlaylistService(PlaylistService playlistService) {
-        this.playlistService = playlistService;
     }
 }

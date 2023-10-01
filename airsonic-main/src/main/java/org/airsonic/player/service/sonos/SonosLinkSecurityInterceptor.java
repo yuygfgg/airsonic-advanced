@@ -5,9 +5,9 @@ import com.google.common.collect.Sets;
 import com.sonos.services._1.Credentials;
 import com.sonos.services._1.DeviceAuthTokenResult;
 import com.sonos.services._1.RefreshAuthTokenResponse;
-import org.airsonic.player.dao.SonosLinkDao;
 import org.airsonic.player.domain.SonosLink;
 import org.airsonic.player.domain.User;
+import org.airsonic.player.repository.SonosLinkRepository;
 import org.airsonic.player.security.JWTAuthenticationProvider;
 import org.airsonic.player.security.JWTAuthenticationProvider.VerificationCheck;
 import org.airsonic.player.security.JWTAuthenticationToken;
@@ -175,7 +175,7 @@ public class SonosLinkSecurityInterceptor extends AbstractSoapInterceptor {
     @Component
     public static class SonosJWTVerification implements VerificationCheck {
         @Autowired
-        private SonosLinkDao sonosLinkDao;
+        private SonosLinkRepository sonosLinkRepository;
         @Autowired
         private SettingsService settingsService;
 
@@ -187,7 +187,7 @@ public class SonosLinkSecurityInterceptor extends AbstractSoapInterceptor {
                 return;
             }
             String linkcode = jwt.getClaim(CLAIM_LINKCODE).asString();
-            SonosLink sonosLink = sonosLinkDao.findByLinkcode(linkcode);
+            SonosLink sonosLink = sonosLinkRepository.findById(linkcode).orElseThrow(() -> new InsufficientAuthenticationException("Sonos linkcode is not valid"));
 
             if (!StringUtils.equals(jwt.getSubject(), sonosLink.getUsername())
                     || !StringUtils.equals(linkcode, sonosLink.getLinkcode())

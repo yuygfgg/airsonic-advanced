@@ -14,10 +14,13 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
+
+import javax.persistence.*;
 
 import java.time.Instant;
 
@@ -27,45 +30,53 @@ import java.time.Instant;
  * @author Sindre Mehus
  * @version $Revision: 1.2 $ $Date: 2005/12/25 13:48:46 $
  */
+@Entity
+@Table(name = "internet_radio")
 public class InternetRadio {
 
+    // The system-generated ID.
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    // The user-defined name.
+    @Column(name = "name", nullable = false)
     private String name;
+
+    // The stream URL for the station.
+    @Column(name = "stream_url", nullable = false)
     private String streamUrl;
+
+    // The home page URL for the station.
+    @Column(name = "homepage_url")
     private String homepageUrl;
-    private boolean isEnabled;
+
+    // Whether the station is enabled.
+    @Column(name = "enabled")
+    private boolean enabled;
+
+    // When the corresponding database entry was last changed.
+    @Column(name = "changed", nullable = false)
     private Instant changed;
 
-    /**
-     * Creates a new internet radio station.
-     *
-     * @param id          The system-generated ID.
-     * @param name        The user-defined name.
-     * @param streamUrl   The stream URL for the station.
-     * @param homepageUrl The home page URL for the station.
-     * @param isEnabled   Whether the station is enabled.
-     * @param changed     When the corresponding database entry was last changed.
-     */
-    public InternetRadio(Integer id, String name, String streamUrl, String homepageUrl, boolean isEnabled, Instant changed) {
-        this.id = id;
-        this.name = name;
-        this.streamUrl = streamUrl;
-        this.homepageUrl = homepageUrl;
-        this.isEnabled = isEnabled;
-        this.changed = changed;
+    public InternetRadio() {
     }
 
     /**
      * Creates a new internet radio station.
      *
-     * @param name        The user-defined name.
-     * @param streamUrl   The URL for the station.
+     * @param name      The user-defined name.
+     * @param streamUrl  The stream URL for the station.
      * @param homepageUrl The home page URL for the station.
-     * @param isEnabled   Whether the station is enabled.
-     * @param changed     When the corresponding database entry was last changed.
+     * @param enabled Whether the station is enabled.
+     * @param changed   When the corresponding database entry was last changed.
      */
-    public InternetRadio(String name, String streamUrl, String homepageUrl, boolean isEnabled, Instant changed) {
-        this(null, name, streamUrl, homepageUrl, isEnabled, changed);
+    public InternetRadio(String name, String streamUrl, String homepageUrl, boolean enabled, Instant changed) {
+        this.name = name;
+        this.streamUrl = streamUrl;
+        this.homepageUrl = homepageUrl;
+        this.enabled = enabled;
+        this.changed = changed;
     }
 
     /**
@@ -75,6 +86,15 @@ public class InternetRadio {
      */
     public Integer getId() {
         return id;
+    }
+
+    /**
+     * Sets the user-defined id.
+     *
+     * @param id The user-defined id.
+     */
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     /**
@@ -137,7 +157,7 @@ public class InternetRadio {
      * @return Whether the radio station is enabled.
      */
     public boolean isEnabled() {
-        return isEnabled;
+        return enabled;
     }
 
     /**
@@ -146,7 +166,7 @@ public class InternetRadio {
      * @param enabled Whether the radio station is enabled.
      */
     public void setEnabled(boolean enabled) {
-        isEnabled = enabled;
+        this.enabled = enabled;
     }
 
     /**

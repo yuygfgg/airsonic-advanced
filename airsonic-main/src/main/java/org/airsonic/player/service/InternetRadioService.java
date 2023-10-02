@@ -3,21 +3,28 @@ package org.airsonic.player.service;
 import chameleon.playlist.*;
 import org.airsonic.player.domain.InternetRadio;
 import org.airsonic.player.domain.InternetRadioSource;
+import org.airsonic.player.repository.InternetRadioRepository;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.Instant;
 import java.util.*;
 
 @Service
 public class InternetRadioService {
 
     private static final Logger LOG = LoggerFactory.getLogger(InternetRadioService.class);
+
+    @Autowired
+    private InternetRadioRepository internetRadioRepository;
 
     /**
      * The maximum number of source URLs in a remote playlist.
@@ -239,6 +246,80 @@ public class InternetRadioService {
 
         // Return the last connection that did not redirect.
         return connection;
+    }
+
+    /**
+     * Retrieve all internet radios. This method is read-only.
+     *
+     * @return a list of internet radios
+     */
+    @Transactional(readOnly = true)
+    public List<InternetRadio> getAllInternetRadios() {
+        return internetRadioRepository.findAll();
+    }
+
+    /**
+     * Retrieve all enabled internet radios.
+     *
+     * @return a list of enabled internet radios
+     */
+    public List<InternetRadio> getEnabledInternetRadios() {
+        return internetRadioRepository.findAllByEnabled(true);
+    }
+
+    /**
+     * Delete an internet radio by its id.
+     *
+     * @param id an internet radio id
+     */
+    @Transactional
+    public void deleteInternetRadioById(Integer id) {
+        internetRadioRepository.findById(id).ifPresentOrElse(radio -> {
+            internetRadioRepository.delete(radio);
+            LOG.info("Deleted internet radio with id {}", id);
+        },
+            () -> {
+                LOG.warn("Internet radio with id {} not found", id);
+            });
+    }
+
+    /**
+     * Update an internet radio.
+     *
+     * @param id          an internet radio id
+     * @param name        an internet radio name
+     * @param streamUrl   an internet radio stream url
+     * @param homepageUrl an internet radio homepage url (optional)
+     * @param isEnabled   whether the internet radio is enabled
+     */
+    @Transactional
+    public void updateInternetRadio(Integer id, String name, String streamUrl, String homepageUrl, boolean isEnabled) {
+        internetRadioRepository.findById(id).ifPresentOrElse(radio -> {
+            radio.setName(name);
+            radio.setStreamUrl(streamUrl);
+            radio.setHomepageUrl(homepageUrl);
+            radio.setEnabled(isEnabled);
+            radio.setChanged(Instant.now());
+            internetRadioRepository.save(radio);
+            LOG.info("Updated internet radio with id {}", id);
+        },
+            () -> {
+                LOG.warn("Internet radio with id {} not found", id);
+            });
+    }
+
+    /**
+     * Create an internet radio.
+     *
+     * @param name        an internet radio name
+     * @param streamUrl   an internet radio stream url
+     * @param homepageUrl an internet radio homepage url (optional)
+     * @param isEnabled   whether the internet radio is enabled
+     */
+    @Transactional
+    public void createInternetRadio(String name, String streamUrl, String homepageUrl, boolean isEnabled) {
+        internetRadioRepository.save(new InternetRadio(name, streamUrl, homepageUrl, isEnabled, Instant.now()));
+        LOG.info("Created internet radio station with name {}", name);
     }
 
     /**

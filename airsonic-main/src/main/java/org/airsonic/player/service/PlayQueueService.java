@@ -3,7 +3,6 @@ package org.airsonic.player.service;
 import com.google.common.collect.ImmutableMap;
 import org.airsonic.player.ajax.MediaFileEntry;
 import org.airsonic.player.ajax.PlayQueueInfo;
-import org.airsonic.player.dao.InternetRadioDao;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.PlayQueueDao;
 import org.airsonic.player.domain.InternetRadio;
@@ -17,6 +16,7 @@ import org.airsonic.player.domain.PodcastEpisode;
 import org.airsonic.player.domain.PodcastStatus;
 import org.airsonic.player.domain.RandomSearchCriteria;
 import org.airsonic.player.domain.SavedPlayQueue;
+import org.airsonic.player.repository.InternetRadioRepository;
 import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -55,7 +55,7 @@ public class PlayQueueService {
     @Autowired
     private PlayQueueDao playQueueDao;
     @Autowired
-    private InternetRadioDao internetRadioDao;
+    private InternetRadioRepository internetRadioRepository;
     @Autowired
     private JWTSecurityService jwtSecurityService;
     @Autowired
@@ -182,14 +182,15 @@ public class PlayQueueService {
      * @throws Exception
      */
     public void playInternetRadio(Player player, int id, Integer index, String sessionId) throws Exception {
-        InternetRadio radio = internetRadioDao.getInternetRadioById(id);
-        if (!radio.isEnabled()) {
-            throw new Exception("Radio is not enabled");
-        } else {
-            internetRadioService.clearInternetRadioSourceCache(radio.getId());
-        }
-
-        doPlay(player, Collections.emptyList(), radio, sessionId);
+        internetRadioRepository.findByIdAndEnabledTrue(id).ifPresentOrElse(
+            radio -> {
+                internetRadioService.clearInternetRadioSourceCache(radio.getId());
+                doPlay(player, Collections.emptyList(), radio, sessionId);
+            },
+            () -> {
+                throw new RuntimeException("Radio is not enabled");
+            }
+        );
     }
 
     /**

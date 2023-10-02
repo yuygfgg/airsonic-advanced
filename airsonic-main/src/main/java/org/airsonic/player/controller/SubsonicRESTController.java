@@ -158,6 +158,8 @@ public class SubsonicRESTController {
     private UserService userService;
     @Autowired
     private PersonalSettingsService personalSettingsService;
+    @Autowired
+    private InternetRadioService internetRadioService;
 
     private final JAXBWriter jaxbWriter = new JAXBWriter();
 
@@ -1702,7 +1704,7 @@ public class SubsonicRESTController {
         request = wrapRequest(request);
 
         InternetRadioStations result = new InternetRadioStations();
-        for (InternetRadio radio : settingsService.getAllInternetRadios()) {
+        for (InternetRadio radio : internetRadioService.getEnabledInternetRadios()) {
             InternetRadioStation i = new InternetRadioStation();
             i.setId(String.valueOf(radio.getId()));
             i.setName(radio.getName());

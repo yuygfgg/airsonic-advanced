@@ -20,7 +20,7 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.InternetRadio;
-import org.airsonic.player.service.SettingsService;
+import org.airsonic.player.service.InternetRadioService;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -32,7 +32,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,14 +46,14 @@ import java.util.Map;
 public class InternetRadioSettingsController {
 
     @Autowired
-    private SettingsService settingsService;
+    private InternetRadioService internetRadioService;
 
     @GetMapping
     public String doGet(Model model) {
 
         Map<String, Object> map = new HashMap<>();
 
-        map.put("internetRadios", settingsService.getAllInternetRadios(true));
+        map.put("internetRadios", internetRadioService.getAllInternetRadios());
 
         model.addAttribute("model", map);
         return "internetRadioSettings";
@@ -73,7 +72,7 @@ public class InternetRadioSettingsController {
     }
 
     private String handleParameters(HttpServletRequest request) {
-        List<InternetRadio> radios = settingsService.getAllInternetRadios(true);
+        List<InternetRadio> radios = internetRadioService.getAllInternetRadios();
         for (InternetRadio radio : radios) {
             Integer id = radio.getId();
             String streamUrl = getParameter(request, "streamUrl", id);
@@ -83,7 +82,7 @@ public class InternetRadioSettingsController {
             boolean delete = getParameter(request, "delete", id) != null;
 
             if (delete) {
-                settingsService.deleteInternetRadio(id);
+                internetRadioService.deleteInternetRadioById(id);
             } else {
                 if (name == null) {
                     return "internetradiosettings.noname";
@@ -91,7 +90,7 @@ public class InternetRadioSettingsController {
                 if (streamUrl == null) {
                     return "internetradiosettings.nourl";
                 }
-                settingsService.updateInternetRadio(new InternetRadio(id, name, streamUrl, homepageUrl, enabled, Instant.now()));
+                internetRadioService.updateInternetRadio(id, name, streamUrl, homepageUrl, enabled);
             }
         }
 
@@ -107,7 +106,7 @@ public class InternetRadioSettingsController {
             if (streamUrl == null) {
                 return "internetradiosettings.nourl";
             }
-            settingsService.createInternetRadio(new InternetRadio(name, streamUrl, homepageUrl, enabled, Instant.now()));
+            internetRadioService.createInternetRadio(name, streamUrl, homepageUrl, enabled);
         }
 
         return null;

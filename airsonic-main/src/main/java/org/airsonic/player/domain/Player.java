@@ -77,7 +77,7 @@ public class Player {
     @Enumerated(EnumType.STRING)
     private TranscodeScheme transcodeScheme = TranscodeScheme.OFF;
 
-    @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "player_transcoding",
         joinColumns = {@JoinColumn(name = "player_id")},

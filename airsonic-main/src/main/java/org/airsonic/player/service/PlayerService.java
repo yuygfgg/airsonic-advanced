@@ -175,7 +175,7 @@ public class PlayerService {
             player = new Player();
             player.setLastSeen(Instant.now());
             populatePlayer(player, username, request, isStreamRequest);
-            createPlayer(player);
+            player = createPlayer(player);
         } else if (populatePlayer(player, username, request, isStreamRequest)) {
             updatePlayer(player);
         }
@@ -398,8 +398,7 @@ public class PlayerService {
         if (player.getName() != null) {
             clone.setName(player.getName() + " (copy)");
         }
-        createPlayer(clone);
-        return clone;
+        return createPlayer(clone);
     }
 
 
@@ -408,7 +407,7 @@ public class PlayerService {
      *
      * @param player The player to create.
      */
-    public void createPlayer(Player player) {
+    public Player createPlayer(Player player) {
 
         // Set default transcodings.
         List<Transcoding> defaultActiveTranscodings = transcodingRepository.findByDefaultActiveTrue();
@@ -444,6 +443,7 @@ public class PlayerService {
             asyncWebSocketClient.sendToUser(saved.getUsername(), "/queue/players/created",
                     ImmutableMap.of("id", saved.getId(), "description", saved.getShortDescription(), "tech", saved.getTechnology()));
         }
+        return saved;
     }
 
     /**
@@ -463,9 +463,7 @@ public class PlayerService {
             player.setIpAddress(remoteAddress);
         }
         player.setUsername(User.USERNAME_GUEST);
-        createPlayer(player);
-
-        return player;
+        return createPlayer(player);
     }
 
     /**

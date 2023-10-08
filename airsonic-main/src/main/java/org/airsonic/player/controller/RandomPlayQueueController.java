@@ -28,7 +28,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.ServletRequestUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -212,7 +211,9 @@ public class RandomPlayQueueController {
         if (StringUtils.equalsIgnoreCase(format, "any")) format = null;
 
         // Handle the music folder filter
-        List<MusicFolder> musicFolders = getMusicFolders(request);
+        String username = securityService.getCurrentUsername(request);
+        Integer selectedMusicFolderId = ServletRequestUtils.getRequiredIntParameter(request, "musicFolderId");
+        List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username, selectedMusicFolderId);
 
         // Do we add to the current playqueue or do we replace it?
         boolean shouldAddToPlaylist = request.getParameter("addToPlaylist") != null;
@@ -234,15 +235,10 @@ public class RandomPlayQueueController {
                 doesShowUnstarredSongs,
                 format
         );
-        Player player = playerService.getPlayer(request, response);
+        Player player = playerService.getPlayer(request, response, username);
         playQueueService.addRandomCriteria(player, shouldAddToPlaylist, criteria, autoRandom != null);
 
         return "redirect:more.view";
     }
 
-    private List<MusicFolder> getMusicFolders(HttpServletRequest request) throws ServletRequestBindingException {
-        String username = securityService.getCurrentUsername(request);
-        Integer selectedMusicFolderId = ServletRequestUtils.getRequiredIntParameter(request, "musicFolderId");
-        return mediaFolderService.getMusicFoldersForUser(username, selectedMusicFolderId);
-    }
 }

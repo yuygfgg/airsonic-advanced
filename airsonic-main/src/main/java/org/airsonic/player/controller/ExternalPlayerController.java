@@ -74,6 +74,8 @@ public class ExternalPlayerController {
     private JWTSecurityService jwtSecurityService;
     @Autowired
     private VideoPlayerController videoPlayerController;
+    @Autowired
+    private SecurityService securityService;
 
     @GetMapping("/{shareName}")
     protected ModelAndView handleRequestInternal(
@@ -103,7 +105,9 @@ public class ExternalPlayerController {
             shareService.updateShare(share);
         }
 
-        Player player = playerService.getGuestPlayer(request);
+        // create guest user if it doesn't exist
+        securityService.createGuestUserIfNotExists();
+        Player player = playerService.getGuestPlayer(request.getRemoteAddr());
 
         Instant expires = authentication instanceof JWTAuthenticationToken ? JWTSecurityService.getExpiration((JWTAuthenticationToken) authentication) : null;
 

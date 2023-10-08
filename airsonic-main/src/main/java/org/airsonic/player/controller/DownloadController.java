@@ -113,7 +113,7 @@ public class DownloadController {
             @RequestParam(required = false, name = "i") List<Integer> indices,
             ServletWebRequest swr) throws Exception {
         User user = securityService.getUserByName(p.getName());
-        Player transferPlayer = playerService.getPlayer(swr.getRequest(), swr.getResponse(), false, false);
+        Player transferPlayer = playerService.getPlayer(swr.getRequest(), swr.getResponse(), user.getUsername(), false, false);
         String defaultDownloadName = null;
         ResponseDTO response = null;
 

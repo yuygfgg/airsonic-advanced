@@ -22,5 +22,19 @@ import org.airsonic.player.domain.Player;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
+import java.util.List;
+
 @Repository
-public interface PlayerRepository extends JpaRepository<Player, Integer> {}
+public interface PlayerRepository extends JpaRepository<Player, Integer> {
+
+    public List<Player> findByUsername(String username);
+
+    public List<Player> findByUsernameAndClientIdIsNull(String username);
+
+    public List<Player> findByUsernameAndClientId(String username, String clientId);
+
+    public void deleteAllByNameIsNullAndClientIdIsNullAndLastSeenIsNull();
+
+    public void deleteAllByNameIsNullAndClientIdIsNullAndLastSeenBefore(Instant lastSeen);
+}

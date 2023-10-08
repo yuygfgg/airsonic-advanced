@@ -82,7 +82,7 @@ public class MoreController {
         };
         String uploadDirectory = settingsService.resolveContextualString(settingsService.getUploadsFolder(), contextSupplier);
 
-        Player player = playerService.getPlayer(request, response);
+        Player player = playerService.getPlayer(request, response, user.getUsername());
         ModelAndView result = new ModelAndView();
         result.addObject("model", map);
         map.put("user", user);

@@ -98,7 +98,7 @@ public class VideoPlayerController {
         }
         UserSettings settings = personalSettingsService.getUserSettings(user.getUsername());
 
-        Integer playerId = playerService.getPlayer(request, response).getId();
+        Integer playerId = playerService.getPlayer(request, response, user.getUsername()).getId();
         String url = NetworkUtil.getBaseUrl(request);
         boolean streamable = isStreamable(file);
         boolean castable = isCastable(file);

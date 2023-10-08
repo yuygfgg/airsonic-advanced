@@ -143,7 +143,7 @@ public class LeftController {
                 .findAny().orElse(null);
         MusicFolderContent musicFolderContent = musicIndexService.getMusicFolderContent(musicFoldersToUse, refresh);
 
-        map.put("player", playerService.getPlayer(request, response));
+        map.put("player", playerService.getPlayer(request, response, username));
         map.put("scanning", mediaScannerService.isScanning());
         map.put("musicFolders", allMusicFolders);
         map.put("selectedMusicFolder", selectedMusicFolder);

@@ -67,7 +67,7 @@ public class PlaylistController {
         User user = securityService.getCurrentUser(request);
         String username = user.getUsername();
         UserSettings userSettings = personalSettingsService.getUserSettings(username);
-        Player player = playerService.getPlayer(request, response);
+        Player player = playerService.getPlayer(request, response, username);
         Playlist playlist = playlistService.getPlaylist(id);
         if (playlist == null) {
             return new ModelAndView(new RedirectView("notFound"));

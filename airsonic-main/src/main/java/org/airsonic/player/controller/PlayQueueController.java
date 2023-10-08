@@ -77,7 +77,8 @@ public class PlayQueueController {
     @GetMapping("/player")
     @ResponseBody
     public Map<String, Object> getPlayer(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        Player player = playerService.getPlayer(request, response);
+        String username = securityService.getCurrentUsername(request);
+        Player player = playerService.getPlayer(request, response, username);
         return ImmutableMap.of("id", player.getId(), "description", player.getShortDescription(), "tech", player.getTechnology());
     }
 }

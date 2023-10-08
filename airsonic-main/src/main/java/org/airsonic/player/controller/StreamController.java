@@ -111,12 +111,13 @@ public class StreamController {
             @RequestParam Optional<String> path,
             @RequestParam(required = false) Double offsetSeconds,
             ServletWebRequest swr) throws Exception {
-        Player player = playerService.getPlayer(swr.getRequest(), swr.getResponse(), false, true);
-        User user = securityService.getUserByName(player.getUsername());
 
+        User user = securityService.getCurrentUser(swr.getRequest());
         if (!(authentication instanceof JWTAuthenticationToken) && !user.isStreamRole()) {
             throw new AccessDeniedException("Streaming is forbidden for user " + user.getUsername());
         }
+
+        Player player = playerService.getPlayer(swr.getRequest(), swr.getResponse(), user.getUsername(), false, true);
 
         Long expectedSize = null;
 

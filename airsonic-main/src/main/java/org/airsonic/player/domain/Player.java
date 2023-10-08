@@ -22,20 +22,7 @@ package org.airsonic.player.domain;
 
 import org.apache.commons.lang.StringUtils;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -100,6 +87,26 @@ public class Player {
 
     @Transient
     private PlayQueue playQueue;
+
+    public Player() {
+    }
+
+    /**
+     * Creates a new player.
+     *
+     * @param name The user-defined player name.  * @param clientId The third-party client ID (used if this player is managed over the Airsonic REST API)
+     * @param technology The player "technology", e.g., web, external or jukebox.
+     * @param type The player type, e.g., WinAmp, iTunes.
+     * @param username The logged-in user.
+     * @param ipAddress The IP address of the player.
+     */
+    public Player(String name, String clientId, PlayerTechnology technology, String type, String username, String ipAddress) {
+        this.name = name;
+        this.technology = technology;
+        this.type = type;
+        this.username = username;
+        this.ipAddress = ipAddress;
+    }
 
     /**
      * Returns the player ID.

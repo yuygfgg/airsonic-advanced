@@ -22,6 +22,7 @@ package org.airsonic.player.controller;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.VersionService;
+import org.airsonic.player.util.StringUtil;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -64,7 +66,9 @@ public class HelpController {
     private SecurityService securityService;
 
     @GetMapping
-    protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) {
+    protected ModelAndView handleRequestInternal(HttpServletRequest request,
+                                                 HttpServletResponse response,
+                                                 Locale locale) {
         Map<String, Object> map = new HashMap<>();
 
         if (versionService.isNewFinalVersionAvailable()) {
@@ -73,6 +77,8 @@ public class HelpController {
         } else if (versionService.isNewBetaVersionAvailable()) {
             map.put("newVersionAvailable", true);
             map.put("latestVersion", versionService.getLatestBetaVersion());
+        } else {
+            map.put("newVersionAvailable", false);
         }
 
         long totalMemory = Runtime.getRuntime().totalMemory();
@@ -88,8 +94,8 @@ public class HelpController {
         map.put("buildDate", versionService.getLocalBuildDate());
         map.put("buildNumber", versionService.getLocalBuildNumber());
         map.put("serverInfo", serverInfo);
-        map.put("usedMemory", totalMemory - freeMemory);
-        map.put("totalMemory", totalMemory);
+        map.put("usedMemory", StringUtil.formatBytes(totalMemory - freeMemory, locale));
+        map.put("totalMemory", StringUtil.formatBytes(totalMemory, locale));
         Path logFile = Paths.get(settingsService.getLogFile());
         List<String> latestLogEntries = getLatestLogEntries(logFile);
         map.put("logEntries", latestLogEntries);

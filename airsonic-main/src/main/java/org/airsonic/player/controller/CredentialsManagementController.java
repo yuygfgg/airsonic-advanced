@@ -22,7 +22,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -136,7 +135,7 @@ public class CredentialsManagementController {
         return "redirect:credentialsSettings.view";
     }
 
-    @PutMapping
+    @PostMapping("update")
     protected String updateCreds(Principal user,
             @ModelAttribute("command") @Validated(value = { Default.class, CredentialUpdateChecks.class }) CredentialsManagementCommand cmc,
             BindingResult br, RedirectAttributes redirectAttributes) {
@@ -148,7 +147,7 @@ public class CredentialsManagementController {
 
         redirectAttributes.addFlashAttribute("settings_toast", result);
 
-        return "redirect:credentialsSettings.view";
+        return "redirect:/credentialsSettings.view";
     }
 
     @PostMapping(path = "/admin")

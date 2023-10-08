@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+
+<html><head>
+    <th:block th:replace="head" />
+    <th:block th:replace="jquery" />
+</head>
+<body class="mainframe bgcolor1">
+
+<th:block th:replace="settingsHeader::header(cat='internetRadio',toast=${settings_toast})" />
+
+<form method="post" action="internetRadioSettings.view">
+    <input
+            type="hidden"
+            th:name="${_csrf.parameterName}"
+            th:value="${_csrf.token}" />
+<table class="indent">
+    <tr>
+        <th th:text="#{internetradiosettings.name}"></th>
+        <th th:text="#{internetradiosettings.streamurl}"></th>
+        <th th:text="#{internetradiosettings.homepageurl}"></th>
+        <th style="padding-left:1em" th:text="#{internetradiosettings.enabled}"></th>
+        <th style="padding-left:1em" th:text="#{common.delete}"></th>
+    </tr>
+
+    <tr th:each="radio:${model.internetRadios}">
+        <td><input type="text" th:name="|name[${radio.id}]|" size="20" th:value="${radio.name}"/></td>
+        <td><input type="text" th:name="|streamUrl[${radio.id}]|" size="40" th:value="${radio.streamUrl}"/></td>
+        <td><input type="text" th:name="|homepageUrl[${radio.id}]|" size="40" th:value="${radio.homepageUrl}"/></td>
+        <td align="center" style="padding-left:1em"><input type="checkbox" th:checked="${radio.enabled}" th:name="|enabled[${radio.id}]|" /></td>
+        <td align="center" style="padding-left:1em"><input type="checkbox" th:name="|delete[${radio.id}]|" /></td>
+    </tr>
+
+    <tr th:if="${!#lists.isEmpty(model.internetRadios)}">
+        <th colspan="5" align="left" style="padding-top:1em" th:text="#{internetradiosettings.add}"></th>
+    </tr>
+
+    <tr>
+        <td><input type="text" name="name" size="20" th:placeholder="#{internetradiosettings.name}"/></td>
+        <td><input type="text" name="streamUrl" size="40" th:placeholder="#{internetradiosettings.streamurl}"/></td>
+        <td><input type="text" name="homepageUrl" size="40" th:placeholder="#{internetradiosettings.homepageurl}"/></td>
+        <td align="center" style="padding-left:1em"><input name="enabled" checked type="checkbox"/></td>
+        <td/>
+    </tr>
+
+    <tr>
+        <td style="padding-top:1.5em" colspan="5">
+            <input type="submit" th:value="#{common.save}" style="margin-right:0.3em">
+            <a href='nowPlaying.view'><input type="button" th:value="#{common.cancel}"></a>
+        </td>
+    </tr>
+</table>
+</form>
+
+
+    <p th:if="${!#strings.isEmpty(error)}" class="warning" th:text="#{__${error}__}}"></p>
+
+    <script th:if="${settings_reload}" type="text/javascript">parent.frames.left.location.href="left.view?"</script>
+</body></html>

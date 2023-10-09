@@ -136,7 +136,7 @@ public class SearchController {
             SearchResult songs = searchService.search(criteria, musicFolders, IndexType.SONG);
             command.setSongs(songs.getMediaFiles());
 
-            command.setPlayer(playerService.getPlayer(request, response));
+            command.setPlayer(playerService.getPlayer(request, response, user.getUsername()));
         }
 
         return "search";

@@ -134,8 +134,8 @@ public class HLSController {
             HttpServletRequest request,
             HttpServletResponse response) throws Exception {
         MediaFile mediaFile = mediaFileService.getMediaFile(id);
-        Player player = playerService.getPlayer(request, response);
-        String username = player.getUsername();
+        String username = securityService.getCurrentUsername(request);
+        Player player = playerService.getPlayer(request, response, username);
 
         if (mediaFile == null || mediaFile.isDirectory()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Media file not found or incorrect type: " + id);
@@ -304,8 +304,8 @@ public class HLSController {
         if (mediaFile == null) {
             throw new NotFoundException("Media file not found: " + id);
         }
-        Player player = this.playerService.getPlayer(swr.getRequest(), swr.getResponse());
         User user = securityService.getUserByName(auth.getName());
+        Player player = this.playerService.getPlayer(swr.getRequest(), swr.getResponse(), user.getUsername());
         if (!(auth instanceof JWTAuthenticationToken)
                 && !securityService.isFolderAccessAllowed(mediaFile, user.getUsername())) {
             throw new AccessDeniedException("Access to file " + id + " is forbidden for user " + user.getUsername());

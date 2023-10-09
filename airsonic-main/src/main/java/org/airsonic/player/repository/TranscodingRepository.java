@@ -30,4 +30,6 @@ public interface TranscodingRepository extends JpaRepository<Transcoding, Intege
 
     public List<Transcoding> findByPlayersContaining(Player player);
 
+    public List<Transcoding> findByDefaultActiveTrue();
+
 }

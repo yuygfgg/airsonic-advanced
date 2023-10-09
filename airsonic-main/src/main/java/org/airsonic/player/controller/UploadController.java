@@ -134,7 +134,7 @@ public class UploadController {
 
         try {
 
-            status = statusService.createUploadStatus(playerService.getPlayer(request, response, false, false));
+            status = statusService.createUploadStatus(playerService.getPlayer(request, response, user.getUsername(), false, false));
             status.setBytesTotal(request.getContentLength());
             brokerTemplate.convertAndSendToUser(status.getPlayer().getUsername(), "/queue/uploads/status",
                     new UploadInfo(status.getId(), 0L, status.getBytesTotal()));

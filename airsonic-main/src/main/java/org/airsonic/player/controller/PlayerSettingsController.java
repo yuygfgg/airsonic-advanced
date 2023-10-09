@@ -27,7 +27,6 @@ import org.airsonic.player.service.PlayQueueService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.TranscodingService;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -40,7 +39,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -72,9 +70,9 @@ public class PlayerSettingsController {
     protected void formBackingObject(HttpServletRequest request, Model model) throws Exception {
 
         handleRequestParameters(request);
-        List<Player> players = getPlayers(request);
-
         User user = securityService.getCurrentUser(request);
+        List<Player> players = getPlayers(user);
+
         PlayerSettingsCommand command = new PlayerSettingsCommand();
         Player player = null;
         Integer playerId = ServletRequestUtils.getIntParameter(request, "id");
@@ -112,49 +110,22 @@ public class PlayerSettingsController {
 
     @PostMapping
     protected String doSubmitAction(@ModelAttribute("command") PlayerSettingsCommand command, RedirectAttributes redirectAttributes) {
-        Player player = playerService.getPlayerById(command.getPlayerId());
-        if (player != null) {
-            boolean update = false;
+        Player original = playerService.getPlayerById(command.getPlayerId());
+        Player updated = playerService.updateByCommand(command);
+        if (original != null && updated != null) {
             boolean stopped = false;
-            if (player.getAutoControlEnabled() != command.getAutoControlEnabled()) {
-                player.setAutoControlEnabled(command.getAutoControlEnabled());
-                update = true;
-            }
-            if (player.getM3uBomEnabled() != command.getM3uBomEnabled()) {
-                player.setM3uBomEnabled(command.getM3uBomEnabled());
-                update = true;
-            }
-            if (player.getDynamicIp() != command.getDynamicIp()) {
-                player.setDynamicIp(command.getDynamicIp());
-                update = true;
-            }
-            if (!StringUtils.equals(player.getName(), StringUtils.trimToNull(command.getName()))) {
-                player.setName(StringUtils.trimToNull(command.getName()));
-                update = true;
-            }
-            if (player.getTranscodeScheme() != TranscodeScheme.valueOf(command.getTranscodeSchemeName())) {
+            if (original.getTranscodeScheme() != updated.getTranscodeScheme()) {
                 if (!stopped) {
-                    playQueueService.stop(player);
+                    playQueueService.stop(original);
                     stopped = true;
                 }
-                player.setTranscodeScheme(TranscodeScheme.valueOf(command.getTranscodeSchemeName()));
-                update = true;
             }
-            if (player.getTechnology() != PlayerTechnology.valueOf(command.getTechnologyName())) {
+            if (original.getTechnology() != updated.getTechnology()) {
                 if (!stopped) {
-                    playQueueService.stop(player);
+                    playQueueService.stop(original);
                     stopped = true;
                 }
-                player.setTechnology(PlayerTechnology.valueOf(command.getTechnologyName()));
-                update = true;
             }
-
-            if (update) {
-                playerService.updatePlayer(player);
-            }
-
-            transcodingService.setTranscodingsForPlayerByIds(player, command.getActiveTranscodingIds());
-
             redirectAttributes.addFlashAttribute("settings_toast", true);
             return "redirect:playerSettings.view?id=" + command.getPlayerId();
         } else {
@@ -162,19 +133,13 @@ public class PlayerSettingsController {
         }
     }
 
-    private List<Player> getPlayers(HttpServletRequest request) {
-        User user = securityService.getCurrentUser(request);
+    private List<Player> getPlayers(User user) {
         String username = user.getUsername();
-        List<Player> players = playerService.getAllPlayers();
-        List<Player> authorizedPlayers = new ArrayList<Player>();
-
-        for (Player player : players) {
-            // Only display authorized players.
-            if (user.isAdminRole() || username.equals(player.getUsername())) {
-                authorizedPlayers.add(player);
-            }
+        if (user.isAdminRole()) {
+            return playerService.getAllPlayers();
+        } else {
+            return playerService.getPlayersForUser(username);
         }
-        return authorizedPlayers;
     }
 
     private void handleRequestParameters(HttpServletRequest request) throws Exception {

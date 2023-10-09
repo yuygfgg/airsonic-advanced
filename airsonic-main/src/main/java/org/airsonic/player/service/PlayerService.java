@@ -20,18 +20,25 @@
 package org.airsonic.player.service;
 
 import com.google.common.collect.ImmutableMap;
-import org.airsonic.player.dao.PlayerDao;
+import org.airsonic.player.command.PlayerSettingsCommand;
+import org.airsonic.player.dao.PlayerDaoPlayQueueFactory;
+import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.Player;
+import org.airsonic.player.domain.PlayerTechnology;
+import org.airsonic.player.domain.TranscodeScheme;
 import org.airsonic.player.domain.Transcoding;
 import org.airsonic.player.domain.User;
-import org.airsonic.player.domain.User.Role;
+import org.airsonic.player.repository.PlayerRepository;
+import org.airsonic.player.repository.TranscodingRepository;
+import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.airsonic.player.util.StringUtil;
-import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.ServletRequestUtils;
 
 import javax.annotation.PostConstruct;
@@ -40,9 +47,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Provides services for maintaining the set of players.
@@ -51,48 +62,83 @@ import java.util.Set;
  * @see Player
  */
 @Service
+@Transactional
 @DependsOn("liquibase")
 public class PlayerService {
 
     private static final String COOKIE_NAME = "player";
     private static final int COOKIE_EXPIRY = 365 * 24 * 3600; // One year
 
-    @Autowired
-    private PlayerDao playerDao;
+    private static final Logger LOG = LoggerFactory.getLogger(PlayerService.class);
+
     @Autowired
     private StatusService statusService;
     @Autowired
-    private SecurityService securityService;
+    private TranscodingRepository transcodingRepository;
     @Autowired
-    private TranscodingService transcodingService;
+    private PlayerRepository playerRepository;
     @Autowired
-    private SimpMessagingTemplate brokerTemplate;
+    private AsyncWebSocketClient asyncWebSocketClient;
+    @Autowired
+    private PlayerDaoPlayQueueFactory playerDaoPlayQueueFactory;
 
     @PostConstruct
     public void init() {
-        playerDao.deleteOldPlayers(60);
+        // TODO: configurable
+        deleteOldPlayers(60);
     }
 
-    public Player getPlayer(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        return getPlayer(request, response, true, false);
+    private Map<Integer, PlayQueue> playlists = Collections.synchronizedMap(new HashMap<Integer, PlayQueue>());
+
+    /**
+     * Adds a playlist to the given player.
+     * @param player The player to add the playlist to.
+     */
+    private void addPlaylist(Player player) {
+        PlayQueue playQueue = playlists.get(player.getId());
+        if (playQueue == null) {
+            playQueue = playerDaoPlayQueueFactory.createPlayQueue();
+            playlists.put(player.getId(), playQueue);
+        }
+        player.setPlayQueue(playQueue);
     }
 
-    public Player getPlayer(HttpServletRequest request, HttpServletResponse response, boolean remoteControlEnabled,
+    /**
+     * Deletes all players that have not been seen for the given number of days.
+     *
+     * @param days The number of days.
+     */
+    private void deleteOldPlayers(int days) {
+        LOG.info("Deleting old players");
+        playerRepository.deleteAllByNameIsNullAndClientIdIsNullAndLastSeenIsNull();
+        Instant lastSeen = Instant.now().minus(days, ChronoUnit.DAYS);
+        playerRepository.deleteAllByNameIsNullAndClientIdIsNullAndLastSeenBefore(lastSeen);
+    }
+
+    public Player getPlayer(HttpServletRequest request, HttpServletResponse response, String username) throws Exception {
+        return getPlayer(request, response, username, true, false);
+    }
+
+    public Player getPlayer(HttpServletRequest request, HttpServletResponse response, String username, boolean remoteControlEnabled,
             boolean isStreamRequest) throws Exception {
-        return getPlayer(request, response, null, remoteControlEnabled, isStreamRequest);
+        return getPlayer(request, response, null, username, remoteControlEnabled, isStreamRequest);
     }
+
+
     /**
      * Returns the player associated with the given HTTP request.  If no such player exists, a new
      * one is created.
      *
      * @param request              The HTTP request.
      * @param response             The HTTP response.
+     * @param playerId             The ID of the player to return. May be <code>null</code>.
+     * @param username             The name of the current user. May be <code>null</code>.
      * @param remoteControlEnabled Whether this method should return a remote-controlled player.
      * @param isStreamRequest      Whether the HTTP request is a request for streaming data.
-     * @return The player associated with the given HTTP request.
+     * @return The player associated with the given HTTP request. Never <code>null</code>.
      */
     public synchronized Player getPlayer(HttpServletRequest request, HttpServletResponse response,
-            Integer playerId, boolean remoteControlEnabled, boolean isStreamRequest) throws Exception {
+            Integer playerId, String username, boolean remoteControlEnabled, boolean isStreamRequest) throws Exception {
 
         Player player = getPlayerById(playerId);
 
@@ -110,7 +156,6 @@ public class PlayerService {
         }
 
         // Find by cookie.
-        String username = securityService.getCurrentUsername(request);
         if (player == null && remoteControlEnabled) {
             player = getPlayerById(getPlayerIdFromCookie(request, username));
         }
@@ -130,7 +175,7 @@ public class PlayerService {
             player = new Player();
             player.setLastSeen(Instant.now());
             populatePlayer(player, username, request, isStreamRequest);
-            createPlayer(player);
+            player = createPlayer(player);
         } else if (populatePlayer(player, username, request, isStreamRequest)) {
             updatePlayer(player);
         }
@@ -185,9 +230,9 @@ public class PlayerService {
      * @param player The player to update.
      */
     public void updatePlayer(Player player) {
-        playerDao.updatePlayer(player);
+        playerRepository.save(player);
         if (player.getUsername() != null) {
-            brokerTemplate.convertAndSendToUser(player.getUsername(), "/queue/players/updated",
+            asyncWebSocketClient.sendToUser(player.getUsername(), "/queue/players/updated",
                     ImmutableMap.of("id", player.getId(), "description", player.getShortDescription(), "tech", player.getTechnology()));
         }
     }
@@ -202,7 +247,9 @@ public class PlayerService {
         if (id == null) {
             return null;
         } else {
-            return playerDao.getPlayerById(id);
+            Optional<Player> optPlayer = playerRepository.findById(id);
+            optPlayer.ifPresent(p -> addPlaylist(p));
+            return optPlayer.orElse(null);
         }
     }
 
@@ -265,6 +312,22 @@ public class PlayerService {
     }
 
     /**
+     * Returns all players owned by the given username.
+     *
+     * @param username The name of the user. May be <code>null</code>.
+     * @return All relevant players. Never <code>null</code>.
+     */
+    public List<Player> getPlayersForUser(String username) {
+        if (username == null) {
+            LOG.warn("Username is null");
+            return new ArrayList<>();
+        }
+        List<Player> players = playerRepository.findByUsername(username);
+        players.forEach(player -> addPlaylist(player));
+        return players;
+    }
+
+    /**
      * Returns all players owned by the given username and client ID.
      *
      * @param username The name of the user.
@@ -273,7 +336,14 @@ public class PlayerService {
      * @return All relevant players.
      */
     public List<Player> getPlayersForUserAndClientId(String username, String clientId) {
-        return playerDao.getPlayersForUserAndClientId(username, clientId);
+        List<Player> players;
+        if (clientId == null) {
+            players = playerRepository.findByUsernameAndClientIdIsNull(username);
+        } else {
+            players = playerRepository.findByUsernameAndClientId(username, clientId);
+        }
+        players.forEach(player -> addPlaylist(player));
+        return players;
     }
 
     /**
@@ -282,7 +352,9 @@ public class PlayerService {
      * @return All currently registered players.
      */
     public List<Player> getAllPlayers() {
-        return playerDao.getAllPlayers();
+        List<Player> players = playerRepository.findAll();
+        players.forEach(player -> addPlaylist(player));
+        return players;
     }
 
     /**
@@ -290,9 +362,15 @@ public class PlayerService {
      *
      * @param id The unique player ID.
      */
-    public synchronized void removePlayerById(int id) {
-        playerDao.deletePlayer(id);
-        brokerTemplate.convertAndSend("/topic/players/deleted", id);
+    public void removePlayerById(int id) {
+        playerRepository.findById(id).ifPresentOrElse(player -> {
+            playlists.remove(id);
+            playerRepository.delete(player);
+            asyncWebSocketClient.send("/topic/players/deleted", id);
+        },
+            () -> {
+                LOG.warn("Player with id {} not found", id);
+            });
     }
 
     /**
@@ -303,51 +381,75 @@ public class PlayerService {
      */
     public Player clonePlayer(int playerId) {
         Player player = getPlayerById(playerId);
-        if (player.getName() != null) {
-            player.setName(player.getName() + " (copy)");
-        }
 
-        createPlayer(player);
-        return player;
+        // Clone player.
+        Player clone = new Player();
+        clone.setTechnology(player.getTechnology());
+        clone.setClientId(player.getClientId());
+        clone.setType(player.getType());
+        clone.setUsername(player.getUsername());
+        clone.setIpAddress(player.getIpAddress());
+        clone.setDynamicIp(player.getDynamicIp());
+        clone.setAutoControlEnabled(player.getAutoControlEnabled());
+        clone.setM3uBomEnabled(player.getM3uBomEnabled());
+        clone.setLastSeen(player.getLastSeen());
+        clone.setTranscodeScheme(player.getTranscodeScheme());
+        clone.setTranscodings(player.getTranscodings());
+        if (player.getName() != null) {
+            clone.setName(player.getName() + " (copy)");
+        }
+        return createPlayer(clone);
     }
+
 
     /**
      * Creates the given player, and activates all transcodings.
      *
      * @param player The player to create.
      */
-    public void createPlayer(Player player) {
-        playerDao.createPlayer(player);
+    public Player createPlayer(Player player) {
 
-        List<Transcoding> transcodings = transcodingService.getAllTranscodings();
-        List<Transcoding> defaultActiveTranscodings = new ArrayList<>(transcodings.size());
-        for (Transcoding transcoding : transcodings) {
-            if (transcoding.isDefaultActive()) {
-                defaultActiveTranscodings.add(transcoding);
-            }
+        // Set default transcodings.
+        List<Transcoding> defaultActiveTranscodings = transcodingRepository.findByDefaultActiveTrue();
+        player.setTranscodings(defaultActiveTranscodings);
+
+        // Save player.
+        Player saved = playerRepository.save(player);
+        // never Player 0 due to odd bug cataloged in
+        // https://github.com/airsonic-advanced/airsonic-advanced/issues/646
+        if (saved.getId() == 0) {
+            LOG.info("Player 0 created, deleting and recreating");
+            Player clone = new Player();
+            clone.setName(player.getName());
+            clone.setTechnology(player.getTechnology());
+            clone.setClientId(player.getClientId());
+            clone.setType(player.getType());
+            clone.setUsername(player.getUsername());
+            clone.setIpAddress(player.getIpAddress());
+            clone.setDynamicIp(player.getDynamicIp());
+            clone.setAutoControlEnabled(player.getAutoControlEnabled());
+            clone.setM3uBomEnabled(player.getM3uBomEnabled());
+            clone.setLastSeen(player.getLastSeen());
+            clone.setTranscodeScheme(player.getTranscodeScheme());
+            clone.setTranscodings(player.getTranscodings());
+            saved = playerRepository.save(clone);
+            playerRepository.delete(player);
         }
-        if (player != null) {
-            transcodingService.setTranscodingsForPlayer(player, defaultActiveTranscodings);
-            if (player.getUsername() != null) {
-                brokerTemplate.convertAndSendToUser(player.getUsername(), "/queue/players/created",
-                        ImmutableMap.of("id", player.getId(), "description", player.getShortDescription(), "tech", player.getTechnology()));
-            }
+
+        // Add player to playlist map.
+        addPlaylist(saved);
+
+        if (saved != null && saved.getUsername() != null) {
+            asyncWebSocketClient.sendToUser(saved.getUsername(), "/queue/players/created",
+                    ImmutableMap.of("id", saved.getId(), "description", saved.getShortDescription(), "tech", saved.getTechnology()));
         }
+        return saved;
     }
 
     /**
      * Returns a player associated to the special "guest" user, creating it if necessary.
      */
-    public Player getGuestPlayer(HttpServletRequest request) {
-
-        // Create guest user if necessary.
-        User user = securityService.getUserByName(User.USERNAME_GUEST);
-        if (user == null) {
-            user = new User(User.USERNAME_GUEST, null);
-            user.setRoles(Set.of(Role.STREAM));
-            securityService.createUser(user, RandomStringUtils.randomAlphanumeric(30),
-                    "Autogenerated for " + User.USERNAME_GUEST + " user");
-        }
+    public Player getGuestPlayer(String remoteAddress) {
 
         // Look for existing player.
         List<Player> players = getPlayersForUserAndClientId(User.USERNAME_GUEST, null);
@@ -357,28 +459,35 @@ public class PlayerService {
 
         // Create player if necessary.
         Player player = new Player();
-        if (request != null) {
-            player.setIpAddress(request.getRemoteAddr());
+        if (remoteAddress != null) {
+            player.setIpAddress(remoteAddress);
         }
         player.setUsername(User.USERNAME_GUEST);
-        createPlayer(player);
+        return createPlayer(player);
+    }
 
-        return player;
+    /**
+     * Updates the given player.
+     * @param command The command to update the player with.
+     * @return The updated player.
+     */
+    public Player updateByCommand(PlayerSettingsCommand command) {
+        return playerRepository.findById(command.getPlayerId()).map(player -> {
+            String name = StringUtils.trimToNull(command.getName());
+            player.setName(name);
+            player.setLastSeen(command.getLastSeen());
+            player.setDynamicIp(command.getDynamicIp());
+            player.setAutoControlEnabled(command.getAutoControlEnabled());
+            player.setTranscodeScheme(TranscodeScheme.valueOf(command.getTranscodeSchemeName()));
+            player.setTechnology(PlayerTechnology.valueOf(command.getTechnologyName()));
+            player.setTranscodings(transcodingRepository.findAllById(command.getActiveTranscodingIds()));
+            playerRepository.save(player);
+            addPlaylist(player);
+            return player;
+        }).orElse(null);
     }
 
     public void setStatusService(StatusService statusService) {
         this.statusService = statusService;
-    }
-
-    public void setSecurityService(SecurityService securityService) {
-        this.securityService = securityService;
-    }
-
-    public void setPlayerDao(PlayerDao playerDao) {
-        this.playerDao = playerDao;
-    }
-
-    public void setTranscodingService(TranscodingService transcodingService) {
-        this.transcodingService = transcodingService;
     }
 }

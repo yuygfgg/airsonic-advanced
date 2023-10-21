@@ -19,43 +19,27 @@
  */
 package org.airsonic.player.service;
 
-import chameleon.playlist.SpecificPlaylist;
-import chameleon.playlist.SpecificPlaylistFactory;
-import chameleon.playlist.SpecificPlaylistProvider;
-import org.airsonic.player.dao.MediaFileDao;
-import org.airsonic.player.dao.PlaylistDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.Playlist;
 import org.airsonic.player.domain.User;
-import org.airsonic.player.service.playlist.PlaylistExportHandler;
-import org.airsonic.player.service.playlist.PlaylistImportHandler;
-import org.airsonic.player.util.StringUtil;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.airsonic.player.repository.PlaylistRepository;
+import org.airsonic.player.repository.UserRepository;
+import org.airsonic.player.service.websocket.AsyncWebSocketClient;
+import org.airsonic.player.util.LambdaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.PostConstruct;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.WatchEvent;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.util.concurrent.CompletableFuture.runAsync;
 
 /**
  * Provides services for loading and saving playlists to and from persistent storage.
@@ -64,139 +48,225 @@ import static java.util.concurrent.CompletableFuture.runAsync;
  * @see PlayQueue
  */
 @Service
+@Transactional
 public class PlaylistService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PlaylistService.class);
 
-    private final MediaFileDao mediaFileDao;
-    private final PlaylistDao playlistDao;
-    private final UserService userService;
-    private final SecurityService securityService;
-    private final SettingsService settingsService;
-    private final List<PlaylistExportHandler> exportHandlers;
-    private final List<PlaylistImportHandler> importHandlers;
-    private final SimpMessagingTemplate brokerTemplate;
-    private final PathWatcherService pathWatcherService;
+    private final UserRepository userRepository;
+    private final PlaylistRepository playlistRepository;
+    private final AsyncWebSocketClient asyncWebSocketClient;
 
     @Autowired
-    public PlaylistService(MediaFileDao mediaFileDao,
-                           PlaylistDao playlistDao,
-                           UserService userService,
-                           SecurityService securityService,
-                           SettingsService settingsService,
-                           List<PlaylistExportHandler> exportHandlers,
-                           List<PlaylistImportHandler> importHandlers,
-                           SimpMessagingTemplate brokerTemplate,
-                           PathWatcherService pathWatcherService) {
+    public PlaylistService(UserRepository userRepository,
+                           PlaylistRepository playlistRepository,
+                           AsyncWebSocketClient asyncWebSocketClient) {
 
-        this.mediaFileDao = mediaFileDao;
-        this.playlistDao = playlistDao;
-        this.userService = userService;
-        this.securityService = securityService;
-        this.settingsService = settingsService;
-        this.exportHandlers = exportHandlers;
-        this.importHandlers = importHandlers;
-        this.brokerTemplate = brokerTemplate;
-        this.pathWatcherService = pathWatcherService;
+        this.userRepository = userRepository;
+        this.playlistRepository = playlistRepository;
+        this.asyncWebSocketClient = asyncWebSocketClient;
     }
 
-    @PostConstruct
-    public void init() throws IOException {
-        addPlaylistFolderWatcher();
-    }
-
-    public void addPlaylistFolderWatcher() {
-        Path playlistFolder = Paths.get(settingsService.getPlaylistFolder());
-        if (Files.exists(playlistFolder) && Files.isDirectory(playlistFolder)) {
-            try {
-                pathWatcherService.setWatcher("Playlist folder watcher", playlistFolder,
-                        this::handleModifiedPlaylist, null, this::handleModifiedPlaylist, null);
-            } catch (Exception e) {
-                LOG.warn("Issues setting watcher for folder: {}", playlistFolder);
-            }
-        }
-    }
-
-    private void handleModifiedPlaylist(Path path, WatchEvent<Path> event) {
-        Path fullPath = path.resolve(event.context());
-        importPlaylist(fullPath, playlistDao.getAllPlaylists());
-    }
-
+    /**
+     * Returns all playlists.
+     *
+     * @return All playlists.
+     */
     public List<Playlist> getAllPlaylists() {
-        return playlistDao.getAllPlaylists();
+        Sort sort = Sort.by("name").ascending();
+        return playlistRepository.findAll(sort);
     }
 
+
+    /**
+     * Returns all playlists that the given user is allowed to read.
+     *
+     * @param username The user. If {@code null}, no playlists are returned.
+     * @return All playlists that the given user is allowed to read.
+     */
     public List<Playlist> getReadablePlaylistsForUser(String username) {
-        return playlistDao.getReadablePlaylistsForUser(username);
-    }
 
-    public List<Playlist> getWritablePlaylistsForUser(String username) {
-
-        // Admin users are allowed to modify all playlists that are visible to them.
-        if (securityService.isAdmin(username)) {
-            return getReadablePlaylistsForUser(username);
+        if (username == null) {
+            return Collections.emptyList();
         }
 
-        return playlistDao.getWritablePlaylistsForUser(username);
+        List<Playlist> result1 = playlistRepository.findByUsername(username);
+        List<Playlist> result2 = playlistRepository.findBySharedTrue();
+        List<Playlist> result3 = playlistRepository.findByUsernameNotAndSharedUsersUsername(username, username);
+
+        // Remove duplicates.
+        return Stream.of(result1, result2, result3)
+                .flatMap(r -> r.parallelStream())
+                .filter(LambdaUtils.distinctByKey(p -> p.getId()))
+                .sorted(Comparator.comparing(Playlist::getName))
+                .toList();
+    }
+
+    /**
+     * Returns all playlists that the given user is allowed to write.
+     *
+     * @param username The user. If {@code null}, no playlists are returned.
+     * @return
+     */
+    public List<Playlist> getWritablePlaylistsForUser(String username) {
+        return userRepository.findByUsername(username).map(user -> {
+            if (user.isAdminRole()) {
+                return getReadablePlaylistsForUser(username);
+            } else {
+                return playlistRepository.findByUsernameOrderByNameAsc(username);
+            }
+        }).orElseGet(() -> {
+            LOG.warn("User {} not found", username);
+            return new ArrayList<>();
+        });
+
     }
 
     @Cacheable(cacheNames = "playlistCache", unless = "#result == null")
     public Playlist getPlaylist(int id) {
-        return playlistDao.getPlaylist(id);
+        return playlistRepository.findById(id).orElse(null);
     }
 
     @Cacheable(cacheNames = "playlistUsersCache", unless = "#result == null")
     public List<String> getPlaylistUsers(int playlistId) {
-        return playlistDao.getPlaylistUsers(playlistId);
+        List<User> users = playlistRepository.findById(playlistId).map(Playlist::getSharedUsers).orElse(Collections.emptyList());
+        return users.stream().map(User::getUsername).filter(Objects::nonNull).toList();
     }
 
     public List<MediaFile> getFilesInPlaylist(int id) {
         return getFilesInPlaylist(id, false);
     }
 
+
+    @Transactional(readOnly = true)
     public List<MediaFile> getFilesInPlaylist(int id, boolean includeNotPresent) {
-        return mediaFileDao.getFilesInPlaylist(id).stream().filter(x -> includeNotPresent || x.isPresent()).collect(Collectors.toList());
+        return playlistRepository.findById(id).map(p -> p.getMediaFiles()).orElseGet(
+            () -> {
+                LOG.warn("Playlist {} not found", id);
+                return new ArrayList<>();
+            }
+        ).stream().filter(x -> includeNotPresent || x.isPresent()).collect(Collectors.toList());
     }
 
-    public void setFilesInPlaylist(int id, List<MediaFile> files) {
-        playlistDao.setFilesInPlaylist(id, files);
-        refreshPlaylistStats(id);
+    public Playlist setFilesInPlaylist(int id, List<MediaFile> files) {
+        return playlistRepository.findById(id).map(p -> setFilesInPlaylist(p, files)).orElseGet(
+            () -> {
+                LOG.warn("Playlist {} not found", id);
+                return null;
+            });
     }
 
-    public void refreshPlaylistsStats() {
-        getAllPlaylists().forEach(p -> refreshPlaylistStats(p.getId()));
+    private Playlist setFilesInPlaylist(Playlist playlist, List<MediaFile> files) {
+        playlist.setMediaFiles(files);
+        playlist.setFileCount(files.size());
+        playlist.setDuration(files.stream().mapToDouble(MediaFile::getDuration).sum());
+        playlist.setChanged(Instant.now());
+        playlistRepository.saveAndFlush(playlist);
+        return playlist;
     }
 
-    public void refreshPlaylistStats(int id) {
-        Playlist playlist = new Playlist(getPlaylist(id));
-        Pair<Integer, Double> stats = playlistDao.getPlaylistFileStats(id);
-        playlist.setFileCount(stats.getLeft());
-        playlist.setDuration(stats.getRight());
-        updatePlaylist(playlist, true);
+    @CacheEvict(cacheNames = "playlistCache", key = "#id")
+    public void removeFilesInPlaylistByIndices(int id, List<Integer> indices) {
+        playlistRepository.findById(id).ifPresentOrElse(p -> {
+            List<MediaFile> files = p.getMediaFiles();
+            List<MediaFile> newFiles = new ArrayList<>();
+            for (int i = 0; i < files.size(); i++) {
+                if (!indices.contains(i)) {
+                    newFiles.add(files.get(i));
+                }
+            }
+            setFilesInPlaylist(p, newFiles);
+        }, () -> {
+                LOG.warn("Playlist {} not found", id);
+            }
+        );
     }
 
-    public void createPlaylist(Playlist playlist) {
-        playlistDao.createPlaylist(playlist);
+    /**
+     * Refreshes the file count and duration of all playlists.
+     */
+    public List<Playlist> refreshPlaylistsStats() {
+        return playlistRepository.findAll().stream().map(p -> {
+            p.setFileCount(p.getMediaFiles().size());
+            p.setDuration(p.getMediaFiles().stream().mapToDouble(MediaFile::getDuration).sum());
+            p.setChanged(Instant.now());
+            playlistRepository.save(p);
+            return p;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Creates a new playlist.
+     *
+     * @param name   the playlist name
+     * @param shared if true, the playlist is shared with other users
+     * @param username the username of the user that created the playlist
+     * @return the created playlist
+     */
+    public Playlist createPlaylist(String name, boolean shared, String username) {
+        Instant now = Instant.now();
+        Playlist playlist = new Playlist();
+        playlist.setName(name);
+        playlist.setShared(shared);
+        playlist.setUsername(username);
+        playlist.setCreated(now);
+        playlist.setChanged(now);
+        playlistRepository.save(playlist);
+        return playlist;
+    }
+
+
+    /**
+     * Creates a new playlist.
+     * @param playlist
+     */
+    public Playlist createPlaylist(Playlist playlist) {
+        Instant now = Instant.now();
+        playlist.setCreated(now);
+        playlist.setChanged(now);
+        playlistRepository.save(playlist);
         if (playlist.getShared()) {
-            runAsync(() -> brokerTemplate.convertAndSend("/topic/playlists/updated", playlist));
+            asyncWebSocketClient.send("/topic/playlists/updated", playlist);
         } else {
-            runAsync(() -> brokerTemplate.convertAndSendToUser(playlist.getUsername(), "/queue/playlists/updated", playlist));
+            asyncWebSocketClient.sendToUser(playlist.getUsername(), "/queue/playlists/updated", playlist);
         }
+        return playlist;
     }
 
     @CacheEvict(cacheNames = "playlistUsersCache", key = "#playlist.id")
     public void addPlaylistUser(Playlist playlist, String username) {
-        playlistDao.addPlaylistUser(playlist.getId(), username);
-        // this might cause dual notifications on the client if the playlist is already public
-        runAsync(() -> brokerTemplate.convertAndSendToUser(username, "/queue/playlists/updated", playlist));
+        userRepository.findByUsername(username).ifPresentOrElse(user -> {
+            playlistRepository.findById(playlist.getId()).ifPresentOrElse(p -> {
+                if (!p.getSharedUsers().contains(user)) {
+                    p.addSharedUser(user);
+                    playlistRepository.save(p);
+                    // this might cause dual notifications on the client if the playlist is already public
+                    asyncWebSocketClient.sendToUser(username, "/queue/playlists/updated", p);
+                } else {
+                    LOG.info("Playlist {} already shared with {}", playlist.getId(), username);
+                }
+            }, () -> {
+                    LOG.warn("Playlist {} not found", playlist.getId());
+                }
+            );
+        }, () -> {
+                LOG.warn("User {} not found", username);
+            }
+        );
     }
 
     @CacheEvict(cacheNames = "playlistUsersCache", key = "#playlist.id")
     public void deletePlaylistUser(Playlist playlist, String username) {
-        playlistDao.deletePlaylistUser(playlist.getId(), username);
-        if (!playlist.getShared()) {
-            runAsync(() -> brokerTemplate.convertAndSendToUser(username, "/queue/playlists/deleted", playlist.getId()));
-        }
+        playlistRepository.findByIdAndSharedUsersUsername(playlist.getId(), username).ifPresentOrElse(p -> {
+            p.removeSharedUserByUsername(username);
+            playlistRepository.save(p);
+            if (!p.getShared()) {
+                asyncWebSocketClient.sendToUser(username, "/queue/playlists/deleted", p.getId());
+            }
+        }, () -> {
+                LOG.warn("Playlist {} shared with {} not found", playlist.getId(), username);
+            }
+        );
     }
 
     public boolean isReadAllowed(Playlist playlist, String username) {
@@ -209,38 +279,91 @@ public class PlaylistService {
         return getPlaylistUsers(playlist.getId()).contains(username);
     }
 
+    /**
+     * Returns true if the playlist exists.
+     *
+     * @param id the playlist id
+     * @return true if the playlist exists
+     */
+    @Transactional(readOnly = true)
+    public boolean isExist(Integer id) {
+        return id != null && playlistRepository.existsById(id);
+    }
+
+    public boolean isWriteAllowed(Integer id, String username) {
+        return username != null && playlistRepository.existsByIdAndUsername(id, username);
+    }
+
     public boolean isWriteAllowed(Playlist playlist, String username) {
         return username != null && username.equals(playlist.getUsername());
     }
 
     @CacheEvict(cacheNames = "playlistCache")
     public void deletePlaylist(int id) {
-        playlistDao.deletePlaylist(id);
-        runAsync(() -> brokerTemplate.convertAndSend("/topic/playlists/deleted", id));
+        playlistRepository.deleteById(id);
+        asyncWebSocketClient.send("/topic/playlists/deleted", id);
     }
 
-    public void updatePlaylist(Playlist playlist) {
-        updatePlaylist(playlist, false);
+
+    /**
+     * Broadcasts the playlist to all users that have access to it.
+     *
+     * @param id the playlist id to broadcast
+     */
+    public void broadcastDeleted(int id) {
+        asyncWebSocketClient.send("/topic/playlists/deleted", id);
+    }
+
+    public void updatePlaylist(Integer id, String name) {
+        updatePlaylist(id, name, null, null);
+    }
+
+    @CacheEvict(cacheNames = "playlistCache", key = "#id")
+    public void updatePlaylist(Integer id, String name, String comment, Boolean shared) {
+        playlistRepository.findById(id).ifPresentOrElse(p -> {
+            p.setName(name);
+            if (comment != null) p.setComment(comment);
+            if (shared != null) p.setShared(shared);
+            p.setChanged(Instant.now());
+            playlistRepository.save(p);
+        }, () -> {
+                LOG.warn("Playlist {} not found", id);
+            }
+        );
     }
 
     /**
-     * DO NOT pass in the mutated cache value. This method relies on the existing
-     * cached value to check the differences
+     * Broadcasts the playlist to all users that have access to it.
+     *
+     * @param playlist the playlist to broadcast
      */
-    @CacheEvict(cacheNames = "playlistCache", key = "#playlist.id")
-    public void updatePlaylist(Playlist playlist, boolean filesChangedBroadcastContext) {
-        Playlist oldPlaylist = getPlaylist(playlist.getId());
-        playlistDao.updatePlaylist(playlist);
-        runAsync(() -> {
+    public void broadcast(Playlist playlist) {
+        if (playlist.getShared()) {
+            asyncWebSocketClient.send("/topic/playlists/updated", playlist);
+        } else {
+            asyncWebSocketClient.sendToUser(playlist.getUsername(), "/queue/playlists/updated", playlist);
+        }
+    }
+
+
+    /**
+     * Broadcasts the playlist to all users that have access to it.
+     *
+     * @param id the playlist id to broadcast
+     * @param isShared if true, the playlist was shared with other users
+     * @param filesChangedBroadcastContext if true, the client will know that the files in the playlist have changed
+     */
+    public void broadcastFileChange(Integer id, boolean isShared, boolean filesChangedBroadcastContext) {
+        playlistRepository.findById(id).ifPresent(playlist -> {
             BroadcastedPlaylist bp = new BroadcastedPlaylist(playlist, filesChangedBroadcastContext);
             if (playlist.getShared()) {
-                brokerTemplate.convertAndSend("/topic/playlists/updated", bp);
+                asyncWebSocketClient.send("/topic/playlists/updated", bp);
             } else {
-                if (oldPlaylist.getShared()) {
-                    brokerTemplate.convertAndSend("/topic/playlists/deleted", playlist.getId());
+                if (isShared) {
+                    asyncWebSocketClient.send("/topic/playlists/deleted", playlist.getId());
                 }
-                Stream.concat(Stream.of(playlist.getUsername()), getPlaylistUsers(playlist.getId()).stream())
-                        .forEach(u -> brokerTemplate.convertAndSendToUser(u, "/queue/playlists/updated", bp));
+                Stream.concat(Stream.of(playlist.getUsername()), playlist.getSharedUsers().stream().map(User::getUsername))
+                        .forEach(u -> asyncWebSocketClient.sendToUser(u, "/queue/playlists/updated", bp));
             }
         });
     }
@@ -250,6 +373,7 @@ public class PlaylistService {
 
         public BroadcastedPlaylist(Playlist p, boolean filesChanged) {
             super(p);
+            this.setId(p.getId());
             this.filesChanged = filesChanged;
         }
 
@@ -258,127 +382,5 @@ public class PlaylistService {
         }
     }
 
-    public String getExportPlaylistExtension() {
-        String format = settingsService.getPlaylistExportFormat();
-        SpecificPlaylistProvider provider = SpecificPlaylistFactory.getInstance().findProviderById(format);
-        return provider.getContentTypes()[0].getExtensions()[0];
-    }
 
-    public void exportPlaylist(int id, OutputStream out) throws Exception {
-        String format = settingsService.getPlaylistExportFormat();
-        SpecificPlaylistProvider provider = SpecificPlaylistFactory.getInstance().findProviderById(format);
-        PlaylistExportHandler handler = getExportHandler(provider);
-        SpecificPlaylist specificPlaylist = handler.handle(id, provider);
-        specificPlaylist.writeTo(out, StringUtil.ENCODING_UTF8);
-    }
-
-    private PlaylistImportHandler getImportHandler(SpecificPlaylist playlist) {
-        return importHandlers.stream()
-                .filter(handler -> handler.canHandle(playlist.getClass()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No import handler for " + playlist.getClass().getName()));
-
-    }
-
-    private PlaylistExportHandler getExportHandler(SpecificPlaylistProvider provider) {
-        return exportHandlers.stream()
-                .filter(handler -> handler.canHandle(provider.getClass()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No export handler for " + provider.getClass().getName()));
-    }
-
-    public void importPlaylists() {
-        try {
-            LOG.info("Starting playlist import.");
-            doImportPlaylists();
-            LOG.info("Completed playlist import.");
-        } catch (Throwable x) {
-            LOG.warn("Failed to import playlists: " + x, x);
-        }
-    }
-
-    private void doImportPlaylists() {
-        String playlistFolderPath = settingsService.getPlaylistFolder();
-        if (playlistFolderPath == null) {
-            return;
-        }
-        Path playlistFolder = Paths.get(playlistFolderPath);
-        if (!Files.exists(playlistFolder)) {
-            return;
-        }
-
-        List<Playlist> allPlaylists = playlistDao.getAllPlaylists();
-        try (Stream<Path> children = Files.walk(playlistFolder)) {
-            children.forEach(f -> importPlaylist(f, allPlaylists));
-        } catch (IOException ex) {
-            LOG.warn("Error while reading directory {} when importing playlists", playlistFolder, ex);
-        }
-    }
-
-    private void importPlaylist(Path f, List<Playlist> allPlaylists) {
-        if (Files.isRegularFile(f) && Files.isReadable(f)) {
-            try {
-                Playlist playlist = allPlaylists.stream()
-                        .filter(p -> f.getFileName().toString().equals(p.getImportedFrom()))
-                        .findAny().orElse(null);
-                importPlaylistIfUpdated(f, playlist);
-            } catch (Exception x) {
-                LOG.warn("Failed to auto-import playlist {}", f, x);
-            }
-        }
-    }
-
-    public Playlist importPlaylist(String username, String playlistName, String fileName, Path file, InputStream inputStream, Playlist existingPlaylist) throws Exception {
-
-        // TODO: handle other encodings
-        final SpecificPlaylist inputSpecificPlaylist = SpecificPlaylistFactory.getInstance().readFrom(inputStream, "UTF-8");
-        if (inputSpecificPlaylist == null) {
-            throw new Exception("Unsupported playlist " + fileName);
-        }
-        PlaylistImportHandler importHandler = getImportHandler(inputSpecificPlaylist);
-        LOG.debug("Using {} playlist import handler", importHandler.getClass().getSimpleName());
-
-        Pair<List<MediaFile>, List<String>> result = importHandler.handle(inputSpecificPlaylist, file);
-
-        if (result.getLeft().isEmpty() && !result.getRight().isEmpty()) {
-            throw new Exception("No songs in the playlist were found.");
-        }
-
-        for (String error : result.getRight()) {
-            LOG.warn("File in playlist '{}' not found: {}", fileName, error);
-        }
-        Instant now = Instant.now();
-        Playlist playlist;
-        if (existingPlaylist == null) {
-            playlist = new Playlist();
-            playlist.setUsername(username);
-            playlist.setCreated(now);
-            playlist.setChanged(now);
-            playlist.setShared(true);
-            playlist.setName(playlistName);
-            playlist.setComment("Auto-imported from " + fileName);
-            playlist.setImportedFrom(fileName);
-            createPlaylist(playlist);
-        } else {
-            playlist = existingPlaylist;
-        }
-
-        setFilesInPlaylist(playlist.getId(), result.getLeft());
-
-        return playlist;
-    }
-
-    private void importPlaylistIfUpdated(Path file, Playlist existingPlaylist) throws Exception {
-        String fileName = file.getFileName().toString();
-        if (existingPlaylist != null && Files.getLastModifiedTime(file).toMillis() <= existingPlaylist.getChanged().toEpochMilli()) {
-            // Already imported and not changed since.
-            return;
-        }
-
-        User sysAdmin = userService.getSysAdmin();
-        try (InputStream in = Files.newInputStream(file)) {
-            importPlaylist(sysAdmin.getUsername(), FilenameUtils.getBaseName(fileName), fileName, null, in, existingPlaylist);
-            LOG.info("Auto-imported playlist {}", file);
-        }
-    }
 }

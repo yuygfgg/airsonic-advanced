@@ -1,66 +1,62 @@
 package org.airsonic.player.service;
 
-import com.google.common.collect.Lists;
-import org.airsonic.player.dao.MediaFileDao;
-import org.airsonic.player.dao.PlaylistDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.Playlist;
+import org.airsonic.player.repository.PlaylistRepository;
+import org.airsonic.player.repository.UserRepository;
 import org.airsonic.player.service.playlist.DefaultPlaylistExportHandler;
+import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class PlaylistServiceTestExport {
+@ExtendWith(MockitoExtension.class)
+public class PlaylistFileServiceTestExport {
 
-    PlaylistService playlistService;
+    PlaylistFileService playlistFileService;
 
     @InjectMocks
     DefaultPlaylistExportHandler defaultPlaylistExportHandler;
 
     @Mock
-    MediaFileDao mediaFileDao;
+    private PlaylistService playlistService;
 
     @Mock
-    PlaylistDao playlistDao;
+    private PlaylistRepository playlistRepository;
 
     @Mock
-    MediaFileService mediaFileService;
+    private MediaFileService mediaFileService;
 
     @Mock
-    MediaFolderService mediaFolderService;
+    private MediaFolderService mediaFolderService;
 
     @Mock
-    SettingsService settingsService;
+    private SettingsService settingsService;
 
     @Mock
-    private UserService userService;
+    private UserRepository userRepository;
 
     @Mock
-    SecurityService securityService;
-
-    @Mock
-    private SimpMessagingTemplate brokerTemplate;
+    private AsyncWebSocketClient asyncWebSocketClient;
 
     @Mock
     private PathWatcherService pathWatcherService;
@@ -68,8 +64,8 @@ public class PlaylistServiceTestExport {
     @Mock
     MusicFolder mockedFolder;
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    private Path tempDir;
 
     @Captor
     ArgumentCaptor<Playlist> actual;
@@ -77,30 +73,30 @@ public class PlaylistServiceTestExport {
     @Captor
     ArgumentCaptor<List<MediaFile>> medias;
 
-    @Before
+    @BeforeEach
     public void setup() {
-        playlistService = new PlaylistService(
-                mediaFileDao,
-                playlistDao,
-                userService,
-                securityService,
+        playlistFileService = new PlaylistFileService(
+                playlistService,
                 settingsService,
-                Lists.newArrayList(defaultPlaylistExportHandler),
-                Collections.emptyList(),
-                brokerTemplate,
-                pathWatcherService);
+                userRepository,
+                pathWatcherService,
+                new ArrayList<>(List.of(defaultPlaylistExportHandler)),
+                new ArrayList<>());
     }
 
     @Test
     public void testExportToM3U() throws Exception {
 
-        when(mediaFileDao.getFilesInPlaylist(eq(23))).thenReturn(getPlaylistFiles());
+        Playlist playlist = new Playlist();
+        playlist.setId(23);
+        playlist.setMediaFiles(getPlaylistFiles());
+        when(playlistRepository.findById(eq(23))).thenReturn(Optional.of(playlist));
         when(settingsService.getPlaylistExportFormat()).thenReturn("m3u");
         when(mediaFolderService.getMusicFolderById(any())).thenReturn(mockedFolder);
         when(mockedFolder.getPath()).thenReturn(Paths.get("/"));
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        playlistService.exportPlaylist(23, outputStream);
+        playlistFileService.exportPlaylist(23, outputStream);
         byte[] actual = outputStream.toByteArray();
         byte[] expected = getClass().getResourceAsStream("/PLAYLISTS/23.m3u").readAllBytes();
         assertArrayEquals(expected, actual);

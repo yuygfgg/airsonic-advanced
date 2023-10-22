@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -174,7 +175,12 @@ public class Playlist {
     }
 
     public void setSharedUsers(List<User> sharedUsers) {
-        this.sharedUsers = sharedUsers;
+        if (this.sharedUsers == null) {
+            this.sharedUsers = new ArrayList<>();
+        } else {
+            this.sharedUsers.clear();
+        }
+        this.sharedUsers.addAll(sharedUsers);
     }
 
     public void addSharedUser(User sharedUser) {
@@ -195,7 +201,14 @@ public class Playlist {
     }
 
     public void setMediaFiles(List<MediaFile> mediaFiles) {
-        this.mediaFiles = mediaFiles;
+        if (this.mediaFiles == null) {
+            this.mediaFiles = new ArrayList<>();
+        } else {
+            this.mediaFiles.clear();
+        }
+        if (mediaFiles != null) {
+            this.mediaFiles.addAll(mediaFiles);
+        }
     }
 
 }

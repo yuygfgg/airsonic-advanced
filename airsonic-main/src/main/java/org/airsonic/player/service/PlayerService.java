@@ -36,12 +36,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.ServletRequestUtils;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -82,9 +83,8 @@ public class PlayerService {
     @Autowired
     private PlayerDaoPlayQueueFactory playerDaoPlayQueueFactory;
 
-    @PostConstruct
-    public void init() {
-        // TODO: configurable
+    @EventListener
+    public void onApplicationEvent(ApplicationReadyEvent event) {
         deleteOldPlayers(60);
     }
 
@@ -113,6 +113,7 @@ public class PlayerService {
         playerRepository.deleteAllByNameIsNullAndClientIdIsNullAndLastSeenIsNull();
         Instant lastSeen = Instant.now().minus(days, ChronoUnit.DAYS);
         playerRepository.deleteAllByNameIsNullAndClientIdIsNullAndLastSeenBefore(lastSeen);
+        LOG.info("Complete Deleting old players");
     }
 
     public Player getPlayer(HttpServletRequest request, HttpServletResponse response, String username) throws Exception {

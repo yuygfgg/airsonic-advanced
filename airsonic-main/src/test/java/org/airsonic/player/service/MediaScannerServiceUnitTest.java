@@ -21,7 +21,7 @@ public class MediaScannerServiceUnitTest {
     @Mock
     private SettingsService settingsService;
     @Mock
-    private PlaylistService playlistService;
+    private PlaylistFileService playlistFileService;
     @Mock
     private MediaFileService mediaFileService;
     @Mock
@@ -49,7 +49,7 @@ public class MediaScannerServiceUnitTest {
         when(settingsService.getIndexCreationInterval()).thenReturn(-1);
         when(settingsService.getIndexCreationHour()).thenReturn(-1);
         when(indexManager.getStatistics()).thenReturn(null);
-        MediaScannerService mediaScannerService = new MediaScannerService(settingsService, indexManager, playlistService, mediaFileService, mediaFolderService, coverArtService, mediaFileDao, artistRepository, albumRepository, taskService, messagingTemplate, scanConfig);
+        MediaScannerService mediaScannerService = new MediaScannerService(settingsService, indexManager, playlistFileService, mediaFileService, mediaFolderService, coverArtService, mediaFileDao, artistRepository, albumRepository, taskService, messagingTemplate, scanConfig);
         assertTrue(mediaScannerService.neverScanned());
 
         when(indexManager.getStatistics()).thenReturn(new MediaLibraryStatistics());

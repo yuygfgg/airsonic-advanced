@@ -67,7 +67,7 @@ public class MediaScannerService {
     public MediaScannerService(
         SettingsService settingsService,
         IndexManager indexManager,
-        PlaylistService playlistService,
+        PlaylistFileService playlistFileService,
         MediaFileService mediaFileService,
         MediaFolderService mediaFolderService,
         CoverArtService coverArtService,
@@ -80,7 +80,7 @@ public class MediaScannerService {
     ) {
         this.settingsService = settingsService;
         this.indexManager = indexManager;
-        this.playlistService = playlistService;
+        this.playlistFileService = playlistFileService;
         this.mediaFileService = mediaFileService;
         this.mediaFolderService = mediaFolderService;
         this.coverArtService = coverArtService;
@@ -95,7 +95,7 @@ public class MediaScannerService {
 
     private final SettingsService settingsService;
     private final IndexManager indexManager;
-    private final PlaylistService playlistService;
+    private final PlaylistFileService playlistFileService;
     private final MediaFileService mediaFileService;
     private final MediaFolderService mediaFolderService;
     private final CoverArtService coverArtService;
@@ -219,7 +219,7 @@ public class MediaScannerService {
                         LOG.info("Media library scan completed.");
                     }
                 })
-                .thenRunAsync(() -> playlistService.importPlaylists(), pool)
+                .thenRunAsync(() -> playlistFileService.importPlaylists(), pool)
                 .whenComplete((r,e) -> {
                     pool.shutdown();
                 })

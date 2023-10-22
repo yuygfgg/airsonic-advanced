@@ -974,14 +974,8 @@ public class SubsonicRESTController {
                 return;
             }
         } else {
-            playlist = new org.airsonic.player.domain.Playlist();
-            Instant now = Instant.now();
-            playlist.setName(name);
-            playlist.setCreated(now);
-            playlist.setChanged(now);
-            playlist.setShared(false);
-            playlist.setUsername(username);
-            playlistService.createPlaylist(playlist);
+            playlist = playlistService.createPlaylist(name, false, username);
+            playlistService.broadcast(playlist);
         }
 
         List<MediaFile> songs = new ArrayList<MediaFile>();
@@ -992,6 +986,7 @@ public class SubsonicRESTController {
             }
         }
         playlistService.setFilesInPlaylist(playlist.getId(), songs);
+        playlistService.broadcastFileChange(playlist.getId(), false, true);
 
         writeEmptyResponse(request, response);
     }
@@ -1013,21 +1008,10 @@ public class SubsonicRESTController {
         }
 
         // create new object to not mutate the cache
-        playlist = new org.airsonic.player.domain.Playlist(playlist);
-
         String name = request.getParameter("name");
-        if (name != null) {
-            playlist.setName(name);
-        }
         String comment = request.getParameter("comment");
-        if (comment != null) {
-            playlist.setComment(comment);
-        }
         Boolean shared = getBooleanParameter(request, "public");
-        if (shared != null) {
-            playlist.setShared(shared);
-        }
-        playlistService.updatePlaylist(playlist);
+        playlistService.updatePlaylist(id, name, comment, shared);
 
         // TODO: Add later
 //            for (String usernameToAdd : ServletRequestUtils.getStringParameters(request, "usernameToAdd")) {
@@ -1063,6 +1047,7 @@ public class SubsonicRESTController {
         if (songsChanged) {
             playlistService.setFilesInPlaylist(id, songs);
         }
+        playlistService.broadcastFileChange(id, playlist.getShared(), songsChanged);
 
         writeEmptyResponse(request, response);
     }
@@ -1073,16 +1058,16 @@ public class SubsonicRESTController {
         String username = securityService.getCurrentUsername(request);
 
         int id = getRequiredIntParameter(request, "id");
-        org.airsonic.player.domain.Playlist playlist = playlistService.getPlaylist(id);
-        if (playlist == null) {
+        if (!playlistService.isExist(id)) {
             error(request, response, ErrorCode.NOT_FOUND, "Playlist not found: " + id);
             return;
         }
-        if (!playlistService.isWriteAllowed(playlist, username)) {
+        if (!playlistService.isWriteAllowed(id, username)) {
             error(request, response, ErrorCode.NOT_AUTHORIZED, "Permission denied for playlist " + id);
             return;
         }
         playlistService.deletePlaylist(id);
+        playlistService.broadcastDeleted(id);
 
         writeEmptyResponse(request, response);
     }

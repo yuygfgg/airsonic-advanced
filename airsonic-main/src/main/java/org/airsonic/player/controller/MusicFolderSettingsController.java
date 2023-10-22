@@ -26,6 +26,7 @@ import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.MediaLibraryStatistics;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
+import org.airsonic.player.domain.Playlist;
 import org.airsonic.player.service.AlbumService;
 import org.airsonic.player.service.ArtistService;
 import org.airsonic.player.service.CoverArtService;
@@ -145,7 +146,10 @@ public class MusicFolderSettingsController {
         LOG.debug("Deleting non-present media folders...");
         mediaFolderService.expunge();
         LOG.debug("Refreshing playlist stats...");
-        playlistService.refreshPlaylistsStats();
+        List<Playlist> playlists = playlistService.refreshPlaylistsStats();
+        playlists.forEach(p -> {
+            playlistService.broadcastFileChange(p.getId(), false, false);
+        });
         LOG.debug("Database cleanup complete.");
     }
 

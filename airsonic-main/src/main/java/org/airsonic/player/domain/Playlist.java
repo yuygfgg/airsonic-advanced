@@ -19,33 +19,60 @@
  */
 package org.airsonic.player.domain;
 
-import org.airsonic.player.dao.AbstractDao.Column;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import javax.persistence.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Sindre Mehus
  */
+@Entity
+@Table(name = "playlist")
 public class Playlist {
 
-    private int id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    @Column(name = "username", nullable = false)
     private String username;
-    @Column("is_public")
+    @Column(name = "is_public")
     private boolean shared;
+    @Column(name = "name", nullable = false)
     private String name;
+    @Column(name = "comment")
     private String comment;
+    @Column(name = "file_count")
     private int fileCount;
+    @Column(name = "duration")
     private double duration;
+    @Column(name = "created")
     private Instant created;
+    @Column(name = "changed")
     private Instant changed;
+    @Column(name = "imported_from")
     private String importedFrom;
+
+    @ManyToMany
+    @JoinTable(name = "playlist_user",
+            joinColumns = @JoinColumn(name = "playlist_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "username"))
+    private List<User> sharedUsers;
+
+    @ManyToMany
+    @JoinTable(name = "playlist_file",
+            joinColumns = @JoinColumn(name = "playlist_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "media_file_id", referencedColumnName = "id"))
+    private List<MediaFile> mediaFiles;
 
     public Playlist() {
     }
 
-    public Playlist(int id, String username, boolean shared, String name, String comment, int fileCount,
+    public Playlist(String username, boolean shared, String name, String comment, int fileCount,
                     double duration, Instant created, Instant changed, String importedFrom) {
-        this.id = id;
         this.username = username;
         this.shared = shared;
         this.name = name;
@@ -58,15 +85,15 @@ public class Playlist {
     }
 
     public Playlist(Playlist p) {
-        this(p.getId(), p.getUsername(), p.getShared(), p.getName(), p.getComment(), p.getFileCount(), p.getDuration(),
+        this(p.getUsername(), p.getShared(), p.getName(), p.getComment(), p.getFileCount(), p.getDuration(),
                 p.getCreated(), p.getChanged(), p.getImportedFrom());
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -141,4 +168,47 @@ public class Playlist {
     public void setImportedFrom(String importedFrom) {
         this.importedFrom = importedFrom;
     }
+
+    @JsonIgnore
+    public List<User> getSharedUsers() {
+        return sharedUsers;
+    }
+
+    public void setSharedUsers(List<User> sharedUsers) {
+        if (this.sharedUsers == null) {
+            this.sharedUsers = new ArrayList<>();
+        } else {
+            this.sharedUsers.clear();
+        }
+        this.sharedUsers.addAll(sharedUsers);
+    }
+
+    public void addSharedUser(User sharedUser) {
+        this.sharedUsers.add(sharedUser);
+    }
+
+    public void removeSharedUser(User sharedUser) {
+        this.sharedUsers.remove(sharedUser);
+    }
+
+    public void removeSharedUserByUsername(String username) {
+        this.sharedUsers.removeIf(su -> su.getUsername().equals(username));
+    }
+
+    @JsonIgnore
+    public List<MediaFile> getMediaFiles() {
+        return mediaFiles;
+    }
+
+    public void setMediaFiles(List<MediaFile> mediaFiles) {
+        if (this.mediaFiles == null) {
+            this.mediaFiles = new ArrayList<>();
+        } else {
+            this.mediaFiles.clear();
+        }
+        if (mediaFiles != null) {
+            this.mediaFiles.addAll(mediaFiles);
+        }
+    }
+
 }

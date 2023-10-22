@@ -58,23 +58,26 @@ public class PlaylistWSController {
         return playlistService.getWritablePlaylistsForUser(p.getName());
     }
 
+    /**
+     * Creates a playlist and broadcasts it to all users that have access to it.
+     *
+     * @param playlist the playlist to create
+     * @return the id of the created playlist
+     */
+    private Playlist createPlaylist(String name, boolean shared, String username) {
+        Playlist result = playlistService.createPlaylist(name, shared, username);
+        playlistService.broadcast(result);
+        return result;
+    }
+
     @MessageMapping("/create/empty")
     @SendToUser(broadcast = false)
     public int createEmptyPlaylist(Principal p) {
         Locale locale = localeResolver.resolveLocale(p.getName());
         DateTimeFormatter dateFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale);
-
         Instant now = Instant.now();
-        Playlist playlist = new Playlist();
-        playlist.setUsername(p.getName());
-        playlist.setCreated(now);
-        playlist.setChanged(now);
-        playlist.setShared(false);
-        playlist.setName(dateFormat.format(now.atZone(ZoneId.systemDefault())));
-
-        playlistService.createPlaylist(playlist);
-
-        return playlist.getId();
+        Playlist result = createPlaylist(dateFormat.format(now.atZone(ZoneId.systemDefault())), false, p.getName());
+        return result.getId();
     }
 
     @MessageMapping("/create/starred")
@@ -83,22 +86,18 @@ public class PlaylistWSController {
         Locale locale = localeResolver.resolveLocale(p.getName());
         DateTimeFormatter dateFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale);
 
-        Instant now = Instant.now();
-        Playlist playlist = new Playlist();
-        playlist.setUsername(p.getName());
-        playlist.setCreated(now);
-        playlist.setChanged(now);
-        playlist.setShared(false);
-
         ResourceBundle bundle = ResourceBundle.getBundle("org.airsonic.player.i18n.ResourceBundle", locale);
-        playlist.setName(bundle.getString("top.starred") + " " + dateFormat.format(now.atZone(ZoneId.systemDefault())));
+        Instant now = Instant.now();
+        String name = bundle.getString("top.starred") + " " + dateFormat.format(now.atZone(ZoneId.systemDefault()));
+        String username = p.getName();
 
-        playlistService.createPlaylist(playlist);
-        List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(p.getName());
-        List<MediaFile> songs = mediaFileDao.getStarredFiles(0, Integer.MAX_VALUE, p.getName(), musicFolders);
-        playlistService.setFilesInPlaylist(playlist.getId(), songs);
-
-        return playlist.getId();
+        Playlist result = createPlaylist(name, false, username);
+        List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
+        List<MediaFile> songs = mediaFileDao.getStarredFiles(0, Integer.MAX_VALUE, username, musicFolders);
+        Integer playlistId = result.getId();
+        playlistService.setFilesInPlaylist(playlistId, songs);
+        playlistService.broadcastFileChange(playlistId, false, true);
+        return result.getId();
     }
 
     @MessageMapping("/create/playqueue")
@@ -111,29 +110,31 @@ public class PlaylistWSController {
         Instant now = Instant.now();
         Playlist playlist = new Playlist();
         playlist.setUsername(p.getName());
-        playlist.setCreated(now);
-        playlist.setChanged(now);
         playlist.setShared(false);
         playlist.setName(dateFormat.format(now.atZone(ZoneId.systemDefault())));
 
-        playlistService.createPlaylist(playlist);
-        playlistService.setFilesInPlaylist(playlist.getId(), player.getPlayQueue().getFiles());
+        Playlist result = createPlaylist(dateFormat.format(now.atZone(ZoneId.systemDefault())), false, p.getName());
+        Integer playlistId = result.getId();
+        playlistService.setFilesInPlaylist(playlistId, player.getPlayQueue().getFiles());
+        playlistService.broadcastFileChange(playlistId, false, true);
 
-        return playlist.getId();
+        return playlistId;
     }
 
     @MessageMapping("/delete")
     public void deletePlaylist(int id) {
         playlistService.deletePlaylist(id);
+        playlistService.broadcastDeleted(id);
     }
 
     @MessageMapping("/update")
     public void updatePlaylist(PlaylistUpdateRequest req) {
-        Playlist playlist = new Playlist(playlistService.getPlaylist(req.getId()));
-        playlist.setName(req.getName());
-        playlist.setComment(req.getComment());
-        playlist.setShared(req.getShared());
-        playlistService.updatePlaylist(playlist);
+        Playlist playlist = playlistService.getPlaylist(req.getId());
+        if (playlist == null) {
+            return;
+        }
+        playlistService.updatePlaylist(req.getId(), req.getName(), req.getComment(), req.getShared());
+        playlistService.broadcastFileChange(req.getId(), playlist.getShared(), false);
     }
 
     @MessageMapping("/files/append")
@@ -146,6 +147,7 @@ public class PlaylistWSController {
                 .collect(Collectors.toList());
 
         playlistService.setFilesInPlaylist(req.getId(), files);
+        playlistService.broadcastFileChange(req.getId(), false, true);
 
         return req.getId();
     }
@@ -154,15 +156,10 @@ public class PlaylistWSController {
     @SendToUser(broadcast = false)
     public int remove(PlaylistFilesModificationRequest req) {
         // in this context, modifierIds are indices
-        List<MediaFile> files = playlistService.getFilesInPlaylist(req.getId(), true);
         List<Integer> indices = req.getModifierIds();
         Collections.sort(indices);
-        for (int i = 0; i < indices.size(); i++) {
-            // factor in previous indices we've deleted so far
-            files.remove(indices.get(i) - i);
-        }
-        playlistService.setFilesInPlaylist(req.getId(), files);
-
+        playlistService.removeFilesInPlaylistByIndices(req.getId(), indices);
+        playlistService.broadcastFileChange(req.getId(), false, true);
         return req.getId();
     }
 
@@ -174,6 +171,7 @@ public class PlaylistWSController {
         if (req.getModifierIds().size() == 1 && req.getModifierIds().get(0) > 0) {
             Collections.swap(files, req.getModifierIds().get(0), req.getModifierIds().get(0) - 1);
             playlistService.setFilesInPlaylist(req.getId(), files);
+            playlistService.broadcastFileChange(req.getId(), false, true);
         }
 
         return req.getId();
@@ -187,6 +185,7 @@ public class PlaylistWSController {
         if (req.getModifierIds().size() == 1 && req.getModifierIds().get(0) < files.size() - 1) {
             Collections.swap(files, req.getModifierIds().get(0), req.getModifierIds().get(0) + 1);
             playlistService.setFilesInPlaylist(req.getId(), files);
+            playlistService.broadcastFileChange(req.getId(), false, true);
         }
 
         return req.getId();
@@ -202,6 +201,7 @@ public class PlaylistWSController {
             newFiles[i] = files.get(req.getModifierIds().get(i));
         }
         playlistService.setFilesInPlaylist(req.getId(), Arrays.asList(newFiles));
+        playlistService.broadcastFileChange(req.getId(), false, true);
 
         return req.getId();
     }
@@ -215,26 +215,6 @@ public class PlaylistWSController {
     @SendToUser(broadcast = false)
     public List<MediaFileEntry> getPlaylistEntries(Principal p, @DestinationVariable int id) {
         return mediaFileService.toMediaFileEntryList(playlistService.getFilesInPlaylist(id, true), p.getName(), true, true, null, null, null);
-    }
-
-    public void setPlaylistService(PlaylistService playlistService) {
-        this.playlistService = playlistService;
-    }
-
-    public void setMediaFileService(MediaFileService mediaFileService) {
-        this.mediaFileService = mediaFileService;
-    }
-
-    public void setMediaFileDao(MediaFileDao mediaFileDao) {
-        this.mediaFileDao = mediaFileDao;
-    }
-
-    public void setPlayerService(PlayerService playerService) {
-        this.playerService = playerService;
-    }
-
-    public void setLocaleResolver(LocaleResolver localeResolver) {
-        this.localeResolver = localeResolver;
     }
 
     public static class PlaylistFilesModificationRequest {

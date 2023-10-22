@@ -112,7 +112,7 @@ public class MediaFileDao extends AbstractDao {
      */
     public List<MediaFile> getChildrenOf(String path, int folderId, boolean onlyPresent, boolean noIndexedTracks) {
         return query("select " + QUERY_COLUMNS + " from media_file where parent_path=? and folder_id=?" +
-                        (onlyPresent ? " and present" : "") + (noIndexedTracks ? " and start_position < 0" : ""), rowMapper, path, folderId);
+                        (onlyPresent ? " and present" : "") + (noIndexedTracks ? " and start_position < 0" : "") + " order by start_position", rowMapper, path, folderId);
     }
 
     public List<MediaFile> getFilesInPlaylist(int playlistId) {

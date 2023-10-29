@@ -19,25 +19,63 @@
  */
 package org.airsonic.player.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import javax.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A Podcast channel. Each channel contain several episodes.
  *
  * @author Sindre Mehus
  * @see PodcastEpisode
  */
+@Entity
+@Table(name = "podcast_channel")
 public class PodcastChannel {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(name = "url", nullable = false)
     private String url;
+
+    @Column(name = "title")
     private String title;
+
+    @Column(name = "description")
     private String description;
+
+    @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
     private PodcastStatus status;
+
+    @Column(name = "error_message")
     private String errorMessage;
-    private Integer mediaFileId;
+
+    @OneToOne
+    @JoinColumn(name = "media_file_id")
+    private MediaFile mediaFile;
+
+    @OneToMany(mappedBy = "channel")
+    private List<PodcastEpisode> episodes = new ArrayList<>();
+
+    @JsonIgnore
+    public List<PodcastEpisode> getEpisodes() {
+        return episodes;
+    }
+
+    public PodcastChannel() {
+    }
 
     public PodcastChannel(Integer id, String url, String title, String description, String imageUrl,
-                          PodcastStatus status, String errorMessage, Integer mediaFileId) {
+            PodcastStatus status, String errorMessage, MediaFile mediaFile) {
         this.id = id;
         this.url = url;
         this.title = title;
@@ -45,7 +83,7 @@ public class PodcastChannel {
         this.imageUrl = imageUrl;
         this.status = status;
         this.errorMessage = errorMessage;
-        this.mediaFileId = mediaFileId;
+        this.mediaFile = mediaFile;
     }
 
     public PodcastChannel(String url) {
@@ -105,11 +143,12 @@ public class PodcastChannel {
         this.errorMessage = errorMessage;
     }
 
-    public void setMediaFileId(Integer mediaFileId) {
-        this.mediaFileId = mediaFileId;
+    public void setMediaFile(MediaFile mediaFile) {
+        this.mediaFile = mediaFile;
     }
 
-    public Integer getMediaFileId() {
-        return mediaFileId;
+    @JsonIgnore
+    public MediaFile getMediaFile() {
+        return mediaFile;
     }
 }

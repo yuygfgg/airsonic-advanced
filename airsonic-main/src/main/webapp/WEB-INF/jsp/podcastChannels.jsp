@@ -219,14 +219,14 @@
                   className: "detail fit songTitle",
                   title: "<fmt:message key='edittags.songtitle'/>"
                 },
-                { data: "channelId",
+                { data: "channel",
                   className: "detail truncate",
                   name: "channel",
                   title: "<fmt:message key='podcastreceiver.channel'/>",
                   render: function(data, type, row) {
                       if (type == "display" && data != null) {
-                          var channels = podcasts.filter(p => p.id == data);
-                          var name = data;
+                          var channels = podcasts.filter(p => p.id == data.id);
+                          var name = data.id;
                           if (channels.length == 1) {
                              name = channels[0].title;
                           }

@@ -96,7 +96,7 @@ public class PlayerRepositoryTest {
 
         playerRepository.save(player);
         Integer playerId1 = player.getId();
-        assertEquals(1, playerRepository.findAll().size());
+        assertEquals(1, playerRepository.count());
 
         player = new Player();
         playerRepository.save(player);

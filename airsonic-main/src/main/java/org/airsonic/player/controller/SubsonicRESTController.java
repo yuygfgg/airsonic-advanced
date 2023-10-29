@@ -1578,14 +1578,14 @@ public class SubsonicRESTController {
     private org.subsonic.restapi.PodcastEpisode createJaxbPodcastEpisode(Player player, String username, org.airsonic.player.domain.PodcastEpisode episode) {
         org.subsonic.restapi.PodcastEpisode e = new org.subsonic.restapi.PodcastEpisode();
 
-        if (episode.getMediaFileId() != null) {
-            MediaFile mediaFile = mediaFileService.getMediaFile(episode.getMediaFileId());
+        if (episode.getMediaFile() != null) {
+            MediaFile mediaFile = episode.getMediaFile();
             e = createJaxbChild(new org.subsonic.restapi.PodcastEpisode(), player, mediaFile, username);
             e.setStreamId(String.valueOf(mediaFile.getId()));
         }
 
         e.setId(String.valueOf(episode.getId()));  // Overwrites the previous "id" attribute.
-        e.setChannelId(String.valueOf(episode.getChannelId()));
+        e.setChannelId(String.valueOf(episode.getChannel().getId()));
         e.setStatus(PodcastStatus.valueOf(episode.getStatus().name()));
         e.setTitle(episode.getTitle());
         e.setDescription(episode.getDescription());
@@ -1629,7 +1629,8 @@ public class SubsonicRESTController {
         }
 
         int id = getRequiredIntParameter(request, "id");
-        podcastService.deleteChannel(id);
+        if (podcastService.deleteChannel(id))
+            podcastService.broadcastDeleted(id);
         writeEmptyResponse(request, response);
     }
 

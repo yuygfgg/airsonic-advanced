@@ -110,12 +110,14 @@ public class PodcastSettingsController {
             if (r.getDelete()) {
                 podcastService.deleteChannelRule(r.getId());
             } else {
-                podcastService.createOrUpdateChannelRule(r.toPodcastChannelRule());
+                podcastService.createOrUpdateChannelRuleByCommand(r);
             }
         });
 
-        Optional.ofNullable(command.getNewRule().toPodcastChannelRule())
-                .ifPresent(podcastService::createOrUpdateChannelRule);
+
+
+        Optional.ofNullable(command.getNewRule())
+                .ifPresent(podcastService::createOrUpdateChannelRuleByCommand);
 
         redirectAttributes.addFlashAttribute("settings_toast", success);
         return "redirect:podcastSettings.view";

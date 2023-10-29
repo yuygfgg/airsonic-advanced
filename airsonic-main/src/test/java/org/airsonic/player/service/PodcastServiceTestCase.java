@@ -19,7 +19,7 @@
 
 package org.airsonic.player.service;
 
-import org.airsonic.player.dao.PodcastDao;
+import org.airsonic.player.command.PodcastSettingsCommand.PodcastRule;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.PodcastChannel;
@@ -27,6 +27,9 @@ import org.airsonic.player.domain.PodcastChannelRule;
 import org.airsonic.player.domain.PodcastEpisode;
 import org.airsonic.player.domain.PodcastStatus;
 import org.airsonic.player.domain.Version;
+import org.airsonic.player.repository.PodcastChannelRepository;
+import org.airsonic.player.repository.PodcastEpisodeRepository;
+import org.airsonic.player.repository.PodcastRuleRepository;
 import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -55,6 +58,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -67,6 +71,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -77,7 +83,11 @@ public class PodcastServiceTestCase {
     @Mock
     private TaskSchedulingService taskService;
     @Mock
-    private PodcastDao podcastDao;
+    private PodcastChannelRepository podcastChannelRepository;
+    @Mock
+    private PodcastRuleRepository podcastRuleRepository;
+    @Mock
+    private PodcastEpisodeRepository podcastEpisodeRepository;
     @Mock
     private SecurityService securityService;
     @Mock
@@ -113,23 +123,25 @@ public class PodcastServiceTestCase {
 
 
     // test data
-    private PodcastChannelRule RULE_SCHEDULE = new PodcastChannelRule(1, 1, null, null);
+    private PodcastChannelRule RULE_SCHEDULE = new PodcastChannelRule(1, 1, 1, 1);
+    private PodcastRule RULE_SCHEDULE_COMMAND = new PodcastRule(RULE_SCHEDULE, "test");
     private PodcastChannelRule RULE_UNSCHEDULE = new PodcastChannelRule(2, -1, null, null);
 
     @Test
     void testCreateOrUpdateChannelRule() {
         // given
         // prepare instant
+        when(podcastRuleRepository.findById(1)).thenReturn(Optional.of(RULE_SCHEDULE));
         Instant now = Instant.parse("2020-01-01T00:00:00Z");
         Instant expectedFirstTime = Instant.parse("2020-01-01T00:05:00Z");
 
         try (MockedStatic<Instant> mockedInstant = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
             mockedInstant.when(Instant::now).thenReturn(now);
             // when
-            podcastService.createOrUpdateChannelRule(RULE_SCHEDULE);
+            podcastService.createOrUpdateChannelRuleByCommand(RULE_SCHEDULE_COMMAND);
 
             // then
-            verify(podcastDao).createOrUpdateChannelRule(RULE_SCHEDULE);
+            verify(podcastRuleRepository).save(any(PodcastChannelRule.class));
             verify(taskService).scheduleAtFixedRate(eq("podcast-channel-refresh-1"), any(), eq(expectedFirstTime), eq(Duration.ofHours(1)), eq(true));
         }
     }
@@ -139,12 +151,10 @@ public class PodcastServiceTestCase {
 
         // given
         int channelId = 1;
-        when(podcastService.getEpisodes(channelId)).thenReturn(Arrays.asList(mockedEpisode));
-        when(mockedEpisode.getMediaFileId()).thenReturn(null);
-        when(mockedEpisode.getId()).thenReturn(10);
-        when(podcastDao.getChannel(channelId)).thenReturn(mockedChannel);
-        when(mockedChannel.getMediaFileId()).thenReturn(1);
-        when(mediaFileService.getMediaFile(1)).thenReturn(mockedMediaFile);
+        when(podcastChannelRepository.findById(channelId)).thenReturn(Optional.of(mockedChannel));
+        when(podcastEpisodeRepository.findByChannel(mockedChannel)).thenReturn(Arrays.asList(mockedEpisode));
+        when(mockedEpisode.getMediaFile()).thenReturn(null);
+        when(mockedChannel.getMediaFile()).thenReturn(mockedMediaFile);
         when(mockedMediaFile.getFolderId()).thenReturn(1);
         when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedMusicFolder);
         when(mockedMusicFolder.getPath()).thenReturn(tempFolder);
@@ -152,24 +162,27 @@ public class PodcastServiceTestCase {
         Files.createFile(tempFolder.resolve("test.mp3"));
 
         // when
-        podcastService.deleteChannel(channelId);
+        boolean actual = podcastService.deleteChannel(channelId);
 
         // then
-        verify(podcastDao).deleteEpisode(10);
-        verify(podcastDao).deleteChannel(channelId);
-        verify(podcastService, times(1)).deleteEpisode(mockedEpisode, false);
+        verify(podcastEpisodeRepository).delete(mockedEpisode);
+        verify(podcastChannelRepository).delete(mockedChannel);
         verify(mediaFileService).refreshMediaFile(mockedMediaFile, mockedMusicFolder);
-        verify(asyncSocketClient).send("/topic/podcasts/deleted", channelId);
+        verifyNoInteractions(asyncSocketClient);
         assertFalse(Files.exists(tempFolder.resolve("test.mp3")));
+        assertTrue(actual);
     }
 
     @Test
     void testDeleteChannelRule() {
+        // given
+        when(podcastChannelRepository.findById(10)).thenReturn(Optional.of(mockedChannel));
+
         // when
         podcastService.deleteChannelRule(10);
 
         // then
-        verify(podcastDao).deleteChannelRule(10);
+        verify(podcastChannelRepository).delete(mockedChannel);
         assertUnschedule(10); // assert call unschedule
 
     }
@@ -178,22 +191,20 @@ public class PodcastServiceTestCase {
     @ValueSource(strings = {"true", "false"})
     void testDeleteEpisodeWithNullShouldDoNothing(boolean logicalDelete) {
         // given
-        when(podcastDao.getEpisode(1)).thenReturn(null);
+        when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.empty());
 
         // when
         podcastService.deleteEpisode(1, logicalDelete);
 
         // then
-        verify(podcastDao, never()).deleteEpisode(anyInt());
-        verify(podcastDao, never()).updateEpisode(any());
+        verifyNoMoreInteractions(podcastEpisodeRepository);
     }
 
     @Test
     public void testDeleteEpisodeForLogicalDeleteShouldUpdateEpisode() throws Exception {
         // given
-        when(podcastDao.getEpisode(1)).thenReturn(mockedEpisode);
-        when(mockedEpisode.getMediaFileId()).thenReturn(1);
-        when(mediaFileService.getMediaFile(1)).thenReturn(mockedMediaFile);
+        when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
+        when(mockedEpisode.getMediaFile()).thenReturn(mockedMediaFile);
         when(mockedMediaFile.getFolderId()).thenReturn(1);
         when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedMusicFolder);
         when(mockedMusicFolder.getPath()).thenReturn(tempFolder);
@@ -206,21 +217,19 @@ public class PodcastServiceTestCase {
         podcastService.deleteEpisode(1, true);
 
         // then
-        verify(podcastDao, never()).deleteEpisode(anyInt());
         verify(mediaFileService).refreshMediaFile(mockedMediaFile, mockedMusicFolder);
         verify(mockedEpisode).setStatus(PodcastStatus.DELETED);
         verify(mockedEpisode).setErrorMessage(null);
-        verify(podcastDao).updateEpisode(mockedEpisode);
+        verify(podcastEpisodeRepository).save(mockedEpisode);
+        verifyNoMoreInteractions(podcastEpisodeRepository);
         assertFalse(Files.exists(tempFolder.resolve("test.mp3")));
     }
 
     @Test
     public void testDeleteEpisodeForDeleteShouldDeleteEpisode() throws Exception {
         // given
-        when(podcastDao.getEpisode(1)).thenReturn(mockedEpisode);
-        when(mockedEpisode.getMediaFileId()).thenReturn(1);
-        when(mockedEpisode.getId()).thenReturn(1);
-        when(mediaFileService.getMediaFile(1)).thenReturn(mockedMediaFile);
+        when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
+        when(mockedEpisode.getMediaFile()).thenReturn(mockedMediaFile);
         when(mockedMediaFile.getFolderId()).thenReturn(1);
         when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedMusicFolder);
         when(mockedMusicFolder.getPath()).thenReturn(tempFolder);
@@ -232,17 +241,17 @@ public class PodcastServiceTestCase {
         podcastService.deleteEpisode(1, false);
 
         // then
-        verify(podcastDao).deleteEpisode(1);
+        verify(podcastEpisodeRepository).delete(mockedEpisode);
         verify(mediaFileService).refreshMediaFile(mockedMediaFile, mockedMusicFolder);
         assertFalse(Files.exists(tempFolder.resolve("test.mp3")));
-        verify(podcastDao, never()).updateEpisode(any());
+        verifyNoMoreInteractions(podcastEpisodeRepository);
     }
 
     @Test
     void testDoDownloadEpisodeWithDeletedEpisodeShouldDoNothing() {
 
         // given
-        when(podcastDao.getEpisode(1)).thenReturn(mockedEpisode);
+        when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
         when(mockedEpisode.getId()).thenReturn(1);
         when(mockedEpisode.getStatus()).thenReturn(PodcastStatus.DELETED);
 
@@ -250,14 +259,14 @@ public class PodcastServiceTestCase {
         ReflectionTestUtils.invokeMethod(podcastService, "doDownloadEpisode", mockedEpisode);
 
         // then
-        verify(podcastDao, never()).updateEpisode(any());
+        verify(podcastEpisodeRepository, never()).save(any(PodcastEpisode.class));
     }
 
     @ParameterizedTest
     @EnumSource(value = PodcastStatus.class, names = {"DOWNLOADING", "COMPLETED"})
     public void testDoDownloadEpisodeWithDownloadingOrCompletedEpisodeShouldDoNothing(PodcastStatus status) {
         // given
-        when(podcastDao.getEpisode(1)).thenReturn(mockedEpisode);
+        when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
         when(mockedEpisode.getId()).thenReturn(1);
         when(mockedEpisode.getStatus()).thenReturn(status);
 
@@ -265,21 +274,20 @@ public class PodcastServiceTestCase {
         ReflectionTestUtils.invokeMethod(podcastService, "doDownloadEpisode", mockedEpisode);
 
         // then
-        verify(podcastDao, never()).updateEpisode(any());
+        verify(podcastEpisodeRepository, never()).save(any(PodcastEpisode.class));
     }
 
     @Test
     public void testDoDonwloadEpisodeWithExceptionShouldSetErrorStatus() throws Exception {
 
         // given
-        when(podcastDao.getEpisode(1)).thenReturn(mockedEpisode);
+        when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
         when(mockedEpisode.getId()).thenReturn(1);
         when(mockedEpisode.getStatus()).thenReturn(PodcastStatus.NEW);
-        when(mockedEpisode.getChannelId()).thenReturn(1);
+        when(mockedEpisode.getChannel()).thenReturn(mockedChannel);
         when(mockedEpisode.getUrl()).thenReturn("http://test.com/test.mp3");
-        when(podcastService.getChannel(1)).thenReturn(mockedChannel);
-        when(mockedChannel.getMediaFileId()).thenReturn(2);
-        when(mediaFileService.getMediaFile(2)).thenReturn(mockedMediaFile);
+        when(mockedEpisode.getChannel()).thenReturn(mockedChannel);
+        when(mockedChannel.getMediaFile()).thenReturn(mockedMediaFile);
         when(mockedMediaFile.getFolderId()).thenReturn(1);
         when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedMusicFolder);
         when(mockedMusicFolder.getPath()).thenReturn(tempFolder);
@@ -295,7 +303,7 @@ public class PodcastServiceTestCase {
         }
 
         // then
-        verify(podcastDao, times(2)).updateEpisode(mockedEpisode);
+        verify(podcastEpisodeRepository, times(2)).save(mockedEpisode);
         verify(mockedEpisode).setStatus(PodcastStatus.ERROR);
         verify(mockedEpisode).setErrorMessage("test");
     }
@@ -306,20 +314,20 @@ public class PodcastServiceTestCase {
     @ValueSource(strings = {"true", "false"})
     public void testGetEpisodeWithNotFoundShouldReturnNull(boolean includeDeleted) {
         // given
-        when(podcastDao.getEpisode(1)).thenReturn(null);
+        when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.empty());
 
         // when
         PodcastEpisode episode = podcastService.getEpisode(1, includeDeleted);
 
         // then
         assertNull(episode);
-        verify(podcastDao).getEpisode(1);
+        verify(podcastEpisodeRepository).findById(1);
     }
 
     @Test
     public void testGetEpisodeWithDeletedEpisodeShouldReturnNull() {
         // given
-        when(podcastDao.getEpisode(1)).thenReturn(mockedEpisode);
+        when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
         when(mockedEpisode.getStatus()).thenReturn(PodcastStatus.DELETED);
 
         // when
@@ -327,14 +335,14 @@ public class PodcastServiceTestCase {
 
         // then
         assertNull(episode);
-        verify(podcastDao).getEpisode(1);
+        verify(podcastEpisodeRepository).findById(1);
     }
 
     @ParameterizedTest
     @EnumSource(value = PodcastStatus.class, mode = Mode.EXCLUDE, names = {"DELETED"})
-    public void testGetEpisodeWithExcludeDeleteShouldREturnEpisode(PodcastStatus status) {
+    public void testGetEpisodeWithExcludeDeleteShouldReturnEpisode(PodcastStatus status) {
         // given
-        when(podcastDao.getEpisode(1)).thenReturn(mockedEpisode);
+        when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
         when(mockedEpisode.getStatus()).thenReturn(status);
 
         // when
@@ -342,22 +350,22 @@ public class PodcastServiceTestCase {
 
         // then
         assertEquals(mockedEpisode, episode);
-        verify(podcastDao).getEpisode(1);
+        verify(podcastEpisodeRepository).findById(1);
     }
 
     @ParameterizedTest
     @EnumSource(value = PodcastStatus.class)
     public void testGetEpisodeWithIncludeDeletedShouldReturnEpisode(PodcastStatus status) {
         // given
-        when(podcastDao.getEpisode(1)).thenReturn(mockedEpisode);
-        when(mockedEpisode.getStatus()).thenReturn(status);
+        when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
 
         // when
         PodcastEpisode episode = podcastService.getEpisode(1, true);
 
         // then
         assertEquals(mockedEpisode, episode);
-        verify(podcastDao).getEpisode(1);
+        verify(mockedEpisode, never()).getStatus();
+        verify(podcastEpisodeRepository).findById(1);
     }
 
     // testGetEpisodes
@@ -369,14 +377,15 @@ public class PodcastServiceTestCase {
 
         // then
         assertEquals(0, episodes.size());
-        verify(podcastDao, never()).getEpisodes(anyInt());
+        verify(podcastEpisodeRepository, never()).findById(anyInt());
     }
 
     @Test
     void testGetEpisodesWithIdShouldReturnListWithNullMediaId() {
         // given
-        when(podcastDao.getEpisodes(1)).thenReturn(Arrays.asList(mockedEpisode));
-        when(mockedEpisode.getMediaFileId()).thenReturn(null);
+        when(podcastChannelRepository.findById(1)).thenReturn(Optional.of(mockedChannel));
+        when(podcastEpisodeRepository.findByChannel(mockedChannel)).thenReturn(Arrays.asList(mockedEpisode));
+        when(mockedEpisode.getMediaFile()).thenReturn(null);
 
         // when
         List<PodcastEpisode> episodes = podcastService.getEpisodes(1);
@@ -384,16 +393,16 @@ public class PodcastServiceTestCase {
         // then
         assertEquals(1, episodes.size());
         assertEquals(mockedEpisode, episodes.get(0));
-        verify(podcastDao).getEpisodes(1);
+        verify(podcastChannelRepository).findById(1);
     }
 
     @Test
     void testGetEpisodesWithIdShouldReturnListWithAllowedMediaId() {
         // given
-        when(podcastDao.getEpisodes(1)).thenReturn(Arrays.asList(mockedEpisode));
+        when(podcastChannelRepository.findById(1)).thenReturn(Optional.of(mockedChannel));
+        when(podcastEpisodeRepository.findByChannel(mockedChannel)).thenReturn(Arrays.asList(mockedEpisode));
         // setup mediafile allowed
-        when(mockedEpisode.getMediaFileId()).thenReturn(1);
-        when(mediaFileService.getMediaFile(1)).thenReturn(mockedMediaFile);
+        when(mockedEpisode.getMediaFile()).thenReturn(mockedMediaFile);
         when(securityService.isReadAllowed(mockedMediaFile, false)).thenReturn(true);
 
         // when
@@ -402,16 +411,16 @@ public class PodcastServiceTestCase {
         // then
         assertEquals(1, episodes.size());
         assertEquals(mockedEpisode, episodes.get(0));
-        verify(podcastDao).getEpisodes(1);
+        verify(podcastChannelRepository).findById(1);
     }
 
     @Test
     void testGetEpisodesWithDisallowedMediafileIdShouldReturnEmptyList() {
         // given
-        when(podcastDao.getEpisodes(1)).thenReturn(Arrays.asList(mockedEpisode));
+        when(podcastChannelRepository.findById(1)).thenReturn(Optional.of(mockedChannel));
+        when(podcastEpisodeRepository.findByChannel(mockedChannel)).thenReturn(Arrays.asList(mockedEpisode));
         // setup mediafile allowed
-        when(mockedEpisode.getMediaFileId()).thenReturn(1);
-        when(mediaFileService.getMediaFile(1)).thenReturn(mockedMediaFile);
+        when(mockedEpisode.getMediaFile()).thenReturn(mockedMediaFile);
         when(securityService.isReadAllowed(mockedMediaFile, false)).thenReturn(false);
 
         // when
@@ -419,7 +428,7 @@ public class PodcastServiceTestCase {
 
         // then
         assertEquals(0, episodes.size());
-        verify(podcastDao).getEpisodes(1);
+        verify(podcastChannelRepository).findById(1);
     }
 
     // testGetNewestEpisodes
@@ -427,28 +436,21 @@ public class PodcastServiceTestCase {
     void testGetNewestEpisodes() {
 
         // given
-        int count = 10;
-        when(mediaFileService.getMediaFile(anyInt()))
-            .thenReturn(null)
-            .thenReturn(mockedMediaFile);
-        when(mockedMediaFile.isPresent())
-            .thenReturn(false)
-            .thenReturn(true);
-        when(podcastDao.getNewestEpisodes(count)).thenReturn(Arrays.asList(mockedEpisode, mockedEpisode, mockedEpisode));
-        when(mockedEpisode.getMediaFileId()).thenReturn(1);
+        int count = 2;
+        when(podcastEpisodeRepository.findByStatusAndPublishDateNotNullAndMediaFilePresentTrueOrderByPublishDateDesc(PodcastStatus.COMPLETED)).thenReturn(Arrays.asList(mockedEpisode, mockedEpisode, mockedEpisode));
 
         // when
         List<PodcastEpisode> episodes = podcastService.getNewestEpisodes(count);
 
         // then
-        assertEquals(1, episodes.size());
-        verify(mediaFileService, times(3)).getMediaFile(anyInt());
+        assertEquals(2, episodes.size());
+        verify(mediaFileService, never()).getMediaFile(anyInt());
     }
 
     @Test
     void testSchedule() {
         // given
-        when(podcastDao.getAllChannelRules()).thenReturn(Arrays.asList(RULE_SCHEDULE, RULE_UNSCHEDULE));
+        when(podcastRuleRepository.findAll()).thenReturn(Arrays.asList(RULE_SCHEDULE, RULE_UNSCHEDULE));
 
         // config scheduleDefault to schedule
         when(settingsService.getPodcastUpdateInterval()).thenReturn(1);

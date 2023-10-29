@@ -20,4 +20,16 @@ public class ThreadPoolConfig {
         threadPool.initialize();
         return threadPool;
     }
+
+    @Bean(name = "PodcastDownloadThreadPool")
+    public Executor podcastDownloadThreadPool() {
+        var threadPool = new ThreadPoolTaskExecutor();
+        threadPool.setCorePoolSize(2);
+        threadPool.setMaxPoolSize(3);
+        threadPool.setQueueCapacity(500);
+        threadPool.setDaemon(true);
+        threadPool.setThreadNamePrefix("podcast-download");
+        threadPool.initialize();
+        return threadPool;
+    }
 }

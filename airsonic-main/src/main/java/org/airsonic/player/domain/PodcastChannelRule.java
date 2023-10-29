@@ -1,10 +1,26 @@
 package org.airsonic.player.domain;
 
+import javax.persistence.*;
+
+@Entity
+@Table(name = "podcast_channel_rules")
 public class PodcastChannelRule {
+
+    @Id
     private Integer id;
+
+    @Column(name = "check_interval")
     private Integer checkInterval;
+
+    @Column(name = "retention_count")
     private Integer retentionCount;
+
+    @Column(name = "download_count")
     private Integer downloadCount;
+
+    public PodcastChannelRule() {
+        super();
+    }
 
     public PodcastChannelRule(Integer id, Integer checkInterval, Integer retentionCount, Integer downloadCount) {
         super();

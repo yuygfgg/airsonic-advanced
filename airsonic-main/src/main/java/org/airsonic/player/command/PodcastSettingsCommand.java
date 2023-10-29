@@ -149,12 +149,5 @@ public class PodcastSettingsCommand {
         public void setDelete(boolean delete) {
             this.delete = delete;
         }
-
-        public PodcastChannelRule toPodcastChannelRule() {
-            if (id == null || interval == null || episodeRetentionCount == null || episodeDownloadCount == null) {
-                return null;
-            }
-            return new PodcastChannelRule(id, interval, episodeRetentionCount, episodeDownloadCount);
-        }
     }
 }

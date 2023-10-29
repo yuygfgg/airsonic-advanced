@@ -68,7 +68,8 @@ public class PodcastReceiverAdminController {
             return new ModelAndView(new RedirectView("podcastChannel.view?id=" + channelId));
         }
         if (deleteChannel != null && channelId != null) {
-            podcastService.deleteChannel(channelId);
+            if (podcastService.deleteChannel(channelId))
+                podcastService.broadcastDeleted(channelId);
             return new ModelAndView(new RedirectView("podcastChannels.view"));
         }
         if (deleteEpisode != null) {

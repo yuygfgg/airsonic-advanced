@@ -50,7 +50,11 @@ public class PodcastWSController {
 
     @MessageMapping("delete")
     public void deleteChannels(List<Integer> ids) {
-        ids.forEach(id -> podcastService.deleteChannel(id));
+        ids.forEach(id -> {
+            if (podcastService.deleteChannel(id)) {
+                podcastService.broadcastDeleted(id);
+            }
+        });
     }
 
     @MessageMapping("refresh")
@@ -72,12 +76,22 @@ public class PodcastWSController {
     public static class PodcastChannelInfo extends PodcastChannel {
         private int fileCount;
         private int downloadedCount;
+        private Integer mediaFileId;
 
         public PodcastChannelInfo(PodcastChannel channel, int fileCount, int downloadedCount) {
             super(channel.getId(), channel.getUrl(), channel.getTitle(), channel.getDescription(),
-                    channel.getImageUrl(), channel.getStatus(), channel.getErrorMessage(), channel.getMediaFileId());
+                    channel.getImageUrl(), channel.getStatus(), channel.getErrorMessage(), channel.getMediaFile());
             this.fileCount = fileCount;
             this.downloadedCount = downloadedCount;
+            this.mediaFileId = channel.getMediaFile() != null ? channel.getMediaFile().getId() : null;
+        }
+
+        public Integer getMediaFileId() {
+            return mediaFileId;
+        }
+
+        public void setMediaFileId(Integer mediaFileId) {
+            this.mediaFileId = mediaFileId;
         }
 
         public int getFileCount() {

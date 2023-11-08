@@ -31,7 +31,7 @@ import org.airsonic.player.service.ArtistService;
 import org.airsonic.player.service.CoverArtService;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.PlaylistService;
-import org.airsonic.player.service.PodcastService;
+import org.airsonic.player.service.PodcastPersistenceService;
 import org.airsonic.player.util.ImageUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -89,7 +89,7 @@ public class CoverArtControllerTest {
     private PlaylistService playlistService;
 
     @MockBean
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastService;
 
     @SpyBean
     private CoverArtService coverArtService;

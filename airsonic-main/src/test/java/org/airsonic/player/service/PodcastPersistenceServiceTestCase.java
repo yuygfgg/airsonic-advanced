@@ -1,11 +1,4 @@
-/*
- This file is part of Airsonic.
-
- Airsonic is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
+/* This file is part of Airsonic.  Airsonic is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  Airsonic is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -26,7 +19,6 @@ import org.airsonic.player.domain.PodcastChannel;
 import org.airsonic.player.domain.PodcastChannelRule;
 import org.airsonic.player.domain.PodcastEpisode;
 import org.airsonic.player.domain.PodcastStatus;
-import org.airsonic.player.domain.Version;
 import org.airsonic.player.repository.PodcastChannelRepository;
 import org.airsonic.player.repository.PodcastEpisodeRepository;
 import org.airsonic.player.repository.PodcastRuleRepository;
@@ -34,7 +26,6 @@ import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -44,18 +35,10 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -66,17 +49,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class PodcastServiceTestCase {
+public class PodcastPersistenceServiceTestCase {
 
     @Mock
     private SettingsService settingsService;
@@ -100,8 +79,7 @@ public class PodcastServiceTestCase {
     private VersionService versionService;
 
     @InjectMocks
-    @Spy
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastService;
 
     @Mock
     private PodcastEpisode mockedEpisode;
@@ -121,29 +99,31 @@ public class PodcastServiceTestCase {
     @TempDir
     private Path tempFolder;
 
-
     // test data
     private PodcastChannelRule RULE_SCHEDULE = new PodcastChannelRule(1, 1, 1, 1);
-    private PodcastRule RULE_SCHEDULE_COMMAND = new PodcastRule(RULE_SCHEDULE, "test");
-    private PodcastChannelRule RULE_UNSCHEDULE = new PodcastChannelRule(2, -1, null, null);
 
     @Test
     void testCreateOrUpdateChannelRule() {
         // given
         // prepare instant
-        when(podcastRuleRepository.findById(1)).thenReturn(Optional.of(RULE_SCHEDULE));
-        Instant now = Instant.parse("2020-01-01T00:00:00Z");
-        Instant expectedFirstTime = Instant.parse("2020-01-01T00:05:00Z");
+        PodcastChannel channel = new PodcastChannel();
+        PodcastChannelRule rule = new PodcastChannelRule(1);
 
-        try (MockedStatic<Instant> mockedInstant = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
-            mockedInstant.when(Instant::now).thenReturn(now);
-            // when
-            podcastService.createOrUpdateChannelRuleByCommand(RULE_SCHEDULE_COMMAND);
+        when(podcastChannelRepository.findById(1)).thenReturn(Optional.of(channel));
+        when(podcastRuleRepository.findById(1)).thenReturn(Optional.of(rule));
+        PodcastRule command = new PodcastRule(RULE_SCHEDULE, "test");
+        command.setId(1);
 
-            // then
-            verify(podcastRuleRepository).save(any(PodcastChannelRule.class));
-            verify(taskService).scheduleAtFixedRate(eq("podcast-channel-refresh-1"), any(), eq(expectedFirstTime), eq(Duration.ofHours(1)), eq(true));
-        }
+        // when
+        PodcastChannelRule actual = podcastService.createOrUpdateChannelRuleByCommand(command);
+
+        // then
+        verify(podcastRuleRepository).save(any(PodcastChannelRule.class));
+        assertEquals(1, actual.getCheckInterval());
+        assertEquals(1, actual.getDownloadCount());
+        assertEquals(1, actual.getRetentionCount());
+        assertEquals(1, actual.getId());
+
     }
 
     @Test
@@ -168,7 +148,6 @@ public class PodcastServiceTestCase {
         verify(podcastEpisodeRepository).delete(mockedEpisode);
         verify(podcastChannelRepository).delete(mockedChannel);
         verify(mediaFileService).refreshMediaFile(mockedMediaFile, mockedMusicFolder);
-        verifyNoInteractions(asyncSocketClient);
         assertFalse(Files.exists(tempFolder.resolve("test.mp3")));
         assertTrue(actual);
     }
@@ -176,15 +155,14 @@ public class PodcastServiceTestCase {
     @Test
     void testDeleteChannelRule() {
         // given
-        when(podcastChannelRepository.findById(10)).thenReturn(Optional.of(mockedChannel));
+        when(podcastRuleRepository.findById(10)).thenReturn(Optional.of(RULE_SCHEDULE));
 
         // when
-        podcastService.deleteChannelRule(10);
+        boolean result = podcastService.deleteChannelRule(10);
 
         // then
-        verify(podcastChannelRepository).delete(mockedChannel);
-        assertUnschedule(10); // assert call unschedule
-
+        verify(podcastRuleRepository).delete(RULE_SCHEDULE);
+        assertTrue(result);
     }
 
     @ParameterizedTest
@@ -248,68 +226,52 @@ public class PodcastServiceTestCase {
     }
 
     @Test
-    void testDoDownloadEpisodeWithDeletedEpisodeShouldDoNothing() {
+    void testPrepareDownloadEpisodeWithDeletedEpisodeShouldReturnNull() {
 
         // given
         when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
-        when(mockedEpisode.getId()).thenReturn(1);
         when(mockedEpisode.getStatus()).thenReturn(PodcastStatus.DELETED);
 
         // when
-        ReflectionTestUtils.invokeMethod(podcastService, "doDownloadEpisode", mockedEpisode);
+        PodcastEpisode episode = podcastService.prepareDownloadEpisode(1);
 
         // then
-        verify(podcastEpisodeRepository, never()).save(any(PodcastEpisode.class));
+        assertNull(episode);
+
     }
 
     @ParameterizedTest
     @EnumSource(value = PodcastStatus.class, names = {"DOWNLOADING", "COMPLETED"})
-    public void testDoDownloadEpisodeWithDownloadingOrCompletedEpisodeShouldDoNothing(PodcastStatus status) {
+    public void testPrepareDownloadEpisodeWithDownloadingOrCompletedEpisodeShouldDoNothing(PodcastStatus status) {
         // given
         when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
-        when(mockedEpisode.getId()).thenReturn(1);
         when(mockedEpisode.getStatus()).thenReturn(status);
 
         // when
-        ReflectionTestUtils.invokeMethod(podcastService, "doDownloadEpisode", mockedEpisode);
+        PodcastEpisode episode = podcastService.prepareDownloadEpisode(1);
 
         // then
-        verify(podcastEpisodeRepository, never()).save(any(PodcastEpisode.class));
+        assertNull(episode);
     }
 
-    @Test
-    public void testDoDonwloadEpisodeWithExceptionShouldSetErrorStatus() throws Exception {
+    @ParameterizedTest
+    @EnumSource(value = PodcastStatus.class, mode = Mode.EXCLUDE, names = {"DELETED", "DOWNLOADING", "COMPLETED"})
+    public void testPrepareDonwloadEpisodeShouldReturnDownloadingEpisode(PodcastStatus status) {
 
         // given
         when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
-        when(mockedEpisode.getId()).thenReturn(1);
-        when(mockedEpisode.getStatus()).thenReturn(PodcastStatus.NEW);
-        when(mockedEpisode.getChannel()).thenReturn(mockedChannel);
-        when(mockedEpisode.getUrl()).thenReturn("http://test.com/test.mp3");
-        when(mockedEpisode.getChannel()).thenReturn(mockedChannel);
-        when(mockedChannel.getMediaFile()).thenReturn(mockedMediaFile);
-        when(mockedMediaFile.getFolderId()).thenReturn(1);
-        when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedMusicFolder);
-        when(mockedMusicFolder.getPath()).thenReturn(tempFolder);
-        when(mockedMediaFile.getFullPath(tempFolder)).thenReturn(tempFolder);
-        when(securityService.isWriteAllowed(Paths.get("test.mp3"), mockedMusicFolder)).thenReturn(true);
-        when(versionService.getLocalVersion()).thenReturn(new Version("1.0.0"));
+        when(mockedEpisode.getStatus()).thenReturn(status);
 
         // when
-        try (MockedStatic<HttpClients> mockedHttpClients = Mockito.mockStatic(HttpClients.class, Mockito.CALLS_REAL_METHODS)) {
-            mockedHttpClients.when(() -> HttpClients.createDefault()).thenReturn(mockedHttpClient);
-            when(mockedHttpClient.execute(any())).thenThrow(new IOException("test"));
-            ReflectionTestUtils.invokeMethod(podcastService, "doDownloadEpisode", mockedEpisode);
-        }
+        PodcastEpisode episode = podcastService.prepareDownloadEpisode(1);
 
         // then
-        verify(podcastEpisodeRepository, times(2)).save(mockedEpisode);
-        verify(mockedEpisode).setStatus(PodcastStatus.ERROR);
-        verify(mockedEpisode).setErrorMessage("test");
+        assertEquals(mockedEpisode, episode);
+        verify(mockedEpisode).setStatus(PodcastStatus.DOWNLOADING);
+        verify(podcastEpisodeRepository).save(mockedEpisode);
     }
 
     // testGetEpisode
-
     @ParameterizedTest
     @ValueSource(strings = {"true", "false"})
     public void testGetEpisodeWithNotFoundShouldReturnNull(boolean includeDeleted) {
@@ -437,7 +399,8 @@ public class PodcastServiceTestCase {
 
         // given
         int count = 2;
-        when(podcastEpisodeRepository.findByStatusAndPublishDateNotNullAndMediaFilePresentTrueOrderByPublishDateDesc(PodcastStatus.COMPLETED)).thenReturn(Arrays.asList(mockedEpisode, mockedEpisode, mockedEpisode));
+        when(podcastEpisodeRepository.findByStatusAndPublishDateNotNullAndMediaFilePresentTrueOrderByPublishDateDesc(
+                PodcastStatus.COMPLETED)).thenReturn(Arrays.asList(mockedEpisode, mockedEpisode, mockedEpisode));
 
         // when
         List<PodcastEpisode> episodes = podcastService.getNewestEpisodes(count);
@@ -445,68 +408,6 @@ public class PodcastServiceTestCase {
         // then
         assertEquals(2, episodes.size());
         verify(mediaFileService, never()).getMediaFile(anyInt());
-    }
-
-    @Test
-    void testSchedule() {
-        // given
-        when(podcastRuleRepository.findAll()).thenReturn(Arrays.asList(RULE_SCHEDULE, RULE_UNSCHEDULE));
-
-        // config scheduleDefault to schedule
-        when(settingsService.getPodcastUpdateInterval()).thenReturn(1);
-
-        // prepare instant
-        Instant now = Instant.parse("2020-01-01T00:00:00Z");
-        Instant expectedFirstTime = Instant.parse("2020-01-01T00:05:00Z");
-
-
-        try (MockedStatic<Instant> mockedInstant = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
-            mockedInstant.when(Instant::now).thenReturn(now);
-
-            // when
-            podcastService.schedule();
-
-            // then
-            verify(taskService).scheduleAtFixedRate(eq("podcast-channel-refresh--1"), any(), eq(expectedFirstTime), eq(Duration.ofHours(1)), eq(true)); // assert scheduleDefault is called
-            assertUnschedule(2); // schedule rule 2
-            verify(taskService).scheduleAtFixedRate(eq("podcast-channel-refresh-1"), any(), eq(expectedFirstTime), eq(Duration.ofHours(1)), eq(true));
-        }
-    }
-
-    @Test
-    void testScheduleDefaultWithoutIntervalConfigShouldUnshcedule() {
-        // given
-        when(settingsService.getPodcastUpdateInterval()).thenReturn(-1);
-
-        // when
-        podcastService.scheduleDefault();
-
-        // then
-        // unschedule should be called
-        assertUnschedule(-1);
-    }
-
-    private void assertUnschedule(Integer id) {
-        verify(taskService).unscheduleTask(eq("podcast-channel-refresh-" + id));
-    }
-
-
-    @Test
-    void testScheduleDefaultWithIntervalConfigShouldSchedule() {
-        // given
-        when(settingsService.getPodcastUpdateInterval()).thenReturn(1);
-        Instant now = Instant.parse("2020-01-01T00:00:00Z");
-        Instant expectedFirstTime = Instant.parse("2020-01-01T00:05:00Z");
-
-        // when
-        try (MockedStatic<Instant> mockedInstant = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
-            mockedInstant.when(Instant::now).thenReturn(now);
-            podcastService.scheduleDefault();
-
-            // then
-            verify(taskService).scheduleAtFixedRate(eq("podcast-channel-refresh--1"), any(), eq(expectedFirstTime), eq(Duration.ofHours(1)), eq(true));
-            verify(taskService, never()).unscheduleTask(anyString());
-        }
     }
 
 }

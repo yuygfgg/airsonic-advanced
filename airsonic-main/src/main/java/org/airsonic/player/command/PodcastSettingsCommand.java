@@ -149,5 +149,9 @@ public class PodcastSettingsCommand {
         public void setDelete(boolean delete) {
             this.delete = delete;
         }
+
+        public boolean isValid() {
+            return id != null && interval != null && episodeRetentionCount != null && episodeDownloadCount != null;
+        }
     }
 }

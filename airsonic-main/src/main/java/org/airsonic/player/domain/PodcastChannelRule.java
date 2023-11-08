@@ -1,5 +1,6 @@
 package org.airsonic.player.domain;
 
+
 import javax.persistence.*;
 
 @Entity
@@ -22,6 +23,11 @@ public class PodcastChannelRule {
         super();
     }
 
+    public PodcastChannelRule(Integer id) {
+        super();
+        this.id = id;
+    }
+
     public PodcastChannelRule(Integer id, Integer checkInterval, Integer retentionCount, Integer downloadCount) {
         super();
         this.id = id;
@@ -29,6 +35,7 @@ public class PodcastChannelRule {
         this.retentionCount = retentionCount;
         this.downloadCount = downloadCount;
     }
+
 
     public Integer getId() {
         return id;

@@ -45,7 +45,7 @@ public class PlayQueueService {
     @Autowired
     private RatingService ratingService;
     @Autowired
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastService;
     @Autowired
     private PlaylistService playlistService;
     @Autowired

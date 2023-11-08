@@ -3,7 +3,8 @@ package org.airsonic.player.ajax;
 import org.airsonic.player.domain.PodcastChannel;
 import org.airsonic.player.domain.PodcastEpisode;
 import org.airsonic.player.domain.PodcastStatus;
-import org.airsonic.player.service.PodcastService;
+import org.airsonic.player.service.PodcastManagementService;
+import org.airsonic.player.service.PodcastPersistenceService;
 import org.airsonic.player.service.podcast.PodcastIndexService;
 import org.airsonic.player.service.podcast.PodcastIndexService.PodcastIndexResponse.PodcastIndexResult;
 import org.apache.commons.lang.StringUtils;
@@ -22,49 +23,51 @@ import static java.util.stream.Collectors.toList;
 @MessageMapping("/podcasts")
 public class PodcastWSController {
     @Autowired
-    PodcastService podcastService;
+    PodcastPersistenceService podcastPersistenceService;
+
+    @Autowired
+    PodcastManagementService podcastManagementService;
+
     @Autowired
     PodcastIndexService podcastIndexService;
 
     @SubscribeMapping("all")
     public List<PodcastChannelInfo> getAllPodcastChannels() {
-        return podcastService.getAllChannels().stream().map(this::wrap).collect(toList());
+        return podcastPersistenceService.getAllChannels().stream().map(this::wrap).collect(toList());
     }
 
     @MessageMapping("channel")
     @SendToUser(broadcast = false)
     public PodcastChannelInfo getPodcastChannel(Integer channelId) {
-        return wrap(podcastService.getChannel(channelId));
+        return wrap(podcastPersistenceService.getChannel(channelId));
     }
 
     private PodcastChannelInfo wrap(PodcastChannel channel) {
-        List<PodcastEpisode> episodes = podcastService.getEpisodes(channel.getId());
+        List<PodcastEpisode> episodes = podcastPersistenceService.getEpisodes(channel.getId());
 
         return new PodcastChannelInfo(channel, episodes.size(), (int) episodes.stream().filter(e -> e.getStatus() == PodcastStatus.COMPLETED).count());
     }
 
     @MessageMapping("create")
     public void createChannel(String url) {
-        podcastService.createChannel(StringUtils.trimToNull(url));
+        podcastManagementService.createChannel(StringUtils.trimToNull(url));
     }
 
     @MessageMapping("delete")
     public void deleteChannels(List<Integer> ids) {
         ids.forEach(id -> {
-            if (podcastService.deleteChannel(id)) {
-                podcastService.broadcastDeleted(id);
-            }
+            podcastManagementService.deleteChannel(id);
         });
     }
 
     @MessageMapping("refresh")
     public void refreshChannels(List<Integer> ids) {
-        podcastService.refreshChannelIds(ids, true);
+        podcastManagementService.refreshChannelIds(ids, true);
     }
 
     @SubscribeMapping("episodes/newest")
     public List<PodcastEpisode> newestEpisodes() {
-        return podcastService.getNewestEpisodes(10);
+        return podcastPersistenceService.getNewestEpisodes(10);
     }
 
     @MessageMapping("search")

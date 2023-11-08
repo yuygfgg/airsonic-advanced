@@ -89,7 +89,7 @@ public class CoverArtController {
     @Autowired
     private PlaylistService playlistService;
     @Autowired
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastService;
     @Autowired
     private ArtistService artistService;
     @Autowired

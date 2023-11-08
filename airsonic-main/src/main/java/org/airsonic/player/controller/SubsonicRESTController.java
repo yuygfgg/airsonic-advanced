@@ -32,6 +32,7 @@ import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.i18n.LocaleResolver;
 import org.airsonic.player.service.*;
+import org.airsonic.player.service.podcast.PodcastDownloadClient;
 import org.airsonic.player.service.search.IndexType;
 import org.airsonic.player.util.StringUtil;
 import org.airsonic.player.util.Util;
@@ -131,7 +132,11 @@ public class SubsonicRESTController {
     @Autowired
     private AudioScrobblerService audioScrobblerService;
     @Autowired
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastPersistenceService;
+    @Autowired
+    private PodcastManagementService podcastManagementService;
+    @Autowired
+    private PodcastDownloadClient podcastDownloadClient;
     @Autowired
     private RatingService ratingService;
     @Autowired
@@ -1529,7 +1534,7 @@ public class SubsonicRESTController {
 
         Podcasts result = new Podcasts();
 
-        for (org.airsonic.player.domain.PodcastChannel channel : podcastService.getAllChannels()) {
+        for (org.airsonic.player.domain.PodcastChannel channel : podcastPersistenceService.getAllChannels()) {
             if (channelId == null || channelId.equals(channel.getId())) {
 
                 org.subsonic.restapi.PodcastChannel c = new org.subsonic.restapi.PodcastChannel();
@@ -1545,7 +1550,7 @@ public class SubsonicRESTController {
                 c.setErrorMessage(channel.getErrorMessage());
 
                 if (includeEpisodes) {
-                    List<org.airsonic.player.domain.PodcastEpisode> episodes = podcastService.getEpisodes(channel.getId());
+                    List<org.airsonic.player.domain.PodcastEpisode> episodes = podcastPersistenceService.getEpisodes(channel.getId());
                     for (org.airsonic.player.domain.PodcastEpisode episode : episodes) {
                         c.getEpisode().add(createJaxbPodcastEpisode(player, username, episode));
                     }
@@ -1566,7 +1571,7 @@ public class SubsonicRESTController {
         int count = getIntParameter(request, "count", 20);
         NewestPodcasts result = new NewestPodcasts();
 
-        for (org.airsonic.player.domain.PodcastEpisode episode : podcastService.getNewestEpisodes(count)) {
+        for (org.airsonic.player.domain.PodcastEpisode episode : podcastPersistenceService.getNewestEpisodes(count)) {
             result.getEpisode().add(createJaxbPodcastEpisode(player, username, episode));
         }
 
@@ -1601,7 +1606,7 @@ public class SubsonicRESTController {
             error(request, response, ErrorCode.NOT_AUTHORIZED, user.getUsername() + " is not authorized to administrate podcasts.");
             return;
         }
-        podcastService.refreshAllChannels(true);
+        podcastManagementService.refreshAllChannels(true);
         writeEmptyResponse(request, response);
     }
 
@@ -1615,7 +1620,7 @@ public class SubsonicRESTController {
         }
 
         String url = getRequiredStringParameter(request, "url");
-        podcastService.createChannel(url);
+        podcastManagementService.createChannel(url);
         writeEmptyResponse(request, response);
     }
 
@@ -1629,8 +1634,7 @@ public class SubsonicRESTController {
         }
 
         int id = getRequiredIntParameter(request, "id");
-        if (podcastService.deleteChannel(id))
-            podcastService.broadcastDeleted(id);
+        podcastManagementService.deleteChannel(id);
         writeEmptyResponse(request, response);
     }
 
@@ -1644,7 +1648,7 @@ public class SubsonicRESTController {
         }
 
         int id = getRequiredIntParameter(request, "id");
-        podcastService.deleteEpisode(id, true);
+        podcastPersistenceService.deleteEpisode(id, true);
         writeEmptyResponse(request, response);
     }
 
@@ -1658,13 +1662,13 @@ public class SubsonicRESTController {
         }
 
         int id = getRequiredIntParameter(request, "id");
-        org.airsonic.player.domain.PodcastEpisode episode = podcastService.getEpisode(id, true);
+        org.airsonic.player.domain.PodcastEpisode episode = podcastPersistenceService.getEpisode(id, true);
         if (episode == null) {
             error(request, response, ErrorCode.NOT_FOUND, "Podcast episode " + id + " not found.");
             return;
         }
 
-        podcastService.downloadEpisode(episode);
+        podcastDownloadClient.downloadEpisode(episode.getId());
         writeEmptyResponse(request, response);
     }
 
@@ -1683,7 +1687,7 @@ public class SubsonicRESTController {
         headers.setContentDisposition(ContentDisposition.builder("attachment").filename("airsonic.opml", StandardCharsets.UTF_8).build());
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_XML);
 
-        return ResponseEntity.ok().headers(headers).body(podcastService.export(podcastService.getAllChannels()));
+        return ResponseEntity.ok().headers(headers).body(podcastPersistenceService.exportAllChannels());
     }
 
     @RequestMapping("/getInternetRadioStations")

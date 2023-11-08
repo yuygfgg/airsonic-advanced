@@ -32,4 +32,16 @@ public class ThreadPoolConfig {
         threadPool.initialize();
         return threadPool;
     }
+
+    @Bean(name = "PodcastRefreshThreadPool")
+    public Executor podcastRefreshThreadPool() {
+        var threadPool = new ThreadPoolTaskExecutor();
+        threadPool.setCorePoolSize(2);
+        threadPool.setMaxPoolSize(5);
+        threadPool.setQueueCapacity(1000);
+        threadPool.setDaemon(true);
+        threadPool.setThreadNamePrefix("podcast-refresh");
+        threadPool.initialize();
+        return threadPool;
+    }
 }

@@ -73,7 +73,7 @@ public class SonosHelper {
     @Autowired
     private LastFmService lastFmService;
     @Autowired
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastService;
     @Autowired
     private JWTSecurityService jwtSecurityService;
     @Autowired
@@ -741,7 +741,7 @@ public class SonosHelper {
         this.lastFmService = lastFmService;
     }
 
-    public void setPodcastService(PodcastService podcastService) {
+    public void setPodcastService(PodcastPersistenceService podcastService) {
         this.podcastService = podcastService;
     }
 }

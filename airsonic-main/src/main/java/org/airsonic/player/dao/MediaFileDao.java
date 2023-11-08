@@ -64,29 +64,6 @@ public class MediaFileDao extends AbstractDao {
     private final MusicFileInfoMapper musicFileInfoRowMapper = new MusicFileInfoMapper();
     private final GenreMapper genreRowMapper = new GenreMapper();
 
-    /**
-     * Returns the media file that are direct children of the given path.
-     *
-     * @param path The path.
-     * @return The list of children.
-     */
-    public List<MediaFile> getChildrenOf(String path, int folderId, boolean onlyPresent) {
-        return getChildrenOf(path, folderId, onlyPresent, false);
-    }
-
-    /**
-     * Returns the media file that are direct children of the given path.
-     *
-     * @param path The path.
-     * @param folderId root folder
-     * @param onlyPresent only return files which are marked as being present
-     * @param noIndexedTracks do not return indexed tracks
-     * @return The list of children.
-     */
-    public List<MediaFile> getChildrenOf(String path, int folderId, boolean onlyPresent, boolean noIndexedTracks) {
-        return query("select " + QUERY_COLUMNS + " from media_file where parent_path=? and folder_id=?" +
-                        (onlyPresent ? " and present" : "") + (noIndexedTracks ? " and start_position < 0" : "") + " order by start_position", rowMapper, path, folderId);
-    }
 
     public List<MediaFile> getFilesInPlaylist(int playlistId) {
         return query("select " + prefix(QUERY_COLUMNS, "media_file") + " from playlist_file, media_file where " +

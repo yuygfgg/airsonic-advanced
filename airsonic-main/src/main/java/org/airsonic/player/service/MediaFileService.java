@@ -50,6 +50,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedInputStream;
@@ -285,7 +286,7 @@ public class MediaFileService {
 
             if (resultStream == null) {
                 MusicFolder folder = mediaFolderService.getMusicFolderById(parent.getFolderId());
-                resultStream = mediaFileDao.getChildrenOf(parent.getPath(), parent.getFolderId(), true).parallelStream()
+                resultStream = mediaFileRepository.findByFolderIdAndParentPathAndPresentTrue(parent.getFolderId(), parent.getPath(), Sort.by("startPosition")).parallelStream()
                         .map(x -> checkLastModified(x, folder, minimizeDiskAccess))
                         .filter(x -> includeMediaFile(x, folder));
             }
@@ -470,7 +471,7 @@ public class MediaFileService {
             return null;
         }
 
-        Map<Pair<String, Double>, MediaFile> storedChildrenMap = mediaFileDao.getChildrenOf(parent.getPath(), parent.getFolderId(), false).parallelStream()
+        Map<Pair<String, Double>, MediaFile> storedChildrenMap = mediaFileRepository.findByFolderIdAndParentPath(parent.getFolderId(), parent.getPath(), Sort.by("startPosition")).parallelStream()
             .collect(Collectors.toConcurrentMap(i -> Pair.of(i.getPath(), i.getStartPosition()), i -> i));
         MusicFolder folder = mediaFolderService.getMusicFolderById(parent.getFolderId());
 

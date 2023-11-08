@@ -24,6 +24,7 @@ import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
+import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.repository.MusicFolderRepository;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -59,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class MediaFileDaoTest {
 
     @Autowired
-    MediaFileDao mediaFileDao;
+    MediaFileRepository mediaFileRepository;
 
     @Autowired
     MusicFolderRepository musicFolderRepository;
@@ -111,10 +112,10 @@ public class MediaFileDaoTest {
         baseFile.setLastScanned(Instant.now());
         baseFile.setChildrenLastUpdated(Instant.now());
         // save
-        mediaFileDao.createOrUpdateMediaFile(baseFile, file -> {});
+        mediaFileRepository.save(baseFile);
 
         // assert
-        List<MediaFile> registeredTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("test.wav", testFolder.getId());
+        List<MediaFile> registeredTracks = mediaFileRepository.findByFolderIdAndPath(testFolder.getId(), "test.wav");
         assertEquals(1, registeredTracks.size());
 
         // update
@@ -127,17 +128,17 @@ public class MediaFileDaoTest {
         mediaFile.setChanged(Instant.now());
         mediaFile.setLastScanned(Instant.now());
         mediaFile.setChildrenLastUpdated(Instant.now());
-        mediaFileDao.createOrUpdateMediaFile(mediaFile, file -> {});
+        mediaFileRepository.save(mediaFile);
 
         // assertion
-        registeredTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("test.wav", testFolder.getId());
+        registeredTracks = mediaFileRepository.findByFolderIdAndPath(testFolder.getId(), "test.wav");
         assertEquals(2, registeredTracks.size());
         registeredTracks.forEach(t -> assertEquals("test.wav",t.getPath()));
 
-        List<MediaFile> wrongFolderTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("test.wav", testFolder.getId() + 1);
+        List<MediaFile> wrongFolderTracks = mediaFileRepository.findByFolderIdAndPath(testFolder.getId() + 1, "test.wav");
         assertEquals(0, wrongFolderTracks.size());
 
-        List<MediaFile> wrongPathTracks = mediaFileDao.getMediaFilesByRelativePathAndFolderId("wrong.wav", testFolder.getId());
+        List<MediaFile> wrongPathTracks = mediaFileRepository.findByFolderIdAndPath(testFolder.getId(), "wrong.wav");
         assertEquals(0, wrongPathTracks.size());
     }
 

@@ -621,7 +621,7 @@ public class SubsonicRESTController {
         Player player = playerService.getPlayer(request, response, username);
 
         int id = getRequiredIntParameter(request, "id");
-        MediaFile song = mediaFileDao.getMediaFile(id);
+        MediaFile song = mediaFileService.getMediaFile(id);
         if (song == null || song.isDirectory()) {
             error(request, response, ErrorCode.NOT_FOUND, "Song not found.");
             return;
@@ -1451,7 +1451,7 @@ public class SubsonicRESTController {
 
         String username = securityService.getCurrentUser(request).getUsername();
         for (int id : getIntParameters(request, "id")) {
-            MediaFile mediaFile = mediaFileDao.getMediaFile(id);
+            MediaFile mediaFile = mediaFileService.getMediaFile(id);
             if (mediaFile == null) {
                 error(request, response, ErrorCode.NOT_FOUND, "Media file not found: " + id);
                 return;

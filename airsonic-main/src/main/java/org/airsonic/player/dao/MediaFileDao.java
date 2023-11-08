@@ -64,33 +64,6 @@ public class MediaFileDao extends AbstractDao {
     private final MusicFileInfoMapper musicFileInfoRowMapper = new MusicFileInfoMapper();
     private final GenreMapper genreRowMapper = new GenreMapper();
 
-    public MediaFile getMediaFile(String path, int folderId, Double startPosition) {
-        return queryOne("select " + QUERY_COLUMNS + " from media_file where path=? and folder_id=? and start_position=?", rowMapper, path, folderId, startPosition);
-    }
-
-    public MediaFile getMediaFile(String path, int folderId) {
-        return getMediaFile(path, folderId, MediaFile.NOT_INDEXED);
-    }
-
-    public MediaFile getMediaFile(int id) {
-        return queryOne("select " + QUERY_COLUMNS + " from media_file where id=?", rowMapper, id);
-    }
-
-    public List<MediaFile> getMediaFilesByRelativePath(String path) {
-        return query("select " + QUERY_COLUMNS + " from media_file where path=?", rowMapper, path);
-    }
-
-    /**
-     * Returns the list of media file that has same path in the folder whose id is given folderId
-     *
-     * @param path The path of media file
-     * @param folderId The id of the folder which contains the media file
-     * @return The list of media files
-     */
-    public List<MediaFile> getMediaFilesByRelativePathAndFolderId(String path, int folderId) {
-        return query("select " + QUERY_COLUMNS + " from media_file where path=? and folder_id=?", rowMapper, path, folderId);
-    }
-
     /**
      * Returns the media file that are direct children of the given path.
      *

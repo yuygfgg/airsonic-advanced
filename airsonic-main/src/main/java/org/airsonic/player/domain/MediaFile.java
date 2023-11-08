@@ -154,6 +154,7 @@ public class MediaFile {
     @Column(name = "mb_recording_id", nullable = true)
     private String musicBrainzRecordingId;
 
+
     public MediaFile(Integer id, String path, Integer folderId, MediaType mediaType, Double startPosition, String format, String title,
                      String albumName, String artist, String albumArtist, Integer discNumber, Integer trackNumber, Integer year, String genre, Integer bitRate,
                      boolean variableBitRate, Double duration, Long fileSize, Integer width, Integer height, String parentPath, String indexPath, int playCount,

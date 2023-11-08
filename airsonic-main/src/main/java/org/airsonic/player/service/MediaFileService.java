@@ -30,6 +30,7 @@ import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.i18n.LocaleResolver;
 import org.airsonic.player.repository.AlbumRepository;
+import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.service.metadata.JaudiotaggerParser;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
@@ -93,6 +94,8 @@ public class MediaFileService {
     @Autowired
     private CoverArtService coverArtService;
     @Autowired
+    private MediaFileRepository mediaFileRepository;
+    @Autowired
     private LocaleResolver localeResolver;
     private boolean memoryCacheEnabled = true;
 
@@ -143,41 +146,31 @@ public class MediaFileService {
     @Cacheable(cacheNames = "mediaFilePathCache", key = "#relativePath.toString().concat('-').concat(#folder.id).concat('-').concat(#startPosition == null ? '' : #startPosition.toString())", condition = "#root.target.memoryCacheEnabled", unless = "#result == null")
     public MediaFile getMediaFile(Path relativePath, MusicFolder folder, Double startPosition, boolean minimizeDiskAccess) {
         // Look in database.
-        MediaFile result = mediaFileDao.getMediaFile(relativePath.toString(), folder.getId(), startPosition);
-        if (result != null) {
-            result = checkLastModified(result, folder, minimizeDiskAccess);
-            return result;
-        }
-
-        if (!Files.exists(folder.getPath().resolve(relativePath))) {
-            return null;
-        }
-
-        if (startPosition > MediaFile.NOT_INDEXED) {
-            return null;
-        }
-        // Not found in database, must read from disk.
-        result = createMediaFile(relativePath, folder, null);
-
-        // Put in database.
-        updateMediaFile(result);
-
-        return result;
+        return mediaFileRepository.findByPathAndFolderIdAndStartPosition(relativePath.toString(), folder.getId(), startPosition)
+            .map(file -> checkLastModified(file, folder, minimizeDiskAccess))
+            .orElseGet(() -> {
+                if (!Files.exists(folder.getPath().resolve(relativePath))) {
+                    return null;
+                }
+                if (startPosition > MediaFile.NOT_INDEXED) {
+                    return null;
+                }
+                // Not found in database, must read from disk.
+                MediaFile mediaFile = createMediaFile(relativePath, folder, null);
+                // Put in database.
+                updateMediaFile(mediaFile);
+                return mediaFile;
+            });
     }
 
     @Cacheable(cacheNames = "mediaFileIdCache", condition = "#root.target.memoryCacheEnabled", unless = "#result == null")
     public MediaFile getMediaFile(Integer id) {
         if (Objects.isNull(id)) return null;
-        MediaFile mediaFile = mediaFileDao.getMediaFile(id);
-        if (mediaFile == null) {
-            return null;
-        }
-
-        return checkLastModified(mediaFile, mediaFolderService.getMusicFolderById(mediaFile.getFolderId()), settingsService.isFastCacheEnabled());
+        return mediaFileRepository.findById(id).map(mediaFile -> checkLastModified(mediaFile, mediaFolderService.getMusicFolderById(mediaFile.getFolderId()), settingsService.isFastCacheEnabled())).orElse(null);
     }
 
     public List<MediaFile> getMediaFilesByRelativePath(Path relativePath) {
-        return mediaFileDao.getMediaFilesByRelativePath(relativePath.toString());
+        return mediaFileRepository.findByPath(relativePath.toString());
     }
 
     public MediaFile getParentOf(MediaFile mediaFile) {
@@ -742,7 +735,7 @@ public class MediaFileService {
 
     private List<MediaFile> createIndexedTracks(MediaFile base, MusicFolder folder, CueSheet cueSheet) {
 
-        Map<Pair<String, Double>, MediaFile> storedChildrenMap = mediaFileDao.getMediaFilesByRelativePathAndFolderId(base.getPath(), folder.getId()).parallelStream()
+        Map<Pair<String, Double>, MediaFile> storedChildrenMap = mediaFileRepository.findByFolderIdAndPath(folder.getId(), base.getPath()).parallelStream()
             .filter(MediaFile::isIndexedTrack).collect(Collectors.toConcurrentMap(i -> Pair.of(i.getPath(), i.getStartPosition()), i -> i));
 
         List<MediaFile> children = new ArrayList<>();

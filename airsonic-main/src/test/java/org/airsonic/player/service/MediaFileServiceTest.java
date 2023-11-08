@@ -3,6 +3,7 @@ package org.airsonic.player.service;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
+import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.service.metadata.MetaDataParserFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +32,8 @@ public class MediaFileServiceTest {
     private MetaDataParserFactory metaDataParserFactory;
     @Mock
     private MediaFileDao mediaFileDao;
+    @Mock
+    private MediaFileRepository mediaFileRepository;
     @Mock
     private CoverArtService coverArtService;
 

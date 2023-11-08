@@ -99,19 +99,19 @@ public class TranscodingRepositoryTest {
 
     @Test
     public void testDeleteTranscoding() {
-        assertEquals(0, transcodingRepository.findAll().size());
+        assertEquals(0, transcodingRepository.count());
 
         transcodingRepository.save(new Transcoding(null, "name", "sourceFormats", "targetFormat", "step1", "step2", "step3", true));
-        assertEquals(1, transcodingRepository.findAll().size());
+        assertEquals(1, transcodingRepository.count());
 
         transcodingRepository.save(new Transcoding(null, "name", "sourceFormats", "targetFormat", "step1", "step2", "step3", true));
-        assertEquals(2, transcodingRepository.findAll().size());
+        assertEquals(2, transcodingRepository.count());
 
         transcodingRepository.deleteById(transcodingRepository.findAll().get(0).getId());
-        assertEquals(1, transcodingRepository.findAll().size());
+        assertEquals(1, transcodingRepository.count());
 
         transcodingRepository.deleteById(transcodingRepository.findAll().get(0).getId());
-        assertEquals(0, transcodingRepository.findAll().size());
+        assertEquals(0, transcodingRepository.count());
     }
 
     @Test

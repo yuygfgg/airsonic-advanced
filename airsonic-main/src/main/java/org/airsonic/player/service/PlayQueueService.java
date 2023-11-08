@@ -45,7 +45,7 @@ public class PlayQueueService {
     @Autowired
     private RatingService ratingService;
     @Autowired
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastService;
     @Autowired
     private PlaylistService playlistService;
     @Autowired
@@ -237,7 +237,7 @@ public class PlayQueueService {
         List<MediaFile> files = new ArrayList<>(episodes.size());
         for (PodcastEpisode episode : episodes) {
             if (episode.getStatus() == PodcastStatus.COMPLETED) {
-                MediaFile mediaFile = mediaFileService.getMediaFile(episode.getMediaFileId());
+                MediaFile mediaFile = episode.getMediaFile();
                 if (mediaFile != null && mediaFile.isPresent()) {
                     files.add(mediaFile);
                 }
@@ -251,12 +251,12 @@ public class PlayQueueService {
         boolean queueFollowingSongs = personalSettingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
 
         PodcastEpisode episode = podcastService.getEpisode(id, false);
-        List<PodcastEpisode> allEpisodes = podcastService.getEpisodes(episode.getChannelId());
+        List<PodcastEpisode> allEpisodes = podcastService.getEpisodes(episode.getChannel().getId());
         List<MediaFile> files = new ArrayList<>(allEpisodes.size());
 
         for (PodcastEpisode ep : allEpisodes) {
-            if (ep.getStatus() == PodcastStatus.COMPLETED && ep.getMediaFileId() != null) {
-                MediaFile mediaFile = mediaFileService.getMediaFile(ep.getMediaFileId());
+            if (ep.getStatus() == PodcastStatus.COMPLETED) {
+                MediaFile mediaFile = ep.getMediaFile();
                 if (mediaFile != null && mediaFile.isPresent()
                         && (ep.getId().equals(episode.getId()) || queueFollowingSongs && !files.isEmpty())) {
                     files.add(mediaFile);

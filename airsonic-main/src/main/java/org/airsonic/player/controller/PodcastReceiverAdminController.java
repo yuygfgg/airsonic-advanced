@@ -19,8 +19,11 @@
  */
 package org.airsonic.player.controller;
 
+import org.airsonic.player.domain.PodcastEpisode;
 import org.airsonic.player.domain.PodcastStatus;
-import org.airsonic.player.service.PodcastService;
+import org.airsonic.player.service.PodcastManagementService;
+import org.airsonic.player.service.PodcastPersistenceService;
+import org.airsonic.player.service.podcast.PodcastDownloadClient;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -42,7 +45,13 @@ import java.util.List;
 public class PodcastReceiverAdminController {
 
     @Autowired
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastPersistenceService;
+
+    @Autowired
+    private PodcastManagementService podcastManagementService;
+
+    @Autowired
+    private PodcastDownloadClient podcastDownloadClient;
 
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET })
     protected ModelAndView handleRequestInternal(
@@ -55,32 +64,33 @@ public class PodcastReceiverAdminController {
 
         if (add != null) {
             String url = StringUtils.trim(add);
-            podcastService.createChannel(url);
+            podcastManagementService.createChannel(url);
             return new ModelAndView(new RedirectView("podcastChannels.view"));
         }
         if (downloadEpisode != null && channelId != null) {
             downloadEpisode.parallelStream()
-                    .map(e -> podcastService.getEpisode(e, false))
+                    .map(e -> podcastPersistenceService.getEpisode(e, false))
                     .filter(episode -> episode != null && episode.getUrl() != null
                             && (episode.getStatus() == PodcastStatus.NEW || episode.getStatus() == PodcastStatus.ERROR
                                     || episode.getStatus() == PodcastStatus.SKIPPED))
-                    .forEach(podcastService::downloadEpisode);
+                    .map(PodcastEpisode::getId)
+                    .forEach(podcastDownloadClient::downloadEpisode);
             return new ModelAndView(new RedirectView("podcastChannel.view?id=" + channelId));
         }
         if (deleteChannel != null && channelId != null) {
-            podcastService.deleteChannel(channelId);
+            podcastManagementService.deleteChannel(channelId);
             return new ModelAndView(new RedirectView("podcastChannels.view"));
         }
         if (deleteEpisode != null) {
-            deleteEpisode.forEach(episodeId -> podcastService.deleteEpisode(episodeId, true));
+            deleteEpisode.forEach(episodeId -> podcastPersistenceService.deleteEpisode(episodeId, true));
             return new ModelAndView(new RedirectView("podcastChannel.view?id=" + channelId));
         }
         if (refresh != null) {
             if (channelId != null) {
-                podcastService.refreshChannel(channelId, true);
+                podcastManagementService.refreshChannel(channelId, true);
                 return new ModelAndView(new RedirectView("podcastChannel.view?id=" + channelId));
             } else {
-                podcastService.refreshAllChannels(true);
+                podcastManagementService.refreshAllChannels(true);
                 return new ModelAndView(new RedirectView("podcastChannels.view"));
             }
         }

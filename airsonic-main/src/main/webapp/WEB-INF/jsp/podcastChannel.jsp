@@ -133,12 +133,12 @@
             <td class="fit center"><input type="checkbox" id="episode${i.index}" value="${episode.id}"/></td>
 
             <c:choose>
-                <c:when test="${empty episode.mediaFileId or episode.status ne 'COMPLETED'}">
+                <c:when test="${empty episode.mediaFile.id or episode.status ne 'COMPLETED'}">
                     <td colspan="4"></td>
                 </c:when>
                 <c:otherwise>
                     <c:import url="playButtons.jsp">
-                        <c:param name="id" value="${episode.mediaFileId}"/>
+                        <c:param name="id" value="${episode.mediaFile.id}"/>
                         <c:param name="playEnabled" value="${model.user.streamRole and not model.partyMode}"/>
                         <c:param name="addEnabled" value="${model.user.streamRole and not model.partyMode}"/>
                         <c:param name="asTable" value="true"/>

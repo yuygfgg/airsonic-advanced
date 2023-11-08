@@ -89,7 +89,7 @@ public class CoverArtController {
     @Autowired
     private PlaylistService playlistService;
     @Autowired
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastService;
     @Autowired
     private ArtistService artistService;
     @Autowired
@@ -202,24 +202,26 @@ public class CoverArtController {
         if (channel == null) {
             return null;
         }
-        if (channel.getMediaFileId() == null) {
+        if (channel.getMediaFile() == null) {
             return new PodcastCoverArtRequest(channel);
         }
-        return createMediaFileCoverArtRequest(channel.getMediaFileId(), offset);
+        return createMediaFileCoverArtRequest(channel.getMediaFile(), offset);
     }
 
-    private CoverArtRequest createMediaFileCoverArtRequest(int id, int offset) {
-        MediaFile mediaFile = mediaFileService.getMediaFile(id);
+    private CoverArtRequest createMediaFileCoverArtRequest(MediaFile mediaFile, int offset) {
         if (mediaFile == null) {
             return null;
         }
         if (mediaFile.isVideo()) {
             return new VideoCoverArtRequest(mediaFile, offset);
         }
-
         var dir = mediaFile.isDirectory() ? mediaFile : mediaFileService.getParentOf(mediaFile);
-
         return new MediaFileCoverArtRequest(dir, mediaFile.isDirectory() ? null : mediaFile.getId());
+    }
+
+    private CoverArtRequest createMediaFileCoverArtRequest(int id, int offset) {
+        MediaFile mediaFile = mediaFileService.getMediaFile(id);
+        return createMediaFileCoverArtRequest(mediaFile, offset);
     }
 
     private void sendImage(Path file, HttpServletResponse response) throws IOException {

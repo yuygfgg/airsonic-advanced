@@ -64,38 +64,6 @@ public class MediaFileDao extends AbstractDao {
     private final MusicFileInfoMapper musicFileInfoRowMapper = new MusicFileInfoMapper();
     private final GenreMapper genreRowMapper = new GenreMapper();
 
-
-    public List<MediaFile> getFilesInPlaylist(int playlistId) {
-        return query("select " + prefix(QUERY_COLUMNS, "media_file") + " from playlist_file, media_file where " +
-                     "media_file.id = playlist_file.media_file_id and " +
-                     "playlist_file.playlist_id = ? " +
-                     "order by playlist_file.id", rowMapper, playlistId);
-    }
-
-    public List<MediaFile> getSongsForAlbum(final String artist, final String album) {
-        Map<String, Object> args = new HashMap<>();
-        args.put("types", MediaFile.MediaType.audioTypes());
-        args.put("artist", artist);
-        args.put("album", album);
-        return namedQuery("select " + QUERY_COLUMNS + " from media_file where album_artist = :artist and album = :album and present " +
-                          "and type in (:types) order by disc_number, track_number", rowMapper, args);
-    }
-
-
-    public List<MediaFile> getVideos(final int count, final int offset, final List<MusicFolder> musicFolders) {
-        if (musicFolders.isEmpty()) {
-            return Collections.emptyList();
-        }
-        Map<String, Object> args = new HashMap<>();
-        args.put("type", MediaFile.MediaType.VIDEO.name());
-        args.put("folders", MusicFolder.toIdList(musicFolders));
-        args.put("count", count);
-        args.put("offset", offset);
-        return namedQuery("select " + QUERY_COLUMNS
-                + " from media_file where type = :type and present and folder_id in (:folders)"
-                + " order by title limit :count offset :offset", rowMapper, args);
-    }
-
     public MediaFile getArtistByName(final String name, final List<MusicFolder> musicFolders) {
         if (musicFolders.isEmpty()) {
             return null;
@@ -435,7 +403,7 @@ public class MediaFileDao extends AbstractDao {
             return Collections.emptyList();
         }
         Map<String, Object> args = new HashMap<>();
-        args.put("types", MediaFile.MediaType.audioTypes());
+        args.put("types", MediaFile.MediaType.audioTypes().stream().map(Enum::name).collect(Collectors.toList()));
         args.put("genre", genre);
         args.put("count", count);
         args.put("offset", offset);

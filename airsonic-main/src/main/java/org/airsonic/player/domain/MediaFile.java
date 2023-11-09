@@ -271,7 +271,7 @@ public class MediaFile {
     }
 
     public boolean isAudio() {
-        return MediaType.audioTypes().contains(mediaType.toString());
+        return MediaType.audioTypes().contains(mediaType);
     }
 
     public boolean isIndexedTrack() {
@@ -585,10 +585,10 @@ public class MediaFile {
         DIRECTORY,
         ALBUM;
 
-        private static final List<String> AUDIO_TYPES = Arrays.asList(MUSIC.toString(),AUDIOBOOK.toString(),PODCAST.toString());
+        private static final List<MediaType> AUDIO_TYPES = Arrays.asList(MUSIC,AUDIOBOOK,PODCAST);
         private static final List<String> PLAYABLE_TYPES = Arrays.asList(MUSIC.toString(),AUDIOBOOK.toString(),PODCAST.toString(),VIDEO.toString());
 
-        public static List<String> audioTypes() {
+        public static List<MediaType> audioTypes() {
             return AUDIO_TYPES;
         }
 

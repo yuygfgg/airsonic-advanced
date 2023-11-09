@@ -31,6 +31,7 @@ import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.i18n.LocaleResolver;
 import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.MediaFileRepository;
+import org.airsonic.player.repository.OffsetBasedPageRequest;
 import org.airsonic.player.service.metadata.JaudiotaggerParser;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
@@ -52,6 +53,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -302,6 +304,31 @@ public class MediaFileService {
             LOG.error("get children of {} failed", parent.getPath(), e);
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * Returns all songs in the album
+     *
+     * @param artist The album artist name.
+     * @param album The album name.
+     * @return All songs in the album.
+     */
+    public List<MediaFile> getSongsForAlbum(String artist, String album) {
+        return mediaFileRepository.findByAlbumArtistAndAlbumNameAndMediaTypeInAndPresentTrue(artist, album, MediaType.audioTypes(), Sort.by("discNumber", "trackNumber"));
+    }
+
+     /**
+     * Returns all videos in folders
+     *
+     * @param artist The album artist name.
+     * @param album The album name.
+     * @return All songs in the album.
+     */
+    public List<MediaFile> getVideos(List<MusicFolder> folders, int count, int offset) {
+        if (CollectionUtils.isEmpty(folders)) {
+            return Collections.emptyList();
+        }
+        return mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(folders), MediaType.VIDEO, new OffsetBasedPageRequest(offset, count, Sort.by("title")));
     }
 
     /**

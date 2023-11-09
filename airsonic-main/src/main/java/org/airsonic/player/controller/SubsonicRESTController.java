@@ -605,7 +605,7 @@ public class SubsonicRESTController {
         }
 
         AlbumWithSongsID3 result = createJaxbAlbum(new AlbumWithSongsID3(), album, username);
-        for (MediaFile mediaFile : mediaFileDao.getSongsForAlbum(album.getArtist(), album.getName())) {
+        for (MediaFile mediaFile : mediaFileService.getSongsForAlbum(album.getArtist(), album.getName())) {
             result.getSong().add(createJaxbChild(player, mediaFile, username));
         }
 
@@ -1207,7 +1207,7 @@ public class SubsonicRESTController {
         List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
 
         Videos result = new Videos();
-        for (MediaFile mediaFile : mediaFileDao.getVideos(size, offset, musicFolders)) {
+        for (MediaFile mediaFile : mediaFileService.getVideos(musicFolders, size, offset)) {
             result.getVideo().add(createJaxbChild(player, mediaFile, username));
         }
         Response res = createResponse();

@@ -66,7 +66,8 @@ public class User {
     @Convert(converter = RolesConverter.class)
     private Set<Role> roles = new HashSet<>();
 
-    @ManyToMany
+    // TODO: change fetch type to LAZY
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "music_folder_user",
             joinColumns = @JoinColumn(name = "username"),
             inverseJoinColumns = @JoinColumn(name = "music_folder_id", referencedColumnName = "id"))

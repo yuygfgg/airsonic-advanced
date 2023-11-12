@@ -1,14 +1,16 @@
 package org.airsonic.player.security;
 
-import org.airsonic.player.util.HomeRule;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.airsonic.player.config.AirsonicHomeConfig;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -20,24 +22,32 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@RunWith(SpringRunner.class)
+import java.nio.file.Path;
+
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@EnableConfigurationProperties({AirsonicHomeConfig.class})
 public class RESTAuthTest {
 
     private static final String USERNAME = "admin";
     private static final String PASSWORD = "admin";
     private static final String API_VERSION = "1.15.0";
 
-    @ClassRule
-    public static final HomeRule homeRule = new HomeRule();
+    @TempDir
+    private static Path tempDir;
 
     @Autowired
     private WebApplicationContext wac;
 
     private MockMvc mvc;
 
-    @Before
-    public void setup() {
+    @BeforeAll
+    public static void beforeAll() {
+        System.setProperty("airsonic.home", tempDir.toString());
+    }
+
+    @BeforeEach
+    public void beforeEach() {
         mvc = MockMvcBuilders
                 .webAppContextSetup(wac)
                 .apply(springSecurity())

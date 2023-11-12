@@ -26,6 +26,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
@@ -92,7 +93,7 @@ public class MediaFolderService {
                     return user.getMusicFolders()
                         .stream()
                         .filter(folder -> folder.isEnabled() && !folder.isDeleted() && Files.exists(folder.getPath()))
-                        .toList();
+                        .collect(Collectors.toList());
                 })
                 .orElse(new ArrayList<>());
         });

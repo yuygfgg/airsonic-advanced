@@ -98,7 +98,7 @@ public class LastFmService {
 
             // First select artists that are present.
             for (Artist lastFmArtist : similarArtists) {
-                MediaFile similarArtist = mediaFileDao.getArtistByName(lastFmArtist.getName(), musicFolders);
+                MediaFile similarArtist = mediaFileService.getArtistByName(lastFmArtist.getName(), musicFolders);
                 if (similarArtist != null) {
                     result.add(similarArtist);
                     if (result.size() == count) {
@@ -110,7 +110,7 @@ public class LastFmService {
             // Then fill up with non-present artists
             if (includeNotPresent) {
                 for (Artist lastFmArtist : similarArtists) {
-                    MediaFile similarArtist = mediaFileDao.getArtistByName(lastFmArtist.getName(), musicFolders);
+                    MediaFile similarArtist = mediaFileService.getArtistByName(lastFmArtist.getName(), musicFolders);
                     if (similarArtist == null) {
                         MediaFile notPresentArtist = new MediaFile();
                         notPresentArtist.setId(-1);
@@ -208,7 +208,7 @@ public class LastFmService {
         List<MediaFile> similarSongs = new ArrayList<MediaFile>();
 
         String artistName = getArtistName(mediaFile);
-        MediaFile artist = mediaFileDao.getArtistByName(artistName, musicFolders);
+        MediaFile artist = mediaFileService.getArtistByName(artistName, musicFolders);
         if (artist != null) {
             similarSongs.addAll(mediaFileService.getRandomSongsForParent(artist, count));
         }

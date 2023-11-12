@@ -128,7 +128,7 @@ public class LastFmServiceTest {
         setupMockedMediaFileReturnTestArtist();
         when(mockedLastFmArtist1.getName()).thenReturn(similarArtists.get(0));
         when(mockedLastFmArtist2.getName()).thenReturn(similarArtistsWithNotPresent.get(0));
-        when(mediaFileDao.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
+        when(mediaFileService.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
         when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
 
         try (MockedStatic<Artist> mockedArtist = org.mockito.Mockito.mockStatic(Artist.class)) {
@@ -149,7 +149,7 @@ public class LastFmServiceTest {
         setupMockedMediaFileReturnTestArtist();
         when(mockedLastFmArtist1.getName()).thenReturn(similarArtists.get(0));
         when(mockedLastFmArtist2.getName()).thenReturn(similarArtistsWithNotPresent.get(0));
-        when(mediaFileDao.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
+        when(mediaFileService.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
         when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
 
         try (MockedStatic<Artist> mockedArtist = org.mockito.Mockito.mockStatic(Artist.class)) {
@@ -199,7 +199,7 @@ public class LastFmServiceTest {
         when(mockedArtist.getName()).thenReturn("testArtist");
         when(mockedLastFmArtist1.getName()).thenReturn(similarArtists.get(0));
         when(mockedLastFmArtist2.getName()).thenReturn(similarArtistsWithNotPresent.get(0));
-        when(mediaFileDao.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
+        when(mediaFileService.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
         when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
 
         try (MockedStatic<Artist> mockedStaticArtist = org.mockito.Mockito.mockStatic(Artist.class)) {
@@ -226,7 +226,7 @@ public class LastFmServiceTest {
         when(mediaFileDao.getSongsByArtist(similarArtists.get(0), 0, 1000)).thenReturn(Arrays.asList(new MediaFile()));
         when(mockedLastFmArtist1.getName()).thenReturn(similarArtists.get(0));
         when(mockedLastFmArtist2.getName()).thenReturn(similarArtistsWithNotPresent.get(0));
-        when(mediaFileDao.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
+        when(mediaFileService.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
         when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
         org.airsonic.player.domain.Artist artist = new org.airsonic.player.domain.Artist();
         artist.setName("testArtist");
@@ -247,10 +247,10 @@ public class LastFmServiceTest {
     @MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
     public void testGetSimilarSongsByMediaFileWithNullArtist(int count, int expectedSize) {
         setupMockedMediaFileReturnTestArtist();
-        when(mediaFileDao.getArtistByName(eq("testArtist"),any())).thenReturn(null);
+        when(mediaFileService.getArtistByName(eq("testArtist"),any())).thenReturn(null);
         when(mockedLastFmArtist1.getName()).thenReturn(similarArtists.get(0));
         when(mockedLastFmArtist2.getName()).thenReturn(similarArtistsWithNotPresent.get(0));
-        when(mediaFileDao.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
+        when(mediaFileService.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
         when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
         when(mediaFileService.getRandomSongsForParent(any(), eq(count))).thenReturn(Arrays.asList(mockedMediaFile));
 
@@ -272,10 +272,10 @@ public class LastFmServiceTest {
         setupMockedMediaFileReturnTestArtist();
         MediaFile artistMediaFile = new MediaFile();
         artistMediaFile.setArtist("testArtist");
-        when(mediaFileDao.getArtistByName(eq("testArtist"),any())).thenReturn(artistMediaFile);
+        when(mediaFileService.getArtistByName(eq("testArtist"),any())).thenReturn(artistMediaFile);
         when(mockedLastFmArtist1.getName()).thenReturn(similarArtists.get(0));
         when(mockedLastFmArtist2.getName()).thenReturn(similarArtistsWithNotPresent.get(0));
-        when(mediaFileDao.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
+        when(mediaFileService.getArtistByName(startsWith("artist"), any())).thenReturn(new MediaFile());
         when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
         when(mediaFileService.getRandomSongsForParent(any(), eq(count))).thenReturn(Arrays.asList(mockedMediaFile));
 

@@ -31,6 +31,7 @@ import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.i18n.LocaleResolver;
 import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.MediaFileRepository;
+import org.airsonic.player.repository.MusicFileInfoRepository;
 import org.airsonic.player.repository.OffsetBasedPageRequest;
 import org.airsonic.player.service.metadata.JaudiotaggerParser;
 import org.airsonic.player.service.metadata.MetaData;
@@ -100,6 +101,9 @@ public class MediaFileService {
     private MediaFileRepository mediaFileRepository;
     @Autowired
     private LocaleResolver localeResolver;
+    @Autowired
+    private MusicFileInfoRepository musicFileInfoRepository;
+
     private boolean memoryCacheEnabled = true;
 
     public MediaFile getMediaFile(String pathName) {
@@ -112,7 +116,7 @@ public class MediaFileService {
 
     // This may be an expensive op
     public MediaFile getMediaFile(Path fullPath, boolean minimizeDiskAccess) {
-        MusicFolder folder = securityService.getMusicFolderForFile(fullPath, true, true);
+        MusicFolder folder = mediaFolderService.getMusicFolderForFile(fullPath, true, true);
         if (folder == null) {
             // can't look outside folders and not present in folder
             return null;
@@ -159,9 +163,11 @@ public class MediaFileService {
                     return null;
                 }
                 // Not found in database, must read from disk.
-                MediaFile mediaFile = createMediaFile(relativePath, folder, null);
+                MediaFile mediaFile = createMediaFileByFile(relativePath, folder);
                 // Put in database.
-                updateMediaFile(mediaFile);
+                if (mediaFile != null) {
+                    updateMediaFile(mediaFile);
+                }
                 return mediaFile;
             });
     }
@@ -203,36 +209,34 @@ public class MediaFileService {
             return mediaFile;
         }
         LOG.debug("Updating database file from disk (id {}, path {} in folder {} ({}))", mediaFile.getId(), mediaFile.getPath(), folder.getId(), folder.getName());
-        if (mediaFile.hasIndex()) {
-            if (!Files.exists(mediaFile.getFullPath(folder.getPath()))) {
-                // Delete children and base file that no longer exist on disk.
-                mediaFileDao.deleteMediaFile(mediaFile.getPath(),mediaFile.getStartPosition(), mediaFile.getFolderId());
-                mediaFile.setPresent(false);
-                mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
-            } else if (!Files.exists(mediaFile.getFullIndexPath(folder.getPath()))) {
-                // Delete children that no longer exist on disk
-                mediaFileDao.deleteMediaFile(mediaFile.getPath(), mediaFile.getStartPosition(), mediaFile.getFolderId());
-                mediaFile.setPresent(true);
-                mediaFile.setIndexPath(null);
-                mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
-                updateMediaFile(mediaFile);
-            } else {
-            // update media file
-                Instant mediaChanged = FileUtil.lastModified(mediaFile.getFullPath(folder.getPath()));
-                Instant cueChanged = FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath()));
-                // update cue tracks
-                try {
-                    createIndexedTracks(mediaFile, folder);
-                    // update media file
-                    mediaFile.setChanged(mediaChanged.compareTo(cueChanged) >= 0 ? mediaChanged : cueChanged);
-                    updateMediaFile(mediaFile);
-                } catch (Exception e) {
-                    LOG.error("create indexed tracks error: {}", mediaFile.getFullPath(folder.getPath()), e);
-                }
-            }
-        } else {
-            mediaFile = createMediaFile(mediaFile.getRelativePath(), folder, mediaFile);
+        if (!Files.exists(mediaFile.getFullPath(folder.getPath()))) {
+            mediaFile.setPresent(false);
+            mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
             updateMediaFile(mediaFile);
+        } else {
+            if (mediaFile.hasIndex()) {
+                if (!Files.exists(mediaFile.getFullIndexPath(folder.getPath()))) {
+                    // Delete children that no longer exist on disk
+                    mediaFile.setIndexPath(null);
+                    updateMediaFile(mediaFile);
+                } else {
+                    // update media file
+                    Instant mediaChanged = FileUtil.lastModified(mediaFile.getFullPath(folder.getPath()));
+                    Instant cueChanged = FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath()));
+                    // update cue tracks
+                    try {
+                        createIndexedTracks(mediaFile, folder);
+                        // update media file
+                        mediaFile.setChanged(mediaChanged.compareTo(cueChanged) >= 0 ? mediaChanged : cueChanged);
+                        updateMediaFile(mediaFile);
+                    } catch (Exception e) {
+                        LOG.error("create indexed tracks error: {}", mediaFile.getFullPath(folder.getPath()), e);
+                    }
+                }
+            } else {
+                mediaFile = updateMediaFileByFile(mediaFile, folder);
+                updateMediaFile(mediaFile);
+            }
         }
         return mediaFile;
     }
@@ -315,6 +319,26 @@ public class MediaFileService {
      */
     public List<MediaFile> getSongsForAlbum(String artist, String album) {
         return mediaFileRepository.findByAlbumArtistAndAlbumNameAndMediaTypeInAndPresentTrue(artist, album, MediaType.audioTypes(), Sort.by("discNumber", "trackNumber"));
+    }
+
+    /**
+     * Returns artist info for the given artist.
+     *
+     * @param artist The artist name.
+     * @param folders The music folders to search.
+     * @return Artist info for the given artist.
+     */
+    public MediaFile getArtistByName(String artist, List<MusicFolder> folders) {
+        if (CollectionUtils.isEmpty(folders)) {
+            return null;
+        }
+
+        return mediaFileRepository.findByArtistAndMediaTypeAndFolderIdInAndPresentTrue(artist, MediaType.DIRECTORY, MusicFolder.toIdList(folders)).orElseGet(
+            () -> {
+                LOG.info("Media file not found for artist: {}", artist);
+                return null;
+            }
+        );
     }
 
      /**
@@ -479,7 +503,6 @@ public class MediaFileService {
     public Instant getMediaFileStarredDate(int id, String username) {
         return mediaFileDao.getMediaFileStarredDate(id, username);
     }
-
     public void populateStarredDate(List<MediaFile> mediaFiles, String username) {
         for (MediaFile mediaFile : mediaFiles) {
             populateStarredDate(mediaFile, username);
@@ -530,18 +553,19 @@ public class MediaFileService {
         try (Stream<Path> children = Files.list(parent.getFullPath(folder.getPath()))) {
             Map<String, MediaFile> bareFiles = children.parallel()
                 .filter(this::includeMediaFile)
-                .filter(x -> securityService.getMusicFolderForFile(x, true, true).getId().equals(parent.getFolderId()))
+                .filter(x -> mediaFolderService.getMusicFolderForFile(x, true, true).getId().equals(parent.getFolderId()))
                 .map(x -> folder.getPath().relativize(x))
                 .map(x -> {
                     MediaFile media = storedChildrenMap.remove(Pair.of(x.toString(), MediaFile.NOT_INDEXED));
                     if (media == null) {
-                        media = createMediaFile(x, folder, null);
+                        media = createMediaFileByFile(x, folder);
                         // Add children that are not already stored.
-                        updateMediaFile(media);
+                        if (media != null) {
+                            updateMediaFile(media);
+                        }
                     } else {
                         media = checkLastModified(media, folder, false); // has to be false, only time it's called
                     }
-
                     return media;
                 })
                 .collect(Collectors.toConcurrentMap(m -> FilenameUtils.getName(m.getPath()), m -> m));
@@ -651,22 +675,37 @@ public class MediaFileService {
         return (name.startsWith(".") && !name.startsWith("..")) || name.startsWith("@eaDir") || "Thumbs.db".equals(name);
     }
 
-    private MediaFile createMediaFile(Path relativePath, MusicFolder folder, MediaFile existingFile) {
-        Path file = folder.getPath().resolve(relativePath);
-        if (!Files.exists(file)) {
-            if (existingFile != null) {
-                existingFile.setPresent(false);
-                existingFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
-            }
-            return existingFile;
+    private MediaFile createMediaFileByFile(Path relativePath, MusicFolder folder) {
+        MediaFile mediaFile = new MediaFile();
+        mediaFile.setPath(relativePath.toString());
+        MediaFile result = updateMediaFileByFile(mediaFile, folder);
+        return result.isPresent() ? result : null;
+    }
+
+    /**
+     * return media file reflected from file system
+     *
+     * @param mediaFile   media file to reflect. Must not be null. path must be set.
+     * @param folder     music folder
+     * @return media file reflected from file system
+     */
+    private MediaFile updateMediaFileByFile(MediaFile mediaFile, MusicFolder folder) {
+
+        if (mediaFile == null || folder == null || mediaFile.getPath() == null) {
+            throw new IllegalArgumentException("mediaFile, folder and mediaFile.path must not be null");
         }
 
-        MediaFile mediaFile = new MediaFile();
-        Instant lastModified = FileUtil.lastModified(file);
-        mediaFile.setPath(relativePath.toString());
-        mediaFile.setFolderId(folder.getId());
+        Path relativePath = mediaFile.getRelativePath();
+        Path file = folder.getPath().resolve(relativePath);
+        if (!Files.exists(file)) {
+            // file not found
+            mediaFile.setPresent(false);
+            mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
+            return mediaFile;
+        }
+
         //sanity check
-        MusicFolder folderActual = securityService.getMusicFolderForFile(file, true, true);
+        MusicFolder folderActual = mediaFolderService.getMusicFolderForFile(file, true, true);
         if (!folderActual.getId().equals(folder.getId())) {
             LOG.warn("Inconsistent Mediafile folder for media file with path: {}, folder id should be {} and is instead {}", file, folderActual.getId(), folder.getId());
         }
@@ -675,17 +714,16 @@ public class MediaFileService {
         if (StringUtils.isNotEmpty(relativePath.toString())) {
             parentPath = relativePath.getParent() == null ? "" : relativePath.getParent().toString();
         }
+
+        Instant lastModified = FileUtil.lastModified(file).truncatedTo(ChronoUnit.MICROS);
+        mediaFile.setFolderId(folder.getId());
         mediaFile.setParentPath(parentPath);
         mediaFile.setChanged(lastModified);
         mediaFile.setLastScanned(Instant.now());
-        mediaFile.setPlayCount(existingFile == null ? 0 : existingFile.getPlayCount());
-        mediaFile.setLastPlayed(existingFile == null ? null : existingFile.getLastPlayed());
-        mediaFile.setComment(existingFile == null ? null : existingFile.getComment());
         mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1)); //distant past, can't use Instant.MIN due to HSQL incompatibility
         mediaFile.setCreated(lastModified);
         mediaFile.setMediaType(MediaFile.MediaType.DIRECTORY);
         mediaFile.setPresent(true);
-        mediaFile.setId(existingFile == null ? null : existingFile.getId());
 
         if (Files.isRegularFile(file)) {
 
@@ -759,6 +797,7 @@ public class MediaFileService {
         }
 
         return mediaFile;
+
     }
 
     private List<MediaFile> createIndexedTracks(MediaFile base, MusicFolder folder, CueSheet cueSheet) {
@@ -920,7 +959,7 @@ public class MediaFileService {
     }
 
     public void refreshMediaFile(MediaFile mediaFile, MusicFolder folder) {
-        mediaFile = createMediaFile(mediaFile.getRelativePath(), folder, mediaFile);
+        mediaFile = updateMediaFileByFile(mediaFile, folder);
         updateMediaFile(mediaFile);
     }
 
@@ -1083,12 +1122,11 @@ public class MediaFileService {
             // Copy values from obsolete table music_file_info if inserting for first time
             MusicFolder folder = mediaFolderService.getMusicFolderById(mediaFile.getFolderId());
             if (folder != null) {
-                MediaFile musicFileInfo = mediaFileDao.getMusicFileInfo(file.getFullPath(folder.getPath()).toString());
-                if (musicFileInfo != null) {
+                musicFileInfoRepository.findByPath(file.getFullPath(folder.getPath()).toString()).ifPresent(musicFileInfo -> {
                     file.setComment(musicFileInfo.getComment());
                     file.setLastPlayed(musicFileInfo.getLastPlayed());
                     file.setPlayCount(musicFileInfo.getPlayCount());
-                }
+                });
             }
         });
 
@@ -1153,5 +1191,12 @@ public class MediaFileService {
 
     public void setParser(JaudiotaggerParser parser) {
         this.parser = parser;
+    }
+
+    /**
+     * delete all media files that are not present on disk
+     */
+    public void expunge() {
+        mediaFileRepository.deleteAllByPresentFalse();
     }
 }

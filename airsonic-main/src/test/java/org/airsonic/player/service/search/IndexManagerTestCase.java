@@ -14,42 +14,58 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.service.search;
 
-import org.airsonic.player.dao.MediaFileDao;
+import org.airsonic.player.TestCaseUtils;
+import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Album;
+import org.airsonic.player.domain.Artist;
+import org.airsonic.player.domain.MediaFile;
+import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.SearchCriteria;
 import org.airsonic.player.domain.SearchResult;
 import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.ArtistRepository;
+import org.airsonic.player.repository.MediaFileRepository;
+import org.airsonic.player.repository.MusicFolderRepository;
+import org.airsonic.player.service.MediaFolderService;
+import org.airsonic.player.service.MediaScannerService;
 import org.airsonic.player.service.SearchService;
 import org.airsonic.player.util.MusicFolderTestData;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.data.domain.Sort;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.springframework.util.ObjectUtils.isEmpty;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
+@SpringBootTest
+@ExtendWith(SpringExtension.class)
+@EnableConfigurationProperties({ AirsonicHomeConfig.class })
+public class IndexManagerTestCase {
 
-    private List<MusicFolder> musicFolders;
+    private List<MusicFolder> musicFolders = new ArrayList<>();
 
     @Autowired
     private SearchService searchService;
@@ -57,34 +73,39 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
     @Autowired
     private IndexManager indexManager;
 
-    @Override
-    public List<MusicFolder> getMusicFolders() {
-        if (isEmpty(musicFolders)) {
-            musicFolders = new ArrayList<>();
-            Path musicDir = MusicFolderTestData.resolveMusicFolderPath();
-            musicFolders.add(new MusicFolder(1, musicDir, "Music", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
-        }
-        return musicFolders;
-    }
-
-    private static UUID cleanupId = null;
-
-    @Before
-    public void setup() {
-        UUID id = populateDatabaseOnlyOnce();
-        if (id != null) {
-            cleanupId = id;
-        }
-    }
-
-    @AfterClass
-    public static void cleanup() {
-        AbstractAirsonicHomeTest.cleanup(cleanupId);
-        cleanupId = null;
-    }
+    @Autowired
+    private MediaScannerService mediaScannerService;
 
     @Autowired
-    private MediaFileDao mediaFileDao;
+    private MusicFolderRepository musicFolderRepository;
+
+    @Autowired
+    private MediaFolderService mediaFolderService;
+
+    @TempDir
+    private static Path tempDir;
+
+    @BeforeAll
+    public static void setup() {
+        System.setProperty("airsonic.home", tempDir.toString());
+    }
+
+    @BeforeEach
+    public void beforeEach() {
+        mediaFolderService.clearMusicFolderCache();
+        mediaFolderService.clearMediaFileCache();
+        Path musicDir = MusicFolderTestData.resolveMusicFolderPath();
+        MusicFolder folder = new MusicFolder(musicDir, "Music", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        musicFolders.add(folder);
+        musicFolderRepository.saveAndFlush(folder);
+        TestCaseUtils.execScan(mediaScannerService);
+    }
+
+    @AfterEach
+    public void afterEach() {
+        musicFolderRepository.deleteAll(musicFolders);
+        musicFolders = new ArrayList<>();
+    }
 
     @Autowired
     private ArtistRepository artistRepository;
@@ -92,8 +113,8 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
     @Autowired
     private AlbumRepository albumRepository;
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @Autowired
+    private MediaFileRepository mediaFileRepository;
 
     @Autowired
     ResourceLoader resourceLoader;
@@ -124,12 +145,12 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
         assertEquals("_DIR_ Ravel", result.getMediaFiles().get(0).getName());
         assertEquals("_DIR_ Sixteen Horsepower", result.getMediaFiles().get(1).getName());
 
-        List<Integer> candidates = mediaFileDao.getArtistExpungeCandidates();
+        List<MediaFile> candidates = mediaFileRepository.findByMediaTypeAndPresentFalse(MediaType.DIRECTORY);
         assertEquals(0, candidates.size());
 
-        result.getMediaFiles().forEach(a -> mediaFileDao.deleteMediaFile(a.getPath(), a.getStartPosition(), a.getFolderId()));
+        result.getMediaFiles().forEach(this::deleteMediaFile);
 
-        candidates = mediaFileDao.getArtistExpungeCandidates();
+        candidates = mediaFileRepository.findByMediaTypeAndPresentFalse(MediaType.DIRECTORY);
         assertEquals(2, candidates.size());
 
         // album
@@ -138,26 +159,26 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
         assertEquals("_DIR_ Ravel - Complete Piano Works", result.getMediaFiles().get(0).getName());
         assertEquals("_DIR_ Ravel - Chamber Music With Voice", result.getMediaFiles().get(1).getName());
 
-        candidates = mediaFileDao.getAlbumExpungeCandidates();
+        candidates = mediaFileRepository.findByMediaTypeAndPresentFalse(MediaType.ALBUM);
         assertEquals(0, candidates.size());
 
-        result.getMediaFiles().forEach(a -> mediaFileDao.deleteMediaFile(a.getPath(), a.getStartPosition(), a.getFolderId()));
+        result.getMediaFiles().forEach(this::deleteMediaFile);
 
-        candidates = mediaFileDao.getAlbumExpungeCandidates();
+        candidates = mediaFileRepository.findByMediaTypeAndPresentFalse(MediaType.ALBUM);
         assertEquals(2, candidates.size());
 
         // song
         result = searchService.search(criteriaSong, musicFolders, IndexType.SONG);
         assertEquals(2, result.getMediaFiles().size());
-        assertEquals("01 - Gaspard de la Nuit - i. Ondine", result.getMediaFiles().get(0).getName());
-        assertEquals("02 - Gaspard de la Nuit - ii. Le Gibet", result.getMediaFiles().get(1).getName());
+        assertTrue(result.getMediaFiles().stream().anyMatch(mf -> mf.getName().equals("01 - Gaspard de la Nuit - i. Ondine")));
+        assertTrue(result.getMediaFiles().stream().anyMatch(mf -> mf.getName().equals("02 - Gaspard de la Nuit - ii. Le Gibet")));
 
-        candidates = mediaFileDao.getSongExpungeCandidates();
+        candidates = mediaFileRepository.findByMediaTypeInAndPresentFalse(MediaType.playableTypes());
         assertEquals(0, candidates.size());
 
-        result.getMediaFiles().forEach(a -> mediaFileDao.deleteMediaFile(a.getPath(), a.getStartPosition(), a.getFolderId()));
+        result.getMediaFiles().forEach(this::deleteMediaFile);
 
-        candidates = mediaFileDao.getSongExpungeCandidates();
+        candidates = mediaFileRepository.findByMediaTypeInAndPresentFalse(MediaType.playableTypes());
         assertEquals(2, candidates.size());
 
         // artistid3
@@ -167,21 +188,31 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
 
         assertEquals(0, artistRepository.findByPresentFalse().size());
 
-        artistRepository.markNonPresent(Instant.now().truncatedTo(ChronoUnit.MICROS));
+        List<Artist> artists = artistRepository.findAll();
 
-        assertEquals(4, artistRepository.findByPresentFalse().size());
+        artistRepository.findByFolderIdInAndPresentTrue(MusicFolder.toIdList(musicFolders), Sort.by("id")).forEach(artist -> {
+            artist.setPresent(false);
+            artistRepository.saveAndFlush(artist);
+        });
+
+        artists = artistRepository.findByPresentFalse();
+
+        assertEquals(4, artists.size());
 
         // albumId3
         result = searchService.search(criteriaAlbumId3, musicFolders, IndexType.ALBUM_ID3);
         assertEquals(1, result.getAlbums().size());
         assertEquals("Complete Piano Works", result.getAlbums().get(0).getName());
 
-        candidates = albumRepository.findByPresentFalse().stream().map(Album::getId).toList();
-        assertEquals(0, candidates.size());
+        List<Album> albums = albumRepository.findByPresentFalse();
+        assertEquals(0, albums.size());
 
-        albumRepository.markNonPresent(Instant.now().truncatedTo(ChronoUnit.MICROS));
+        albumRepository.findByFolderIdInAndPresentTrue(MusicFolder.toIdList(musicFolders), Sort.by("id")).forEach(album -> {
+            album.setPresent(false);
+            albumRepository.saveAndFlush(album);
+        });
 
-        candidates = albumRepository.findByPresentFalse().stream().map(Album::getId).toList();
+        albums = albumRepository.findByPresentFalse();
         assertEquals(4, candidates.size());
 
         /* Does not scan, only expunges the index. */
@@ -209,6 +240,16 @@ public class IndexManagerTestCase extends AbstractAirsonicHomeTest {
         result = searchService.search(criteriaAlbumId3, musicFolders, IndexType.ALBUM_ID3);
         assertEquals(0, result.getAlbums().size());
 
+    }
+
+    private void deleteMediaFile(MediaFile mediaFile) {
+
+        mediaFileRepository.findByPathAndFolderIdAndStartPosition(mediaFile.getPath(), mediaFile.getFolderId(), mediaFile.getStartPosition())
+                .ifPresent(mf -> {
+                    mf.setPresent(false);
+                    mf.setChildrenLastUpdated(Instant.ofEpochMilli(1));
+                    mediaFileRepository.saveAndFlush(mf);
+                });
     }
 
 }

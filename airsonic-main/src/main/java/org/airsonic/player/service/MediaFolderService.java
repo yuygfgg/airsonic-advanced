@@ -8,6 +8,7 @@ import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.repository.MusicFolderRepository;
 import org.airsonic.player.repository.UserRepository;
+import org.airsonic.player.util.FileUtil;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -323,5 +324,30 @@ public class MediaFolderService {
     @CacheEvict(cacheNames = { "mediaFilePathCache", "mediaFileIdCache" }, allEntries = true)
     public void clearMediaFileCache() {
         // TODO: optimize cache eviction
+    }
+
+    /**
+     * Returns the music folder that contains the given file. If multiple music folders contain the file, the one with the longest path is returned.
+     *
+     * @param file             File to get music folder for.
+     * @param includeDisabled Whether to include disabled folders.
+     * @param includeNonExisting Whether to include non-existing folders.
+     * @return Music folder that contains the file, or null if no music folder contains the file.
+     */
+    public MusicFolder getMusicFolderForFile(Path file, boolean includeDisabled, boolean includeNonExisting) {
+        return getAllMusicFolders(includeDisabled, includeNonExisting).stream()
+                .filter(folder -> FileUtil.isFileInFolder(file, folder.getPath()))
+                .sorted(Comparator.comparing(folder -> folder.getPath().getNameCount(), Comparator.reverseOrder()))
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * Returns the music folder that contains the given file. If multiple music folders contain the file, the one with the longest path is returned.
+     *
+     * @param file File to get music folder for.
+     * @return Music folder that contains the file, or null if no music folder contains the file.
+     */
+    public MusicFolder getMusicFolderForFile(Path file) {
+        return getMusicFolderForFile(file, false, true);
     }
 }

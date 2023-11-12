@@ -586,13 +586,13 @@ public class MediaFile {
         ALBUM;
 
         private static final List<MediaType> AUDIO_TYPES = Arrays.asList(MUSIC,AUDIOBOOK,PODCAST);
-        private static final List<String> PLAYABLE_TYPES = Arrays.asList(MUSIC.toString(),AUDIOBOOK.toString(),PODCAST.toString(),VIDEO.toString());
+        private static final List<MediaType> PLAYABLE_TYPES = Arrays.asList(MUSIC, AUDIOBOOK, PODCAST, VIDEO);
 
         public static List<MediaType> audioTypes() {
             return AUDIO_TYPES;
         }
 
-        public static List<String> playableTypes() {
+        public static List<MediaType> playableTypes() {
             return PLAYABLE_TYPES;
         }
     }

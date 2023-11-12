@@ -13,18 +13,27 @@ import java.util.Optional;
 @Repository
 public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
-    List<MediaFile> findByPath(String path);
+    public List<MediaFile> findByPath(String path);
 
-    List<MediaFile> findByFolderIdAndPath(Integer folderId, String path);
+    public List<MediaFile> findByMediaTypeAndPresentFalse(MediaType mediaType);
 
-    List<MediaFile> findByFolderIdInAndMediaTypeAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Pageable page);
+    public List<MediaFile> findByMediaTypeInAndPresentFalse(Iterable<MediaType> mediaTypes);
 
-    List<MediaFile> findByFolderIdAndParentPath(Integer folderId, String parentPath, Sort sort);
+    public List<MediaFile> findByFolderIdAndPath(Integer folderId, String path);
 
-    List<MediaFile> findByFolderIdAndParentPathAndPresentTrue(Integer folderId, String parentPath, Sort sort);
+    public List<MediaFile> findByFolderIdInAndMediaTypeAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Pageable page);
 
-    List<MediaFile> findByAlbumArtistAndAlbumNameAndMediaTypeInAndPresentTrue(String albumArtist, String albumName,
+    public List<MediaFile> findByFolderIdAndParentPath(Integer folderId, String parentPath, Sort sort);
+
+    public List<MediaFile> findByFolderIdAndParentPathAndPresentTrue(Integer folderId, String parentPath, Sort sort);
+
+    public List<MediaFile> findByAlbumArtistAndAlbumNameAndMediaTypeInAndPresentTrue(String albumArtist, String albumName,
             List<MediaType> mediaTypes, Sort sort);
 
-    Optional<MediaFile> findByPathAndFolderIdAndStartPosition(String path, Integer folderId, Double startPosition);
+    public Optional<MediaFile> findByArtistAndMediaTypeAndFolderIdInAndPresentTrue(String artist, MediaType mediaType,
+            List<Integer> folderIds);
+
+    public Optional<MediaFile> findByPathAndFolderIdAndStartPosition(String path, Integer folderId, Double startPosition);
+
+    public void deleteAllByPresentFalse();
 }

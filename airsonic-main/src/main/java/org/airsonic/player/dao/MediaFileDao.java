@@ -61,20 +61,7 @@ public class MediaFileDao extends AbstractDao {
     public static final int VERSION = 4;
 
     private final MediaFileMapper rowMapper = new MediaFileMapper();
-    private final MusicFileInfoMapper musicFileInfoRowMapper = new MusicFileInfoMapper();
     private final GenreMapper genreRowMapper = new GenreMapper();
-
-    public MediaFile getArtistByName(final String name, final List<MusicFolder> musicFolders) {
-        if (musicFolders.isEmpty()) {
-            return null;
-        }
-        Map<String, Object> args = new HashMap<>();
-        args.put("type", MediaFile.MediaType.DIRECTORY.name());
-        args.put("name", name);
-        args.put("folders", MusicFolder.toIdList(musicFolders));
-        return namedQueryOne("select " + QUERY_COLUMNS + " from media_file where type = :type and artist = :name " +
-                "and present and folder_id in (:folders)", rowMapper, args);
-    }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void createOrUpdateMediaFile(MediaFile file, Consumer<MediaFile> preInsertionCallback) {
@@ -206,10 +193,6 @@ public class MediaFileDao extends AbstractDao {
                 LOG.warn("failure getting id for mediaFile {}", file, e);
             }
         }
-    }
-
-    public MediaFile getMusicFileInfo(String path) {
-        return queryOne("select play_count, last_played, comment from music_file_info where path=?", musicFileInfoRowMapper, path);
     }
 
     public void deleteMediaFile(String path, Double position, Integer folderId) {
@@ -721,24 +704,6 @@ public class MediaFileDao extends AbstractDao {
                 childrenLastUpdated, lastScanned);
     }
 
-    public List<Integer> getArtistExpungeCandidates() {
-        return queryForInts("select id from media_file where media_file.type = ? and not present",
-                MediaFile.MediaType.DIRECTORY.name());
-    }
-
-    public List<Integer> getAlbumExpungeCandidates() {
-        return queryForInts("select id from media_file where media_file.type = ? and not present",
-                MediaFile.MediaType.ALBUM.name());
-    }
-
-    public List<Integer> getSongExpungeCandidates() {
-        return queryForInts("select id from media_file where media_file.type in (?) and not present",
-                String.join(",", MediaFile.MediaType.playableTypes()));
-    }
-
-    public void expunge() {
-        update("delete from media_file where not present");
-    }
 
     private static class MediaFileMapper implements RowMapper<MediaFile> {
         @Override
@@ -780,16 +745,6 @@ public class MediaFileDao extends AbstractDao {
         }
     }
 
-    private static class MusicFileInfoMapper implements RowMapper<MediaFile> {
-        @Override
-        public MediaFile mapRow(ResultSet rs, int rowNum) throws SQLException {
-            MediaFile file = new MediaFile();
-            file.setPlayCount(rs.getInt(1));
-            file.setLastPlayed(Optional.ofNullable(rs.getTimestamp(2)).map(x -> x.toInstant()).orElse(null));
-            file.setComment(rs.getString(3));
-            return file;
-        }
-    }
 
     private static class GenreMapper implements RowMapper<Genre> {
         @Override

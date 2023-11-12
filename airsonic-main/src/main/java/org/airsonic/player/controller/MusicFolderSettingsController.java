@@ -22,7 +22,6 @@ package org.airsonic.player.controller;
 
 import org.airsonic.player.command.MusicFolderSettingsCommand;
 import org.airsonic.player.command.MusicFolderSettingsCommand.MusicFolderInfo;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.MediaLibraryStatistics;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
@@ -30,6 +29,7 @@ import org.airsonic.player.domain.Playlist;
 import org.airsonic.player.service.AlbumService;
 import org.airsonic.player.service.ArtistService;
 import org.airsonic.player.service.CoverArtService;
+import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.MediaFolderService;
 import org.airsonic.player.service.MediaScannerService;
 import org.airsonic.player.service.PlaylistService;
@@ -75,7 +75,7 @@ public class MusicFolderSettingsController {
     @Autowired
     private AlbumService albumService;
     @Autowired
-    private MediaFileDao mediaFileDao;
+    private MediaFileService mediaFileService;
     @Autowired
     private IndexManager indexManager;
     @Autowired
@@ -140,7 +140,7 @@ public class MusicFolderSettingsController {
         LOG.debug("Deleting non-present albums...");
         albumService.expunge();
         LOG.debug("Deleting non-present media files...");
-        mediaFileDao.expunge();
+        mediaFileService.expunge();
         LOG.debug("Deleting non-present cover art...");
         coverArtService.expunge();
         LOG.debug("Deleting non-present media folders...");

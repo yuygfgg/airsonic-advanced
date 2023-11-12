@@ -34,7 +34,6 @@ import org.airsonic.player.repository.UserRepository;
 import org.airsonic.player.security.GlobalSecurityConfig;
 import org.airsonic.player.security.PasswordDecoder;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -60,7 +59,6 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -635,7 +633,7 @@ public class SecurityService implements UserDetailsService {
      * @return Whether the given file may be uploaded.
      */
     public void checkUploadAllowed(Path file, boolean checkFileExists) throws IOException {
-        if (getMusicFolderForFile(file) == null) {
+        if (mediaFolderService.getMusicFolderForFile(file) == null) {
             throw new AccessDeniedException(file.toString(), null,
                     "Specified location is not in writable music folder");
         }
@@ -645,27 +643,9 @@ public class SecurityService implements UserDetailsService {
         }
     }
 
-    private MusicFolder getMusicFolderForFile(Path file) {
-        return getMusicFolderForFile(file, false, true);
-    }
-
-    public MusicFolder getMusicFolderForFile(Path file, boolean includeDisabled, boolean includeNonExisting) {
-        return mediaFolderService.getAllMusicFolders(includeDisabled, includeNonExisting).stream()
-                .filter(folder -> isFileInFolder(file, folder.getPath()))
-                .sorted(Comparator.comparing(folder -> folder.getPath().getNameCount(), Comparator.reverseOrder()))
-                .findFirst().orElse(null);
-    }
-
     public boolean isFolderAccessAllowed(MediaFile file, String username) {
         return mediaFolderService.getMusicFoldersForUser(username).parallelStream()
                 .anyMatch(musicFolder -> musicFolder.getId().equals(file.getFolderId()));
-    }
-
-    public static boolean isFileInFolder(Path file, Path folder) {
-        // not using this to account for / and \\ issues in linux
-        // return file.normalize().startsWith(folder.normalize());
-        return Paths.get(FilenameUtils.separatorsToUnix(file.toString())).normalize()
-                .startsWith(Paths.get(FilenameUtils.separatorsToUnix(folder.toString())).normalize());
     }
 
     public static class UserDetail extends org.springframework.security.core.userdetails.User {

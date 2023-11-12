@@ -19,6 +19,7 @@
  */
 package org.airsonic.player.util;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.stream.Stream;
@@ -111,5 +113,19 @@ public final class FileUtil {
                 // Ignored
             }
         }
+    }
+
+    /**
+     * Returns true if the given file is in the given folder.
+     *
+     * @param file  The file to check
+     * @param folder The folder to check
+     * @return True if the given file is in the given folder
+     */
+    public static boolean isFileInFolder(Path file, Path folder) {
+        // not using this to account for / and \\ issues in linux
+        // return file.normalize().startsWith(folder.normalize());
+        return Paths.get(FilenameUtils.separatorsToUnix(file.toString())).normalize()
+                .startsWith(Paths.get(FilenameUtils.separatorsToUnix(folder.toString())).normalize());
     }
 }

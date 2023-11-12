@@ -110,7 +110,7 @@ public class UploadController {
         try {
             securityService.checkUploadAllowed(p, checkExistence);
         } catch (AccessDeniedException ade) {
-            if (!user.isAdminRole() || !SecurityService.isFileInFolder(p, homeConfig.getAirsonicHome())) {
+            if (!user.isAdminRole() || !FileUtil.isFileInFolder(p, homeConfig.getAirsonicHome())) {
                 throw ade;
             }
         }

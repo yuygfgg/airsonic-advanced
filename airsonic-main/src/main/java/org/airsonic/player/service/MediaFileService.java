@@ -613,7 +613,7 @@ public class MediaFileService {
             result.addAll(nonIndexedTracks);
 
             // Delete children that no longer exist on disk.
-            mediaFileDao.deleteMediaFiles(storedChildrenMap.keySet(), parent.getFolderId());
+            storedChildrenMap.values().forEach(f -> delete(f));
 
             // Update timestamp in parent.
             parent.setChildrenLastUpdated(parent.getChanged());
@@ -928,7 +928,7 @@ public class MediaFileService {
             LOG.warn("Invalid CUE sheet: {}", base.getFullIndexPath(folder.getPath()));
             return new ArrayList<MediaFile>();
         } finally {
-            mediaFileDao.deleteMediaFiles(storedChildrenMap.keySet(), folder.getId());
+            storedChildrenMap.values().forEach(m -> delete(m));
         }
     }
 
@@ -1191,6 +1191,22 @@ public class MediaFileService {
 
     public void setParser(JaudiotaggerParser parser) {
         this.parser = parser;
+    }
+
+    /**
+     * soft delete media file
+     *
+     * @param file media file to delete
+     * @return deleted media file
+     */
+    private MediaFile delete(MediaFile file) {
+        if (file == null) {
+            return null;
+        }
+        file.setPresent(false);
+        file.setChildrenLastUpdated(Instant.ofEpochMilli(1));
+        mediaFileRepository.save(file);
+        return file;
     }
 
     /**

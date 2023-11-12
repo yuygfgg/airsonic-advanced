@@ -4,9 +4,11 @@ import org.airsonic.player.command.MusicFolderSettingsCommand.MusicFolderInfo;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.MusicFolderDao;
+import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.User;
+import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.repository.MusicFolderRepository;
 import org.airsonic.player.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -59,6 +62,9 @@ public class MediaFolderServiceTest {
     @MockBean
     private MusicFolderDao musicFolderDao;
 
+    @MockBean
+    private MediaFileRepository mediaFileRepository;
+
     @SpyBean
     private MediaFileDao mediaFileDao;
 
@@ -76,6 +82,9 @@ public class MediaFolderServiceTest {
 
     @TempDir
     private Path tempMusicFolder2;
+
+    @Mock
+    private MediaFile mockedFile;
 
     private final String TEST_USER_NAME = "testUserForMediaFolder";
 
@@ -472,6 +481,7 @@ public class MediaFolderServiceTest {
         Mockito.reset(mediaFileDao);
 
         when(mediaFileDao.getMediaFileCount(childFolder.getId())).thenReturn(10);
+        when(mediaFileRepository.findByFolderIdAndPresentTrue(childFolder.getId())).thenReturn(List.of(mockedFile));
 
         // when
         mediaFolderService.deleteMusicFolder(childFolder.getId());
@@ -480,7 +490,9 @@ public class MediaFolderServiceTest {
         verify(musicFolderRepository).findByIdAndDeletedFalse(childFolder.getId());
         verify(musicFolderRepository).delete(any(MusicFolder.class));
         verify(musicFolderDao).reassignChildren(any(MusicFolder.class), any(MusicFolder.class));
-        verify(mediaFileDao).deleteMediaFiles(childFolder.getId());
+        verify(mockedFile).setPresent(false);
+        verify(mockedFile).setChildrenLastUpdated(Instant.ofEpochMilli(1));
+        verify(mediaFileRepository).save(mockedFile);
         assertEquals(count - 1L, musicFolderRepository.count());
     }
 
@@ -496,6 +508,7 @@ public class MediaFolderServiceTest {
         Mockito.reset(musicFolderRepository);
         Mockito.reset(mediaFileDao);
 
+        when(mediaFileRepository.findByFolderIdAndPresentTrue(musicFolder.getId())).thenReturn(List.of(mockedFile));
         when(mediaFileDao.getMediaFileCount(musicFolder.getId())).thenReturn(10);
 
         // when
@@ -505,7 +518,9 @@ public class MediaFolderServiceTest {
         verify(musicFolderRepository).findByIdAndDeletedFalse(musicFolder.getId());
         verify(musicFolderRepository).save(any(MusicFolder.class));
         verifyNoInteractions(musicFolderDao);
-        verify(mediaFileDao).deleteMediaFiles(musicFolder.getId());
+        verify(mockedFile).setPresent(false);
+        verify(mockedFile).setChildrenLastUpdated(Instant.ofEpochMilli(1));
+        verify(mediaFileRepository).save(mockedFile);
         assertEquals(count, musicFolderRepository.count());
         MusicFolder deletedFolder = musicFolderRepository.findById(musicFolder.getId()).get();
         assertTrue(deletedFolder.isDeleted());
@@ -523,6 +538,7 @@ public class MediaFolderServiceTest {
         Mockito.reset(musicFolderRepository);
         Mockito.reset(mediaFileDao);
 
+        when(mediaFileRepository.findByFolderIdAndPresentTrue(musicFolder.getId())).thenReturn(List.of(mockedFile));
         when(mediaFileDao.getMediaFileCount(musicFolder.getId())).thenReturn(10);
 
         // when
@@ -532,7 +548,9 @@ public class MediaFolderServiceTest {
         verify(musicFolderRepository).findByIdAndDeletedFalse(musicFolder.getId());
         verify(musicFolderRepository).save(any(MusicFolder.class));
         verifyNoInteractions(musicFolderDao);
-        verify(mediaFileDao).deleteMediaFiles(musicFolder.getId());
+        verify(mockedFile).setPresent(false);
+        verify(mockedFile).setChildrenLastUpdated(Instant.ofEpochMilli(1));
+        verify(mediaFileRepository).save(mockedFile);
         assertEquals(count, musicFolderRepository.count());
         MusicFolder deletedFolder = musicFolderRepository.findById(musicFolder.getId()).get();
         assertTrue(deletedFolder.isDeleted());

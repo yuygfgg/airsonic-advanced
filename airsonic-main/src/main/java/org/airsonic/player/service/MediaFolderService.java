@@ -6,6 +6,7 @@ import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.MusicFolderDao;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
+import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.repository.MusicFolderRepository;
 import org.airsonic.player.repository.UserRepository;
 import org.airsonic.player.util.FileUtil;
@@ -45,6 +46,8 @@ public class MediaFolderService {
     private MusicFolderRepository musicFolderRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private MediaFileRepository mediaFileRepository;
 
     private List<MusicFolder> cachedMusicFolders;
     private final ConcurrentMap<String, List<MusicFolder>> cachedMusicFoldersPerUser = new ConcurrentHashMap<>();
@@ -191,7 +194,11 @@ public class MediaFolderService {
                 folder.setEnabled(false);
                 musicFolderRepository.save(folder);
             }
-            mediaFileDao.deleteMediaFiles(id);
+            mediaFileRepository.findByFolderIdAndPresentTrue(id).forEach(f -> {
+                f.setChildrenLastUpdated(Instant.ofEpochMilli(1));
+                f.setPresent(false);
+                mediaFileRepository.save(f);
+            });
             clearMusicFolderCache();
             clearMediaFileCache();
         }, () -> {

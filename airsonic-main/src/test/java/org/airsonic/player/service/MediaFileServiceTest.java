@@ -66,7 +66,7 @@ public class MediaFileServiceTest {
         assertTrue(actual.isEmpty());
         // verify updateMedia does not called
         verify(mediaFileDao).createOrUpdateMediaFile(any(), any());
-        verify(mediaFileDao).deleteMediaFiles(any(), anyInt());
+        verify(mediaFileRepository).findByFolderIdAndPath(anyInt(), eq("valid/airsonic-test.wav"));
         verify(coverArtService).persistIfNeeded(eq(base));
     }
 }

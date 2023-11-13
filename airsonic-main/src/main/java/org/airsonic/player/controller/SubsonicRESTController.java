@@ -297,7 +297,7 @@ public class SubsonicRESTController {
         request = wrapRequest(request);
         org.subsonic.restapi.Genres genres = new org.subsonic.restapi.Genres();
 
-        for (org.airsonic.player.domain.Genre genre : mediaFileDao.getGenres(false)) {
+        for (org.airsonic.player.domain.Genre genre : mediaFileService.getGenres(false)) {
             org.subsonic.restapi.Genre g = new org.subsonic.restapi.Genre();
             genres.getGenre().add(g);
             g.setContent(genre.getName());

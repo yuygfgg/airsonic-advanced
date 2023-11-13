@@ -299,7 +299,8 @@ public class MediaScannerService {
             CompletableFuture<Void> genrePersistence = CompletableFuture
                     .runAsync(() -> {
                         LOG.info("Updating genres");
-                        boolean genresSuccessful = mediaFileDao.updateGenres(genres.getGenres());
+                        long count = mediaFileService.updateGenres(genres.getGenres()).size();
+                        boolean genresSuccessful = count == genres.getGenres().size();
                         LOG.info("Genre persistence successfully complete: {}", genresSuccessful);
                     }, pool);
 

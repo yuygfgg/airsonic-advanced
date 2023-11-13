@@ -30,6 +30,7 @@ import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.i18n.LocaleResolver;
 import org.airsonic.player.repository.AlbumRepository;
+import org.airsonic.player.repository.GenreRepository;
 import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.repository.MusicFileInfoRepository;
 import org.airsonic.player.repository.OffsetBasedPageRequest;
@@ -53,6 +54,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -103,6 +105,8 @@ public class MediaFileService {
     private LocaleResolver localeResolver;
     @Autowired
     private MusicFileInfoRepository musicFileInfoRepository;
+    @Autowired
+    private GenreRepository genreRepository;
 
     private boolean memoryCacheEnabled = true;
 
@@ -375,7 +379,18 @@ public class MediaFileService {
      * @return Sorted list of genres.
      */
     public List<Genre> getGenres(boolean sortByAlbum) {
-        return mediaFileDao.getGenres(sortByAlbum);
+        Sort sort = sortByAlbum ? Sort.by("albumCount") : Sort.by("songCount");
+        return genreRepository.findAll(sort.and(Sort.by(Direction.ASC, "name")));
+    }
+
+    /**
+     * update genres
+     *
+     * @param genres The genres to update.
+     * @return The updated genres.
+     */
+    public List<Genre> updateGenres(List <Genre> genres) {
+        return genreRepository.saveAll(genres);
     }
 
     /**

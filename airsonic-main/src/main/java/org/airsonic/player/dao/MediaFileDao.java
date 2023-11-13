@@ -21,7 +21,6 @@
 package org.airsonic.player.dao;
 
 import com.google.common.collect.ImmutableMap;
-import org.airsonic.player.domain.Genre;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.RandomSearchCriteria;
@@ -55,12 +54,10 @@ public class MediaFileDao extends AbstractDao {
                                                 "children_last_updated, present, version, mb_release_id, mb_recording_id";
 
     private static final String QUERY_COLUMNS = "id, " + INSERT_COLUMNS;
-    private static final String GENRE_COLUMNS = "name, song_count, album_count";
 
     public static final int VERSION = 4;
 
     private final MediaFileMapper rowMapper = new MediaFileMapper();
-    private final GenreMapper genreRowMapper = new GenreMapper();
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void createOrUpdateMediaFile(MediaFile file, Consumer<MediaFile> preInsertionCallback) {
@@ -194,23 +191,6 @@ public class MediaFileDao extends AbstractDao {
         }
     }
 
-    public List<Genre> getGenres(boolean sortByAlbum) {
-        String orderBy = sortByAlbum ? "album_count" : "song_count";
-        return query("select " + GENRE_COLUMNS + " from genre order by " + orderBy + ", name desc", genreRowMapper);
-    }
-
-    public boolean updateGenres(List<Genre> genres) {
-        update("delete from genre");
-        if (!genres.isEmpty()) {
-            return batchedUpdate("insert into genre(" + GENRE_COLUMNS + ") values(?, ?, ?)",
-                    genres.parallelStream()
-                            .map(genre -> new Object[] { genre.getName(), genre.getSongCount(), genre.getAlbumCount() })
-                            .collect(Collectors.toList()))
-                == genres.size();
-        }
-
-        return true;
-    }
 
     /**
      * Returns the most frequently played albums.
@@ -729,11 +709,4 @@ public class MediaFileDao extends AbstractDao {
         }
     }
 
-
-    private static class GenreMapper implements RowMapper<Genre> {
-        @Override
-        public Genre mapRow(ResultSet rs, int rowNum) throws SQLException {
-            return new Genre(rs.getString(1), rs.getInt(2), rs.getInt(3));
-        }
-    }
 }

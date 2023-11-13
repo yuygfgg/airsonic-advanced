@@ -14,10 +14,15 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
+
+import org.airsonic.player.repository.AtomicIntegerConverter;
+
+import javax.persistence.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,11 +32,24 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Sindre Mehus
  * @version $Revision: 1.2 $ $Date: 2005/12/25 13:48:46 $
  */
+@Entity
+@Table(name = "genre")
 public class Genre {
 
-    private final String name;
-    private final AtomicInteger songCount = new AtomicInteger(0);
-    private final AtomicInteger albumCount = new AtomicInteger(0);
+    @Id
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "song_count")
+    @Convert(converter = AtomicIntegerConverter.class)
+    private AtomicInteger songCount = new AtomicInteger(0);
+
+    @Column(name = "album_count")
+    @Convert(converter = AtomicIntegerConverter.class)
+    private AtomicInteger albumCount = new AtomicInteger(0);
+
+    public Genre() {
+    }
 
     public Genre(String name) {
         this.name = name;

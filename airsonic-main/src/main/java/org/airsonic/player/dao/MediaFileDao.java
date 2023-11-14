@@ -380,31 +380,6 @@ public class MediaFileDao extends AbstractDao {
         return namedQuery(query, rowMapper, args);
     }
 
-    public int getMediaFileCount(Integer folderId) {
-        return queryForInt("select count(*) from media_file where folder_id=?", 0, folderId);
-    }
-
-    public int getAlbumCount(final List<MusicFolder> musicFolders) {
-        if (musicFolders.isEmpty()) {
-            return 0;
-        }
-        Map<String, Object> args = new HashMap<>();
-        args.put("type", MediaFile.MediaType.ALBUM.name());
-        args.put("folders", MusicFolder.toIdList(musicFolders));
-        return namedQueryForInt("select count(*) from media_file where type = :type and folder_id in (:folders) and present", 0, args);
-    }
-
-    public int getPlayedAlbumCount(final List<MusicFolder> musicFolders) {
-        if (musicFolders.isEmpty()) {
-            return 0;
-        }
-        Map<String, Object> args = new HashMap<>();
-        args.put("type", MediaFile.MediaType.ALBUM.name());
-        args.put("folders", MusicFolder.toIdList(musicFolders));
-        return namedQueryForInt("select count(*) from media_file where type = :type " +
-                                "and play_count > 0 and present and folder_id in (:folders)", 0, args);
-    }
-
     public int getStarredAlbumCount(final String username, final List<MusicFolder> musicFolders) {
         if (musicFolders.isEmpty()) {
             return 0;

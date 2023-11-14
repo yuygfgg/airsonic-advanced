@@ -506,7 +506,7 @@ public class MediaFileService {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
         }
-        Sort sort = byArtist ? Sort.by("artist", "album", "id") : Sort.by("album", "id");
+        Sort sort = byArtist ? Sort.by("artist", "albumName", "id") : Sort.by("albumName", "id");
         return mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, new OffsetBasedPageRequest(offset, count, sort));
     }
 
@@ -1261,11 +1261,17 @@ public class MediaFileService {
     }
 
     public int getAlbumCount(List<MusicFolder> musicFolders) {
-        return mediaFileDao.getAlbumCount(musicFolders);
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return 0;
+        }
+        return mediaFileRepository.countByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM);
     }
 
     public int getPlayedAlbumCount(List<MusicFolder> musicFolders) {
-        return mediaFileDao.getPlayedAlbumCount(musicFolders);
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return 0;
+        }
+        return mediaFileRepository.countByFolderIdInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, 0);
     }
 
     public int getStarredAlbumCount(String username, List<MusicFolder> musicFolders) {

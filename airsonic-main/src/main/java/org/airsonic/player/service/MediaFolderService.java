@@ -2,7 +2,6 @@ package org.airsonic.player.service;
 
 import com.google.common.collect.Streams;
 import org.airsonic.player.command.MusicFolderSettingsCommand.MusicFolderInfo;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.MusicFolderDao;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
@@ -40,8 +39,6 @@ public class MediaFolderService {
 
     @Autowired
     private MusicFolderDao musicFolderDao;
-    @Autowired
-    private MediaFileDao mediaFileDao;
     @Autowired
     private MusicFolderRepository musicFolderRepository;
     @Autowired
@@ -178,7 +175,7 @@ public class MediaFolderService {
 
         musicFolderRepository.findByIdAndDeletedFalse(id).ifPresentOrElse(folder -> {
             // if empty folder, just delete
-            if (mediaFileDao.getMediaFileCount(id) == 0) {
+            if (mediaFileRepository.countByFolderId(id) == 0) {
                 musicFolderRepository.delete(folder);
                 clearMusicFolderCache();
                 return;

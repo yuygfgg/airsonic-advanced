@@ -50,5 +50,11 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public Optional<MediaFile> findByPathAndFolderIdAndStartPosition(String path, Integer folderId, Double startPosition);
 
+    public int countByFolderId(Integer folderId);
+
+    public int countByFolderIdInAndMediaTypeAndPresentTrue(List<Integer> folderIds, MediaType mediaType);
+
+    public int countByFolderIdInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Integer playCount);
+
     public void deleteAllByPresentFalse();
 }

@@ -2,7 +2,6 @@ package org.airsonic.player.service;
 
 import org.airsonic.player.command.MusicFolderSettingsCommand.MusicFolderInfo;
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.MusicFolderDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
@@ -64,9 +63,6 @@ public class MediaFolderServiceTest {
 
     @MockBean
     private MediaFileRepository mediaFileRepository;
-
-    @SpyBean
-    private MediaFileDao mediaFileDao;
 
     @TempDir
     private static Path tempAirsonicHome;
@@ -436,7 +432,7 @@ public class MediaFolderServiceTest {
 
         // given
         Mockito.reset(musicFolderRepository);
-        Mockito.reset(mediaFileDao);
+        Mockito.reset(mediaFileRepository);
 
         // when
         mediaFolderService.deleteMusicFolder(-1);
@@ -444,7 +440,7 @@ public class MediaFolderServiceTest {
         // then
         verify(musicFolderRepository).findByIdAndDeletedFalse(-1);
         verifyNoMoreInteractions(musicFolderRepository);
-        verifyNoInteractions(mediaFileDao);
+        verifyNoInteractions(mediaFileRepository);
     }
 
     @Test
@@ -455,9 +451,9 @@ public class MediaFolderServiceTest {
         musicFolderRepository.save(musicFolder);
         long count = musicFolderRepository.count();
         Mockito.reset(musicFolderRepository);
-        Mockito.reset(mediaFileDao);
+        Mockito.reset(mediaFileRepository);
 
-        when(mediaFileDao.getMediaFileCount(musicFolder.getId())).thenReturn(0);
+        when(mediaFileRepository.countByFolderId(musicFolder.getId())).thenReturn(0);
 
         // when
         mediaFolderService.deleteMusicFolder(musicFolder.getId());
@@ -478,9 +474,9 @@ public class MediaFolderServiceTest {
         musicFolderRepository.save(childFolder);
         long count = musicFolderRepository.count();
         Mockito.reset(musicFolderRepository);
-        Mockito.reset(mediaFileDao);
+        Mockito.reset(mediaFileRepository);
 
-        when(mediaFileDao.getMediaFileCount(childFolder.getId())).thenReturn(10);
+        when(mediaFileRepository.countByFolderId(childFolder.getId())).thenReturn(10);
         when(mediaFileRepository.findByFolderIdAndPresentTrue(childFolder.getId())).thenReturn(List.of(mockedFile));
 
         // when
@@ -506,10 +502,10 @@ public class MediaFolderServiceTest {
         musicFolderRepository.save(childFolder);
         long count = musicFolderRepository.count();
         Mockito.reset(musicFolderRepository);
-        Mockito.reset(mediaFileDao);
+        Mockito.reset(mediaFileRepository);
 
         when(mediaFileRepository.findByFolderIdAndPresentTrue(musicFolder.getId())).thenReturn(List.of(mockedFile));
-        when(mediaFileDao.getMediaFileCount(musicFolder.getId())).thenReturn(10);
+        when(mediaFileRepository.countByFolderId(musicFolder.getId())).thenReturn(10);
 
         // when
         mediaFolderService.deleteMusicFolder(musicFolder.getId());
@@ -536,10 +532,10 @@ public class MediaFolderServiceTest {
         musicFolderRepository.save(musicFolder);
         long count = musicFolderRepository.count();
         Mockito.reset(musicFolderRepository);
-        Mockito.reset(mediaFileDao);
+        Mockito.reset(mediaFileRepository);
 
         when(mediaFileRepository.findByFolderIdAndPresentTrue(musicFolder.getId())).thenReturn(List.of(mockedFile));
-        when(mediaFileDao.getMediaFileCount(musicFolder.getId())).thenReturn(10);
+        when(mediaFileRepository.countByFolderId(musicFolder.getId())).thenReturn(10);
 
         // when
         mediaFolderService.deleteMusicFolder(musicFolder.getId());

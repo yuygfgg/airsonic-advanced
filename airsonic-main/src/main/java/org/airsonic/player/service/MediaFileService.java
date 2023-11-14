@@ -402,7 +402,10 @@ public class MediaFileService {
      * @return The most frequently played albums.
      */
     public List<MediaFile> getMostFrequentlyPlayedAlbums(int offset, int count, List<MusicFolder> musicFolders) {
-        return mediaFileDao.getMostFrequentlyPlayedAlbums(offset, count, musicFolders);
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return Collections.emptyList();
+        }
+        return mediaFileRepository.findByFolderIdInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, 0, new OffsetBasedPageRequest(offset, count, Sort.by("playCount").descending().and(Sort.by("id"))));
     }
 
     /**
@@ -414,7 +417,10 @@ public class MediaFileService {
      * @return The most recently played albums.
      */
     public List<MediaFile> getMostRecentlyPlayedAlbums(int offset, int count, List<MusicFolder> musicFolders) {
-        return mediaFileDao.getMostRecentlyPlayedAlbums(offset, count, musicFolders);
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return Collections.emptyList();
+        }
+        return mediaFileRepository.findByFolderIdInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, 0, new OffsetBasedPageRequest(offset, count, Sort.by("lastPlayed").descending().and(Sort.by("id"))));
     }
 
     /**
@@ -426,7 +432,10 @@ public class MediaFileService {
      * @return The most recently added albums.
      */
     public List<MediaFile> getNewestAlbums(int offset, int count, List<MusicFolder> musicFolders) {
-        return mediaFileDao.getNewestAlbums(offset, count, musicFolders);
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return Collections.emptyList();
+        }
+        return mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, new OffsetBasedPageRequest(offset, count, Sort.by("created").descending().and(Sort.by("id"))));
     }
 
     /**
@@ -452,7 +461,11 @@ public class MediaFileService {
      * @return Albums in alphabetical order.
      */
     public List<MediaFile> getAlphabeticalAlbums(int offset, int count, boolean byArtist, List<MusicFolder> musicFolders) {
-        return mediaFileDao.getAlphabeticalAlbums(offset, count, byArtist, musicFolders);
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return Collections.emptyList();
+        }
+        Sort sort = byArtist ? Sort.by("artist", "album", "id") : Sort.by("album", "id");
+        return mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, new OffsetBasedPageRequest(offset, count, sort));
     }
 
     /**
@@ -466,7 +479,16 @@ public class MediaFileService {
      * @return Albums in the year range.
      */
     public List<MediaFile> getAlbumsByYear(int offset, int count, int fromYear, int toYear, List<MusicFolder> musicFolders) {
-        return mediaFileDao.getAlbumsByYear(offset, count, fromYear, toYear, musicFolders);
+
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return Collections.emptyList();
+        }
+
+        if (fromYear <= toYear) {
+            return mediaFileRepository.findByFolderIdInAndMediaTypeAndYearBetweenAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, fromYear, toYear, new OffsetBasedPageRequest(offset, count, Sort.by("year", "id")));
+        } else {
+            return mediaFileRepository.findByFolderIdInAndMediaTypeAndYearBetweenAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, toYear, fromYear, new OffsetBasedPageRequest(offset, count, Sort.by("year").descending().and(Sort.by("id"))));
+        }
     }
 
     /**
@@ -479,7 +501,10 @@ public class MediaFileService {
      * @return Albums in the genre.
      */
     public List<MediaFile> getAlbumsByGenre(int offset, int count, String genre, List<MusicFolder> musicFolders) {
-        return mediaFileDao.getAlbumsByGenre(offset, count, genre, musicFolders);
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return Collections.emptyList();
+        }
+        return mediaFileRepository.findByFolderIdInAndMediaTypeAndGenreAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, genre, new OffsetBasedPageRequest(offset, count, Sort.by("id")));
     }
 
     /**

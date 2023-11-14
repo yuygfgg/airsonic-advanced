@@ -25,6 +25,15 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public List<MediaFile> findByFolderIdInAndMediaTypeAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Pageable page);
 
+    public List<MediaFile> findByFolderIdInAndMediaTypeAndGenreAndPresentTrue(List<Integer> folderIds, MediaType mediaType, String genre, Pageable page);
+
+    public List<MediaFile> findByFolderIdInAndMediaTypeInAndGenreAndPresentTrue(List<Integer> folderIds, Iterable<MediaType> mediaType, String genre, Pageable page);
+
+    public List<MediaFile> findByFolderIdInAndMediaTypeAndYearBetweenAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Integer startYear,
+            Integer endYear, Pageable page);
+
+    public List<MediaFile> findByFolderIdInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Integer playCount, Pageable page);
+
     public List<MediaFile> findByFolderIdAndParentPath(Integer folderId, String parentPath, Sort sort);
 
     public List<MediaFile> findByFolderIdAndParentPathAndPresentTrue(Integer folderId, String parentPath, Sort sort);

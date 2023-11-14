@@ -6,7 +6,6 @@ import com.codahale.metrics.Timer;
 import com.google.common.io.Resources;
 import org.airsonic.player.TestCaseUtils;
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.*;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.MediaFile;
@@ -72,9 +71,6 @@ public class MediaScannerServiceTestCase {
 
     @Autowired
     private MediaScannerService mediaScannerService;
-
-    @Autowired
-    private MediaFileDao mediaFileDao;
 
     @Autowired
     private MediaFileRepository mediaFileRepository;
@@ -160,7 +156,7 @@ public class MediaScannerServiceTestCase {
         assertEquals(5, allAlbums.size());
         System.out.println("--- *********************** ---");
 
-        List<MediaFile> listeSongs = mediaFileDao.getSongsByGenre("Baroque Instrumental", 0, Integer.MAX_VALUE, testFolders);
+        List<MediaFile> listeSongs = mediaFileService.getSongsByGenre(0, Integer.MAX_VALUE, "Baroque Instrumental", testFolders);
         assertEquals(2, listeSongs.size());
 
         // display out metrics report

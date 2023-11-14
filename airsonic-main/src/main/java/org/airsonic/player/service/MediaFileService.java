@@ -326,6 +326,48 @@ public class MediaFileService {
     }
 
     /**
+     * Returns songs in a genre.
+     *
+     * @param offset      Number of songs to skip.
+     * @param count      Maximum number of songs to return.
+     * @param genre      The genre name.
+     * @param musicFolders Only return songs in these folders.
+     * @return Songs in the genre.
+     */
+    public List<MediaFile> getSongsByGenre(int offset, int count, String genre, List<MusicFolder> musicFolders) {
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return Collections.emptyList();
+        }
+        return mediaFileRepository.findByFolderIdInAndMediaTypeInAndGenreAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.audioTypes(), genre, new OffsetBasedPageRequest(offset, count, Sort.by("id")));
+    }
+
+    /**
+     * Returns songs by a given artist.
+     *
+     * @param offset      Number of songs to skip.
+     * @param count     Maximum number of songs to return.
+     * @param artist    The artist name.
+     * @return Songs by the artist.
+     */
+    public List<MediaFile> getSongsByArtist(int offset, int count, String artist) {
+        return mediaFileRepository.findByMediaTypeInAndArtistAndPresentTrue(MediaType.audioTypes(), artist, new OffsetBasedPageRequest(offset, count, Sort.by("id")));
+    }
+
+    /**
+     * Returns song by a given artist and title.
+     * @param artist The artist name.
+     * @param title The title name.
+     * @param musicFolders Only return songs in these folders.
+     * @return Song by the artist and title.
+     */
+    public MediaFile getSongByArtistAndTitle(String artist, String title, List<MusicFolder> musicFolders) {
+        if (CollectionUtils.isEmpty(musicFolders) || StringUtils.isBlank(artist) || StringUtils.isBlank(title)) {
+            return null;
+        }
+        return mediaFileRepository.findByFolderIdInAndMediaTypeAndArtistAndTitleAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.MUSIC, artist, title).orElse(null);
+    }
+
+    /**
      * Returns artist info for the given artist.
      *
      * @param artist The artist name.
@@ -337,7 +379,7 @@ public class MediaFileService {
             return null;
         }
 
-        return mediaFileRepository.findByArtistAndMediaTypeAndFolderIdInAndPresentTrue(artist, MediaType.DIRECTORY, MusicFolder.toIdList(folders)).orElseGet(
+        return mediaFileRepository.findByFolderIdInAndMediaTypeAndArtistAndPresentTrue(MusicFolder.toIdList(folders), MediaType.DIRECTORY, artist).orElseGet(
             () -> {
                 LOG.info("Media file not found for artist: {}", artist);
                 return null;
@@ -506,6 +548,7 @@ public class MediaFileService {
         }
         return mediaFileRepository.findByFolderIdInAndMediaTypeAndGenreAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, genre, new OffsetBasedPageRequest(offset, count, Sort.by("id")));
     }
+
 
     /**
      * Returns random songs for the given parent.

@@ -324,7 +324,7 @@ public class SubsonicRESTController {
         Integer musicFolderId = getIntParameter(request, "musicFolderId");
         List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username, musicFolderId);
 
-        for (MediaFile mediaFile : mediaFileDao.getSongsByGenre(genre, offset, count, musicFolders)) {
+        for (MediaFile mediaFile : mediaFileService.getSongsByGenre(offset, count, genre, musicFolders)) {
             songs.getSong().add(createJaxbChild(player, mediaFile, username));
         }
         Response res = createResponse();

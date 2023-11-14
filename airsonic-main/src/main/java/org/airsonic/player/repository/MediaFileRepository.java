@@ -19,6 +19,8 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public List<MediaFile> findByMediaTypeInAndPresentFalse(Iterable<MediaType> mediaTypes);
 
+    public List<MediaFile> findByMediaTypeInAndArtistAndPresentTrue(List<MediaType> mediaTypes, String artist, Pageable page);
+
     public List<MediaFile> findByFolderIdAndPresentTrue(Integer folderId);
 
     public List<MediaFile> findByFolderIdAndPath(Integer folderId, String path);
@@ -38,11 +40,13 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public List<MediaFile> findByFolderIdAndParentPathAndPresentTrue(Integer folderId, String parentPath, Sort sort);
 
+    public Optional<MediaFile> findByFolderIdInAndMediaTypeAndArtistAndPresentTrue(List<Integer> folderIds, MediaType mediaType, String artist);
+
+    public Optional<MediaFile> findByFolderIdInAndMediaTypeAndArtistAndTitleAndPresentTrue(List<Integer> folderIds, MediaType mediaType, String artist, String title);
+
     public List<MediaFile> findByAlbumArtistAndAlbumNameAndMediaTypeInAndPresentTrue(String albumArtist, String albumName,
             List<MediaType> mediaTypes, Sort sort);
 
-    public Optional<MediaFile> findByArtistAndMediaTypeAndFolderIdInAndPresentTrue(String artist, MediaType mediaType,
-            List<Integer> folderIds);
 
     public Optional<MediaFile> findByPathAndFolderIdAndStartPosition(String path, Integer folderId, Double startPosition);
 

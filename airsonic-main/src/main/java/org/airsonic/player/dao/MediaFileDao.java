@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableMap;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.RandomSearchCriteria;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowMapper;
@@ -189,44 +188,6 @@ public class MediaFileDao extends AbstractDao {
                 LOG.warn("failure getting id for mediaFile {}", file, e);
             }
         }
-    }
-
-    public List<MediaFile> getSongsByGenre(final String genre, final int offset, final int count, final List<MusicFolder> musicFolders) {
-        if (musicFolders.isEmpty()) {
-            return Collections.emptyList();
-        }
-        Map<String, Object> args = new HashMap<>();
-        args.put("types", MediaFile.MediaType.audioTypes().stream().map(Enum::name).collect(Collectors.toList()));
-        args.put("genre", genre);
-        args.put("count", count);
-        args.put("offset", offset);
-        args.put("folders", MusicFolder.toIdList(musicFolders));
-        return namedQuery("select " + QUERY_COLUMNS + " from media_file where type in (:types) and genre = :genre " +
-                "and present and folder_id in (:folders) order by id limit :count offset :offset", rowMapper, args);
-    }
-
-    public List<MediaFile> getSongsByArtist(final String artist, final int offset, final int count) {
-        Map<String, Object> args = new HashMap<>();
-        args.put("types", MediaFile.MediaType.audioTypes());
-        args.put("artist", artist);
-        args.put("count", count);
-        args.put("offset", offset);
-        return namedQuery("select " + QUERY_COLUMNS + " from media_file where type in (:types) and artist = :artist " +
-                          "and present order by id limit :count offset :offset",
-                          rowMapper, args);
-    }
-
-    public MediaFile getSongByArtistAndTitle(final String artist, final String title, final List<MusicFolder> musicFolders) {
-        if (musicFolders.isEmpty() || StringUtils.isBlank(title) || StringUtils.isBlank(artist)) {
-            return null;
-        }
-        Map<String, Object> args = new HashMap<>();
-        args.put("artist", artist);
-        args.put("title", title);
-        args.put("type", MediaFile.MediaType.MUSIC.name());
-        args.put("folders", MusicFolder.toIdList(musicFolders));
-        return namedQueryOne("select " + QUERY_COLUMNS + " from media_file where artist = :artist " +
-                "and title = :title and type = :type and present and folder_id in (:folders)", rowMapper, args);
     }
 
     /**

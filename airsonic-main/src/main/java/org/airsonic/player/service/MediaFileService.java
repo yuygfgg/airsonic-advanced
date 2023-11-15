@@ -28,12 +28,14 @@ import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder.Type;
+import org.airsonic.player.domain.entity.StarredMediaFile;
 import org.airsonic.player.i18n.LocaleResolver;
 import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.GenreRepository;
 import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.repository.MusicFileInfoRepository;
 import org.airsonic.player.repository.OffsetBasedPageRequest;
+import org.airsonic.player.repository.StarredMediaFileRepository;
 import org.airsonic.player.service.metadata.JaudiotaggerParser;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
@@ -101,6 +103,8 @@ public class MediaFileService {
     private CoverArtService coverArtService;
     @Autowired
     private MediaFileRepository mediaFileRepository;
+    @Autowired
+    private StarredMediaFileRepository starredMediaFileRepository;
     @Autowired
     private LocaleResolver localeResolver;
     @Autowired
@@ -368,6 +372,28 @@ public class MediaFileService {
     }
 
     /**
+     * Returns the most recently starred songs.
+     *
+     * @param offset       Number of songs to skip.
+     * @param count        Maximum number of songs to return.
+     * @param username     Returns songs starred by this user.
+     * @param musicFolders Only return songs from these folders.
+     * @return The most recently starred songs for this user.
+     */
+    public List<MediaFile> getStarredSongs(int offset, int count, String username, List<MusicFolder> musicFolders) {
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return Collections.emptyList();
+        }
+        return starredMediaFileRepository
+                .findByUsernameAndMediaFileMediaTypeInAndMediaFileFolderIdInAndMediaFilePresentTrue(username,
+                        MediaType.audioTypes(), MusicFolder.toIdList(musicFolders),
+                        new OffsetBasedPageRequest(offset, count, Sort.by("created").descending().and(Sort.by("id"))))
+                .stream().map(StarredMediaFile::getMediaFile).collect(Collectors.toList());
+    }
+
+
+
+    /**
      * Returns artist info for the given artist.
      *
      * @param artist The artist name.
@@ -387,6 +413,26 @@ public class MediaFileService {
         );
     }
 
+    /**
+     * Returns the most recently starred artists.
+     *
+     * @param offset       Number of artists to skip.
+     * @param count        Maximum number of artists to return.
+     * @param username     Returns artists starred by this user.
+     * @param musicFolders Only return artists from these folders.
+     * @return The most recently starred artists for this user.
+     */
+    public List<MediaFile> getStarredArtists(int offset, int count, String username, List<MusicFolder> musicFolders) {
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return Collections.emptyList();
+        }
+        return starredMediaFileRepository
+                .findByUsernameAndMediaFileMediaTypeAndMediaFileFolderIdInAndMediaFilePresentTrue(username,
+                        MediaType.DIRECTORY, MusicFolder.toIdList(musicFolders),
+                        new OffsetBasedPageRequest(offset, count, Sort.by("created").descending().and(Sort.by("id"))))
+                .stream().map(StarredMediaFile::getMediaFile).collect(Collectors.toList());
+    }
+
      /**
      * Returns all videos in folders
      *
@@ -400,6 +446,7 @@ public class MediaFileService {
         }
         return mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(folders), MediaType.VIDEO, new OffsetBasedPageRequest(offset, count, Sort.by("title")));
     }
+
 
     /**
      * Returns whether the given file is the root of a media folder.
@@ -490,7 +537,14 @@ public class MediaFileService {
      * @return The most recently starred albums for this user.
      */
     public List<MediaFile> getStarredAlbums(int offset, int count, String username, List<MusicFolder> musicFolders) {
-        return mediaFileDao.getStarredAlbums(offset, count, username, musicFolders);
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return Collections.emptyList();
+        }
+        return starredMediaFileRepository
+                .findByUsernameAndMediaFileMediaTypeAndMediaFileFolderIdInAndMediaFilePresentTrue(username,
+                        MediaType.ALBUM, MusicFolder.toIdList(musicFolders),
+                        new OffsetBasedPageRequest(offset, count, Sort.by("created").descending().and(Sort.by("id"))))
+                .stream().map(StarredMediaFile::getMediaFile).collect(Collectors.toList());
     }
 
     /**

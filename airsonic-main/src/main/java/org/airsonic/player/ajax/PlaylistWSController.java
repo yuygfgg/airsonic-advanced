@@ -1,6 +1,5 @@
 package org.airsonic.player.ajax;
 
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.Player;
@@ -38,8 +37,6 @@ public class PlaylistWSController {
     private MediaFileService mediaFileService;
     @Autowired
     private PlaylistService playlistService;
-    @Autowired
-    private MediaFileDao mediaFileDao;
     @Autowired
     private MediaFolderService mediaFolderService;
     @Autowired
@@ -93,7 +90,7 @@ public class PlaylistWSController {
 
         Playlist result = createPlaylist(name, false, username);
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
-        List<MediaFile> songs = mediaFileDao.getStarredFiles(0, Integer.MAX_VALUE, username, musicFolders);
+        List<MediaFile> songs = mediaFileService.getStarredSongs(0, Integer.MAX_VALUE, username, musicFolders);
         Integer playlistId = result.getId();
         playlistService.setFilesInPlaylist(playlistId, songs);
         playlistService.broadcastFileChange(playlistId, false, true);

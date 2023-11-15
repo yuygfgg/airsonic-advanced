@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,6 +15,8 @@ import java.util.Optional;
 public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public List<MediaFile> findByPath(String path);
+
+    public List<MediaFile> findByLastScannedBeforeAndPresentTrue(Instant lastScanned);
 
     public List<MediaFile> findByMediaTypeAndPresentFalse(MediaType mediaType);
 
@@ -24,6 +27,8 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
     public List<MediaFile> findByFolderIdAndPresentTrue(Integer folderId);
 
     public List<MediaFile> findByFolderIdAndPath(Integer folderId, String path);
+
+    public List<MediaFile> findByFolderIdAndPathInAndPresentFalse(Integer folderId, Iterable<String> path);
 
     public List<MediaFile> findByFolderIdInAndMediaTypeAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Pageable page);
 

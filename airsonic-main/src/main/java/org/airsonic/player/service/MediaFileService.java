@@ -404,12 +404,8 @@ public class MediaFileService {
             return null;
         }
 
-        return mediaFileRepository.findByFolderIdInAndMediaTypeAndArtistAndPresentTrue(MusicFolder.toIdList(folders), MediaType.DIRECTORY, artist).orElseGet(
-            () -> {
-                LOG.info("Media file not found for artist: {}", artist);
-                return null;
-            }
-        );
+        return mediaFileRepository.findByFolderIdInAndMediaTypeAndArtistAndPresentTrue(MusicFolder.toIdList(folders),
+                MediaType.DIRECTORY, artist).orElse(null);
     }
 
     /**
@@ -1210,17 +1206,6 @@ public class MediaFileService {
                 .orElse(null);
     }
 
-    public void setSecurityService(SecurityService securityService) {
-        this.securityService = securityService;
-    }
-
-    public void setSettingsService(SettingsService settingsService) {
-        this.settingsService = settingsService;
-    }
-
-    public void setMediaFileDao(MediaFileDao mediaFileDao) {
-        this.mediaFileDao = mediaFileDao;
-    }
 
     /**
      * Returns all media files that are children, grand-children etc of a given media file.
@@ -1371,8 +1356,48 @@ public class MediaFileService {
         starredMediaFileRepository.deleteAllByMediaFileIdInAndUsername(ids, username);
     }
 
-    public void setParser(JaudiotaggerParser parser) {
-        this.parser = parser;
+    /**
+     * mark media files present
+     *
+     * @param paths paths to mark present by folder id
+     * @param lastScanned last scanned time
+     * @return true if success, false otherwise
+     */
+    @Transactional
+    public boolean markPresent(Map<Integer, Set<String>> paths, Instant lastScanned) {
+
+        if (CollectionUtils.isEmpty(paths)) {
+            return true;
+        }
+        try {
+            paths.entrySet().parallelStream().forEach(e -> {
+                mediaFileRepository.findByFolderIdAndPathInAndPresentFalse(e.getKey(), e.getValue())
+                    .forEach(
+                        m -> {
+                            m.setPresent(true);
+                            m.setLastScanned(lastScanned);
+                            mediaFileRepository.save(m);
+                        }
+                    );
+            });
+            return true;
+        } catch (Exception e) {
+            LOG.warn("Error marking media files present", e);
+            return false;
+        }
+    }
+
+    /**
+     * mark media files non present
+     * @param lastScanned last scanned time before which media files are marked non present
+     */
+    @Transactional
+    public void markNonPresent(Instant lastScanned) {
+        mediaFileRepository.findByLastScannedBeforeAndPresentTrue(lastScanned).forEach(m -> {
+            m.setPresent(false);
+            m.setChildrenLastUpdated(Instant.ofEpochMilli(1));
+            mediaFileRepository.save(m);
+        });
     }
 
     /**
@@ -1394,6 +1419,7 @@ public class MediaFileService {
     /**
      * delete all media files that are not present on disk
      */
+    @Transactional
     public void expunge() {
         mediaFileRepository.deleteAllByPresentFalse();
     }

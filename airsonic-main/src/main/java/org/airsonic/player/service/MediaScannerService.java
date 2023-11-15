@@ -20,7 +20,6 @@
 package org.airsonic.player.service;
 
 import org.airsonic.player.config.AirsonicScanConfig;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.repository.AlbumRepository;
@@ -71,7 +70,6 @@ public class MediaScannerService {
         MediaFileService mediaFileService,
         MediaFolderService mediaFolderService,
         CoverArtService coverArtService,
-        MediaFileDao mediaFileDao,
         ArtistRepository artistRepository,
         AlbumRepository albumRepository,
         TaskSchedulingService taskService,
@@ -84,7 +82,6 @@ public class MediaScannerService {
         this.mediaFileService = mediaFileService;
         this.mediaFolderService = mediaFolderService;
         this.coverArtService = coverArtService;
-        this.mediaFileDao = mediaFileDao;
         this.artistRepository = artistRepository;
         this.albumRepository = albumRepository;
         this.taskService = taskService;
@@ -99,7 +96,6 @@ public class MediaScannerService {
     private final MediaFileService mediaFileService;
     private final MediaFolderService mediaFolderService;
     private final CoverArtService coverArtService;
-    private final MediaFileDao mediaFileDao;
     private final ArtistRepository artistRepository;
     private final AlbumRepository albumRepository;
     private final TaskSchedulingService taskService;
@@ -288,10 +284,10 @@ public class MediaScannerService {
 
             LOG.info("Marking present files");
             CompletableFuture<Void> mediaFilePersistence = CompletableFuture
-                    .runAsync(() -> mediaFileDao.markPresent(encountered, statistics.getScanDate()), pool)
+                    .runAsync(() -> mediaFileService.markPresent(encountered, statistics.getScanDate()), pool)
                     .thenRunAsync(() -> {
                         LOG.info("Marking non-present files.");
-                        mediaFileDao.markNonPresent(statistics.getScanDate());
+                        mediaFileService.markNonPresent(statistics.getScanDate());
                     }, pool)
                     .thenRunAsync(() -> LOG.info("File marking complete"), pool);
 

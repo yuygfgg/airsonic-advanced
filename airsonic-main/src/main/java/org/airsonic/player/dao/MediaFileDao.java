@@ -20,7 +20,6 @@
  */
 package org.airsonic.player.dao;
 
-import com.google.common.collect.ImmutableMap;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.RandomSearchCriteria;
@@ -33,10 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
 /**
  * Provides database services for media files.
@@ -298,32 +295,6 @@ public class MediaFileDao extends AbstractDao {
 
         return namedQuery(query, rowMapper, args);
     }
-
-    public boolean markPresent(Map<Integer, Set<String>> paths, Instant lastScanned) {
-        if (!paths.isEmpty()) {
-            return paths.entrySet().parallelStream().map(e -> {
-                int batches = (e.getValue().size() - 1) / 30000;
-                List<String> pList = new ArrayList<>(e.getValue());
-
-                return IntStream.rangeClosed(0, batches).parallel().map(b -> {
-                    List<String> batch = pList.subList(b * 30000, Math.min(e.getValue().size(), b * 30000 + 30000));
-                    return namedUpdate(
-                            "update media_file set present=true, last_scanned = :lastScanned where path in (:paths) and folder_id=:folderId",
-                            ImmutableMap.of("lastScanned", lastScanned, "paths", batch, "folderId", e.getKey()));
-                }).sum() == e.getValue().size();
-            }).reduce(true, (a, b) -> a && b);
-        }
-
-        return true;
-    }
-
-    public void markNonPresent(Instant lastScanned) {
-        Instant childrenLastUpdated = Instant.ofEpochMilli(1);  // Used to force a children rescan if file is later resurrected.
-
-        update("update media_file set present=false, children_last_updated=? where last_scanned < ? and present",
-                childrenLastUpdated, lastScanned);
-    }
-
 
     private static class MediaFileMapper implements RowMapper<MediaFile> {
         @Override

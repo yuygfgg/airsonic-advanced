@@ -58,6 +58,7 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.io.BufferedInputStream;
@@ -1362,6 +1363,7 @@ public class MediaFileService {
      * @param ids    media file ids to unstar
      * @param username username who unstars the media files
      */
+    @Transactional
     public void unstarMediaFiles(List<Integer> ids, String username) {
         if (CollectionUtils.isEmpty(ids) || StringUtils.isEmpty(username)) {
             return;

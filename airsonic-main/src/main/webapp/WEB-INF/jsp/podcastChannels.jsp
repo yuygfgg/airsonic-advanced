@@ -230,7 +230,7 @@
                           if (channels.length == 1) {
                              name = channels[0].title;
                           }
-                          return $("<a>", {title: name, alt: name, text: name, target: "main"}).attr("href", "podcastChannel.view?id=" + data)[0].outerHTML;
+                          return $("<a>", {title: name, alt: name, text: name, target: "main"}).attr("href", "podcastChannel.view?id=" + data.id)[0].outerHTML;
                       }
                       return data;
                   }

@@ -36,7 +36,6 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -298,51 +297,6 @@ public class MediaFileDao extends AbstractDao {
         query += " limit " + criteria.getCount();
 
         return namedQuery(query, rowMapper, args);
-    }
-
-    public int getStarredAlbumCount(final String username, final List<MusicFolder> musicFolders) {
-        if (musicFolders.isEmpty()) {
-            return 0;
-        }
-        Map<String, Object> args = new HashMap<>();
-        args.put("type", MediaFile.MediaType.ALBUM.name());
-        args.put("folders", MusicFolder.toIdList(musicFolders));
-        args.put("username", username);
-        return namedQueryForInt("select count(*) from starred_media_file, media_file " +
-                                "where media_file.id = starred_media_file.media_file_id " +
-                                "and media_file.type = :type " +
-                                "and media_file.present " +
-                                "and media_file.folder_id in (:folders) " +
-                                "and starred_media_file.username = :username",
-                                0, args);
-    }
-
-    public void starMediaFiles(List<Integer> ids, String username) {
-        if (!ids.isEmpty()) {
-            unstarMediaFiles(ids, username);
-            Instant now = Instant.now();
-            batchedUpdate("insert into starred_media_file(media_file_id, username, created) values (?,?,?)",
-                    ids.parallelStream().map(id -> new Object[] { id, username, now }).collect(Collectors.toList()));
-        }
-    }
-
-    public void unstarMediaFiles(List<Integer> ids, String username) {
-        if (!ids.isEmpty()) {
-            namedUpdate("delete from starred_media_file where media_file_id in (:ids) and username=:user",
-                    ImmutableMap.of("ids", ids, "user", username));
-        }
-    }
-
-    public void starMediaFile(int id, String username) {
-        starMediaFiles(Collections.singletonList(id), username);
-    }
-
-    public void unstarMediaFile(int id, String username) {
-        unstarMediaFiles(Collections.singletonList(id), username);
-    }
-
-    public Instant getMediaFileStarredDate(int id, String username) {
-        return queryForInstant("select created from starred_media_file where media_file_id=? and username=?", null, id, username);
     }
 
     public boolean markPresent(Map<Integer, Set<String>> paths, Instant lastScanned) {

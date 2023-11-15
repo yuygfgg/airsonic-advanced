@@ -23,7 +23,6 @@ import com.google.common.primitives.Ints;
 import org.airsonic.player.ajax.LyricsInfo;
 import org.airsonic.player.ajax.LyricsWSController;
 import org.airsonic.player.command.UserSettingsCommand;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.PlayQueueDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.Bookmark;
@@ -141,8 +140,6 @@ public class SubsonicRESTController {
     private RatingService ratingService;
     @Autowired
     private SearchService searchService;
-    @Autowired
-    private MediaFileDao mediaFileDao;
     @Autowired
     private ArtistService artistService;
     @Autowired
@@ -265,7 +262,7 @@ public class SubsonicRESTController {
             for (MusicIndex.SortableArtistWithMediaFiles artist : entry.getValue()) {
                 for (MediaFile mediaFile : artist.getMediaFiles()) {
                     if (mediaFile.isDirectory()) {
-                        Instant starredDate = mediaFileDao.getMediaFileStarredDate(mediaFile.getId(), username);
+                        Instant starredDate = mediaFileService.getMediaFileStarredDate(mediaFile, username);
                         org.subsonic.restapi.Artist a = new org.subsonic.restapi.Artist();
                         index.getArtist().add(a);
                         a.setId(String.valueOf(mediaFile.getId()));
@@ -523,7 +520,7 @@ public class SubsonicRESTController {
         org.subsonic.restapi.Artist result = new org.subsonic.restapi.Artist();
         result.setId(String.valueOf(artist.getId()));
         result.setName(artist.getArtist());
-        Instant starred = mediaFileDao.getMediaFileStarredDate(artist.getId(), username);
+        Instant starred = mediaFileService.getMediaFileStarredDate(artist, username);
         result.setStarred(jaxbWriter.convertDate(starred));
         return result;
     }
@@ -664,7 +661,7 @@ public class SubsonicRESTController {
             // Ignored.
         }
         directory.setName(dir.getName());
-        directory.setStarred(jaxbWriter.convertDate(mediaFileDao.getMediaFileStarredDate(id, username)));
+        directory.setStarred(jaxbWriter.convertDate(mediaFileService.getMediaFileStarredDate(dir, username)));
         directory.setPlayCount((long) dir.getPlayCount());
 
         if (dir.isAlbum()) {
@@ -1259,7 +1256,7 @@ public class SubsonicRESTController {
         child.setYear(mediaFile.getYear());
         child.setGenre(mediaFile.getGenre());
         child.setCreated(jaxbWriter.convertDate(mediaFile.getCreated()));
-        child.setStarred(jaxbWriter.convertDate(mediaFileDao.getMediaFileStarredDate(mediaFile.getId(), username)));
+        child.setStarred(jaxbWriter.convertDate(mediaFileService.getMediaFileStarredDate(mediaFile, username)));
         child.setUserRating(ratingService.getRatingForUser(username, mediaFile));
         child.setAverageRating(ratingService.getAverageRating(mediaFile));
         child.setPlayCount((long) mediaFile.getPlayCount());
@@ -1457,9 +1454,9 @@ public class SubsonicRESTController {
                 return;
             }
             if (star) {
-                mediaFileDao.starMediaFile(id, username);
+                mediaFileService.starMediaFiles(List.of(id), username);
             } else {
-                mediaFileDao.unstarMediaFile(id, username);
+                mediaFileService.unstarMediaFiles(List.of(id), username);
             }
         }
         for (int albumId : getIntParameters(request, "albumId")) {

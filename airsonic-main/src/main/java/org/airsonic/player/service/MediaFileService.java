@@ -391,8 +391,6 @@ public class MediaFileService {
                 .stream().map(StarredMediaFile::getMediaFile).collect(Collectors.toList());
     }
 
-
-
     /**
      * Returns artist info for the given artist.
      *
@@ -637,9 +635,10 @@ public class MediaFileService {
         files.removeIf(MediaFile::isVideo);
     }
 
-    public Instant getMediaFileStarredDate(int id, String username) {
-        return mediaFileDao.getMediaFileStarredDate(id, username);
+    public Instant getMediaFileStarredDate(MediaFile mediaFile, String username) {
+        return starredMediaFileRepository.findByUsernameAndMediaFile(username, mediaFile).map(StarredMediaFile::getCreated).orElse(null);
     }
+
     public void populateStarredDate(List<MediaFile> mediaFiles, String username) {
         for (MediaFile mediaFile : mediaFiles) {
             populateStarredDate(mediaFile, username);
@@ -647,7 +646,7 @@ public class MediaFileService {
     }
 
     public void populateStarredDate(MediaFile mediaFile, String username) {
-        Instant starredDate = mediaFileDao.getMediaFileStarredDate(mediaFile.getId(), username);
+        Instant starredDate = starredMediaFileRepository.findByUsernameAndMediaFile(username, mediaFile).map(StarredMediaFile::getCreated).orElse(null);
         mediaFile.setStarredDate(starredDate);
     }
 
@@ -1306,7 +1305,7 @@ public class MediaFileService {
             String remoteStreamUrl = Optional.ofNullable(remoteStreamUrlGenerator).map(g -> g.apply(file)).orElse(null);
             String remoteCoverArtUrl = Optional.ofNullable(remoteCoverArtUrlGenerator).map(g -> g.apply(file)).orElse(null);
 
-            boolean starred = calculateStarred && username != null && getMediaFileStarredDate(file.getId(), username) != null;
+            boolean starred = calculateStarred && username != null && getMediaFileStarredDate(file, username) != null;
             boolean folderAccess = !calculateFolderAccess || username == null || securityService.isFolderAccessAllowed(file, username);
             entries.add(MediaFileEntry.fromMediaFile(file, locale, starred, folderAccess, streamUrl, remoteStreamUrl, remoteCoverArtUrl));
         }
@@ -1329,7 +1328,45 @@ public class MediaFileService {
     }
 
     public int getStarredAlbumCount(String username, List<MusicFolder> musicFolders) {
-        return mediaFileDao.getStarredAlbumCount(username, musicFolders);
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return 0;
+        }
+        return starredMediaFileRepository.countByUsernameAndMediaFileMediaTypeAndMediaFileFolderIdInAndMediaFilePresentTrue(username, MediaType.ALBUM, MusicFolder.toIdList(musicFolders));
+    }
+
+    /**
+     * star media files
+     *
+     * @param ids     media file ids to star
+     * @param username username who stars the media files
+     */
+    public void starMediaFiles(List<Integer> ids, String username) {
+        if (CollectionUtils.isEmpty(ids) || StringUtils.isEmpty(username)) {
+            return;
+        }
+        List<MediaFile> mediaFiles = mediaFileRepository.findAllById(ids);
+        mediaFiles.forEach(m -> {
+            starredMediaFileRepository.findByUsernameAndMediaFile(username, m).ifPresentOrElse(starredMediaFile -> {
+                starredMediaFile.setCreated(Instant.now().truncatedTo(ChronoUnit.MICROS));
+                starredMediaFileRepository.save(starredMediaFile);
+            }, () -> {
+                    StarredMediaFile starredMediaFile = new StarredMediaFile(m, username, Instant.now().truncatedTo(ChronoUnit.MICROS));
+                    starredMediaFileRepository.save(starredMediaFile);
+                });
+        });
+    }
+
+    /**
+     * unstar media files
+     *
+     * @param ids    media file ids to unstar
+     * @param username username who unstars the media files
+     */
+    public void unstarMediaFiles(List<Integer> ids, String username) {
+        if (CollectionUtils.isEmpty(ids) || StringUtils.isEmpty(username)) {
+            return;
+        }
+        starredMediaFileRepository.deleteAllByMediaFileIdInAndUsername(ids, username);
     }
 
     public void setParser(JaudiotaggerParser parser) {

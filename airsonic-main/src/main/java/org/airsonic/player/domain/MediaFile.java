@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -21,15 +22,7 @@ package org.airsonic.player.domain;
 
 import org.apache.commons.io.FilenameUtils;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -146,7 +139,7 @@ public class MediaFile {
     private boolean present;
 
     @Column(name = "version", nullable = false)
-    private int version;
+    private int version = VERSION;
 
     @Column(name = "mb_release_id", nullable = true)
     private String musicBrainzReleaseId;
@@ -154,6 +147,8 @@ public class MediaFile {
     @Column(name = "mb_recording_id", nullable = true)
     private String musicBrainzRecordingId;
 
+    @Transient
+    private Double averageRating = 0.0;
 
     public MediaFile(Integer id, String path, Integer folderId, MediaType mediaType, Double startPosition, String format, String title,
                      String albumName, String artist, String albumArtist, Integer discNumber, Integer trackNumber, Integer year, String genre, Integer bitRate,
@@ -517,6 +512,14 @@ public class MediaFile {
         return version;
     }
 
+    public Double getAverageRating() {
+        return averageRating;
+    }
+
+    public void setAverageRating(Double averageRating) {
+        this.averageRating = averageRating;
+    }
+
     // placeholder to use prior to persistence
     @Transient
     private CoverArt art;
@@ -576,6 +579,8 @@ public class MediaFile {
     }
 
     public static final double NOT_INDEXED = -1.0;
+
+    public static final int VERSION = 4;
 
     public static enum MediaType {
         MUSIC,

@@ -23,19 +23,21 @@ package org.airsonic.player.service;
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;
 import org.airsonic.player.ajax.MediaFileEntry;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.entity.StarredMediaFile;
+import org.airsonic.player.domain.entity.UserRating;
 import org.airsonic.player.i18n.LocaleResolver;
 import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.GenreRepository;
 import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.repository.MusicFileInfoRepository;
 import org.airsonic.player.repository.OffsetBasedPageRequest;
+import org.airsonic.player.repository.RandomMediaFileRepository;
 import org.airsonic.player.repository.StarredMediaFileRepository;
+import org.airsonic.player.repository.UserRatingRepository;
 import org.airsonic.player.service.metadata.JaudiotaggerParser;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
@@ -55,6 +57,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
@@ -91,9 +94,11 @@ public class MediaFileService {
     @Autowired
     private SettingsService settingsService;
     @Autowired
-    private MediaFileDao mediaFileDao;
-    @Autowired
     private MediaFolderService mediaFolderService;
+    @Autowired
+    private RandomMediaFileRepository randomMediaFileRepository;
+    @Autowired
+    private UserRatingRepository userRatingRepository;
     @Autowired
     private AlbumRepository albumRepository;
     @Autowired
@@ -205,7 +210,7 @@ public class MediaFileService {
     private boolean needsUpdate(MediaFile mediaFile, MusicFolder folder, boolean minimizeDiskAccess) {
         return !(minimizeDiskAccess
                 || mediaFile.isIndexedTrack() // ignore virtual track
-                || (mediaFile.getVersion() >= MediaFileDao.VERSION
+                || (mediaFile.getVersion() >= MediaFile.VERSION
                 && !settingsService.getFullScan()
                 && mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullPath(folder.getPath())).truncatedTo(ChronoUnit.MICROS)) > -1
                 && (mediaFile.hasIndex() ? mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath())).truncatedTo(ChronoUnit.MICROS)) > -1 : true)
@@ -622,7 +627,41 @@ public class MediaFileService {
      *
      */
     public List<MediaFile> getRandomSongs(RandomSearchCriteria criteria, String username) {
-        return mediaFileDao.getRandomSongs(criteria, username);
+        if (criteria == null || CollectionUtils.isEmpty(criteria.getMusicFolders())) {
+            return Collections.emptyList();
+        }
+        boolean joinAlbumRating = criteria.getMinAlbumRating() != null || criteria.getMaxAlbumRating() != null;
+        boolean joinStarred = criteria.isShowStarredSongs() ^ criteria.isShowUnstarredSongs();
+
+        List<Integer> starredFileIds = new ArrayList<>();
+        List<Integer> fileIds = new ArrayList<>();
+
+        if (joinAlbumRating) {
+            Integer minAlbumRating = criteria.getMinAlbumRating() == null ? 0 : criteria.getMinAlbumRating();
+            Integer maxAlbumRating = criteria.getMaxAlbumRating() == null ? 5 : criteria.getMaxAlbumRating();
+            List<Integer> ratedIds = userRatingRepository.findByUsernameAndRatingBetween(username, minAlbumRating, maxAlbumRating).stream().map(UserRating::getMediaFileId).collect(Collectors.toList());
+            List<MediaFile> ratedAlbums = mediaFileRepository.findByIdInAndFolderIdInAndMediaTypeAndPresentTrue(ratedIds, MusicFolder.toIdList(criteria.getMusicFolders()), MediaType.ALBUM);
+            fileIds = ratedAlbums.stream().flatMap(ra -> {
+                return mediaFileRepository.findByAlbumArtistAndAlbumNameAndMediaTypeInAndPresentTrue(ra.getArtist(), ra.getAlbumName(), List.of(MediaType.MUSIC), Sort.by("id")).stream().map(MediaFile::getId);
+            }).collect(Collectors.toList());
+        } else {
+            fileIds = mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(criteria.getMusicFolders()), MediaType.MUSIC, PageRequest.of(0, Integer.MAX_VALUE)).stream().map(MediaFile::getId).collect(Collectors.toList());
+        }
+        if (joinStarred) {
+            starredFileIds = starredMediaFileRepository.findByUsername(username).stream().map(StarredMediaFile::getMediaFile).filter(Objects::nonNull).map(MediaFile::getId).collect(Collectors.toList());
+            if (criteria.isShowStarredSongs()) {
+                fileIds.retainAll(starredFileIds);
+            } else {
+                fileIds.removeAll(starredFileIds);
+            }
+        }
+        List<MediaFile> files = randomMediaFileRepository.getRandomMediaFiles(username, criteria, fileIds);
+        Collections.shuffle(files);
+
+        if (files.size() <= criteria.getCount()) {
+            return files;
+        }
+        return files.subList(0, criteria.getCount());
     }
 
     /**
@@ -1240,17 +1279,26 @@ public class MediaFileService {
         @CacheEvict(cacheNames = "mediaFilePathCache", key = "#mediaFile.path.concat('-').concat(#mediaFile.folderId).concat('-').concat(#mediaFile.startPosition == null ? '' : #mediaFile.startPosition.toString())"),
         @CacheEvict(cacheNames = "mediaFileIdCache", key = "#mediaFile.id", condition = "#mediaFile.id != null") })
     public void updateMediaFile(MediaFile mediaFile) {
-        mediaFileDao.createOrUpdateMediaFile(mediaFile, file -> {
-            // Copy values from obsolete table music_file_info if inserting for first time
-            MusicFolder folder = mediaFolderService.getMusicFolderById(mediaFile.getFolderId());
-            if (folder != null) {
-                musicFileInfoRepository.findByPath(file.getFullPath(folder.getPath()).toString()).ifPresent(musicFileInfo -> {
-                    file.setComment(musicFileInfo.getComment());
-                    file.setLastPlayed(musicFileInfo.getLastPlayed());
-                    file.setPlayCount(musicFileInfo.getPlayCount());
+        if (mediaFile == null) {
+            throw new IllegalArgumentException("mediaFile must not be null");
+        } else if (mediaFileRepository.existsById(mediaFile.getId())) {
+            mediaFileRepository.save(mediaFile);
+        } else {
+            mediaFileRepository.findByPathAndFolderIdAndStartPosition(mediaFile.getPath(), mediaFile.getFolderId(), mediaFile.getStartPosition()).ifPresentOrElse(m -> {
+                mediaFile.setId(m.getId());
+                mediaFileRepository.save(mediaFile);
+            }, () -> {
+                    MusicFolder folder = mediaFolderService.getMusicFolderById(mediaFile.getFolderId());
+                    if (folder != null) {
+                        musicFileInfoRepository.findByPath(mediaFile.getFullPath(folder.getPath()).toString()).ifPresent(musicFileInfo -> {
+                            mediaFile.setComment(musicFileInfo.getComment());
+                            mediaFile.setLastPlayed(musicFileInfo.getLastPlayed());
+                            mediaFile.setPlayCount(musicFileInfo.getPlayCount());
+                        });
+                    }
+                    mediaFileRepository.save(mediaFile);
                 });
-            }
-        });
+        }
 
         // persist cover art if not overridden
         coverArtService.persistIfNeeded(mediaFile);

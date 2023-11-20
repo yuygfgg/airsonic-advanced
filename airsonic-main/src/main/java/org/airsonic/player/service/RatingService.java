@@ -75,6 +75,7 @@ public class RatingService {
                 file.setAverageRating(rating);
                 return file;
             })
+            .filter(file -> file.getAverageRating() != null)
             .sorted(Comparator.comparing(MediaFile::getAverageRating).reversed())
             .collect(Collectors.toList());
 

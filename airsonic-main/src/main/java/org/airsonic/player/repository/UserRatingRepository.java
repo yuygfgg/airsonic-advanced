@@ -27,6 +27,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -35,6 +36,8 @@ public interface UserRatingRepository extends JpaRepository<UserRating, UserRati
     public Optional<UserRating> findOptByUsernameAndMediaFileId(String username, int mediaFileId);
 
     public Integer countByUsernameAndMediaFileIdIn(String username, Iterable<Integer> mediaFileIds);
+
+    public List<UserRating> findByUsernameAndRatingBetween(String username, Integer fromRating, Integer toRating);
 
     @Query("SELECT AVG(u.rating) FROM UserRating u WHERE u.mediaFileId = :mediaFileId")
     public Double getAverageRatingByMediaFileId(@Param("mediaFileId") int mediaFileId);

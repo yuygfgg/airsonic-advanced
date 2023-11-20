@@ -1,6 +1,23 @@
+/*
+ This file is part of Airsonic.
+
+ Airsonic is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ Airsonic is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
+
+ Copyright 2023 (C) Y.Tory
+ */
 package org.airsonic.player.service;
 
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder;
@@ -31,23 +48,28 @@ public class MediaFileServiceTest {
     @Mock
     private MetaDataParserFactory metaDataParserFactory;
     @Mock
-    private MediaFileDao mediaFileDao;
-    @Mock
     private MediaFileRepository mediaFileRepository;
     @Mock
     private CoverArtService coverArtService;
+    @Mock
+    private MediaFolderService mediaFolderService;
 
     @InjectMocks
     private MediaFileService mediaFileService;
 
+
     @Mock
     private MusicFolder mockedFolder;
+
+    @Mock
+    private MediaFile mockedMediaFile;
 
     private final Path CLASS_PATH = Paths.get("src", "test", "resources");
 
     @BeforeEach
     public void setUp() {
         when(mockedFolder.getPath()).thenReturn(CLASS_PATH.resolve("MEDIAS"));
+        when(mockedFolder.getId()).thenReturn(1);
     }
 
     @Test
@@ -59,14 +81,18 @@ public class MediaFileServiceTest {
         base.setMediaType(MediaType.MUSIC);
         base.setFormat("wav");
 
+        when(mediaFileRepository.findByFolderIdAndPath(anyInt(), eq("valid/airsonic-test.wav"))).thenReturn(List.of(mockedMediaFile));
+        when(mockedMediaFile.isIndexedTrack()).thenReturn(true);
+        when(mediaFileRepository.existsById(any())).thenReturn(true);
+
         // execute
         List<MediaFile> actual = ReflectionTestUtils.invokeMethod(mediaFileService, "createIndexedTracks", base, mockedFolder);
 
         // check empty list is returned
         assertTrue(actual.isEmpty());
         // verify updateMedia does not called
-        verify(mediaFileDao).createOrUpdateMediaFile(any(), any());
         verify(mediaFileRepository).findByFolderIdAndPath(anyInt(), eq("valid/airsonic-test.wav"));
+        verify(mediaFileRepository).save(base);
         verify(coverArtService).persistIfNeeded(eq(base));
     }
 }

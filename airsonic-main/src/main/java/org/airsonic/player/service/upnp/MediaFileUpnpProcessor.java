@@ -14,12 +14,12 @@
   You should have received a copy of the GNU General Public License
   along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+  Copyright 2023 (C) Y.Tory
   Copyright 2017 (C) Airsonic Authors
   Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
 */
 package org.airsonic.player.service.upnp;
 
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.service.MediaFileService;
@@ -30,7 +30,6 @@ import org.fourthline.cling.support.model.container.Container;
 import org.fourthline.cling.support.model.container.MusicAlbum;
 import org.fourthline.cling.support.model.item.Item;
 import org.fourthline.cling.support.model.item.MusicTrack;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -45,9 +44,6 @@ import static java.util.stream.Collectors.toList;
  */
 @Service
 public class MediaFileUpnpProcessor extends UpnpContentProcessor <MediaFile, MediaFile> {
-
-    @Autowired
-    MediaFileDao mediaFileDao;
 
     public MediaFileUpnpProcessor() {
         setRootId(DispatchingContentDirectory.CONTAINER_ID_FOLDER_PREFIX);
@@ -159,14 +155,6 @@ public class MediaFileUpnpProcessor extends UpnpContentProcessor <MediaFile, Med
 
     public MediaFileService getMediaFileService() {
         return getDispatchingContentDirectory().getMediaFileService();
-    }
-
-    public MediaFileDao getMediaFileDao() {
-        return mediaFileDao;
-    }
-
-    public void setMediaFileDao(MediaFileDao mediaFileDao) {
-        this.mediaFileDao = mediaFileDao;
     }
 
 }

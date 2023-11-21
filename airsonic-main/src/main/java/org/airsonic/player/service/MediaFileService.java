@@ -231,6 +231,8 @@ public class MediaFileService {
             if (mediaFile.hasIndex()) {
                 if (!Files.exists(mediaFile.getFullIndexPath(folder.getPath()))) {
                     // Delete children that no longer exist on disk
+                    mediaFile.setPresent(true);
+                    mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
                     mediaFile.setIndexPath(null);
                     updateMediaFile(mediaFile);
                 } else {
@@ -887,7 +889,7 @@ public class MediaFileService {
             parentPath = relativePath.getParent() == null ? "" : relativePath.getParent().toString();
         }
 
-        Instant lastModified = FileUtil.lastModified(file).truncatedTo(ChronoUnit.MICROS);
+        Instant lastModified = FileUtil.lastModified(file);
         mediaFile.setFolderId(folder.getId());
         mediaFile.setParentPath(parentPath);
         mediaFile.setChanged(lastModified);
@@ -1281,7 +1283,7 @@ public class MediaFileService {
     public void updateMediaFile(MediaFile mediaFile) {
         if (mediaFile == null) {
             throw new IllegalArgumentException("mediaFile must not be null");
-        } else if (mediaFileRepository.existsById(mediaFile.getId())) {
+        } else if (mediaFile.getId() != null && mediaFileRepository.existsById(mediaFile.getId())) {
             mediaFileRepository.save(mediaFile);
         } else {
             mediaFileRepository.findByPathAndFolderIdAndStartPosition(mediaFile.getPath(), mediaFile.getFolderId(), mediaFile.getStartPosition()).ifPresentOrElse(m -> {
@@ -1419,7 +1421,7 @@ public class MediaFileService {
         }
         try {
             paths.entrySet().parallelStream().forEach(e -> {
-                mediaFileRepository.findByFolderIdAndPathInAndPresentFalse(e.getKey(), e.getValue())
+                mediaFileRepository.findByFolderIdAndPathIn(e.getKey(), e.getValue())
                     .forEach(
                         m -> {
                             m.setPresent(true);

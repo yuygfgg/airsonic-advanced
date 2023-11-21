@@ -80,6 +80,7 @@ public class MediaFileServiceTest {
         base.setPath("valid/airsonic-test.wav");
         base.setMediaType(MediaType.MUSIC);
         base.setFormat("wav");
+        base.setId(10);
 
         when(mediaFileRepository.findByFolderIdAndPath(anyInt(), eq("valid/airsonic-test.wav"))).thenReturn(List.of(mockedMediaFile));
         when(mockedMediaFile.isIndexedTrack()).thenReturn(true);

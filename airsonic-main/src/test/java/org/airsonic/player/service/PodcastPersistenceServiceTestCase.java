@@ -135,10 +135,9 @@ public class PodcastPersistenceServiceTestCase {
         when(podcastEpisodeRepository.findByChannel(mockedChannel)).thenReturn(Arrays.asList(mockedEpisode));
         when(mockedEpisode.getMediaFile()).thenReturn(null);
         when(mockedChannel.getMediaFile()).thenReturn(mockedMediaFile);
-        when(mockedMediaFile.getFolderId()).thenReturn(1);
-        when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedMusicFolder);
+        when(mockedMediaFile.getFolder()).thenReturn(mockedMusicFolder);
         when(mockedMusicFolder.getPath()).thenReturn(tempFolder);
-        when(mockedMediaFile.getFullPath(tempFolder)).thenReturn(tempFolder.resolve("test.mp3"));
+        when(mockedMediaFile.getFullPath()).thenReturn(tempFolder.resolve("test.mp3"));
         Files.createFile(tempFolder.resolve("test.mp3"));
 
         // when
@@ -147,7 +146,7 @@ public class PodcastPersistenceServiceTestCase {
         // then
         verify(podcastEpisodeRepository).delete(mockedEpisode);
         verify(podcastChannelRepository).delete(mockedChannel);
-        verify(mediaFileService).refreshMediaFile(mockedMediaFile, mockedMusicFolder);
+        verify(mediaFileService).refreshMediaFile(mockedMediaFile);
         assertFalse(Files.exists(tempFolder.resolve("test.mp3")));
         assertTrue(actual);
     }
@@ -183,10 +182,9 @@ public class PodcastPersistenceServiceTestCase {
         // given
         when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
         when(mockedEpisode.getMediaFile()).thenReturn(mockedMediaFile);
-        when(mockedMediaFile.getFolderId()).thenReturn(1);
-        when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedMusicFolder);
+        when(mockedMediaFile.getFolder()).thenReturn(mockedMusicFolder);
         when(mockedMusicFolder.getPath()).thenReturn(tempFolder);
-        when(mockedMediaFile.getFullPath(tempFolder)).thenReturn(tempFolder.resolve("test.mp3"));
+        when(mockedMediaFile.getFullPath()).thenReturn(tempFolder.resolve("test.mp3"));
         Files.createFile(tempFolder.resolve("test.mp3"));
         assertTrue(Files.exists(tempFolder.resolve("test.mp3")));
 
@@ -195,7 +193,7 @@ public class PodcastPersistenceServiceTestCase {
         podcastService.deleteEpisode(1, true);
 
         // then
-        verify(mediaFileService).refreshMediaFile(mockedMediaFile, mockedMusicFolder);
+        verify(mediaFileService).refreshMediaFile(mockedMediaFile);
         verify(mockedEpisode).setStatus(PodcastStatus.DELETED);
         verify(mockedEpisode).setErrorMessage(null);
         verify(podcastEpisodeRepository).save(mockedEpisode);
@@ -208,10 +206,9 @@ public class PodcastPersistenceServiceTestCase {
         // given
         when(podcastEpisodeRepository.findById(1)).thenReturn(Optional.of(mockedEpisode));
         when(mockedEpisode.getMediaFile()).thenReturn(mockedMediaFile);
-        when(mockedMediaFile.getFolderId()).thenReturn(1);
-        when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedMusicFolder);
+        when(mockedMediaFile.getFolder()).thenReturn(mockedMusicFolder);
         when(mockedMusicFolder.getPath()).thenReturn(tempFolder);
-        when(mockedMediaFile.getFullPath(tempFolder)).thenReturn(tempFolder.resolve("test.mp3"));
+        when(mockedMediaFile.getFullPath()).thenReturn(tempFolder.resolve("test.mp3"));
         Files.createFile(tempFolder.resolve("test.mp3"));
         assertTrue(Files.exists(tempFolder.resolve("test.mp3")));
 
@@ -220,7 +217,7 @@ public class PodcastPersistenceServiceTestCase {
 
         // then
         verify(podcastEpisodeRepository).delete(mockedEpisode);
-        verify(mediaFileService).refreshMediaFile(mockedMediaFile, mockedMusicFolder);
+        verify(mediaFileService).refreshMediaFile(mockedMediaFile);
         assertFalse(Files.exists(tempFolder.resolve("test.mp3")));
         verifyNoMoreInteractions(podcastEpisodeRepository);
     }

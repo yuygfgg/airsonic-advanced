@@ -17,15 +17,13 @@
  Copyright 2023 (C) Y.Tory
  */
 
-package org.airsonic.player.dao;
+package org.airsonic.player.repository;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
-import org.airsonic.player.repository.MediaFileRepository;
-import org.airsonic.player.repository.MusicFolderRepository;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ExtendWith(SpringExtension.class)
 @EnableConfigurationProperties(AirsonicHomeConfig.class)
 @ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class)
-public class MediaFileDaoTest {
+public class MediaFileRepositoryTest {
 
     @Autowired
     MediaFileRepository mediaFileRepository;
@@ -102,7 +100,7 @@ public class MediaFileDaoTest {
     public void testGetMediaFilesByRelativePathAndFolderId() {
         //prepare
         MediaFile baseFile = new MediaFile();
-        baseFile.setFolderId(testFolder.getId());
+        baseFile.setFolder(testFolder);
         baseFile.setPath("test.wav");
         baseFile.setMediaType(MediaType.MUSIC);
         baseFile.setIndexPath("test.cue");
@@ -115,12 +113,12 @@ public class MediaFileDaoTest {
         mediaFileRepository.save(baseFile);
 
         // assert
-        List<MediaFile> registeredTracks = mediaFileRepository.findByFolderIdAndPath(testFolder.getId(), "test.wav");
+        List<MediaFile> registeredTracks = mediaFileRepository.findByFolderAndPath(testFolder, "test.wav");
         assertEquals(1, registeredTracks.size());
 
         // update
         MediaFile mediaFile = new MediaFile();
-        mediaFile.setFolderId(testFolder.getId());
+        mediaFile.setFolder(testFolder);
         mediaFile.setPath("test.wav");
         mediaFile.setMediaType(MediaType.MUSIC);
         mediaFile.setStartPosition(10.0);
@@ -131,14 +129,17 @@ public class MediaFileDaoTest {
         mediaFileRepository.save(mediaFile);
 
         // assertion
-        registeredTracks = mediaFileRepository.findByFolderIdAndPath(testFolder.getId(), "test.wav");
+        registeredTracks = mediaFileRepository.findByFolderAndPath(testFolder, "test.wav");
         assertEquals(2, registeredTracks.size());
         registeredTracks.forEach(t -> assertEquals("test.wav",t.getPath()));
 
-        List<MediaFile> wrongFolderTracks = mediaFileRepository.findByFolderIdAndPath(testFolder.getId() + 1, "test.wav");
+        MusicFolder wrongFolder = new MusicFolder(tempMusicDir, "wrong", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        wrongFolder.setId(testFolder.getId() + 1);
+
+        List<MediaFile> wrongFolderTracks = mediaFileRepository.findByFolderAndPath(wrongFolder, "test.wav");
         assertEquals(0, wrongFolderTracks.size());
 
-        List<MediaFile> wrongPathTracks = mediaFileRepository.findByFolderIdAndPath(testFolder.getId(), "wrong.wav");
+        List<MediaFile> wrongPathTracks = mediaFileRepository.findByFolderAndPath(testFolder, "wrong.wav");
         assertEquals(0, wrongPathTracks.size());
     }
 

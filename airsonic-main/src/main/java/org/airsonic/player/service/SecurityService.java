@@ -617,8 +617,8 @@ public class SecurityService implements UserDetailsService {
         if (file == null) {
             return false;
         }
-        MusicFolder folder = mediaFolderService.getMusicFolderById(file.getFolderId());
-        return folder.isEnabled() && (!checkExistence || Files.exists(file.getFullPath(folder.getPath())));
+        MusicFolder folder = file.getFolder();
+        return folder.isEnabled() && (!checkExistence || Files.exists(file.getFullPath()));
     }
 
     public boolean isWriteAllowed(Path relativePath, MusicFolder folder) {
@@ -645,7 +645,7 @@ public class SecurityService implements UserDetailsService {
 
     public boolean isFolderAccessAllowed(MediaFile file, String username) {
         return mediaFolderService.getMusicFoldersForUser(username).parallelStream()
-                .anyMatch(musicFolder -> musicFolder.getId().equals(file.getFolderId()));
+                .anyMatch(musicFolder -> musicFolder.getId().equals(file.getFolder().getId()));
     }
 
     public static class UserDetail extends org.springframework.security.core.userdetails.User {

@@ -140,7 +140,7 @@ public class JaudiotaggerParser extends MetaDataParser {
     public void setMetaData(MediaFile file, MetaData metaData) {
 
         try {
-            AudioFile audioFile = AudioFileIO.read(file.getFullPath(mediaFolderService.getMusicFolderById(file.getFolderId()).getPath()).toFile());
+            AudioFile audioFile = AudioFileIO.read(file.getFullPath().toFile());
             Tag tag = audioFile.getTagOrCreateAndSetDefault();
 
             tag.setField(FieldKey.ARTIST, StringUtils.trimToEmpty(metaData.getArtist()));

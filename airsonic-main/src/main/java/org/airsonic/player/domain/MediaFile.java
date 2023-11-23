@@ -50,8 +50,9 @@ public class MediaFile {
     @Column(name = "path", nullable = false)
     private String path;
 
-    @Column(name = "folder_id", nullable = false)
-    private Integer folderId;
+    @ManyToOne
+    @JoinColumn(name = "folder_id", referencedColumnName = "id")
+    private MusicFolder folder;
 
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -150,46 +151,6 @@ public class MediaFile {
     @Transient
     private Double averageRating = 0.0;
 
-    public MediaFile(Integer id, String path, Integer folderId, MediaType mediaType, Double startPosition, String format, String title,
-                     String albumName, String artist, String albumArtist, Integer discNumber, Integer trackNumber, Integer year, String genre, Integer bitRate,
-                     boolean variableBitRate, Double duration, Long fileSize, Integer width, Integer height, String parentPath, String indexPath, int playCount,
-                     Instant lastPlayed, String comment, Instant created, Instant changed, Instant lastScanned, Instant childrenLastUpdated, boolean present,
-                     int version, String musicBrainzReleaseId, String musicBrainzRecordingId) {
-        this.id = id;
-        this.path = path;
-        this.folderId = folderId;
-        this.mediaType = mediaType;
-        this.startPosition = startPosition;
-        this.format = format;
-        this.title = title;
-        this.albumName = albumName;
-        this.artist = artist;
-        this.albumArtist = albumArtist;
-        this.discNumber = discNumber;
-        this.trackNumber = trackNumber;
-        this.year = year;
-        this.genre = genre;
-        this.bitRate = bitRate;
-        this.variableBitRate = variableBitRate;
-        this.duration = duration;
-        this.fileSize = fileSize;
-        this.width = width;
-        this.height = height;
-        this.parentPath = parentPath;
-        this.indexPath = indexPath;
-        this.playCount = playCount;
-        this.lastPlayed = lastPlayed;
-        this.comment = comment;
-        this.created = created;
-        this.changed = changed;
-        this.lastScanned = lastScanned;
-        this.childrenLastUpdated = childrenLastUpdated;
-        this.present = present;
-        this.version = version;
-        this.musicBrainzReleaseId = musicBrainzReleaseId;
-        this.musicBrainzRecordingId = musicBrainzRecordingId;
-    }
-
     public MediaFile() {
     }
 
@@ -209,20 +170,20 @@ public class MediaFile {
         this.path = path;
     }
 
-    public Integer getFolderId() {
-        return folderId;
+    public MusicFolder getFolder() {
+        return folder;
     }
 
-    public void setFolderId(Integer folderId) {
-        this.folderId = folderId;
+    public void setFolder(MusicFolder folder) {
+        this.folder = folder;
     }
 
     public Path getRelativePath() {
         return Paths.get(path);
     }
 
-    public Path getFullPath(Path relativeMediaFolderPath) {
-        return relativeMediaFolderPath.resolve(path);
+    public Path getFullPath() {
+        return folder.getPath().resolve(path);
     }
 
     public String getIndexPath() {
@@ -237,8 +198,8 @@ public class MediaFile {
         return indexPath == null ? null : Paths.get(indexPath);
     }
 
-    public Path getFullIndexPath(Path folderPath) {
-        return folderPath.resolve(indexPath);
+    public Path getFullIndexPath() {
+        return folder.getPath().resolve(indexPath);
     }
 
     public MediaType getMediaType() {
@@ -551,7 +512,7 @@ public class MediaFile {
         } else if (!path.equals(other.path)) {
             return false;
         }
-        if (!folderId.equals(other.folderId)) {
+        if (!folder.equals(other.folder)) {
             return false;
         }
         if (!startPosition.equals(other.startPosition)) {
@@ -562,7 +523,7 @@ public class MediaFile {
 
     @Override
     public int hashCode() {
-        return Objects.hash(path, folderId, startPosition);
+        return Objects.hash(path, folder, startPosition);
     }
 
     @Override

@@ -8,7 +8,6 @@ import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.service.CoverArtService;
 import org.airsonic.player.service.LastFmService;
 import org.airsonic.player.service.MediaFileService;
-import org.airsonic.player.service.MediaFolderService;
 import org.airsonic.player.service.SecurityService;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.client.config.RequestConfig;
@@ -41,8 +40,6 @@ public class CoverArtWSController {
     private MediaFileService mediaFileService;
     @Autowired
     private LastFmService lastFmService;
-    @Autowired
-    private MediaFolderService mediaFolderService;
     @Autowired
     private CoverArtService coverArtService;
 
@@ -87,8 +84,8 @@ public class CoverArtWSController {
         }
 
         // Check permissions.
-        MusicFolder folder = mediaFolderService.getMusicFolderById(dir.getFolderId());
-        Path fullPath = dir.getFullPath(folder.getPath());
+        MusicFolder folder = dir.getFolder();
+        Path fullPath = dir.getFullPath();
         Path newCoverFile = fullPath.resolve("cover." + suffix);
         if (!securityService.isWriteAllowed(folder.getPath().relativize(newCoverFile), folder)) {
             throw new SecurityException("Permission denied: " + StringEscapeUtils.escapeHtml(newCoverFile.toString()));
@@ -105,7 +102,7 @@ public class CoverArtWSController {
             Files.copy(input, newCoverFile, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        CoverArt coverArt = new CoverArt(dir.getId(), EntityType.MEDIA_FILE, folder.getPath().relativize(newCoverFile).toString(), dir.getFolderId(), true);
+        CoverArt coverArt = new CoverArt(dir.getId(), EntityType.MEDIA_FILE, folder.getPath().relativize(newCoverFile).toString(), dir.getFolder().getId(), true);
         coverArtService.upsert(coverArt);
 
     }

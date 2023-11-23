@@ -37,7 +37,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -69,7 +68,6 @@ public class MediaFileServiceTest {
     @BeforeEach
     public void setUp() {
         when(mockedFolder.getPath()).thenReturn(CLASS_PATH.resolve("MEDIAS"));
-        when(mockedFolder.getId()).thenReturn(1);
     }
 
     @Test
@@ -81,18 +79,19 @@ public class MediaFileServiceTest {
         base.setMediaType(MediaType.MUSIC);
         base.setFormat("wav");
         base.setId(10);
+        base.setFolder(mockedFolder);
 
-        when(mediaFileRepository.findByFolderIdAndPath(anyInt(), eq("valid/airsonic-test.wav"))).thenReturn(List.of(mockedMediaFile));
+        when(mediaFileRepository.findByFolderAndPath(any(), eq("valid/airsonic-test.wav"))).thenReturn(List.of(mockedMediaFile));
         when(mockedMediaFile.isIndexedTrack()).thenReturn(true);
         when(mediaFileRepository.existsById(any())).thenReturn(true);
 
         // execute
-        List<MediaFile> actual = ReflectionTestUtils.invokeMethod(mediaFileService, "createIndexedTracks", base, mockedFolder);
+        List<MediaFile> actual = ReflectionTestUtils.invokeMethod(mediaFileService, "createIndexedTracks", base);
 
         // check empty list is returned
         assertTrue(actual.isEmpty());
         // verify updateMedia does not called
-        verify(mediaFileRepository).findByFolderIdAndPath(anyInt(), eq("valid/airsonic-test.wav"));
+        verify(mediaFileRepository).findByFolderAndPath(any(), eq("valid/airsonic-test.wav"));
         verify(mediaFileRepository).save(base);
         verify(coverArtService).persistIfNeeded(eq(base));
     }

@@ -9,7 +9,6 @@ import org.airsonic.player.domain.PodcastEpisode;
 import org.airsonic.player.domain.PodcastStatus;
 import org.airsonic.player.domain.entity.CoverArtKey;
 import org.airsonic.player.repository.CoverArtRepository;
-import org.airsonic.player.service.MediaFolderService;
 import org.airsonic.player.service.PodcastPersistenceService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.VersionService;
@@ -67,9 +66,6 @@ public class PodcastRefresher {
 
     @Autowired
     private SettingsService settingsService;
-
-    @Autowired
-    private MediaFolderService mediaFolderService;
 
     @Autowired
     private VersionService versionService;
@@ -164,8 +160,8 @@ public class PodcastRefresher {
             return;
         }
 
-        MusicFolder folder = mediaFolderService.getMusicFolderById(channelMediaFile.getFolderId());
-        Path channelDir = channelMediaFile.getFullPath(folder.getPath());
+        MusicFolder folder = channelMediaFile.getFolder();
+        Path channelDir = channelMediaFile.getFullPath();
 
         HttpGet method = new HttpGet(imageUrl);
         method.addHeader("User-Agent", "Airsonic/" + versionService.getLocalVersion());
@@ -175,7 +171,7 @@ public class PodcastRefresher {
             Path filePath = channelDir.resolve("cover." + getCoverArtSuffix(response));
             Files.copy(in, filePath, StandardCopyOption.REPLACE_EXISTING);
             CoverArt coverArt = new CoverArt(channelMediaFile.getId(), EntityType.MEDIA_FILE,
-                    folder.getPath().relativize(filePath).toString(), channelMediaFile.getFolderId(), false);
+                    folder.getPath().relativize(filePath).toString(), channelMediaFile.getFolder().getId(), false);
             coverArtRepository.save(coverArt);
         } catch (Exception x) {
             LOG.warn("Failed to download cover art for podcast channel '{}'", channel.getTitle(), x);

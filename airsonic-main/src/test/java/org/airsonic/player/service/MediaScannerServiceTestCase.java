@@ -137,10 +137,10 @@ public class MediaScannerServiceTestCase {
         globalTimerContext.stop();
 
         // Music Folder Music must have 3 children
-        List<MediaFile> listeMusicChildren = mediaFileRepository.findByFolderIdAndParentPath(testFolders.get(0).getId(), "", Sort.by("startPosition"));
+        List<MediaFile> listeMusicChildren = mediaFileRepository.findByFolderAndParentPath(testFolders.get(0), "", Sort.by("startPosition"));
         assertEquals(3, listeMusicChildren.size());
         // Music Folder Music2 must have 1 children
-        List<MediaFile> listeMusic2Children = mediaFileRepository.findByFolderIdAndParentPath(testFolders.get(1).getId(), "", Sort.by("startPosition"));
+        List<MediaFile> listeMusic2Children = mediaFileRepository.findByFolderAndParentPath(testFolders.get(1), "", Sort.by("startPosition"));
         assertEquals(1, listeMusic2Children.size());
 
         System.out.println("--- List of all artists ---");
@@ -186,7 +186,7 @@ public class MediaScannerServiceTestCase {
 
         MediaFile mediaFile = mediaFileService.getMediaFile(musicFile);
         assertEquals(mediaFile.getRelativePath(), temporaryFolder.relativize(musicFile));
-        assertThat(mediaFile.getFolderId()).isEqualTo(musicFolder.getId());
+        assertThat(mediaFile.getFolder().getId()).isEqualTo(musicFolder.getId());
         MediaFile relativeMediaFile = mediaFileService.getMediaFile(temporaryFolder.relativize(musicFile), musicFolder);
         assertEquals(relativeMediaFile.getRelativePath(), mediaFile.getRelativePath());
     }
@@ -339,7 +339,7 @@ public class MediaScannerServiceTestCase {
         assertEquals(0, allAlbums.size());
 
         // Test that the music file is correctly imported
-        List<MediaFile> albumFiles = mediaFileRepository.findByFolderIdAndParentPath(musicFolder.getId(), "", Sort.by("startPosition"));
+        List<MediaFile> albumFiles = mediaFileRepository.findByFolderAndParentPath(musicFolder, "", Sort.by("startPosition"));
         assertEquals(1, albumFiles.size());
         MediaFile file = albumFiles.get(0);
         assertEquals("airsonic-test", file.getTitle());
@@ -387,7 +387,7 @@ public class MediaScannerServiceTestCase {
         assertEquals(0, allAlbums.size());
 
         // Test that the music file is correctly imported
-        List<MediaFile> albumFiles = mediaFileRepository.findByFolderIdAndParentPath(folders.get(0).getId(), "", Sort.by("startPosition"));
+        List<MediaFile> albumFiles = mediaFileRepository.findByFolderAndParentPath(folders.get(0), "", Sort.by("startPosition"));
         assertEquals(1, albumFiles.size());
         MediaFile file = albumFiles.get(0);
         assertEquals("airsonic-test", file.getTitle());
@@ -431,7 +431,7 @@ public class MediaScannerServiceTestCase {
         assertEquals(0, allAlbums.size());
 
         // Test that the music file is correctly imported
-        List<MediaFile> albumFiles = mediaFileRepository.findByFolderIdAndParentPath(folders.get(0).getId(), "", Sort.by("startPosition"));
+        List<MediaFile> albumFiles = mediaFileRepository.findByFolderAndParentPath(folders.get(0), "", Sort.by("startPosition"));
         assertEquals(1, albumFiles.size());
         MediaFile file = albumFiles.get(0);
         assertEquals("airsonic-test", file.getTitle());
@@ -467,10 +467,10 @@ public class MediaScannerServiceTestCase {
         List<MusicFolder> folders = new ArrayList<>();
         folders.add(musicFolder);
 
-        List<MediaFile> listMusicChildren = mediaFileRepository.findByFolderIdAndParentPath(musicFolder.getId(), "", Sort.by("startPosition"));
+        List<MediaFile> listMusicChildren = mediaFileRepository.findByFolderAndParentPath(musicFolder, "", Sort.by("startPosition"));
         assertEquals(2, listMusicChildren.size());
 
-        List<MediaFile> listDuplicateBaseNameFiles = mediaFileRepository.findByFolderIdAndParentPath(musicFolder.getId(), "a", Sort.by("startPosition"));
+        List<MediaFile> listDuplicateBaseNameFiles = mediaFileRepository.findByFolderAndParentPath(musicFolder, "a", Sort.by("startPosition"));
         assertEquals(2, listDuplicateBaseNameFiles.size());
 
 
@@ -493,7 +493,7 @@ public class MediaScannerServiceTestCase {
         List<MusicFolder> folders = new ArrayList<>();
         folders.add(musicFolder);
 
-        List<MediaFile> listMusicChildren = mediaFileRepository.findByFolderIdAndParentPath(musicFolder.getId(), "", Sort.by("startPosition"));
+        List<MediaFile> listMusicChildren = mediaFileRepository.findByFolderAndParentPath(musicFolder, "", Sort.by("startPosition"));
         assertEquals(1, listMusicChildren.size());
 
         assertTrue(listMusicChildren.get(0).getDuration() > 0.0);

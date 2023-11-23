@@ -104,7 +104,7 @@ public class UserRatingRepositoryTest {
 
         // media file
         MediaFile baseFile = new MediaFile();
-        baseFile.setFolderId(testFolder.getId());
+        baseFile.setFolder(testFolder);
         baseFile.setPath("userrating.wav");
         baseFile.setMediaType(MediaType.MUSIC);
         baseFile.setIndexPath("test.cue");
@@ -115,7 +115,7 @@ public class UserRatingRepositoryTest {
         baseFile.setChildrenLastUpdated(Instant.now());
         mediaFileRepository.save(baseFile);
         MediaFile base2File = new MediaFile();
-        base2File.setFolderId(testFolder.getId());
+        base2File.setFolder(testFolder);
         base2File.setMediaType(MediaType.MUSIC);
         base2File.setStartPosition(MediaFile.NOT_INDEXED);
         base2File.setCreated(Instant.now());
@@ -125,7 +125,7 @@ public class UserRatingRepositoryTest {
         base2File.setPath("userrating2.wav");
         base2File.setIndexPath("test2.cue");
         mediaFileRepository.save(base2File);
-        mediaFile = mediaFileRepository.findByFolderIdAndPath(testFolder.getId(),"userrating.wav").get(0);
+        mediaFile = mediaFileRepository.findByFolderAndPath(testFolder,"userrating.wav").get(0);
 
         // user
         User user = new User(TEST_USER_NAME, "rating@activeobjects.no", false, 1000L, 2000L, 3000L, Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));

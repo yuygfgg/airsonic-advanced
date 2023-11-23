@@ -85,6 +85,7 @@ import java.util.stream.Stream;
  * @author Sindre Mehus
  */
 @Service
+@Transactional
 public class MediaFileService {
 
     private static final Logger LOG = LoggerFactory.getLogger(MediaFileService.class);
@@ -156,10 +157,6 @@ public class MediaFileService {
         return getMediaFile(relativePath, folder, settingsService.isFastCacheEnabled());
     }
 
-    public MediaFile getMediaFile(String relativePath, Integer folderId, boolean minimizeDiskAccess) {
-        return getMediaFile(Paths.get(relativePath), mediaFolderService.getMusicFolderById(folderId), minimizeDiskAccess);
-    }
-
     public MediaFile getMediaFile(Path relativePath, MusicFolder folder, boolean minimizeDiskAccess) {
         return getMediaFile(relativePath, folder, MediaFile.NOT_INDEXED, minimizeDiskAccess);
     }
@@ -167,8 +164,8 @@ public class MediaFileService {
     @Cacheable(cacheNames = "mediaFilePathCache", key = "#relativePath.toString().concat('-').concat(#folder.id).concat('-').concat(#startPosition == null ? '' : #startPosition.toString())", condition = "#root.target.memoryCacheEnabled", unless = "#result == null")
     public MediaFile getMediaFile(Path relativePath, MusicFolder folder, Double startPosition, boolean minimizeDiskAccess) {
         // Look in database.
-        return mediaFileRepository.findByPathAndFolderIdAndStartPosition(relativePath.toString(), folder.getId(), startPosition)
-            .map(file -> checkLastModified(file, folder, minimizeDiskAccess))
+        return mediaFileRepository.findByPathAndFolderAndStartPosition(relativePath.toString(), folder, startPosition)
+            .map(file -> checkLastModified(file, minimizeDiskAccess))
             .orElseGet(() -> {
                 if (!Files.exists(folder.getPath().resolve(relativePath))) {
                     return null;
@@ -189,7 +186,7 @@ public class MediaFileService {
     @Cacheable(cacheNames = "mediaFileIdCache", condition = "#root.target.memoryCacheEnabled", unless = "#result == null")
     public MediaFile getMediaFile(Integer id) {
         if (Objects.isNull(id)) return null;
-        return mediaFileRepository.findById(id).map(mediaFile -> checkLastModified(mediaFile, mediaFolderService.getMusicFolderById(mediaFile.getFolderId()), settingsService.isFastCacheEnabled())).orElse(null);
+        return mediaFileRepository.findById(id).map(mediaFile -> checkLastModified(mediaFile, settingsService.isFastCacheEnabled())).orElse(null);
     }
 
     public List<MediaFile> getMediaFilesByRelativePath(Path relativePath) {
@@ -204,32 +201,33 @@ public class MediaFileService {
         if (mediaFile.getParentPath() == null) {
             return null;
         }
-        return getMediaFile(mediaFile.getParentPath(), mediaFile.getFolderId(), minimizeDiskAccess);
+        return getMediaFile(Paths.get(mediaFile.getParentPath()), mediaFile.getFolder(), minimizeDiskAccess);
     }
 
-    private boolean needsUpdate(MediaFile mediaFile, MusicFolder folder, boolean minimizeDiskAccess) {
+    private boolean needsUpdate(MediaFile mediaFile, boolean minimizeDiskAccess) {
         return !(minimizeDiskAccess
                 || mediaFile.isIndexedTrack() // ignore virtual track
                 || (mediaFile.getVersion() >= MediaFile.VERSION
                 && !settingsService.getFullScan()
-                && mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullPath(folder.getPath())).truncatedTo(ChronoUnit.MICROS)) > -1
-                && (mediaFile.hasIndex() ? mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath())).truncatedTo(ChronoUnit.MICROS)) > -1 : true)
+                && mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullPath()).truncatedTo(ChronoUnit.MICROS)) > -1
+                && (mediaFile.hasIndex() ? mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath()).truncatedTo(ChronoUnit.MICROS)) > -1 : true)
                 ));
     }
 
-    private MediaFile checkLastModified(MediaFile mediaFile, MusicFolder folder, boolean minimizeDiskAccess) {
-        if (!needsUpdate(mediaFile, folder, minimizeDiskAccess)) {
+    private MediaFile checkLastModified(MediaFile mediaFile, boolean minimizeDiskAccess) {
+        MusicFolder folder = mediaFile.getFolder();
+        if (!needsUpdate(mediaFile, minimizeDiskAccess)) {
             LOG.debug("Detected unmodified file (id {}, path {} in folder {} ({}))", mediaFile.getId(), mediaFile.getPath(), folder.getId(), folder.getName());
             return mediaFile;
         }
         LOG.debug("Updating database file from disk (id {}, path {} in folder {} ({}))", mediaFile.getId(), mediaFile.getPath(), folder.getId(), folder.getName());
-        if (!Files.exists(mediaFile.getFullPath(folder.getPath()))) {
+        if (!Files.exists(mediaFile.getFullPath())) {
             mediaFile.setPresent(false);
             mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
             updateMediaFile(mediaFile);
         } else {
             if (mediaFile.hasIndex()) {
-                if (!Files.exists(mediaFile.getFullIndexPath(folder.getPath()))) {
+                if (!Files.exists(mediaFile.getFullIndexPath())) {
                     // Delete children that no longer exist on disk
                     mediaFile.setPresent(true);
                     mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));
@@ -237,20 +235,20 @@ public class MediaFileService {
                     updateMediaFile(mediaFile);
                 } else {
                     // update media file
-                    Instant mediaChanged = FileUtil.lastModified(mediaFile.getFullPath(folder.getPath()));
-                    Instant cueChanged = FileUtil.lastModified(mediaFile.getFullIndexPath(folder.getPath()));
+                    Instant mediaChanged = FileUtil.lastModified(mediaFile.getFullPath());
+                    Instant cueChanged = FileUtil.lastModified(mediaFile.getFullIndexPath());
                     // update cue tracks
                     try {
-                        createIndexedTracks(mediaFile, folder);
+                        createIndexedTracks(mediaFile);
                         // update media file
                         mediaFile.setChanged(mediaChanged.compareTo(cueChanged) >= 0 ? mediaChanged : cueChanged);
                         updateMediaFile(mediaFile);
                     } catch (Exception e) {
-                        LOG.error("create indexed tracks error: {}", mediaFile.getFullPath(folder.getPath()), e);
+                        LOG.error("create indexed tracks error: {}", mediaFile.getFullPath(), e);
                     }
                 }
             } else {
-                mediaFile = updateMediaFileByFile(mediaFile, folder);
+                mediaFile = updateMediaFileByFile(mediaFile);
                 updateMediaFile(mediaFile);
             }
         }
@@ -289,7 +287,7 @@ public class MediaFileService {
      * @param includeFiles       Whether files should be included in the result.
      * @param includeDirectories Whether directories should be included in the result.
      * @param sort               Whether to sort files in the same directory.
-         * @param minimizeDiskAccess Whether to refrain from checking for new or changed files
+     * @param minimizeDiskAccess Whether to refrain from checking for new or changed files
      * @return All children media files.
      */
     public List<MediaFile> getChildrenOf(MediaFile parent, boolean includeFiles, boolean includeDirectories, boolean sort, boolean minimizeDiskAccess) {
@@ -307,10 +305,9 @@ public class MediaFileService {
             }
 
             if (resultStream == null) {
-                MusicFolder folder = mediaFolderService.getMusicFolderById(parent.getFolderId());
-                resultStream = mediaFileRepository.findByFolderIdAndParentPathAndPresentTrue(parent.getFolderId(), parent.getPath(), Sort.by("startPosition")).parallelStream()
-                        .map(x -> checkLastModified(x, folder, minimizeDiskAccess))
-                        .filter(x -> includeMediaFile(x, folder));
+                resultStream = mediaFileRepository.findByFolderAndParentPathAndPresentTrue(parent.getFolder(), parent.getPath(), Sort.by("startPosition")).parallelStream()
+                        .map(x -> checkLastModified(x, minimizeDiskAccess))
+                        .filter(this::includeMediaFile);
             }
 
             resultStream = resultStream.filter(x -> (includeDirectories && x.isDirectory()) || (includeFiles && x.isFile()));
@@ -460,7 +457,7 @@ public class MediaFileService {
     public boolean isRoot(MediaFile mediaFile) {
         return StringUtils.isEmpty(mediaFile.getPath()) &&
                 mediaFolderService.getAllMusicFolders(true, true).parallelStream()
-                        .anyMatch(x -> mediaFile.getFolderId().equals(x.getId()));
+                        .anyMatch(x -> mediaFile.getFolder().getId().equals(x.getId()));
     }
 
     /**
@@ -695,9 +692,9 @@ public class MediaFileService {
             return null;
         }
 
-        Map<Pair<String, Double>, MediaFile> storedChildrenMap = mediaFileRepository.findByFolderIdAndParentPath(parent.getFolderId(), parent.getPath(), Sort.by("startPosition")).parallelStream()
+        Map<Pair<String, Double>, MediaFile> storedChildrenMap = mediaFileRepository.findByFolderAndParentPath(parent.getFolder(), parent.getPath(), Sort.by("startPosition")).parallelStream()
             .collect(Collectors.toConcurrentMap(i -> Pair.of(i.getPath(), i.getStartPosition()), i -> i));
-        MusicFolder folder = mediaFolderService.getMusicFolderById(parent.getFolderId());
+        MusicFolder folder = parent.getFolder();
 
         boolean isEnableCueIndexing = settingsService.getEnableCueIndexing();
 
@@ -705,7 +702,7 @@ public class MediaFileService {
 
         if (isEnableCueIndexing) {
             LOG.debug("Cue indexing enabled");
-            try (Stream<Path> children = Files.list(parent.getFullPath(folder.getPath()))) {
+            try (Stream<Path> children = Files.list(parent.getFullPath())) {
                 children.parallel()
                     .filter(x -> {
                         String ext = FilenameUtils.getExtension(x.toString());
@@ -724,10 +721,10 @@ public class MediaFileService {
         }
 
         // collect files, if any
-        try (Stream<Path> children = Files.list(parent.getFullPath(folder.getPath()))) {
+        try (Stream<Path> children = Files.list(parent.getFullPath())) {
             Map<String, MediaFile> bareFiles = children.parallel()
-                .filter(this::includeMediaFile)
-                .filter(x -> mediaFolderService.getMusicFolderForFile(x, true, true).getId().equals(parent.getFolderId()))
+                .filter(this::includeMediaFileByPath)
+                .filter(x -> mediaFolderService.getMusicFolderForFile(x, true, true).getId().equals(folder.getId()))
                 .map(x -> folder.getPath().relativize(x))
                 .map(x -> {
                     MediaFile media = storedChildrenMap.remove(Pair.of(x.toString(), MediaFile.NOT_INDEXED));
@@ -738,7 +735,7 @@ public class MediaFileService {
                             updateMediaFile(media);
                         }
                     } else {
-                        media = checkLastModified(media, folder, false); // has to be false, only time it's called
+                        media = checkLastModified(media, false); // has to be false, only time it's called
                     }
                     return media;
                 })
@@ -757,11 +754,11 @@ public class MediaFileService {
 
                     if (Objects.nonNull(base)) {
                         base.setIndexPath(indexPath); // update indexPath in mediaFile
-                        Instant mediaChanged = FileUtil.lastModified(base.getFullPath(folder.getPath()));
-                        Instant cueChanged = FileUtil.lastModified(base.getFullIndexPath(folder.getPath()));
+                        Instant mediaChanged = FileUtil.lastModified(base.getFullPath());
+                        Instant cueChanged = FileUtil.lastModified(base.getFullIndexPath());
                         base.setChanged(mediaChanged.compareTo(cueChanged) >= 0 ? mediaChanged : cueChanged);
                         updateMediaFile(base);
-                        List<MediaFile> tracks = createIndexedTracks(base, folder, cueSheet);
+                        List<MediaFile> tracks = createIndexedTracks(base, cueSheet);
                         // remove stored children that are now indexed
                         tracks.forEach(t -> storedChildrenMap.remove(Pair.of(t.getPath(), t.getStartPosition())));
                         tracks.add(base);
@@ -811,11 +808,11 @@ public class MediaFileService {
             !(settingsService.getHideIndexedFiles() && media.hasIndex());
     }
 
-    public boolean includeMediaFile(MediaFile candidate, MusicFolder folder) {
-        return includeMediaFile(candidate.getFullPath(folder.getPath()));
+    public boolean includeMediaFile(MediaFile candidate) {
+        return includeMediaFileByPath(candidate.getFullPath());
     }
 
-    public boolean includeMediaFile(Path candidate) {
+    public boolean includeMediaFileByPath(Path candidate) {
         String suffix = FilenameUtils.getExtension(candidate.toString()).toLowerCase();
         return (!isExcluded(candidate) && (Files.isDirectory(candidate) || isAudioFile(suffix) || isVideoFile(suffix)));
     }
@@ -852,7 +849,8 @@ public class MediaFileService {
     private MediaFile createMediaFileByFile(Path relativePath, MusicFolder folder) {
         MediaFile mediaFile = new MediaFile();
         mediaFile.setPath(relativePath.toString());
-        MediaFile result = updateMediaFileByFile(mediaFile, folder);
+        mediaFile.setFolder(folder);
+        MediaFile result = updateMediaFileByFile(mediaFile);
         return result.isPresent() ? result : null;
     }
 
@@ -863,14 +861,14 @@ public class MediaFileService {
      * @param folder     music folder
      * @return media file reflected from file system
      */
-    private MediaFile updateMediaFileByFile(MediaFile mediaFile, MusicFolder folder) {
+    private MediaFile updateMediaFileByFile(MediaFile mediaFile) {
 
-        if (mediaFile == null || folder == null || mediaFile.getPath() == null) {
+        if (mediaFile == null || mediaFile.getFolder() == null || mediaFile.getPath() == null) {
             throw new IllegalArgumentException("mediaFile, folder and mediaFile.path must not be null");
         }
 
         Path relativePath = mediaFile.getRelativePath();
-        Path file = folder.getPath().resolve(relativePath);
+        Path file = mediaFile.getFullPath();
         if (!Files.exists(file)) {
             // file not found
             mediaFile.setPresent(false);
@@ -880,8 +878,8 @@ public class MediaFileService {
 
         //sanity check
         MusicFolder folderActual = mediaFolderService.getMusicFolderForFile(file, true, true);
-        if (!folderActual.getId().equals(folder.getId())) {
-            LOG.warn("Inconsistent Mediafile folder for media file with path: {}, folder id should be {} and is instead {}", file, folderActual.getId(), folder.getId());
+        if (!folderActual.getId().equals(mediaFile.getFolder().getId())) {
+            LOG.warn("Inconsistent Mediafile folder for media file with path: {}, folder id should be {} and is instead {}", file, folderActual.getId(), mediaFile.getFolder().getId());
         }
         // distinguish between null (no parent, like root folder), "" (root parent), and else
         String parentPath = null;
@@ -890,7 +888,6 @@ public class MediaFileService {
         }
 
         Instant lastModified = FileUtil.lastModified(file);
-        mediaFile.setFolderId(folder.getId());
         mediaFile.setParentPath(parentPath);
         mediaFile.setChanged(lastModified);
         mediaFile.setLastScanned(Instant.now());
@@ -923,16 +920,17 @@ public class MediaFileService {
             String format = StringUtils.trimToNull(StringUtils.lowerCase(FilenameUtils.getExtension(mediaFile.getPath())));
             mediaFile.setFormat(format);
             mediaFile.setFileSize(FileUtil.size(file));
-            mediaFile.setMediaType(getMediaType(mediaFile, folder));
+            mediaFile.setMediaType(getMediaType(mediaFile));
 
         } else {
 
+            MusicFolder folder = mediaFile.getFolder();
             // Is this an album?
             if (!isRoot(mediaFile)) {
                 try (Stream<Path> stream = Files.list(file)) {
                     List<Path> children = stream.parallel().collect(Collectors.toList());
                     Path firstChild = children.parallelStream()
-                            .filter(x -> includeMediaFile(x))
+                            .filter(this::includeMediaFileByPath)
                             .filter(x -> Files.isRegularFile(x))
                             .findFirst().orElse(null);
 
@@ -974,9 +972,9 @@ public class MediaFileService {
 
     }
 
-    private List<MediaFile> createIndexedTracks(MediaFile base, MusicFolder folder, CueSheet cueSheet) {
+    private List<MediaFile> createIndexedTracks(MediaFile base, CueSheet cueSheet) {
 
-        Map<Pair<String, Double>, MediaFile> storedChildrenMap = mediaFileRepository.findByFolderIdAndPath(folder.getId(), base.getPath()).parallelStream()
+        Map<Pair<String, Double>, MediaFile> storedChildrenMap = mediaFileRepository.findByFolderAndPath(base.getFolder(), base.getPath()).parallelStream()
             .filter(MediaFile::isIndexedTrack).collect(Collectors.toConcurrentMap(i -> Pair.of(i.getPath(), i.getStartPosition()), i -> i));
 
         List<MediaFile> children = new ArrayList<>();
@@ -988,7 +986,7 @@ public class MediaFileService {
                 return children;
             }
 
-            Path audioFile = base.getFullPath(folder.getPath());
+            Path audioFile = base.getFullPath();
             MetaData metaData = null;
             MetaDataParser parser = metaDataParserFactory.getParser(audioFile);
             if (parser != null) {
@@ -1007,12 +1005,12 @@ public class MediaFileService {
             String parentPath = base.getParentPath();
             String performer = cueSheet.getPerformer();
             String albumName = cueSheet.getTitle();
-            MediaFile.MediaType mediaType = getMediaType(base, folder);
+            MediaFile.MediaType mediaType = getMediaType(base);
             Instant lastModified = FileUtil.lastModified(audioFile);
             Instant childrenLastUpdated = Instant.now().plusSeconds(100 * 365 * 24 * 60 * 60); // now + 100 years, tracks do not have children
-            Integer folderId = base.getFolderId();
+            MusicFolder baseFolder = base.getFolder();
 
-            boolean update = needsUpdate(base, folder, settingsService.isFastCacheEnabled());
+            boolean update = needsUpdate(base, settingsService.isFastCacheEnabled());
             int trackSize = cueSheet.getAllTrackData().size();
 
             if (trackSize > 0) {
@@ -1055,7 +1053,7 @@ public class MediaFileService {
                     track.setTitle(trackData.getTitle());
                     track.setArtist(trackData.getPerformer());
                     track.setParentPath(parentPath);
-                    track.setFolderId(folderId);
+                    track.setFolder(baseFolder);
                     track.setChanged(lastModified);
                     track.setLastScanned(Instant.now());
                     track.setChildrenLastUpdated(childrenLastUpdated);
@@ -1096,22 +1094,23 @@ public class MediaFileService {
             }
             return children;
         } catch (IOException e) {
-            LOG.warn("Not found: {}", base.getFullIndexPath(folder.getPath()));
+            LOG.warn("Not found: {}", base.getFullIndexPath());
             return new ArrayList<MediaFile>();
         } catch (IndexOutOfBoundsException e) {
-            LOG.warn("Invalid CUE sheet: {}", base.getFullIndexPath(folder.getPath()));
+            LOG.warn("Invalid CUE sheet: {}", base.getFullIndexPath());
             return new ArrayList<MediaFile>();
         } finally {
             storedChildrenMap.values().forEach(m -> delete(m));
         }
     }
 
-    private List<MediaFile> createIndexedTracks(MediaFile base, MusicFolder folder) {
-        CueSheet cueSheet = getCueSheet(base, folder);
-        return createIndexedTracks(base, folder, cueSheet);
+    private List<MediaFile> createIndexedTracks(MediaFile base) {
+        CueSheet cueSheet = getCueSheet(base);
+        return createIndexedTracks(base, cueSheet);
     }
 
-    private MediaFile.MediaType getMediaType(MediaFile mediaFile, MusicFolder folder) {
+    private MediaFile.MediaType getMediaType(MediaFile mediaFile) {
+        MusicFolder folder = mediaFile.getFolder();
         if (folder.getType() == Type.PODCAST) {
             return MediaType.PODCAST;
         }
@@ -1132,8 +1131,8 @@ public class MediaFileService {
         return MediaFile.MediaType.MUSIC;
     }
 
-    public void refreshMediaFile(MediaFile mediaFile, MusicFolder folder) {
-        mediaFile = updateMediaFileByFile(mediaFile, folder);
+    public void refreshMediaFile(MediaFile mediaFile) {
+        mediaFile = updateMediaFileByFile(mediaFile);
         updateMediaFile(mediaFile);
     }
 
@@ -1191,8 +1190,8 @@ public class MediaFileService {
     /**
      * Returns a parsed CueSheet for the given mediaFile
      */
-    private CueSheet getCueSheet(MediaFile media, MusicFolder folder) {
-        return getCueSheet(media.getFullIndexPath(folder.getPath()));
+    private CueSheet getCueSheet(MediaFile media) {
+        return getCueSheet(media.getFullIndexPath());
     }
 
     /**
@@ -1286,13 +1285,13 @@ public class MediaFileService {
         } else if (mediaFile.getId() != null && mediaFileRepository.existsById(mediaFile.getId())) {
             mediaFileRepository.save(mediaFile);
         } else {
-            mediaFileRepository.findByPathAndFolderIdAndStartPosition(mediaFile.getPath(), mediaFile.getFolderId(), mediaFile.getStartPosition()).ifPresentOrElse(m -> {
+            mediaFileRepository.findByPathAndFolderAndStartPosition(mediaFile.getPath(), mediaFile.getFolder(), mediaFile.getStartPosition()).ifPresentOrElse(m -> {
                 mediaFile.setId(m.getId());
                 mediaFileRepository.save(mediaFile);
             }, () -> {
-                    MusicFolder folder = mediaFolderService.getMusicFolderById(mediaFile.getFolderId());
+                    MusicFolder folder = mediaFile.getFolder();
                     if (folder != null) {
-                        musicFileInfoRepository.findByPath(mediaFile.getFullPath(folder.getPath()).toString()).ifPresent(musicFileInfo -> {
+                        musicFileInfoRepository.findByPath(mediaFile.getFullPath().toString()).ifPresent(musicFileInfo -> {
                             mediaFile.setComment(musicFileInfo.getComment());
                             mediaFile.setLastPlayed(musicFileInfo.getLastPlayed());
                             mediaFile.setPlayCount(musicFileInfo.getPlayCount());
@@ -1398,7 +1397,6 @@ public class MediaFileService {
      * @param ids    media file ids to unstar
      * @param username username who unstars the media files
      */
-    @Transactional
     public void unstarMediaFiles(List<Integer> ids, String username) {
         if (CollectionUtils.isEmpty(ids) || StringUtils.isEmpty(username)) {
             return;
@@ -1413,7 +1411,6 @@ public class MediaFileService {
      * @param lastScanned last scanned time
      * @return true if success, false otherwise
      */
-    @Transactional
     public boolean markPresent(Map<Integer, Set<String>> paths, Instant lastScanned) {
 
         if (CollectionUtils.isEmpty(paths)) {
@@ -1441,7 +1438,6 @@ public class MediaFileService {
      * mark media files non present
      * @param lastScanned last scanned time before which media files are marked non present
      */
-    @Transactional
     public void markNonPresent(Instant lastScanned) {
         mediaFileRepository.findByLastScannedBeforeAndPresentTrue(lastScanned).forEach(m -> {
             m.setPresent(false);
@@ -1469,7 +1465,6 @@ public class MediaFileService {
     /**
      * delete all media files that are not present on disk
      */
-    @Transactional
     public void expunge() {
         mediaFileRepository.deleteAllByPresentFalse();
     }

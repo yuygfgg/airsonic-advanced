@@ -244,7 +244,7 @@ public class IndexManagerTestCase {
 
     private void deleteMediaFile(MediaFile mediaFile) {
 
-        mediaFileRepository.findByPathAndFolderIdAndStartPosition(mediaFile.getPath(), mediaFile.getFolderId(), mediaFile.getStartPosition())
+        mediaFileRepository.findByPathAndFolderAndStartPosition(mediaFile.getPath(), mediaFile.getFolder(), mediaFile.getStartPosition())
                 .ifPresent(mf -> {
                     mf.setPresent(false);
                     mf.setChildrenLastUpdated(Instant.ofEpochMilli(1));

@@ -20,6 +20,7 @@ package org.airsonic.player.repository;
 
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
+import org.airsonic.player.domain.MusicFolder;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -46,7 +47,7 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public List<MediaFile> findByFolderIdAndPresentTrue(Integer folderId);
 
-    public List<MediaFile> findByFolderIdAndPath(Integer folderId, String path);
+    public List<MediaFile> findByFolderAndPath(MusicFolder folder, String path);
 
     public List<MediaFile> findByFolderIdAndPathIn(Integer folderId, Iterable<String> path);
 
@@ -61,9 +62,11 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public List<MediaFile> findByFolderIdInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Integer playCount, Pageable page);
 
+    public List<MediaFile> findByFolderAndParentPath(MusicFolder folder, String parentPath, Sort sort);
+
     public List<MediaFile> findByFolderIdAndParentPath(Integer folderId, String parentPath, Sort sort);
 
-    public List<MediaFile> findByFolderIdAndParentPathAndPresentTrue(Integer folderId, String parentPath, Sort sort);
+    public List<MediaFile> findByFolderAndParentPathAndPresentTrue(MusicFolder folder, String parentPath, Sort sort);
 
     public Optional<MediaFile> findByFolderIdInAndMediaTypeAndArtistAndPresentTrue(List<Integer> folderIds, MediaType mediaType, String artist);
 
@@ -74,6 +77,8 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
 
     public Optional<MediaFile> findByPathAndFolderIdAndStartPosition(String path, Integer folderId, Double startPosition);
+
+    public Optional<MediaFile> findByPathAndFolderAndStartPosition(String path, MusicFolder folder, Double startPosition);
 
     public int countByFolderId(Integer folderId);
 

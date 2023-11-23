@@ -133,10 +133,9 @@ public class PodcastDownloadClientTest {
         when(mockedEpisode.getUrl()).thenReturn("http://test.com/test.mp3");
         when(mockedEpisode.getChannel()).thenReturn(mockedChannel);
         when(mockedChannel.getMediaFile()).thenReturn(mockedMediaFile);
-        when(mockedMediaFile.getFolderId()).thenReturn(1);
-        when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedMusicFolder);
+        when(mockedMediaFile.getFolder()).thenReturn(mockedMusicFolder);
         when(mockedMusicFolder.getPath()).thenReturn(tempFolder);
-        when(mockedMediaFile.getFullPath(tempFolder)).thenReturn(tempFolder);
+        when(mockedMediaFile.getFullPath()).thenReturn(tempFolder);
         when(securityService.isWriteAllowed(Paths.get("test.mp3"), mockedMusicFolder)).thenReturn(true);
         when(versionService.getLocalVersion()).thenReturn(new Version("1.0.0"));
 

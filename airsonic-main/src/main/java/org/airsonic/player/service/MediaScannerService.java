@@ -328,8 +328,8 @@ public class MediaScannerService {
         }
 
         // Update the root folder if it has changed
-        if (!musicFolder.getId().equals(file.getFolderId())) {
-            file.setFolderId(musicFolder.getId());
+        if (!musicFolder.getId().equals(file.getFolder().getId())) {
+            file.setFolder(musicFolder);
             mediaFileService.updateMediaFile(file);
         }
 
@@ -348,7 +348,7 @@ public class MediaScannerService {
             }
 
             updateGenres(file, genres);
-            encountered.computeIfAbsent(file.getFolderId(), k -> ConcurrentHashMap.newKeySet()).add(file.getPath());
+            encountered.computeIfAbsent(file.getFolder().getId(), k -> ConcurrentHashMap.newKeySet()).add(file.getPath());
 
             // don't add indexed tracks to the total duration to avoid double-counting
             if ((file.getDuration() != null) && (!file.isIndexedTrack())) {

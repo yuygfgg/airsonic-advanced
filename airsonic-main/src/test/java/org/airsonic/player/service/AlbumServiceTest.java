@@ -116,7 +116,6 @@ public class AlbumServiceTest {
     public void testAlphabeticalAlbums(boolean byArtist, boolean ignoreCase) {
 
         // given
-        when(mockedMusicFolder.getId()).thenReturn(1).thenReturn(2);
         List<MusicFolder> musicFolders = new ArrayList<MusicFolder>(List.of(mockedMusicFolder, mockedMusicFolder));
         Album album1 = new Album();
         List<Album> expected = new ArrayList<Album>(List.of(album1));
@@ -158,7 +157,6 @@ public class AlbumServiceTest {
         int count = 10;
 
         // given
-        when(mockedMusicFolder.getId()).thenReturn(1).thenReturn(2);
         List<MusicFolder> musicFolders = new ArrayList<MusicFolder>(List.of(mockedMusicFolder, mockedMusicFolder));
         Album album1 = new Album();
         List<Album> expected = new ArrayList<Album>(List.of(album1));
@@ -186,7 +184,6 @@ public class AlbumServiceTest {
     public void testGetStarredAlbums() {
 
         // given
-        when(mockedMusicFolder.getId()).thenReturn(1).thenReturn(2);
         List<MusicFolder> musicFolders = new ArrayList<MusicFolder>(List.of(mockedMusicFolder, mockedMusicFolder));
         StarredAlbum starredAlbum = new StarredAlbum();
         Album album = new Album();

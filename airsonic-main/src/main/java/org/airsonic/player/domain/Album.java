@@ -24,16 +24,7 @@ import org.airsonic.player.domain.entity.StarredAlbum;
 import org.airsonic.player.repository.AtomicDoubleConverter;
 import org.airsonic.player.repository.AtomicIntegerConverter;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
+import javax.persistence.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -99,8 +90,9 @@ public class Album {
     private List<StarredAlbum> starredAlbums = new ArrayList<>();
 
     // TODO: add relation to music folder table
-    @Column(name = "folder_id", nullable = true)
-    private Integer folderId;
+    @ManyToOne
+    @JoinColumn(name = "folder_id", referencedColumnName = "id")
+    private MusicFolder folder;
 
     @Column(name = "mb_release_id", nullable = true)
     private String musicBrainzReleaseId;
@@ -108,19 +100,19 @@ public class Album {
     public Album() {
     }
 
-    public Album(String path, String name, String artist, Instant created, Instant lastScanned, boolean present, Integer folderIdInteger) {
+    public Album(String path, String name, String artist, Instant created, Instant lastScanned, boolean present, MusicFolder folder) {
         this.path = path;
         this.name = name;
         this.artist = artist;
         this.created = created;
         this.lastScanned = lastScanned;
         this.present = present;
-        this.folderId = folderIdInteger;
+        this.folder = folder;
     }
 
     public Album(Integer id, String path, String name, String artist, int songCount, double duration,
             Integer year, String genre, int playCount, Instant lastPlayed, String comment, Instant created, Instant lastScanned,
-            boolean present, Integer folderId, String musicBrainzReleaseId) {
+            boolean present, MusicFolder folder, String musicBrainzReleaseId) {
         this.id = id;
         this.path = path;
         this.name = name;
@@ -134,7 +126,7 @@ public class Album {
         this.comment = comment;
         this.created = created;
         this.lastScanned = lastScanned;
-        this.folderId = folderId;
+        this.folder = folder;
         this.present = present;
         this.musicBrainzReleaseId = musicBrainzReleaseId;
     }
@@ -263,12 +255,12 @@ public class Album {
         this.present = present;
     }
 
-    public void setFolderId(Integer folderId) {
-        this.folderId = folderId;
+    public void setFolder(MusicFolder folder) {
+        this.folder = folder;
     }
 
-    public Integer getFolderId() {
-        return folderId;
+    public MusicFolder getFolder() {
+        return folder;
     }
 
     public String getMusicBrainzReleaseId() {

@@ -20,6 +20,8 @@ package org.airsonic.player.repository;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Album;
+import org.airsonic.player.domain.MusicFolder;
+import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.User.Role;
 import org.airsonic.player.domain.UserCredential;
@@ -39,7 +41,10 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -60,6 +65,9 @@ public class AlbumRepositoryTest {
     @Autowired
     private StarredAlbumRepository starredAlbumRepository;
 
+    @Autowired
+    private MusicFolderRepository musicFolderRepository;
+
     @TempDir
     private static Path tempDir;
 
@@ -68,13 +76,33 @@ public class AlbumRepositoryTest {
         System.setProperty("airsonic.home", tempDir.toString());
     }
 
+
+    private List<MusicFolder> testFolders = new ArrayList<>();
+
+    @BeforeEach
+    public void setupFolder() {
+        MusicFolder musicFolder = new MusicFolder(Paths.get("test1"), "musicFolder", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        MusicFolder musicFolder2 = new MusicFolder(Paths.get("test2"), "musicFolder", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        MusicFolder musicFolder3 = new MusicFolder(Paths.get("test3"), "musicFolder", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        testFolders.add(musicFolder);
+        testFolders.add(musicFolder2);
+        testFolders.add(musicFolder3);
+        musicFolderRepository.saveAll(testFolders);
+    }
+
+    @AfterEach
+    public void clean() {
+        musicFolderRepository.deleteAll(testFolders);
+        testFolders.clear();
+    }
+
     @Nested
     public class NestedAlbumRepositoryTest {
         @Test
         public void testFindByArtistAndName() {
 
             // given
-            Album album = new Album("path", "name", "artist", Instant.now(), Instant.now(), true, 1);
+            Album album = new Album("path", "name", "artist", Instant.now(), Instant.now(), true, testFolders.get(0));
             albumRepository.save(album);
 
             // when
@@ -91,11 +119,12 @@ public class AlbumRepositoryTest {
         @Test
         public void testFindByArtistAndFolderIdInAndPresentTrue() {
 
+
             // given
-            Album album1 = new Album("path1", "name1", "artist1", Instant.now(), Instant.now(), true, 1);
-            Album album2 = new Album("path2", "name2", "artist1", Instant.now(), Instant.now(), true, 2);
-            Album album3 = new Album("path3", "name3", "artist2", Instant.now(), Instant.now(), true, 2);
-            Album album4 = new Album("path3", "name3", "artist3", Instant.now(), Instant.now(), false, 3);
+            Album album1 = new Album("path1", "name1", "artist1", Instant.now(), Instant.now(), true, testFolders.get(0));
+            Album album2 = new Album("path2", "name2", "artist1", Instant.now(), Instant.now(), true, testFolders.get(1));
+            Album album3 = new Album("path3", "name3", "artist2", Instant.now(), Instant.now(), true, testFolders.get(1));
+            Album album4 = new Album("path3", "name3", "artist3", Instant.now(), Instant.now(), false, testFolders.get(2));
 
             albumRepository.save(album1);
             albumRepository.save(album2);
@@ -103,7 +132,7 @@ public class AlbumRepositoryTest {
             albumRepository.save(album4);
 
             // when
-            List<Album> result = albumRepository.findByArtistAndFolderIdInAndPresentTrue("artist1", List.of(1, 2, 3));
+            List<Album> result = albumRepository.findByArtistAndFolderInAndPresentTrue("artist1", testFolders);
 
             // then
             assertEquals(2, result.size());
@@ -119,10 +148,10 @@ public class AlbumRepositoryTest {
 
             long count = albumRepository.findByPresentFalse().size();
             Instant now = Instant.now().minusSeconds(3600);
-            Album album1 = new Album("path1", "name1", "artist1", Instant.now(), now, true, 1);
-            Album album2 = new Album("path2", "name2", "artist1", Instant.now(), now, false, 2);
-            Album album3 = new Album("path3", "name3", "artist2", Instant.now(), now.plusSeconds(2), true, 2);
-            Album album4 = new Album("path3", "name3", "artist3", Instant.now(), now.plusSeconds(2), false, 3);
+            Album album1 = new Album("path1", "name1", "artist1", Instant.now(), now, true, testFolders.get(0));
+            Album album2 = new Album("path2", "name2", "artist1", Instant.now(), now, false, testFolders.get(1));
+            Album album3 = new Album("path3", "name3", "artist2", Instant.now(), now.plusSeconds(2), true, testFolders.get(1));
+            Album album4 = new Album("path3", "name3", "artist3", Instant.now(), now.plusSeconds(2), false, testFolders.get(2));
 
             albumRepository.save(album1);
             albumRepository.save(album2);
@@ -180,10 +209,10 @@ public class AlbumRepositoryTest {
         @Test
         public void testFindByUsernameAndAlbumFolderIdInAndAlbumPresentTrue() {
 
-            Album album1 = new Album("path1", "name1", "artist1", Instant.now(), Instant.now(), true, 1);
-            Album album2 = new Album("path2", "name2", "artist1", Instant.now(), Instant.now(), false, 2);
-            Album album3 = new Album("path3", "name3", "artist2", Instant.now(), Instant.now(), true, 2);
-            Album album4 = new Album("path4", "name4", "artist3", Instant.now(), Instant.now(), true, 3);
+            Album album1 = new Album("path1", "name1", "artist1", Instant.now(), Instant.now(), true, testFolders.get(0));
+            Album album2 = new Album("path2", "name2", "artist1", Instant.now(), Instant.now(), false, testFolders.get(1));
+            Album album3 = new Album("path3", "name3", "artist2", Instant.now(), Instant.now(), true, testFolders.get(1));
+            Album album4 = new Album("path4", "name4", "artist3", Instant.now(), Instant.now(), true, testFolders.get(2));
 
             albumRepository.saveAndFlush(album1);
             albumRepository.saveAndFlush(album2);
@@ -200,8 +229,8 @@ public class AlbumRepositoryTest {
             starredAlbumRepository.saveAndFlush(starredAlbum3);
             starredAlbumRepository.saveAndFlush(starredAlbum4);
 
-            List<StarredAlbum> result = starredAlbumRepository.findByUsernameAndAlbumFolderIdInAndAlbumPresentTrue(
-                    TEST_USER_NAME, List.of(1, 2), Sort.by(Direction.ASC, "albumId"));
+            List<StarredAlbum> result = starredAlbumRepository.findByUsernameAndAlbumFolderInAndAlbumPresentTrue(
+                TEST_USER_NAME, testFolders.subList(0, 2), Sort.by(Direction.ASC, "albumId"));
 
             assertEquals(1, result.size());
             assertEquals(starredAlbum1, result.get(0));
@@ -212,8 +241,8 @@ public class AlbumRepositoryTest {
         @Test
         public void testFindByIdAndStarredAlbumsUsername() {
 
-            Album album1 = new Album("path1", "name1", "artist1", Instant.now(), Instant.now(), true, 1);
-            Album album2 = new Album("path2", "name2", "artist1", Instant.now(), Instant.now(), false, 2);
+            Album album1 = new Album("path1", "name1", "artist1", Instant.now(), Instant.now(), true, testFolders.get(0));
+            Album album2 = new Album("path2", "name2", "artist1", Instant.now(), Instant.now(), false, testFolders.get(1));
 
             albumRepository.saveAndFlush(album1);
             albumRepository.saveAndFlush(album2);

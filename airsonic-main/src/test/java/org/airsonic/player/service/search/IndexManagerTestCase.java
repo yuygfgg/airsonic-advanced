@@ -207,7 +207,7 @@ public class IndexManagerTestCase {
         List<Album> albums = albumRepository.findByPresentFalse();
         assertEquals(0, albums.size());
 
-        albumRepository.findByFolderIdInAndPresentTrue(MusicFolder.toIdList(musicFolders), Sort.by("id")).forEach(album -> {
+        albumRepository.findByFolderInAndPresentTrue(musicFolders, Sort.by("id")).forEach(album -> {
             album.setPresent(false);
             albumRepository.saveAndFlush(album);
         });

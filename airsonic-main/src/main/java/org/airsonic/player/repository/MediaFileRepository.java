@@ -33,7 +33,7 @@ import java.util.Optional;
 @Repository
 public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
-    public List<MediaFile> findByIdInAndFolderIdInAndMediaTypeAndPresentTrue(Iterable<Integer> ids, Iterable<Integer> folderIds, MediaType mediaType);
+    public List<MediaFile> findByIdInAndFolderInAndMediaTypeAndPresentTrue(Iterable<Integer> ids, Iterable<MusicFolder> folders, MediaType mediaType);
 
     public List<MediaFile> findByPath(String path);
 
@@ -45,46 +45,42 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public List<MediaFile> findByMediaTypeInAndArtistAndPresentTrue(List<MediaType> mediaTypes, String artist, Pageable page);
 
-    public List<MediaFile> findByFolderIdAndPresentTrue(Integer folderId);
+    public List<MediaFile> findByFolderAndPresentTrue(MusicFolder folder);
 
     public List<MediaFile> findByFolderAndPath(MusicFolder folder, String path);
 
-    public List<MediaFile> findByFolderIdAndPathIn(Integer folderId, Iterable<String> path);
+    public List<MediaFile> findByFolderAndPathIn(MusicFolder folder, Iterable<String> path);
 
-    public List<MediaFile> findByFolderIdInAndMediaTypeAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Pageable page);
+    public List<MediaFile> findByFolderInAndMediaTypeAndPresentTrue(List<MusicFolder> folders, MediaType mediaType, Pageable page);
 
-    public List<MediaFile> findByFolderIdInAndMediaTypeAndGenreAndPresentTrue(List<Integer> folderIds, MediaType mediaType, String genre, Pageable page);
+    public List<MediaFile> findByFolderInAndMediaTypeAndGenreAndPresentTrue(List<MusicFolder> folders, MediaType mediaType, String genre, Pageable page);
 
-    public List<MediaFile> findByFolderIdInAndMediaTypeInAndGenreAndPresentTrue(List<Integer> folderIds, Iterable<MediaType> mediaType, String genre, Pageable page);
+    public List<MediaFile> findByFolderInAndMediaTypeInAndGenreAndPresentTrue(List<MusicFolder> folders, Iterable<MediaType> mediaType, String genre, Pageable page);
 
-    public List<MediaFile> findByFolderIdInAndMediaTypeAndYearBetweenAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Integer startYear,
+    public List<MediaFile> findByFolderInAndMediaTypeAndYearBetweenAndPresentTrue(List<MusicFolder> folders, MediaType mediaType, Integer startYear,
             Integer endYear, Pageable page);
 
-    public List<MediaFile> findByFolderIdInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Integer playCount, Pageable page);
+    public List<MediaFile> findByFolderInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(List<MusicFolder> folders, MediaType mediaType, Integer playCount, Pageable page);
 
     public List<MediaFile> findByFolderAndParentPath(MusicFolder folder, String parentPath, Sort sort);
 
-    public List<MediaFile> findByFolderIdAndParentPath(Integer folderId, String parentPath, Sort sort);
-
     public List<MediaFile> findByFolderAndParentPathAndPresentTrue(MusicFolder folder, String parentPath, Sort sort);
 
-    public Optional<MediaFile> findByFolderIdInAndMediaTypeAndArtistAndPresentTrue(List<Integer> folderIds, MediaType mediaType, String artist);
+    public Optional<MediaFile> findByFolderInAndMediaTypeAndArtistAndPresentTrue(List<MusicFolder> folders, MediaType mediaType, String artist);
 
-    public Optional<MediaFile> findByFolderIdInAndMediaTypeAndArtistAndTitleAndPresentTrue(List<Integer> folderIds, MediaType mediaType, String artist, String title);
+    public Optional<MediaFile> findByFolderInAndMediaTypeAndArtistAndTitleAndPresentTrue(List<MusicFolder> folders, MediaType mediaType, String artist, String title);
 
     public List<MediaFile> findByAlbumArtistAndAlbumNameAndMediaTypeInAndPresentTrue(String albumArtist, String albumName,
             List<MediaType> mediaTypes, Sort sort);
 
 
-    public Optional<MediaFile> findByPathAndFolderIdAndStartPosition(String path, Integer folderId, Double startPosition);
-
     public Optional<MediaFile> findByPathAndFolderAndStartPosition(String path, MusicFolder folder, Double startPosition);
 
-    public int countByFolderId(Integer folderId);
+    public int countByFolder(MusicFolder folder);
 
-    public int countByFolderIdInAndMediaTypeAndPresentTrue(List<Integer> folderIds, MediaType mediaType);
+    public int countByFolderInAndMediaTypeAndPresentTrue(List<MusicFolder> folders, MediaType mediaType);
 
-    public int countByFolderIdInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(List<Integer> folderIds, MediaType mediaType, Integer playCount);
+    public int countByFolderInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(List<MusicFolder> folders, MediaType mediaType, Integer playCount);
 
     public void deleteAllByPresentFalse();
 }

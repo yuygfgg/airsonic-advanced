@@ -453,7 +453,7 @@ public class MediaFolderServiceTest {
         Mockito.reset(musicFolderRepository);
         Mockito.reset(mediaFileRepository);
 
-        when(mediaFileRepository.countByFolderId(musicFolder.getId())).thenReturn(0);
+        when(mediaFileRepository.countByFolder(musicFolder)).thenReturn(0);
 
         // when
         mediaFolderService.deleteMusicFolder(musicFolder.getId());
@@ -476,8 +476,8 @@ public class MediaFolderServiceTest {
         Mockito.reset(musicFolderRepository);
         Mockito.reset(mediaFileRepository);
 
-        when(mediaFileRepository.countByFolderId(childFolder.getId())).thenReturn(10);
-        when(mediaFileRepository.findByFolderIdAndPresentTrue(childFolder.getId())).thenReturn(List.of(mockedFile));
+        when(mediaFileRepository.countByFolder(childFolder)).thenReturn(10);
+        when(mediaFileRepository.findByFolderAndPresentTrue(childFolder)).thenReturn(List.of(mockedFile));
 
         // when
         mediaFolderService.deleteMusicFolder(childFolder.getId());
@@ -504,8 +504,8 @@ public class MediaFolderServiceTest {
         Mockito.reset(musicFolderRepository);
         Mockito.reset(mediaFileRepository);
 
-        when(mediaFileRepository.findByFolderIdAndPresentTrue(musicFolder.getId())).thenReturn(List.of(mockedFile));
-        when(mediaFileRepository.countByFolderId(musicFolder.getId())).thenReturn(10);
+        when(mediaFileRepository.findByFolderAndPresentTrue(musicFolder)).thenReturn(List.of(mockedFile));
+        when(mediaFileRepository.countByFolder(musicFolder)).thenReturn(10);
 
         // when
         mediaFolderService.deleteMusicFolder(musicFolder.getId());
@@ -534,8 +534,8 @@ public class MediaFolderServiceTest {
         Mockito.reset(musicFolderRepository);
         Mockito.reset(mediaFileRepository);
 
-        when(mediaFileRepository.findByFolderIdAndPresentTrue(musicFolder.getId())).thenReturn(List.of(mockedFile));
-        when(mediaFileRepository.countByFolderId(musicFolder.getId())).thenReturn(10);
+        when(mediaFileRepository.findByFolderAndPresentTrue(musicFolder)).thenReturn(List.of(mockedFile));
+        when(mediaFileRepository.countByFolder(musicFolder)).thenReturn(10);
 
         // when
         mediaFolderService.deleteMusicFolder(musicFolder.getId());

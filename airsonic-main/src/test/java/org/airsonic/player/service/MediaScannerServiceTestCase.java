@@ -231,7 +231,7 @@ public class MediaScannerServiceTestCase {
         assertEquals("TestAlbum", album.getPath());
 
         // Test that the music file is correctly imported, along with its MusicBrainz release ID and recording ID
-        List<MediaFile> albumFiles = mediaFileRepository.findByFolderIdAndParentPath(allAlbums.get(0).getFolderId(), allAlbums.get(0).getPath(), Sort.by("startPosition"));
+        List<MediaFile> albumFiles = mediaFileRepository.findByFolderAndParentPath(allAlbums.get(0).getFolder(), allAlbums.get(0).getPath(), Sort.by("startPosition"));
         assertEquals(1, albumFiles.size());
         MediaFile file = albumFiles.get(0);
         assertEquals("Aria", file.getTitle());
@@ -282,7 +282,7 @@ public class MediaScannerServiceTestCase {
         assertEquals(2, album.getSongCount());
 
         // Test that the music file is correctly imported
-        List<MediaFile> albumFiles = mediaFileRepository.findByFolderIdAndParentPath(allAlbums.get(0).getFolderId(), allAlbums.get(0).getPath(), Sort.by("startPosition"));
+        List<MediaFile> albumFiles = mediaFileRepository.findByFolderAndParentPath(allAlbums.get(0).getFolder(), allAlbums.get(0).getPath(), Sort.by("startPosition"));
         assertEquals(3, albumFiles.size());
         MediaFile file = albumFiles.get(0);
         assertEquals("airsonic-test", file.getTitle());

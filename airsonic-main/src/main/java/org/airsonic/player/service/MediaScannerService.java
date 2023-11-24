@@ -441,7 +441,7 @@ public class MediaScannerService {
         }
 
         if (firstEncounter.get()) {
-            album.setFolderId(musicFolder.getId());
+            album.setFolder(musicFolder);
             albumRepository.saveAndFlush(album);
             albumCount.computeIfAbsent(artist, k -> new AtomicInteger(0)).incrementAndGet();
             indexManager.index(album);

@@ -1,6 +1,7 @@
 package org.airsonic.player.repository;
 
 import org.airsonic.player.domain.Album;
+import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.entity.StarredAlbum;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -14,9 +15,9 @@ import java.util.Optional;
 @Repository
 public interface StarredAlbumRepository extends JpaRepository<StarredAlbum, Integer> {
 
-    public List<StarredAlbum> findByUsernameAndAlbumFolderIdInAndAlbumPresentTrue(String username, Iterable<Integer> musicFolderIds, Sort sort);
+    public List<StarredAlbum> findByUsernameAndAlbumFolderInAndAlbumPresentTrue(String username, Iterable<MusicFolder> musicFolders, Sort sort);
 
-    public List<StarredAlbum> findByUsernameAndAlbumFolderIdInAndAlbumPresentTrue(String username, Iterable<Integer> musicFolderIds, Pageable pageable);
+    public List<StarredAlbum> findByUsernameAndAlbumFolderInAndAlbumPresentTrue(String username, Iterable<MusicFolder> musicFolders, Pageable pageable);
 
     public Optional<StarredAlbum> findByAlbumAndUsername(Album album, String username);
 

@@ -67,7 +67,7 @@ public class RatingService {
         if (count < 1 || musicFolders.isEmpty()) {
             return Collections.emptyList();
         }
-        List<MediaFile> albums = mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaFile.MediaType.ALBUM, PageRequest.of(0, Integer.MAX_VALUE));
+        List<MediaFile> albums = mediaFileRepository.findByFolderInAndMediaTypeAndPresentTrue(musicFolders, MediaFile.MediaType.ALBUM, PageRequest.of(0, Integer.MAX_VALUE));
         List<MediaFile> soredAlbums = albums.parallelStream()
             .filter(file -> securityService.isReadAllowed(file, true))
             .map(file -> {
@@ -149,7 +149,7 @@ public class RatingService {
         if (musicFolders.isEmpty()) {
             return 0;
         }
-        List<MediaFile> albums = mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaFile.MediaType.ALBUM, PageRequest.of(0, Integer.MAX_VALUE));
+        List<MediaFile> albums = mediaFileRepository.findByFolderInAndMediaTypeAndPresentTrue(musicFolders, MediaFile.MediaType.ALBUM, PageRequest.of(0, Integer.MAX_VALUE));
 
         return userRatingRepository.countByUsernameAndMediaFileIdIn(username, albums.stream().map(MediaFile::getId).collect(Collectors.toList()));
     }

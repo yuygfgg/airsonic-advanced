@@ -347,7 +347,7 @@ public class MediaFileService {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
         }
-        return mediaFileRepository.findByFolderIdInAndMediaTypeInAndGenreAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.audioTypes(), genre, new OffsetBasedPageRequest(offset, count, Sort.by("id")));
+        return mediaFileRepository.findByFolderInAndMediaTypeInAndGenreAndPresentTrue(musicFolders, MediaType.audioTypes(), genre, new OffsetBasedPageRequest(offset, count, Sort.by("id")));
     }
 
     /**
@@ -373,7 +373,7 @@ public class MediaFileService {
         if (CollectionUtils.isEmpty(musicFolders) || StringUtils.isBlank(artist) || StringUtils.isBlank(title)) {
             return null;
         }
-        return mediaFileRepository.findByFolderIdInAndMediaTypeAndArtistAndTitleAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.MUSIC, artist, title).orElse(null);
+        return mediaFileRepository.findByFolderInAndMediaTypeAndArtistAndTitleAndPresentTrue(musicFolders, MediaType.MUSIC, artist, title).orElse(null);
     }
 
     /**
@@ -408,7 +408,7 @@ public class MediaFileService {
             return null;
         }
 
-        return mediaFileRepository.findByFolderIdInAndMediaTypeAndArtistAndPresentTrue(MusicFolder.toIdList(folders),
+        return mediaFileRepository.findByFolderInAndMediaTypeAndArtistAndPresentTrue(folders,
                 MediaType.DIRECTORY, artist).orElse(null);
     }
 
@@ -443,7 +443,7 @@ public class MediaFileService {
         if (CollectionUtils.isEmpty(folders)) {
             return Collections.emptyList();
         }
-        return mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(folders), MediaType.VIDEO, new OffsetBasedPageRequest(offset, count, Sort.by("title")));
+        return mediaFileRepository.findByFolderInAndMediaTypeAndPresentTrue(folders, MediaType.VIDEO, new OffsetBasedPageRequest(offset, count, Sort.by("title")));
     }
 
 
@@ -493,7 +493,7 @@ public class MediaFileService {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
         }
-        return mediaFileRepository.findByFolderIdInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, 0, new OffsetBasedPageRequest(offset, count, Sort.by("playCount").descending().and(Sort.by("id"))));
+        return mediaFileRepository.findByFolderInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(musicFolders, MediaType.ALBUM, 0, new OffsetBasedPageRequest(offset, count, Sort.by("playCount").descending().and(Sort.by("id"))));
     }
 
     /**
@@ -508,7 +508,7 @@ public class MediaFileService {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
         }
-        return mediaFileRepository.findByFolderIdInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, 0, new OffsetBasedPageRequest(offset, count, Sort.by("lastPlayed").descending().and(Sort.by("id"))));
+        return mediaFileRepository.findByFolderInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(musicFolders, MediaType.ALBUM, 0, new OffsetBasedPageRequest(offset, count, Sort.by("lastPlayed").descending().and(Sort.by("id"))));
     }
 
     /**
@@ -523,7 +523,7 @@ public class MediaFileService {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
         }
-        return mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, new OffsetBasedPageRequest(offset, count, Sort.by("created").descending().and(Sort.by("id"))));
+        return mediaFileRepository.findByFolderInAndMediaTypeAndPresentTrue(musicFolders, MediaType.ALBUM, new OffsetBasedPageRequest(offset, count, Sort.by("created").descending().and(Sort.by("id"))));
     }
 
     /**
@@ -560,7 +560,7 @@ public class MediaFileService {
             return Collections.emptyList();
         }
         Sort sort = byArtist ? Sort.by("artist", "albumName", "id") : Sort.by("albumName", "id");
-        return mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, new OffsetBasedPageRequest(offset, count, sort));
+        return mediaFileRepository.findByFolderInAndMediaTypeAndPresentTrue(musicFolders, MediaType.ALBUM, new OffsetBasedPageRequest(offset, count, sort));
     }
 
     /**
@@ -580,9 +580,9 @@ public class MediaFileService {
         }
 
         if (fromYear <= toYear) {
-            return mediaFileRepository.findByFolderIdInAndMediaTypeAndYearBetweenAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, fromYear, toYear, new OffsetBasedPageRequest(offset, count, Sort.by("year", "id")));
+            return mediaFileRepository.findByFolderInAndMediaTypeAndYearBetweenAndPresentTrue(musicFolders, MediaType.ALBUM, fromYear, toYear, new OffsetBasedPageRequest(offset, count, Sort.by("year", "id")));
         } else {
-            return mediaFileRepository.findByFolderIdInAndMediaTypeAndYearBetweenAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, toYear, fromYear, new OffsetBasedPageRequest(offset, count, Sort.by("year").descending().and(Sort.by("id"))));
+            return mediaFileRepository.findByFolderInAndMediaTypeAndYearBetweenAndPresentTrue(musicFolders, MediaType.ALBUM, toYear, fromYear, new OffsetBasedPageRequest(offset, count, Sort.by("year").descending().and(Sort.by("id"))));
         }
     }
 
@@ -599,7 +599,7 @@ public class MediaFileService {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
         }
-        return mediaFileRepository.findByFolderIdInAndMediaTypeAndGenreAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, genre, new OffsetBasedPageRequest(offset, count, Sort.by("id")));
+        return mediaFileRepository.findByFolderInAndMediaTypeAndGenreAndPresentTrue(musicFolders, MediaType.ALBUM, genre, new OffsetBasedPageRequest(offset, count, Sort.by("id")));
     }
 
 
@@ -639,12 +639,12 @@ public class MediaFileService {
             Integer minAlbumRating = criteria.getMinAlbumRating() == null ? 0 : criteria.getMinAlbumRating();
             Integer maxAlbumRating = criteria.getMaxAlbumRating() == null ? 5 : criteria.getMaxAlbumRating();
             List<Integer> ratedIds = userRatingRepository.findByUsernameAndRatingBetween(username, minAlbumRating, maxAlbumRating).stream().map(UserRating::getMediaFileId).collect(Collectors.toList());
-            List<MediaFile> ratedAlbums = mediaFileRepository.findByIdInAndFolderIdInAndMediaTypeAndPresentTrue(ratedIds, MusicFolder.toIdList(criteria.getMusicFolders()), MediaType.ALBUM);
+            List<MediaFile> ratedAlbums = mediaFileRepository.findByIdInAndFolderInAndMediaTypeAndPresentTrue(ratedIds, criteria.getMusicFolders(), MediaType.ALBUM);
             fileIds = ratedAlbums.stream().flatMap(ra -> {
                 return mediaFileRepository.findByAlbumArtistAndAlbumNameAndMediaTypeInAndPresentTrue(ra.getArtist(), ra.getAlbumName(), List.of(MediaType.MUSIC), Sort.by("id")).stream().map(MediaFile::getId);
             }).collect(Collectors.toList());
         } else {
-            fileIds = mediaFileRepository.findByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(criteria.getMusicFolders()), MediaType.MUSIC, PageRequest.of(0, Integer.MAX_VALUE)).stream().map(MediaFile::getId).collect(Collectors.toList());
+            fileIds = mediaFileRepository.findByFolderInAndMediaTypeAndPresentTrue(criteria.getMusicFolders(), MediaType.MUSIC, PageRequest.of(0, Integer.MAX_VALUE)).stream().map(MediaFile::getId).collect(Collectors.toList());
         }
         if (joinStarred) {
             starredFileIds = starredMediaFileRepository.findByUsername(username).stream().map(StarredMediaFile::getMediaFile).filter(Objects::nonNull).map(MediaFile::getId).collect(Collectors.toList());
@@ -1352,14 +1352,14 @@ public class MediaFileService {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return 0;
         }
-        return mediaFileRepository.countByFolderIdInAndMediaTypeAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM);
+        return mediaFileRepository.countByFolderInAndMediaTypeAndPresentTrue(musicFolders, MediaType.ALBUM);
     }
 
     public int getPlayedAlbumCount(List<MusicFolder> musicFolders) {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return 0;
         }
-        return mediaFileRepository.countByFolderIdInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(MusicFolder.toIdList(musicFolders), MediaType.ALBUM, 0);
+        return mediaFileRepository.countByFolderInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(musicFolders, MediaType.ALBUM, 0);
     }
 
     public int getStarredAlbumCount(String username, List<MusicFolder> musicFolders) {
@@ -1418,7 +1418,11 @@ public class MediaFileService {
         }
         try {
             paths.entrySet().parallelStream().forEach(e -> {
-                mediaFileRepository.findByFolderIdAndPathIn(e.getKey(), e.getValue())
+                MusicFolder folder = mediaFolderService.getMusicFolderById(e.getKey());
+                if (folder == null) {
+                    return;
+                }
+                mediaFileRepository.findByFolderAndPathIn(folder, e.getValue())
                     .forEach(
                         m -> {
                             m.setPresent(true);

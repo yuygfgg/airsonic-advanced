@@ -175,7 +175,7 @@ public class MediaFolderService {
 
         musicFolderRepository.findByIdAndDeletedFalse(id).ifPresentOrElse(folder -> {
             // if empty folder, just delete
-            if (mediaFileRepository.countByFolderId(id) == 0) {
+            if (mediaFileRepository.countByFolder(folder) == 0) {
                 musicFolderRepository.delete(folder);
                 clearMusicFolderCache();
                 return;
@@ -191,7 +191,7 @@ public class MediaFolderService {
                 folder.setEnabled(false);
                 musicFolderRepository.save(folder);
             }
-            mediaFileRepository.findByFolderIdAndPresentTrue(id).forEach(f -> {
+            mediaFileRepository.findByFolderAndPresentTrue(folder).forEach(f -> {
                 f.setChildrenLastUpdated(Instant.ofEpochMilli(1));
                 f.setPresent(false);
                 mediaFileRepository.save(f);

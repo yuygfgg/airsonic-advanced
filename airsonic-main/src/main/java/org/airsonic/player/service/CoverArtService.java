@@ -96,11 +96,11 @@ public class CoverArtService {
 
     public Path getFullPath(CoverArt art) {
         if (art != null && !CoverArt.NULL_ART.equals(art)) {
-            if (art.getFolderId() == null) {
+            if (art.getFolder() == null) {
                 // null folder ids mean absolute paths
                 return art.getRelativePath();
             } else {
-                MusicFolder folder = mediaFolderService.getMusicFolderById(art.getFolderId());
+                MusicFolder folder = art.getFolder();
                 if (folder != null) {
                     return art.getFullPath(folder.getPath());
                 }
@@ -179,7 +179,7 @@ public class CoverArtService {
         }
 
         CoverArt coverArt = new CoverArt(dir.getId(), EntityType.MEDIA_FILE,
-                folder.getPath().relativize(newCoverFile).toString(), dir.getFolder().getId(), true);
+                folder.getPath().relativize(newCoverFile).toString(), dir.getFolder(), true);
         upsert(coverArt);
     }
 

@@ -435,7 +435,7 @@ public class MediaScannerService {
             if (parent != null) {
                 CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, parent.getId());
                 if (!CoverArt.NULL_ART.equals(art)) {
-                    album.setArt(new CoverArt(-1, EntityType.ALBUM, art.getPath(), art.getFolderId(), false));
+                    album.setArt(new CoverArt(-1, EntityType.ALBUM, art.getPath(), art.getFolder(), false));
                 }
             }
         }
@@ -484,7 +484,7 @@ public class MediaScannerService {
             if (parent != null) {
                 CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, parent.getId());
                 if (!CoverArt.NULL_ART.equals(art)) {
-                    artist.setArt(new CoverArt(-1, EntityType.ARTIST, art.getPath(), art.getFolderId(), false));
+                    artist.setArt(new CoverArt(-1, EntityType.ARTIST, art.getPath(), art.getFolder(), false));
                 }
             }
         }

@@ -53,9 +53,6 @@ public class CoverArtServiceTest {
     @Mock
     private CoverArtRepository coverArtRepository;
 
-    @Mock
-    private MediaFolderService mediaFolderService;
-
     @InjectMocks
     private CoverArtService coverArtService;
 
@@ -100,7 +97,6 @@ public class CoverArtServiceTest {
     public void testGetFullPathReturnsNullForNullCoverArt(CoverArt coverArt) {
         Path result = coverArtService.getFullPath(coverArt);
         assertNull(result);
-        verify(mediaFolderService, never()).getMusicFolderById(anyInt());
     }
 
     @Test
@@ -108,37 +104,23 @@ public class CoverArtServiceTest {
         CoverArt coverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/image.jpg", null, false);
         Path result = coverArtService.getFullPath(coverArt);
         assertEquals(Paths.get("path/to/image.jpg"), result);
-        verify(mediaFolderService, never()).getMusicFolderById(anyInt());
-    }
-
-    @Test
-    public void testGetFullPathReturnsNullForNullFolder() {
-        CoverArt coverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/image.jpg", 1, false);
-        when(mediaFolderService.getMusicFolderById(1)).thenReturn(null);
-        Path result = coverArtService.getFullPath(coverArt);
-        assertNull(result);
-        verify(mediaFolderService, times(1)).getMusicFolderById(1);
     }
 
     @Test
     public void testGetFullPathReturnsFullPath() {
-        CoverArt coverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/image.jpg", 1, false);
-        when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedFolder);
+        CoverArt coverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/image.jpg", mockedFolder, false);
         when(mockedFolder.getPath()).thenReturn(Paths.get("music"));
         Path result = coverArtService.getFullPath(coverArt);
         assertEquals(Paths.get("music/path/to/image.jpg"), result);
-        verify(mediaFolderService, times(1)).getMusicFolderById(1);
     }
 
     @Test
     public void testGetFullPathWithTypeAndId() {
-        CoverArt coverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/image.jpg", 1, false);
-        when(mediaFolderService.getMusicFolderById(1)).thenReturn(mockedFolder);
+        CoverArt coverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/image.jpg", mockedFolder, false);
         when(mockedFolder.getPath()).thenReturn(Paths.get("music"));
         when(coverArtRepository.findByEntityTypeAndEntityId(EntityType.MEDIA_FILE, 1)).thenReturn(Optional.of(coverArt));
         Path result = coverArtService.getFullPath(EntityType.MEDIA_FILE, 1);
         assertEquals(Paths.get("music/path/to/image.jpg"), result);
-        verify(mediaFolderService, times(1)).getMusicFolderById(1);
     }
 
     private static Stream<CoverArt> coverArtWithNullAndNULLART() {
@@ -147,7 +129,7 @@ public class CoverArtServiceTest {
 
     @Test
     public void testsaveWithCoverArt() {
-        CoverArt coverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/image.jpg", 1, false);
+        CoverArt coverArt = new CoverArt(1, EntityType.MEDIA_FILE, "path/to/image.jpg", mockedFolder, false);
         coverArtService.upsert(coverArt);
         verify(coverArtRepository, times(1)).save(coverArt);
     }
@@ -353,17 +335,6 @@ public class CoverArtServiceTest {
 
     private static Stream<CoverArt> coverArtWillBeOverriddenForArtist() {
         return Stream.of(new CoverArt(1, EntityType.ARTIST, "path/to/art.jpg", null, false), CoverArt.NULL_ART);
-    }
-
-
-    @Test
-    void testPersistIfNeeded2() {
-
-    }
-
-    @Test
-    void testPersistIfNeeded3() {
-
     }
 
 }

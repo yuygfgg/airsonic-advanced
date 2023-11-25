@@ -374,7 +374,7 @@ public class CoverArtController {
         }
 
         public String getKey() {
-            return Optional.ofNullable(coverArt).map(c -> coverArt.getFolderId() + "/" + coverArt.getPath())
+            return Optional.ofNullable(coverArt).map(c -> coverArt.getFolder()).map(folder -> folder.getId() + "/" + coverArt.getPath())
                     .orElseGet(keyGenerator);
         }
 

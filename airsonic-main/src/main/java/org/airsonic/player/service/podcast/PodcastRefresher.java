@@ -171,7 +171,7 @@ public class PodcastRefresher {
             Path filePath = channelDir.resolve("cover." + getCoverArtSuffix(response));
             Files.copy(in, filePath, StandardCopyOption.REPLACE_EXISTING);
             CoverArt coverArt = new CoverArt(channelMediaFile.getId(), EntityType.MEDIA_FILE,
-                    folder.getPath().relativize(filePath).toString(), channelMediaFile.getFolder().getId(), false);
+                    folder.getPath().relativize(filePath).toString(), channelMediaFile.getFolder(), false);
             coverArtRepository.save(coverArt);
         } catch (Exception x) {
             LOG.warn("Failed to download cover art for podcast channel '{}'", channel.getTitle(), x);

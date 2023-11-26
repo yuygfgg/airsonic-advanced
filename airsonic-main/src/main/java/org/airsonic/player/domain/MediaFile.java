@@ -374,6 +374,10 @@ public class MediaFile {
         return parentPath;
     }
 
+    public Path getRelativeParentPath() {
+        return parentPath == null ? null : Paths.get(parentPath);
+    }
+
     public void setParentPath(String parentPath) {
         this.parentPath = parentPath;
     }

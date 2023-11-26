@@ -951,7 +951,7 @@ public class MediaFileService {
                         Path coverArt = findCoverArt(children);
                         if (coverArt != null) {
                             // placeholder to be persisted later
-                            mediaFile.setArt(new CoverArt(-1, EntityType.MEDIA_FILE, folder.getPath().relativize(coverArt).toString(), folder.getId(), false));
+                            mediaFile.setArt(new CoverArt(-1, EntityType.MEDIA_FILE, folder.getPath().relativize(coverArt).toString(), folder, false));
                         }
                     } else {
                         mediaFile.setArtist(file.getFileName().toString());

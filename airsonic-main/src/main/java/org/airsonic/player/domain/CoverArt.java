@@ -121,7 +121,7 @@ public class CoverArt {
         return folder;
     }
 
-    public void setFolderId(MusicFolder folder) {
+    public void setFolder(MusicFolder folder) {
         this.folder = folder;
     }
 

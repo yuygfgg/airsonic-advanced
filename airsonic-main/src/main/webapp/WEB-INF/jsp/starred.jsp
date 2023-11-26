@@ -114,7 +114,7 @@
         <c:forEach items="${model.songs}" var="song">
 
             <sub:url value="/main.view" var="mainUrl">
-                <sub:param name="path" value="${song.folderId}:${song.parentPath}"/>
+                <sub:param name="path" value="${song.folder.id}:${song.parentPath}"/>
             </sub:url>
 
             <tr>

@@ -21,6 +21,7 @@
 package org.airsonic.player.domain;
 
 import org.apache.commons.io.FilenameUtils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 
@@ -182,6 +183,7 @@ public class MediaFile {
         return Paths.get(path);
     }
 
+    @JsonIgnore
     public Path getFullPath() {
         return folder.getPath().resolve(path);
     }
@@ -198,6 +200,7 @@ public class MediaFile {
         return indexPath == null ? null : Paths.get(indexPath);
     }
 
+    @JsonIgnore
     public Path getFullIndexPath() {
         return folder.getPath().resolve(indexPath);
     }

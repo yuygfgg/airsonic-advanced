@@ -408,8 +408,14 @@ public class MediaFileService {
             return null;
         }
 
-        return mediaFileRepository.findByFolderInAndMediaTypeAndArtistAndPresentTrue(folders,
-                MediaType.DIRECTORY, artist).orElse(null);
+        List<MediaFile> results = mediaFileRepository.findByFolderInAndMediaTypeAndArtistAndPresentTrue(folders,
+                MediaType.DIRECTORY, artist);
+
+        if (results.isEmpty()) {
+            return null;
+        }
+        // return the first result
+        return results.get(0);
     }
 
     /**

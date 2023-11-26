@@ -20,6 +20,8 @@ package org.airsonic.player.repository;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Artist;
+import org.airsonic.player.domain.MusicFolder;
+import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.domain.User.Role;
 import org.airsonic.player.domain.UserCredential;
@@ -39,7 +41,9 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -54,17 +58,37 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ArtistRepositoryTest {
 
     @Autowired
-    ArtistRepository artistRepository;
+    private ArtistRepository artistRepository;
 
     @Autowired
-    StarredArtistRepository starredArtistRepository;
+    private StarredArtistRepository starredArtistRepository;
+
+    @Autowired
+    private MusicFolderRepository musicFolderRepository;
 
     @TempDir
     private static Path tempDir;
 
+    private List<MusicFolder> testFolders = new ArrayList<>();
+
     @BeforeAll
     public static void setup() {
         System.setProperty("airsonic.home", tempDir.toString());
+    }
+
+    @BeforeEach
+    public void init() {
+        MusicFolder musicFolder = new MusicFolder(Paths.get("test1"), "musicFolder", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        MusicFolder musicFolder2 = new MusicFolder(Paths.get("test2"), "musicFolder2", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        testFolders.add(musicFolder);
+        testFolders.add(musicFolder2);
+        musicFolderRepository.saveAll(testFolders);
+    }
+
+    @AfterEach
+    public void cleanup() {
+        musicFolderRepository.deleteAll(testFolders);
+        testFolders.clear();
     }
 
     @Nested
@@ -84,34 +108,34 @@ public class ArtistRepositoryTest {
 
         @Test
         public void testFindByNameAndFolderIdIn() {
-            assertTrue(artistRepository.findByNameAndFolderIdIn("name", new ArrayList<>(List.of(1))).isEmpty());
+            assertTrue(artistRepository.findByNameAndFolderIn("name", testFolders.subList(0, 1)).isEmpty());
 
             Artist artist = new Artist("name");
             artist.setLastScanned(Instant.now());
-            artist.setFolderId(1);
+            artist.setFolder(testFolders.get(0));
 
             artistRepository.save(artist);
-            assertTrue(artistRepository.findByNameAndFolderIdIn("name", new ArrayList<>(List.of(1))).isPresent());
+            assertTrue(artistRepository.findByNameAndFolderIn("name", testFolders.subList(0, 1)).isPresent());
 
             artistRepository.delete(artist);
         }
 
         @Test
         public void testFindByFolderIdInAndPresentTrue() {
-            assertTrue(artistRepository.findByFolderIdInAndPresentTrue(new ArrayList<>(List.of(1, 2)), Sort.by(Direction.ASC, "name")).isEmpty());
+            assertTrue(artistRepository.findByFolderInAndPresentTrue(testFolders.subList(0,2), Sort.by(Direction.ASC, "name")).isEmpty());
 
             Artist artist = new Artist("name");
             artist.setLastScanned(Instant.now());
-            artist.setFolderId(1);
+            artist.setFolder(testFolders.get(0));
             artist.setPresent(true);
             artistRepository.save(artist);
 
             Artist artist2 = new Artist("name2");
             artist2.setLastScanned(Instant.now());
-            artist2.setFolderId(2);
+            artist2.setFolder(testFolders.get(1));
             artist2.setPresent(true);
             artistRepository.save(artist2);
-            assertTrue(artistRepository.findByFolderIdInAndPresentTrue(new ArrayList<>(List.of(1, 2)), Sort.by(Direction.ASC, "name")).size() == 2);
+            assertTrue(artistRepository.findByFolderInAndPresentTrue(testFolders.subList(0,2), Sort.by(Direction.ASC, "name")).size() == 2);
 
             artistRepository.delete(artist);
             artistRepository.delete(artist2);
@@ -231,18 +255,18 @@ public class ArtistRepositoryTest {
             // given
             Artist artist = new Artist("name");
             artist.setLastScanned(Instant.now());
-            artist.setFolderId(1);
+            artist.setFolder(testFolders.get(0));
             artist.setPresent(true);
             artistRepository.save(artist);
             Artist artist2 = new Artist("name2");
             artist2.setLastScanned(Instant.now());
-            artist2.setFolderId(2);
+            artist2.setFolder(testFolders.get(1));
             artist2.setPresent(true);
             artistRepository.save(artist2);
             // not present
             Artist artist3 = new Artist("name3");
             artist3.setLastScanned(Instant.now());
-            artist3.setFolderId(2);
+            artist3.setFolder(testFolders.get(1));
             artist3.setPresent(false);
             artistRepository.save(artist3);
 
@@ -255,8 +279,8 @@ public class ArtistRepositoryTest {
 
             // when
             List<StarredArtist> starredArtists = starredArtistRepository
-                    .findByUsernameAndArtistFolderIdInAndArtistPresentTrue(TEST_USER_NAME,
-                            new ArrayList<>(List.of(1, 2)), Sort.by("created"));
+                    .findByUsernameAndArtistFolderInAndArtistPresentTrue(TEST_USER_NAME,
+                            testFolders.subList(0, 2), Sort.by("created"));
 
             // then
             assertEquals(2, starredArtists.size());

@@ -145,7 +145,7 @@ public class LastFmService {
             // First select artists that are present.
             Collection<Artist> similarArtists = Artist.getSimilar(getCanonicalArtistName(artist.getName()), LAST_FM_KEY);
             for (Artist lastFmArtist : similarArtists) {
-                artistRepository.findByNameAndFolderIdIn(lastFmArtist.getName(), MusicFolder.toIdList(musicFolders))
+                artistRepository.findByNameAndFolderIn(lastFmArtist.getName(), musicFolders)
                     .ifPresent(entity -> result.add(entity));
                 if (result.size() == count) {
                     return result;

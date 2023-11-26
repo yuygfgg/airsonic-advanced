@@ -90,8 +90,7 @@ public class ArtistService {
             LOG.warn("getArtist: musicFolders is null or artistName is null");
             return null;
         }
-        List<Integer> folderIds = MusicFolder.toIdList(musicFolders);
-        return artistRepository.findByNameAndFolderIdIn(artistName, folderIds).orElse(null);
+        return artistRepository.findByNameAndFolderIn(artistName, musicFolders).orElse(null);
     }
 
     /**
@@ -105,9 +104,8 @@ public class ArtistService {
             LOG.warn("getAlphabeticalArtists: musicFolders is null");
             return Collections.emptyList();
         }
-        List<Integer> folderIds = MusicFolder.toIdList(musicFolders);
         Sort sort = Sort.by(Sort.Direction.ASC, "name");
-        return artistRepository.findByFolderIdInAndPresentTrue(folderIds, sort);
+        return artistRepository.findByFolderInAndPresentTrue(musicFolders, sort);
     }
 
     /**
@@ -122,8 +120,7 @@ public class ArtistService {
             LOG.warn("getStarredArtists: musicFolders or username is null");
             return Collections.emptyList();
         }
-        List<Integer> folderIds = MusicFolder.toIdList(musicFolders);
-        return starredArtistRepository.findByUsernameAndArtistFolderIdInAndArtistPresentTrue(username, folderIds, Sort.by(Sort.Direction.DESC, "created")).stream().map(StarredArtist::getArtist).toList();
+        return starredArtistRepository.findByUsernameAndArtistFolderInAndArtistPresentTrue(username, musicFolders, Sort.by(Sort.Direction.DESC, "created")).stream().map(StarredArtist::getArtist).toList();
     }
 
     /**

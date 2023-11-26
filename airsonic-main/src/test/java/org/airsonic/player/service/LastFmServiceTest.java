@@ -175,7 +175,7 @@ public class LastFmServiceTest {
         when(mockedArtist.getName()).thenReturn("testArtist");
         when(mockedLastFmArtist1.getName()).thenReturn(similarArtists.get(0));
         when(mockedLastFmArtist2.getName()).thenReturn(similarArtistsWithNotPresent.get(0));
-        when(artistRepository.findByNameAndFolderIdIn(startsWith("artist"), any())).thenReturn(Optional.of(new org.airsonic.player.domain.Artist()));
+        when(artistRepository.findByNameAndFolderIn(startsWith("artist"), any())).thenReturn(Optional.of(new org.airsonic.player.domain.Artist()));
         when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
 
         try (MockedStatic<Artist> mockedStaticArtist = org.mockito.Mockito.mockStatic(Artist.class)) {
@@ -227,7 +227,7 @@ public class LastFmServiceTest {
         when(mockedInfoArtist.getWikiSummary()).thenReturn("testSummary");
         org.airsonic.player.domain.Artist artist = new org.airsonic.player.domain.Artist();
         artist.setName("testArtist");
-        when(artistRepository.findByNameAndFolderIdIn(startsWith("artist"), any())).thenReturn(Optional.of(artist));
+        when(artistRepository.findByNameAndFolderIn(startsWith("artist"), any())).thenReturn(Optional.of(artist));
 
         try (MockedStatic<Artist> mockedStaticArtist = org.mockito.Mockito.mockStatic(Artist.class)) {
             mockedStaticArtist.when(() -> Artist.getSimilar(eq("testArtist"), anyString())).thenReturn(Arrays.asList(mockedLastFmArtist1, mockedLastFmArtist2));

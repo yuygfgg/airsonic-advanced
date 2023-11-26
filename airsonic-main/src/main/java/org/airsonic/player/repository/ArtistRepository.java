@@ -19,6 +19,7 @@
 package org.airsonic.player.repository;
 
 import org.airsonic.player.domain.Artist;
+import org.airsonic.player.domain.MusicFolder;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -36,9 +37,9 @@ public interface ArtistRepository extends JpaRepository<Artist, Integer> {
 
     public Optional<Artist> findByName(String name);
 
-    public Optional<Artist> findByNameAndFolderIdIn(String name, List<Integer> folderIds);
+    public Optional<Artist> findByNameAndFolderIn(String name, Iterable<MusicFolder> folders);
 
-    public List<Artist> findByFolderIdInAndPresentTrue(List<Integer> folderIds, Sort sort);
+    public List<Artist> findByFolderInAndPresentTrue(Iterable<MusicFolder> folders, Sort sort);
 
     public List<Artist> findByPresentFalse();
 

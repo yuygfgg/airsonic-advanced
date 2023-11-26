@@ -490,7 +490,7 @@ public class MediaScannerService {
         }
 
         if (firstEncounter.get()) {
-            artist.setFolderId(musicFolder.getId());
+            artist.setFolder(musicFolder);
             artistRepository.saveAndFlush(artist);
             indexManager.index(artist, musicFolder);
         }

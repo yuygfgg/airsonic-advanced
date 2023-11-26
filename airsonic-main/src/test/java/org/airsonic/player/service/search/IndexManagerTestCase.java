@@ -190,7 +190,7 @@ public class IndexManagerTestCase {
 
         List<Artist> artists = artistRepository.findAll();
 
-        artistRepository.findByFolderIdInAndPresentTrue(MusicFolder.toIdList(musicFolders), Sort.by("id")).forEach(artist -> {
+        artistRepository.findByFolderInAndPresentTrue(musicFolders, Sort.by("id")).forEach(artist -> {
             artist.setPresent(false);
             artistRepository.saveAndFlush(artist);
         });

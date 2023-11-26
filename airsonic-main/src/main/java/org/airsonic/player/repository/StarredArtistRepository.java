@@ -18,6 +18,7 @@
  */
 package org.airsonic.player.repository;
 
+import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.entity.StarredArtist;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,7 +35,7 @@ public interface StarredArtistRepository extends JpaRepository<StarredArtist, In
 
     public List<StarredArtist> findByUsername(String username);
 
-    public List<StarredArtist> findByUsernameAndArtistFolderIdInAndArtistPresentTrue(String username, List<Integer> folderIds, Sort sort);
+    public List<StarredArtist> findByUsernameAndArtistFolderInAndArtistPresentTrue(String username, Iterable<MusicFolder> folders, Sort sort);
 
     @Transactional
     public void deleteByArtistIdAndUsername(Integer artistId, String username);

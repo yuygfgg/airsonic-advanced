@@ -22,14 +22,7 @@ package org.airsonic.player.domain;
 
 import org.airsonic.player.repository.AtomicIntegerConverter;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,8 +48,9 @@ public class Artist {
     private Instant lastScanned;
     @Column(name = "present")
     private boolean present = true;
-    @Column(name = "folder_id", nullable = true)
-    private Integer folderId;
+    @ManyToOne
+    @JoinColumn(name = "folder_id", referencedColumnName = "id")
+    private MusicFolder folder;
 
     public Artist() {
     }
@@ -65,13 +59,13 @@ public class Artist {
         this.name = name;
     }
 
-    public Artist(int id, String name, int albumCount, Instant lastScanned, boolean present, Integer folderId) {
+    public Artist(int id, String name, int albumCount, Instant lastScanned, boolean present, MusicFolder folder) {
         this.id = id;
         this.name = name;
         this.albumCount.set(albumCount);
         this.lastScanned = lastScanned;
         this.present = present;
-        this.folderId = folderId;
+        this.folder = folder;
     }
 
     public Integer getId() {
@@ -114,12 +108,12 @@ public class Artist {
         this.present = present;
     }
 
-    public void setFolderId(Integer folderId) {
-        this.folderId = folderId;
+    public void setFolder(MusicFolder folder) {
+        this.folder = folder;
     }
 
-    public Integer getFolderId() {
-        return folderId;
+    public MusicFolder getFolder() {
+        return folder;
     }
 
     // placeholder for persistence later

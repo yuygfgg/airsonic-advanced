@@ -390,8 +390,8 @@ public class MediaFileService {
             return Collections.emptyList();
         }
         return starredMediaFileRepository
-                .findByUsernameAndMediaFileMediaTypeInAndMediaFileFolderIdInAndMediaFilePresentTrue(username,
-                        MediaType.audioTypes(), MusicFolder.toIdList(musicFolders),
+                .findByUsernameAndMediaFileMediaTypeInAndMediaFileFolderInAndMediaFilePresentTrue(username,
+                        MediaType.audioTypes(), musicFolders,
                         new OffsetBasedPageRequest(offset, count, Sort.by("created").descending().and(Sort.by("id"))))
                 .stream().map(StarredMediaFile::getMediaFile).collect(Collectors.toList());
     }
@@ -432,8 +432,8 @@ public class MediaFileService {
             return Collections.emptyList();
         }
         return starredMediaFileRepository
-                .findByUsernameAndMediaFileMediaTypeAndMediaFileFolderIdInAndMediaFilePresentTrue(username,
-                        MediaType.DIRECTORY, MusicFolder.toIdList(musicFolders),
+                .findByUsernameAndMediaFileMediaTypeAndMediaFileFolderInAndMediaFilePresentTrue(username,
+                        MediaType.DIRECTORY, musicFolders,
                         new OffsetBasedPageRequest(offset, count, Sort.by("created").descending().and(Sort.by("id"))))
                 .stream().map(StarredMediaFile::getMediaFile).collect(Collectors.toList());
     }
@@ -546,8 +546,8 @@ public class MediaFileService {
             return Collections.emptyList();
         }
         return starredMediaFileRepository
-                .findByUsernameAndMediaFileMediaTypeAndMediaFileFolderIdInAndMediaFilePresentTrue(username,
-                        MediaType.ALBUM, MusicFolder.toIdList(musicFolders),
+                .findByUsernameAndMediaFileMediaTypeAndMediaFileFolderInAndMediaFilePresentTrue(username,
+                        MediaType.ALBUM, musicFolders,
                         new OffsetBasedPageRequest(offset, count, Sort.by("created").descending().and(Sort.by("id"))))
                 .stream().map(StarredMediaFile::getMediaFile).collect(Collectors.toList());
     }
@@ -1372,7 +1372,7 @@ public class MediaFileService {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return 0;
         }
-        return starredMediaFileRepository.countByUsernameAndMediaFileMediaTypeAndMediaFileFolderIdInAndMediaFilePresentTrue(username, MediaType.ALBUM, MusicFolder.toIdList(musicFolders));
+        return starredMediaFileRepository.countByUsernameAndMediaFileMediaTypeAndMediaFileFolderInAndMediaFilePresentTrue(username, MediaType.ALBUM, musicFolders);
     }
 
     /**

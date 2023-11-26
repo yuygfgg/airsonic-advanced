@@ -22,6 +22,7 @@ package org.airsonic.player.repository;
 
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
+import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.entity.StarredMediaFile;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -33,18 +34,18 @@ import java.util.Optional;
 @Repository
 public interface StarredMediaFileRepository extends JpaRepository<StarredMediaFile, Integer> {
 
-    public int countByUsernameAndMediaFileMediaTypeAndMediaFileFolderIdInAndMediaFilePresentTrue(
-            String username, MediaType mediaType, List<Integer> folderIds);
+    public int countByUsernameAndMediaFileMediaTypeAndMediaFileFolderInAndMediaFilePresentTrue(
+            String username, MediaType mediaType, Iterable<MusicFolder> folders);
 
     public Optional<StarredMediaFile> findByUsernameAndMediaFile(String username, MediaFile mediaFile);
 
     public List<StarredMediaFile> findByUsername(String username);
 
-    public List<StarredMediaFile> findByUsernameAndMediaFileMediaTypeAndMediaFileFolderIdInAndMediaFilePresentTrue(
-            String username, MediaType mediaType, List<Integer> folderIds, Pageable page);
+    public List<StarredMediaFile> findByUsernameAndMediaFileMediaTypeAndMediaFileFolderInAndMediaFilePresentTrue(
+            String username, MediaType mediaType, Iterable<MusicFolder> folders, Pageable page);
 
-    public List<StarredMediaFile> findByUsernameAndMediaFileMediaTypeInAndMediaFileFolderIdInAndMediaFilePresentTrue(
-            String username, Iterable<MediaType> mediaType, List<Integer> folderIds, Pageable page);
+    public List<StarredMediaFile> findByUsernameAndMediaFileMediaTypeInAndMediaFileFolderInAndMediaFilePresentTrue(
+            String username, Iterable<MediaType> mediaType, Iterable<MusicFolder> folders, Pageable page);
 
     public void deleteAllByMediaFileIdInAndUsername(List<Integer> mediaFileIds, String username);
 

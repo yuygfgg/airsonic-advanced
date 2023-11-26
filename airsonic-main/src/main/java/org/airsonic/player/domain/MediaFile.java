@@ -20,8 +20,8 @@
  */
 package org.airsonic.player.domain;
 
-import org.apache.commons.io.FilenameUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.io.FilenameUtils;
 
 import javax.persistence.*;
 

@@ -35,7 +35,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Provides services for user ratings.
@@ -62,21 +66,20 @@ public class RatingService {
      * @param musicFolders Only return albums in these folders.
      * @return The highest rated albums.
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public List<MediaFile> getHighestRatedAlbums(int offset, int count, List<MusicFolder> musicFolders) {
 
         if (count < 1 || musicFolders.isEmpty()) {
             return Collections.emptyList();
         }
-        List<MediaFile> albums = mediaFileRepository.findByFolderInAndMediaTypeAndPresentTrue(musicFolders, MediaFile.MediaType.ALBUM);
-        List<MediaFile> sortedAlbums = albums.parallelStream()
-            .filter(file -> securityService.isReadAllowed(file, true))
-            .map(file -> {
-                Double rating = getAverageRating(file);
-                file.setAverageRating(rating);
+        Map<Integer, Double> averagePerMediaFileId = userRatingRepository.findAll().stream().collect(groupingBy(UserRating::getMediaFileId, Collectors.averagingDouble(UserRating::getRating)));
+
+        List<MediaFile> sortedAlbums = averagePerMediaFileId.entrySet().stream().map(entry -> {
+            return mediaFileRepository.findByIdAndFolderInAndMediaTypeAndPresentTrue(entry.getKey(), musicFolders, MediaFile.MediaType.ALBUM).map(file -> {
+                file.setAverageRating(entry.getValue());
                 return file;
-            })
-            .filter(file -> file.getAverageRating() != null)
+            }).orElse(null);
+        }).filter(file -> Objects.nonNull(file) && securityService.isReadAllowed(file, true))
             .sorted(Comparator.comparing(MediaFile::getAverageRating).reversed())
             .collect(Collectors.toList());
 

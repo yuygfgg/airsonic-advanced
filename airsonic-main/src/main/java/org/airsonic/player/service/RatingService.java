@@ -62,13 +62,14 @@ public class RatingService {
      * @param musicFolders Only return albums in these folders.
      * @return The highest rated albums.
      */
+    @Transactional
     public List<MediaFile> getHighestRatedAlbums(int offset, int count, List<MusicFolder> musicFolders) {
 
         if (count < 1 || musicFolders.isEmpty()) {
             return Collections.emptyList();
         }
-        List<MediaFile> albums = mediaFileRepository.findByFolderInAndMediaTypeAndPresentTrue(musicFolders, MediaFile.MediaType.ALBUM, PageRequest.of(0, Integer.MAX_VALUE));
-        List<MediaFile> soredAlbums = albums.parallelStream()
+        List<MediaFile> albums = mediaFileRepository.findByFolderInAndMediaTypeAndPresentTrue(musicFolders, MediaFile.MediaType.ALBUM);
+        List<MediaFile> sortedAlbums = albums.parallelStream()
             .filter(file -> securityService.isReadAllowed(file, true))
             .map(file -> {
                 Double rating = getAverageRating(file);
@@ -79,10 +80,10 @@ public class RatingService {
             .sorted(Comparator.comparing(MediaFile::getAverageRating).reversed())
             .collect(Collectors.toList());
 
-        if (offset >= soredAlbums.size()) {
+        if (offset >= sortedAlbums.size()) {
             return Collections.emptyList();
         }
-        return soredAlbums.subList(offset, Math.min(offset + count, soredAlbums.size()));
+        return sortedAlbums.subList(offset, Math.min(offset + count, sortedAlbums.size()));
     }
 
     /**

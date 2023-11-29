@@ -92,7 +92,7 @@ public class MediaFileServiceTest {
         assertTrue(actual.isEmpty());
         // verify updateMedia does not called
         verify(mediaFileRepository).findByFolderAndPath(any(), eq("valid/airsonic-test.wav"));
-        verify(mediaFileRepository).save(base);
+        verify(mediaFileRepository).saveAndFlush(base);
         verify(coverArtService).persistIfNeeded(eq(base));
     }
 }

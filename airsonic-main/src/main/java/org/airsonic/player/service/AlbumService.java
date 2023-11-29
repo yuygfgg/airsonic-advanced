@@ -319,4 +319,22 @@ public class AlbumService {
         return albumRepository.countByFolderInAndPresentTrue(musicFolders);
     }
 
+    /**
+     * mark all albums as non present that were last scanned before lastScanned
+     *
+     * @param lastScanned last scanned date
+     */
+    public void markNonPresent(Instant lastScanned) {
+        albumRepository.markNonPresent(lastScanned);
+    }
+
+    /**
+     * Save album to database
+     *
+     * @param album album to save
+     */
+    public Album save(Album album) {
+        return albumRepository.save(album);
+    }
+
 }

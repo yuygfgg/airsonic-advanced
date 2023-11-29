@@ -168,4 +168,23 @@ public class ArtistService {
         artistRepository.deleteAllByPresentFalse();
     }
 
+    /**
+     * Mark artists that are not present
+     *
+     * @param lastScanned last scanned date
+     */
+    public void markNonPresent(Instant lastScanned) {
+        artistRepository.markNonPresent(lastScanned);
+    }
+
+    /**
+     * Save artist
+     *
+     * @param artist artist to save
+     * @return saved artist
+     */
+    public Artist save(Artist artist) {
+        return artistRepository.save(artist);
+    }
+
 }

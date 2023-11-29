@@ -120,6 +120,7 @@ public class MediaScannerServiceTestCase {
     @AfterEach
     public void cleanup() {
         testFolders.forEach(f -> musicFolderRepository.delete(f));
+        testFolders.clear();
     }
 
     /**

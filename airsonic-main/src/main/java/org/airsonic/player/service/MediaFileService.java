@@ -1298,11 +1298,11 @@ public class MediaFileService {
         if (mediaFile == null) {
             throw new IllegalArgumentException("mediaFile must not be null");
         } else if (mediaFile.getId() != null && mediaFileRepository.existsById(mediaFile.getId())) {
-            mediaFileRepository.save(mediaFile);
+            mediaFileRepository.saveAndFlush(mediaFile);
         } else {
             mediaFileRepository.findByPathAndFolderAndStartPosition(mediaFile.getPath(), mediaFile.getFolder(), mediaFile.getStartPosition()).ifPresentOrElse(m -> {
                 mediaFile.setId(m.getId());
-                mediaFileRepository.save(mediaFile);
+                mediaFileRepository.saveAndFlush(mediaFile);
             }, () -> {
                     MusicFolder folder = mediaFile.getFolder();
                     if (folder != null) {
@@ -1312,7 +1312,7 @@ public class MediaFileService {
                             mediaFile.setPlayCount(musicFileInfo.getPlayCount());
                         });
                     }
-                    mediaFileRepository.save(mediaFile);
+                    mediaFileRepository.saveAndFlush(mediaFile);
                 });
         }
 

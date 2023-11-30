@@ -27,7 +27,7 @@ import org.airsonic.player.domain.ParamSearchResult;
 import org.airsonic.player.domain.SearchResult;
 import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.ArtistRepository;
-import org.airsonic.player.service.MediaFileService;
+import org.airsonic.player.repository.MediaFileRepository;
 import org.apache.lucene.document.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -37,8 +37,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-
-import static org.springframework.util.ObjectUtils.isEmpty;
 
 /**
  * Termination used by SearchService.
@@ -62,14 +60,9 @@ public class SearchServiceUtilities {
     @Autowired
     private AlbumRepository albumRepository;
 
-    /*
-     * Search by id only.
-     * Although there is no influence at present,
-     * mediaFileService has a caching mechanism.
-     * Service is used instead of Dao until you are sure you need to use mediaFileDao.
-     */
+    /* Search by id only. */
     @Autowired
-    private MediaFileService mediaFileService;
+    private MediaFileRepository mediaFileRepository;
 
     public final Function<Long, Integer> round = (i) -> {
         // return
@@ -83,10 +76,7 @@ public class SearchServiceUtilities {
 
     public final BiConsumer<List<MediaFile>, Integer> addMediaFileIfAnyMatch = (dist, id) -> {
         if (!dist.stream().anyMatch(m -> id.equals(m.getId()))) {
-            MediaFile mediaFile = mediaFileService.getMediaFile(id);
-            if (!isEmpty(mediaFile)) {
-                dist.add(mediaFile);
-            }
+            mediaFileRepository.findById(id).ifPresent(file -> dist.add(file));
         }
     };
 
@@ -128,9 +118,10 @@ public class SearchServiceUtilities {
 
     public final boolean addMediaFileIgnoreNull(Collection<MediaFile> collection, IndexType indexType, int subjectId) {
         if (indexType == IndexType.ALBUM || indexType == IndexType.SONG) {
-            MediaFile mediaFile = mediaFileService.getMediaFile(subjectId);
-            if (mediaFile != null) {
-                collection.add(mediaFile);
+            if (mediaFileRepository.findById(subjectId).map(m -> {
+                collection.add(m);
+                return m;
+            }).isPresent()) {
                 return true;
             }
         }
@@ -148,10 +139,7 @@ public class SearchServiceUtilities {
 
     public final <T> void addIgnoreNull(ParamSearchResult<T> dist, IndexType indexType, int subjectId, Class<T> subjectClass) {
         if (indexType == IndexType.SONG) {
-            MediaFile mediaFile = mediaFileService.getMediaFile(subjectId);
-            if (mediaFile != null) {
-                dist.getItems().add(subjectClass.cast(mediaFile));
-            }
+            mediaFileRepository.findById(subjectId).ifPresent(file -> dist.getItems().add(subjectClass.cast(file)));
         } else if (indexType == IndexType.ARTIST_ID3) {
             artistRepository.findById(subjectId).ifPresent(artist -> dist.getItems().add(subjectClass.cast(artist)));
         } else if (indexType == IndexType.ALBUM_ID3) {

@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -25,6 +26,7 @@ import org.airsonic.player.domain.PlayStatus;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.TransferStatus;
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,7 +35,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,7 +63,7 @@ public class StatusServiceTestCase {
     private Player player2;
 
     @Mock
-    private SimpMessagingTemplate messagingTemplate;
+    private AsyncWebSocketClient asyncWebSocketClient;
     @Mock
     private MediaFileService mediaFileService;
     @Mock
@@ -98,7 +99,7 @@ public class StatusServiceTestCase {
         assertTrue(service.getInactivePlays().isEmpty());
         // won't start until file starts playing
         assertTrue(service.getActivePlays().isEmpty());
-        verifyNoInteractions(messagingTemplate);
+        verifyNoInteractions(asyncWebSocketClient);
 
         service.removeStreamStatus(status);
         assertFalse(status.isActive());
@@ -107,7 +108,7 @@ public class StatusServiceTestCase {
         assertTrue(service.getStreamStatusesForPlayer(player2).isEmpty());
         assertFalse(service.getInactivePlays().isEmpty());
         assertTrue(service.getActivePlays().isEmpty());
-        verify(messagingTemplate, timeout(300)).convertAndSend(eq("/topic/nowPlaying/recent/add"), any(NowPlayingInfo.class));
+        verify(asyncWebSocketClient, timeout(300)).send(eq("/topic/nowPlaying/recent/add"), any(NowPlayingInfo.class));
     }
 
     @Test
@@ -117,17 +118,17 @@ public class StatusServiceTestCase {
         service.addActiveLocalPlay(status);
         assertTrue(service.getInactivePlays().isEmpty());
         assertFalse(service.getActivePlays().isEmpty());
-        verify(messagingTemplate, timeout(300)).convertAndSend(eq("/topic/nowPlaying/current/add"), any(NowPlayingInfo.class));
+        verify(asyncWebSocketClient, timeout(300)).send(eq("/topic/nowPlaying/current/add"), any(NowPlayingInfo.class));
 
         service.removeActiveLocalPlay(status);
         assertTrue(service.getInactivePlays().isEmpty());
         assertTrue(service.getActivePlays().isEmpty());
-        verify(messagingTemplate, timeout(300)).convertAndSend(eq("/topic/nowPlaying/current/remove"), any(NowPlayingInfo.class));
+        verify(asyncWebSocketClient, timeout(300)).send(eq("/topic/nowPlaying/current/remove"), any(NowPlayingInfo.class));
 
         service.addRemotePlay(status);
         assertFalse(service.getInactivePlays().isEmpty());
         assertTrue(service.getActivePlays().isEmpty());
-        verify(messagingTemplate, timeout(300)).convertAndSend(eq("/topic/nowPlaying/recent/add"), any(NowPlayingInfo.class));
+        verify(asyncWebSocketClient, timeout(300)).send(eq("/topic/nowPlaying/recent/add"), any(NowPlayingInfo.class));
     }
 
     @Test
@@ -163,7 +164,7 @@ public class StatusServiceTestCase {
         service.removeStreamStatus(tStatus);
 
         // Verify
-        verifyNoInteractions(messagingTemplate);
+        verifyNoInteractions(asyncWebSocketClient);
     }
 
     @Test

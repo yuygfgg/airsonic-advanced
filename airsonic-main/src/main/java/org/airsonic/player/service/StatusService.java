@@ -27,10 +27,12 @@ import org.airsonic.player.domain.PlayStatus;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.TransferStatus;
 import org.airsonic.player.domain.UserSettings;
+import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.airsonic.player.util.StringUtil;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -42,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,25 +61,26 @@ public class StatusService {
 
     private final MediaFileService mediaFileService;
     private final PersonalSettingsService personalSettingsService;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final AsyncWebSocketClient asyncWebSocketClient;
     private final TaskSchedulingService taskService;
-
-    public void cleanup() {
-        taskService.scheduleFixedDelayTask("remote-playstatus-cleanup", () -> cleanupRemotePlays(), Instant.now().plus(3, ChronoUnit.HOURS), Duration.ofHours(3), true);
-    }
 
     public StatusService(
         MediaFileService mediaFileService,
-        SimpMessagingTemplate messagingTemplate,
+        AsyncWebSocketClient asyncWebSocketClient,
         TaskSchedulingService taskService,
         PersonalSettingsService personalSettingsService
     ) {
         this.mediaFileService = mediaFileService;
-        this.messagingTemplate = messagingTemplate;
         this.taskService = taskService;
+        this.asyncWebSocketClient = asyncWebSocketClient;
         this.personalSettingsService = personalSettingsService;
-        this.cleanup();
     }
+
+    @EventListener
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        taskService.scheduleFixedDelayTask("remote-playstatus-cleanup", () -> cleanupRemotePlays(), Instant.now().plus(3, ChronoUnit.HOURS), Duration.ofHours(3), true);
+    }
+
 
     private final List<TransferStatus> streamStatuses = Collections.synchronizedList(new ArrayList<>());
     private final List<TransferStatus> downloadStatuses = Collections.synchronizedList(new ArrayList<>());
@@ -208,13 +210,10 @@ public class StatusService {
     }
 
     private void broadcast(PlayStatus status, String location) {
-        CompletableFuture.runAsync(() -> {
-            NowPlayingInfo info = createForBroadcast(status);
-
-            if (info != null) {
-                messagingTemplate.convertAndSend("/topic/nowPlaying/" + location, info);
-            }
-        });
+        NowPlayingInfo info = createForBroadcast(status);
+        if (info != null) {
+            asyncWebSocketClient.send("/topic/nowPlaying/" + location, info);
+        }
     }
 
     public List<NowPlayingInfo> getActivePlays() {

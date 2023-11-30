@@ -382,7 +382,11 @@ public class MediaFileService {
         if (CollectionUtils.isEmpty(musicFolders) || StringUtils.isBlank(artist) || StringUtils.isBlank(title)) {
             return null;
         }
-        return mediaFileRepository.findByFolderInAndMediaTypeAndArtistAndTitleAndPresentTrue(musicFolders, MediaType.MUSIC, artist, title).orElse(null);
+        List<MediaFile> results = mediaFileRepository.findByFolderInAndMediaTypeAndArtistAndTitleAndPresentTrue(musicFolders, MediaType.MUSIC, artist, title);
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.get(0);
     }
 
     /**

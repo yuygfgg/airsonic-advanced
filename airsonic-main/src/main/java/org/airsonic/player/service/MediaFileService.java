@@ -64,6 +64,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
@@ -1298,6 +1299,7 @@ public class MediaFileService {
     @Caching(evict = {
         @CacheEvict(cacheNames = "mediaFilePathCache", key = "#mediaFile.path.concat('-').concat(#mediaFile.folder.id).concat('-').concat(#mediaFile.startPosition == null ? '' : #mediaFile.startPosition.toString())"),
         @CacheEvict(cacheNames = "mediaFileIdCache", key = "#mediaFile.id", condition = "#mediaFile.id != null") })
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void updateMediaFile(MediaFile mediaFile) {
         if (mediaFile == null) {
             throw new IllegalArgumentException("mediaFile must not be null");

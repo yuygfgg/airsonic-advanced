@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -27,7 +28,7 @@ import org.airsonic.player.domain.ParamSearchResult;
 import org.airsonic.player.domain.SearchResult;
 import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.ArtistRepository;
-import org.airsonic.player.repository.MediaFileRepository;
+import org.airsonic.player.service.MediaFileService;
 import org.apache.lucene.document.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -62,7 +63,7 @@ public class SearchServiceUtilities {
 
     /* Search by id only. */
     @Autowired
-    private MediaFileRepository mediaFileRepository;
+    private MediaFileService mediaFileService;
 
     public final Function<Long, Integer> round = (i) -> {
         // return
@@ -76,7 +77,10 @@ public class SearchServiceUtilities {
 
     public final BiConsumer<List<MediaFile>, Integer> addMediaFileIfAnyMatch = (dist, id) -> {
         if (!dist.stream().anyMatch(m -> id.equals(m.getId()))) {
-            mediaFileRepository.findById(id).ifPresent(file -> dist.add(file));
+            MediaFile mediaFile = mediaFileService.getMediaFile(id);
+            if (mediaFile != null) {
+                dist.add(mediaFile);
+            }
         }
     };
 
@@ -118,10 +122,9 @@ public class SearchServiceUtilities {
 
     public final boolean addMediaFileIgnoreNull(Collection<MediaFile> collection, IndexType indexType, int subjectId) {
         if (indexType == IndexType.ALBUM || indexType == IndexType.SONG) {
-            if (mediaFileRepository.findById(subjectId).map(m -> {
-                collection.add(m);
-                return m;
-            }).isPresent()) {
+            MediaFile mediaFile = mediaFileService.getMediaFile(subjectId);
+            if (mediaFile != null) {
+                collection.add(mediaFile);
                 return true;
             }
         }
@@ -139,7 +142,10 @@ public class SearchServiceUtilities {
 
     public final <T> void addIgnoreNull(ParamSearchResult<T> dist, IndexType indexType, int subjectId, Class<T> subjectClass) {
         if (indexType == IndexType.SONG) {
-            mediaFileRepository.findById(subjectId).ifPresent(file -> dist.getItems().add(subjectClass.cast(file)));
+            MediaFile mediaFile = mediaFileService.getMediaFile(subjectId);
+            if (mediaFile != null) {
+                dist.getItems().add(subjectClass.cast(mediaFile));
+            }
         } else if (indexType == IndexType.ARTIST_ID3) {
             artistRepository.findById(subjectId).ifPresent(artist -> dist.getItems().add(subjectClass.cast(artist)));
         } else if (indexType == IndexType.ALBUM_ID3) {

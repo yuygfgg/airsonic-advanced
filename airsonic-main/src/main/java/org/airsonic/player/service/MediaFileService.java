@@ -215,12 +215,12 @@ public class MediaFileService {
     }
 
     private boolean needsUpdate(MediaFile mediaFile, boolean minimizeDiskAccess) {
-        return minimizeDiskAccess
+        return !minimizeDiskAccess
                 && !mediaFile.isIndexedTrack() // ignore virtual track
                 && (mediaFile.getVersion() < MediaFile.VERSION
                     || settingsService.getFullScan()
                     || mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullPath()).truncatedTo(ChronoUnit.MICROS)) < 0
-                    || (!mediaFile.hasIndex() || mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath()).truncatedTo(ChronoUnit.MICROS)) < 0)
+                    || (mediaFile.hasIndex() && mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath()).truncatedTo(ChronoUnit.MICROS)) < 0)
                 );
     }
 

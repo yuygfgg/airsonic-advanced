@@ -220,7 +220,7 @@ public class MediaFileService {
                 && (mediaFile.getVersion() < MediaFile.VERSION
                     || settingsService.getFullScan()
                     || mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullPath()).truncatedTo(ChronoUnit.MICROS)) < 0
-                    || (mediaFile.hasIndex() && mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath()).truncatedTo(ChronoUnit.MICROS)) < 0)
+                    || (!mediaFile.hasIndex() || mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath()).truncatedTo(ChronoUnit.MICROS)) < 0)
                 );
     }
 

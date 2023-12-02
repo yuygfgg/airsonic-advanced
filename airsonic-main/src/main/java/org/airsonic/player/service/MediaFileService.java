@@ -83,6 +83,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -1452,24 +1453,38 @@ public class MediaFileService {
      */
     public boolean markPresent(Map<Integer, Set<String>> paths, Instant lastScanned) {
 
+        final int BATCH_SIZE = 30000;
+
         if (CollectionUtils.isEmpty(paths)) {
             return true;
         }
         try {
-            paths.entrySet().parallelStream().forEach(e -> {
+            paths.entrySet().parallelStream().map(e -> {
                 MusicFolder folder = mediaFolderService.getMusicFolderById(e.getKey());
                 if (folder == null) {
-                    return;
+                    return true;
                 }
-                mediaFileRepository.findByFolderAndPathIn(folder, e.getValue())
-                    .forEach(
-                        m -> {
-                            m.setPresent(true);
-                            m.setLastScanned(lastScanned);
-                            mediaFileRepository.save(m);
-                        }
-                    );
-            });
+                Set<String> pathsInFolder = e.getValue();
+                int batches = (pathsInFolder.size() - 1) / BATCH_SIZE;
+                List<String> pathsInFolderList = new ArrayList<>(pathsInFolder);
+                Integer savedCount = IntStream.rangeClosed(0, batches).parallel().map(b -> {
+                    try {
+                        List<String> subList = pathsInFolderList.subList(b * BATCH_SIZE, Math.min((b + 1) * BATCH_SIZE, pathsInFolderList.size()));
+                        List<MediaFile> files = mediaFileRepository.findByFolderAndPathIn(folder, subList);
+                        files.parallelStream().forEach(m -> {
+                                m.setPresent(true);
+                                m.setLastScanned(lastScanned);
+                            }
+                        );
+                        mediaFileRepository.saveAll(files);
+                        return subList.size();
+                    } catch (Exception ex) {
+                        LOG.warn("Error marking media files present", ex);
+                        return 0;
+                    }
+                }).sum();
+                return savedCount == pathsInFolder.size();
+            }).reduce(true, (a, b) -> a && b);
             return true;
         } catch (Exception e) {
             LOG.warn("Error marking media files present", e);

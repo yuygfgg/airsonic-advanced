@@ -258,7 +258,7 @@ public class MediaFileService {
                     }
                 }
             } else {
-                mediaFile = updateMediaFileByFile(mediaFile);
+                mediaFile = updateMediaFileByFile(mediaFile, true);
                 updateMediaFile(mediaFile);
             }
         }
@@ -866,22 +866,40 @@ public class MediaFileService {
         return (name.startsWith(".") && !name.startsWith("..")) || name.startsWith("@eaDir") || "Thumbs.db".equals(name);
     }
 
+    /**
+     * Create media file from file system. Do not set non existing file.
+     *
+     * @param relativePath relative path
+     * @param folder      music folder
+     * @return media file reflected from file system
+     */
     private MediaFile createMediaFileByFile(Path relativePath, MusicFolder folder) {
         MediaFile mediaFile = new MediaFile();
         mediaFile.setPath(relativePath.toString());
         mediaFile.setFolder(folder);
-        MediaFile result = updateMediaFileByFile(mediaFile);
+        MediaFile result = updateMediaFileByFile(mediaFile, true);
         return result.isPresent() ? result : null;
+    }
+
+    /**
+     * update media file by file
+     *
+     * @param mediaFile media file to reflect. Must not be null. path must be set.
+     * @return media file reflected from file system
+     */
+    public MediaFile updateMediaFileByFile(MediaFile mediaFile) {
+        return updateMediaFileByFile(mediaFile, false);
     }
 
     /**
      * return media file reflected from file system
      *
      * @param mediaFile   media file to reflect. Must not be null. path must be set.
+     * @param isCheckedExistence whether to check file existence
      * @param folder     music folder
      * @return media file reflected from file system
      */
-    private MediaFile updateMediaFileByFile(MediaFile mediaFile) {
+    private MediaFile updateMediaFileByFile(MediaFile mediaFile, boolean isCheckedExistence) {
 
         if (mediaFile == null || mediaFile.getFolder() == null || mediaFile.getPath() == null) {
             throw new IllegalArgumentException("mediaFile, folder and mediaFile.path must not be null");
@@ -889,7 +907,7 @@ public class MediaFileService {
 
         Path relativePath = mediaFile.getRelativePath();
         Path file = mediaFile.getFullPath();
-        if (!Files.exists(file)) {
+        if (!isCheckedExistence && !Files.exists(file)) {
             // file not found
             mediaFile.setPresent(false);
             mediaFile.setChildrenLastUpdated(Instant.ofEpochMilli(1));

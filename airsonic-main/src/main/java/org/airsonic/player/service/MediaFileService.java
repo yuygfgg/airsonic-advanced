@@ -766,7 +766,7 @@ public class MediaFileService {
             List<MediaFile> result = new ArrayList<>();
 
             if (isEnableCueIndexing) {
-                List<MediaFile> indexedTracks = cueSheets.entrySet().stream().parallel().flatMap(e -> {
+                List<MediaFile> indexedTracks = cueSheets.entrySet().parallelStream().flatMap(e -> {
                     String indexPath = e.getKey();
                     CueSheet cueSheet = e.getValue();
 

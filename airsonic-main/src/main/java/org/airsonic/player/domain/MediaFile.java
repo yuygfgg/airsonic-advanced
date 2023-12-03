@@ -14,22 +14,16 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.io.FilenameUtils;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -57,8 +51,9 @@ public class MediaFile {
     @Column(name = "path", nullable = false)
     private String path;
 
-    @Column(name = "folder_id", nullable = false)
-    private Integer folderId;
+    @ManyToOne
+    @JoinColumn(name = "folder_id", referencedColumnName = "id")
+    private MusicFolder folder;
 
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -146,7 +141,7 @@ public class MediaFile {
     private boolean present;
 
     @Column(name = "version", nullable = false)
-    private int version;
+    private int version = VERSION;
 
     @Column(name = "mb_release_id", nullable = true)
     private String musicBrainzReleaseId;
@@ -154,45 +149,8 @@ public class MediaFile {
     @Column(name = "mb_recording_id", nullable = true)
     private String musicBrainzRecordingId;
 
-    public MediaFile(Integer id, String path, Integer folderId, MediaType mediaType, Double startPosition, String format, String title,
-                     String albumName, String artist, String albumArtist, Integer discNumber, Integer trackNumber, Integer year, String genre, Integer bitRate,
-                     boolean variableBitRate, Double duration, Long fileSize, Integer width, Integer height, String parentPath, String indexPath, int playCount,
-                     Instant lastPlayed, String comment, Instant created, Instant changed, Instant lastScanned, Instant childrenLastUpdated, boolean present,
-                     int version, String musicBrainzReleaseId, String musicBrainzRecordingId) {
-        this.id = id;
-        this.path = path;
-        this.folderId = folderId;
-        this.mediaType = mediaType;
-        this.startPosition = startPosition;
-        this.format = format;
-        this.title = title;
-        this.albumName = albumName;
-        this.artist = artist;
-        this.albumArtist = albumArtist;
-        this.discNumber = discNumber;
-        this.trackNumber = trackNumber;
-        this.year = year;
-        this.genre = genre;
-        this.bitRate = bitRate;
-        this.variableBitRate = variableBitRate;
-        this.duration = duration;
-        this.fileSize = fileSize;
-        this.width = width;
-        this.height = height;
-        this.parentPath = parentPath;
-        this.indexPath = indexPath;
-        this.playCount = playCount;
-        this.lastPlayed = lastPlayed;
-        this.comment = comment;
-        this.created = created;
-        this.changed = changed;
-        this.lastScanned = lastScanned;
-        this.childrenLastUpdated = childrenLastUpdated;
-        this.present = present;
-        this.version = version;
-        this.musicBrainzReleaseId = musicBrainzReleaseId;
-        this.musicBrainzRecordingId = musicBrainzRecordingId;
-    }
+    @Transient
+    private Double averageRating = 0.0;
 
     public MediaFile() {
     }
@@ -213,20 +171,21 @@ public class MediaFile {
         this.path = path;
     }
 
-    public Integer getFolderId() {
-        return folderId;
+    public MusicFolder getFolder() {
+        return folder;
     }
 
-    public void setFolderId(Integer folderId) {
-        this.folderId = folderId;
+    public void setFolder(MusicFolder folder) {
+        this.folder = folder;
     }
 
     public Path getRelativePath() {
         return Paths.get(path);
     }
 
-    public Path getFullPath(Path relativeMediaFolderPath) {
-        return relativeMediaFolderPath.resolve(path);
+    @JsonIgnore
+    public Path getFullPath() {
+        return folder.getPath().resolve(path);
     }
 
     public String getIndexPath() {
@@ -241,8 +200,9 @@ public class MediaFile {
         return indexPath == null ? null : Paths.get(indexPath);
     }
 
-    public Path getFullIndexPath(Path folderPath) {
-        return folderPath.resolve(indexPath);
+    @JsonIgnore
+    public Path getFullIndexPath() {
+        return folder.getPath().resolve(indexPath);
     }
 
     public MediaType getMediaType() {
@@ -270,7 +230,7 @@ public class MediaFile {
     }
 
     public boolean isAudio() {
-        return MediaType.audioTypes().contains(mediaType.toString());
+        return MediaType.audioTypes().contains(mediaType);
     }
 
     public boolean isIndexedTrack() {
@@ -417,6 +377,10 @@ public class MediaFile {
         return parentPath;
     }
 
+    public Path getRelativeParentPath() {
+        return parentPath == null ? null : Paths.get(parentPath);
+    }
+
     public void setParentPath(String parentPath) {
         this.parentPath = parentPath;
     }
@@ -516,6 +480,14 @@ public class MediaFile {
         return version;
     }
 
+    public Double getAverageRating() {
+        return averageRating;
+    }
+
+    public void setAverageRating(Double averageRating) {
+        this.averageRating = averageRating;
+    }
+
     // placeholder to use prior to persistence
     @Transient
     private CoverArt art;
@@ -547,7 +519,7 @@ public class MediaFile {
         } else if (!path.equals(other.path)) {
             return false;
         }
-        if (!folderId.equals(other.folderId)) {
+        if (!folder.equals(other.folder)) {
             return false;
         }
         if (!startPosition.equals(other.startPosition)) {
@@ -558,7 +530,7 @@ public class MediaFile {
 
     @Override
     public int hashCode() {
-        return Objects.hash(path, folderId, startPosition);
+        return Objects.hash(path, folder, startPosition);
     }
 
     @Override
@@ -576,6 +548,8 @@ public class MediaFile {
 
     public static final double NOT_INDEXED = -1.0;
 
+    public static final int VERSION = 4;
+
     public static enum MediaType {
         MUSIC,
         PODCAST,
@@ -584,14 +558,14 @@ public class MediaFile {
         DIRECTORY,
         ALBUM;
 
-        private static final List<String> AUDIO_TYPES = Arrays.asList(MUSIC.toString(),AUDIOBOOK.toString(),PODCAST.toString());
-        private static final List<String> PLAYABLE_TYPES = Arrays.asList(MUSIC.toString(),AUDIOBOOK.toString(),PODCAST.toString(),VIDEO.toString());
+        private static final List<MediaType> AUDIO_TYPES = Arrays.asList(MUSIC,AUDIOBOOK,PODCAST);
+        private static final List<MediaType> PLAYABLE_TYPES = Arrays.asList(MUSIC, AUDIOBOOK, PODCAST, VIDEO);
 
-        public static List<String> audioTypes() {
+        public static List<MediaType> audioTypes() {
             return AUDIO_TYPES;
         }
 
-        public static List<String> playableTypes() {
+        public static List<MediaType> playableTypes() {
             return PLAYABLE_TYPES;
         }
     }

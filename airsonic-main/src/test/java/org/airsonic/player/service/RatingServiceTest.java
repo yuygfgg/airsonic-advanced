@@ -18,9 +18,9 @@
  */
 package org.airsonic.player.service;
 
-import org.airsonic.player.dao.RatingDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.entity.UserRating;
+import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.repository.UserRatingRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,10 +49,7 @@ import static org.mockito.Mockito.when;
 public class RatingServiceTest {
 
     @Mock
-    private RatingDao ratingDao;
-
-    @Mock
-    private MediaFileService mediaFileService;
+    private MediaFileRepository mediaFileRepository;
 
     @Mock
     private UserRatingRepository userRatingRepository;

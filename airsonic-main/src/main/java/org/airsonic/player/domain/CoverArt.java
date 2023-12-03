@@ -10,6 +10,7 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -35,8 +36,9 @@ public class CoverArt {
     @Column(name = "path", nullable = false)
     private String path;
 
-    @Column(name = "folder_id")
-    private Integer folderId;
+    @ManyToOne
+    @JoinColumn(name = "folder_id", referencedColumnName = "id")
+    private MusicFolder folder;
 
     @Column(name = "overridden")
     private boolean overridden;
@@ -68,17 +70,17 @@ public class CoverArt {
     public CoverArt() {
     }
 
-    public CoverArt(Integer entityId, EntityType entityType, String path, Integer folderId, boolean overridden) {
+    public CoverArt(Integer entityId, EntityType entityType, String path, MusicFolder folder, boolean overridden) {
         super();
         this.entityId = entityId;
         this.entityType = entityType;
         this.path = path;
-        this.folderId = folderId;
+        this.folder = folder;
         this.overridden = overridden;
     }
 
-    public CoverArt(Integer entityId, EntityType entityType, String path, Integer folderId, boolean overridden, Instant created, Instant updated) {
-        this(entityId, entityType, path, folderId, overridden);
+    public CoverArt(Integer entityId, EntityType entityType, String path, MusicFolder folder, boolean overridden, Instant created, Instant updated) {
+        this(entityId, entityType, path, folder, overridden);
         this.created = created;
         this.updated = updated;
     }
@@ -115,12 +117,12 @@ public class CoverArt {
         return relativeMediaFolderPath.resolve(path);
     }
 
-    public Integer getFolderId() {
-        return folderId;
+    public MusicFolder getFolder() {
+        return folder;
     }
 
-    public void setFolderId(Integer folderId) {
-        this.folderId = folderId;
+    public void setFolder(MusicFolder folder) {
+        this.folder = folder;
     }
 
     public boolean getOverridden() {

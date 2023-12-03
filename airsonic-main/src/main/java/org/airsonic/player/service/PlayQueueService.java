@@ -3,7 +3,6 @@ package org.airsonic.player.service;
 import com.google.common.collect.ImmutableMap;
 import org.airsonic.player.ajax.MediaFileEntry;
 import org.airsonic.player.ajax.PlayQueueInfo;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.PlayQueueDao;
 import org.airsonic.player.domain.InternetRadio;
 import org.airsonic.player.domain.InternetRadioSource;
@@ -48,8 +47,6 @@ public class PlayQueueService {
     private PodcastPersistenceService podcastService;
     @Autowired
     private PlaylistService playlistService;
-    @Autowired
-    private MediaFileDao mediaFileDao;
     @Autowired
     private MediaFolderService mediaFolderService;
     @Autowired
@@ -269,7 +266,7 @@ public class PlayQueueService {
 
     public void playStarred(Player player, String sessionId) {
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(player.getUsername());
-        List<MediaFile> files = mediaFileDao.getStarredFiles(0, Integer.MAX_VALUE, player.getUsername(), musicFolders);
+        List<MediaFile> files = mediaFileService.getStarredSongs(0, Integer.MAX_VALUE, player.getUsername(), musicFolders);
         doPlay(player, files, null, sessionId);
     }
 

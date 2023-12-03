@@ -64,7 +64,7 @@ public class AlbumService {
         if (artist == null || CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
         }
-        return albumRepository.findByArtistAndFolderIdInAndPresentTrue(artist, MusicFolder.toIdList(musicFolders));
+        return albumRepository.findByArtistAndFolderInAndPresentTrue(artist, musicFolders);
     }
 
     /**
@@ -85,7 +85,7 @@ public class AlbumService {
         Sort sortById = Sort.by(Order.asc("id"));
         Sort sort = byArtist ? sortByArtist.and(sortByAlbum) : sortByAlbum;
 
-        return albumRepository.findByFolderIdInAndPresentTrue(MusicFolder.toIdList(musicFolders),
+        return albumRepository.findByFolderInAndPresentTrue(musicFolders,
                 sort.and(sortById));
     }
 
@@ -111,7 +111,7 @@ public class AlbumService {
         Sort sort = byArtist ? sortByArtist.and(sortByAlbum) : sortByAlbum;
 
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(offset, size, sort.and(sortById));
-        return albumRepository.findByFolderIdInAndPresentTrue(MusicFolder.toIdList(musicFolders), pageRequest);
+        return albumRepository.findByFolderInAndPresentTrue(musicFolders, pageRequest);
     }
 
     /**
@@ -128,8 +128,8 @@ public class AlbumService {
         }
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(offset, size,
                 Sort.by(Order.desc("playCount"), Order.asc("id")));
-        return albumRepository.findByFolderIdInAndPlayCountGreaterThanAndPresentTrue(
-                MusicFolder.toIdList(musicFolders), 0, pageRequest);
+        return albumRepository.findByFolderInAndPlayCountGreaterThanAndPresentTrue(
+                musicFolders, 0, pageRequest);
     }
 
     /**
@@ -146,8 +146,8 @@ public class AlbumService {
         }
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(offset, size,
                 Sort.by(Order.desc("lastPlayed"), Order.asc("id")));
-        return albumRepository.findByFolderIdInAndLastPlayedNotNullAndPresentTrue(
-                MusicFolder.toIdList(musicFolders), pageRequest);
+        return albumRepository.findByFolderInAndLastPlayedNotNullAndPresentTrue(
+                musicFolders, pageRequest);
     }
 
     /**
@@ -164,7 +164,7 @@ public class AlbumService {
         }
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(offset, size,
                 Sort.by(Order.desc("created"), Order.desc("id")));
-        return albumRepository.findByFolderIdInAndPresentTrue(MusicFolder.toIdList(musicFolders), pageRequest);
+        return albumRepository.findByFolderInAndPresentTrue(musicFolders, pageRequest);
     }
 
     /**
@@ -182,7 +182,7 @@ public class AlbumService {
         }
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(offset, count, Sort.by(Order.asc("id")));
 
-        return albumRepository.findByGenreAndFolderIdInAndPresentTrue(genre, MusicFolder.toIdList(musicFolders),
+        return albumRepository.findByGenreAndFolderInAndPresentTrue(genre, musicFolders,
                 pageRequest);
     }
 
@@ -205,7 +205,7 @@ public class AlbumService {
                 : Sort.by(Order.desc("year"), Order.asc("id"));
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(offset, count, sort);
 
-        return albumRepository.findByFolderIdInAndYearBetweenAndPresentTrue(MusicFolder.toIdList(musicFolders),
+        return albumRepository.findByFolderInAndYearBetweenAndPresentTrue(musicFolders,
                 startYear, endYear, pageRequest);
     }
 
@@ -264,7 +264,7 @@ public class AlbumService {
             return Collections.emptyList();
         }
         return starredAlbumRepository
-                .findByUsernameAndAlbumFolderIdInAndAlbumPresentTrue(username, MusicFolder.toIdList(musicFolders),
+                .findByUsernameAndAlbumFolderInAndAlbumPresentTrue(username, musicFolders,
                         Sort.by(Order.desc("created"), Order.asc("albumId")))
                 .stream().map(StarredAlbum::getAlbum).toList();
     }
@@ -285,7 +285,7 @@ public class AlbumService {
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(offset, size,
                 Sort.by(Order.desc("created"), Order.asc("albumId")));
         return starredAlbumRepository
-                .findByUsernameAndAlbumFolderIdInAndAlbumPresentTrue(username, MusicFolder.toIdList(musicFolders),
+                .findByUsernameAndAlbumFolderInAndAlbumPresentTrue(username, musicFolders,
                         pageRequest)
                 .stream().map(StarredAlbum::getAlbum).toList();
     }
@@ -316,7 +316,25 @@ public class AlbumService {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return 0;
         }
-        return albumRepository.countByFolderIdInAndPresentTrue(MusicFolder.toIdList(musicFolders));
+        return albumRepository.countByFolderInAndPresentTrue(musicFolders);
+    }
+
+    /**
+     * mark all albums as non present that were last scanned before lastScanned
+     *
+     * @param lastScanned last scanned date
+     */
+    public void markNonPresent(Instant lastScanned) {
+        albumRepository.markNonPresent(lastScanned);
+    }
+
+    /**
+     * Save album to database
+     *
+     * @param album album to save
+     */
+    public Album save(Album album) {
+        return albumRepository.save(album);
     }
 
 }

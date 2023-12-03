@@ -1,7 +1,6 @@
 package org.airsonic.player.service.search;
 
 import org.airsonic.player.api.ScanningTestUtils;
-import org.airsonic.player.dao.MusicFolderDao;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.service.MediaFolderService;
 import org.airsonic.player.service.MediaScannerService;
@@ -43,9 +42,6 @@ public abstract class AbstractAirsonicHomeTest {
 
     @Autowired
     protected MediaScannerService mediaScannerService;
-
-    @Autowired
-    protected MusicFolderDao musicFolderDao;
 
     @Autowired
     protected MediaFolderService mediaFolderService;

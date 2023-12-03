@@ -23,7 +23,6 @@ import de.umass.lastfm.*;
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Artist;
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.repository.ArtistRepository;
 import org.apache.commons.lang.StringUtils;
@@ -52,7 +51,6 @@ public class LastFmService {
     private static final long CACHE_TIME_TO_LIVE_MILLIS = 6 * 30 * 24 * 3600 * 1000L; // 6 months
     private static final Logger LOG = LoggerFactory.getLogger(LastFmService.class);
 
-    private final MediaFileDao mediaFileDao;
     private final MediaFileService mediaFileService;
     private final ArtistRepository artistRepository;
     private final AirsonicHomeConfig homeConfig;
@@ -60,11 +58,9 @@ public class LastFmService {
     public LastFmService(
         AirsonicHomeConfig homeConfig,
         ArtistRepository artistRepository,
-        MediaFileDao mediaFileDao,
         MediaFileService mediaFileService) {
         this.homeConfig = homeConfig;
         this.artistRepository = artistRepository;
-        this.mediaFileDao = mediaFileDao;
         this.mediaFileService = mediaFileService;
         init();
     }
@@ -98,7 +94,7 @@ public class LastFmService {
 
             // First select artists that are present.
             for (Artist lastFmArtist : similarArtists) {
-                MediaFile similarArtist = mediaFileDao.getArtistByName(lastFmArtist.getName(), musicFolders);
+                MediaFile similarArtist = mediaFileService.getArtistByName(lastFmArtist.getName(), musicFolders);
                 if (similarArtist != null) {
                     result.add(similarArtist);
                     if (result.size() == count) {
@@ -110,7 +106,7 @@ public class LastFmService {
             // Then fill up with non-present artists
             if (includeNotPresent) {
                 for (Artist lastFmArtist : similarArtists) {
-                    MediaFile similarArtist = mediaFileDao.getArtistByName(lastFmArtist.getName(), musicFolders);
+                    MediaFile similarArtist = mediaFileService.getArtistByName(lastFmArtist.getName(), musicFolders);
                     if (similarArtist == null) {
                         MediaFile notPresentArtist = new MediaFile();
                         notPresentArtist.setId(-1);
@@ -149,7 +145,7 @@ public class LastFmService {
             // First select artists that are present.
             Collection<Artist> similarArtists = Artist.getSimilar(getCanonicalArtistName(artist.getName()), LAST_FM_KEY);
             for (Artist lastFmArtist : similarArtists) {
-                artistRepository.findByNameAndFolderIdIn(lastFmArtist.getName(), MusicFolder.toIdList(musicFolders))
+                artistRepository.findByNameAndFolderIn(lastFmArtist.getName(), musicFolders)
                     .ifPresent(entity -> result.add(entity));
                 if (result.size() == count) {
                     return result;
@@ -188,9 +184,9 @@ public class LastFmService {
     public List<MediaFile> getSimilarSongs(org.airsonic.player.domain.Artist artist, int count,
                                            List<MusicFolder> musicFolders) {
 
-        List<MediaFile> similarSongs = new ArrayList<MediaFile>(mediaFileDao.getSongsByArtist(artist.getName(), 0, 1000));
+        List<MediaFile> similarSongs = new ArrayList<MediaFile>(mediaFileService.getSongsByArtist(0, 1000, artist.getName()));
         for (org.airsonic.player.domain.Artist similarArtist : getSimilarArtists(artist, 100, false, musicFolders)) {
-            similarSongs.addAll(mediaFileDao.getSongsByArtist(similarArtist.getName(), 0, 1000));
+            similarSongs.addAll(mediaFileService.getSongsByArtist(0, 1000, similarArtist.getName()));
         }
         Collections.shuffle(similarSongs);
         return similarSongs.subList(0, Math.min(count, similarSongs.size()));
@@ -208,7 +204,7 @@ public class LastFmService {
         List<MediaFile> similarSongs = new ArrayList<MediaFile>();
 
         String artistName = getArtistName(mediaFile);
-        MediaFile artist = mediaFileDao.getArtistByName(artistName, musicFolders);
+        MediaFile artist = mediaFileService.getArtistByName(artistName, musicFolders);
         if (artist != null) {
             similarSongs.addAll(mediaFileService.getRandomSongsForParent(artist, count));
         }
@@ -295,7 +291,8 @@ public class LastFmService {
 
             List<MediaFile> result = new ArrayList<MediaFile>();
             for (Track topTrack : Artist.getTopTracks(canonicalArtistName, LAST_FM_KEY)) {
-                MediaFile song = mediaFileDao.getSongByArtistAndTitle(artistName, topTrack.getName(), musicFolders);
+                MediaFile song = mediaFileService.getSongByArtistAndTitle(artistName, topTrack.getName(), musicFolders);
+
                 if (song != null) {
                     result.add(song);
                     if (result.size() == count) {

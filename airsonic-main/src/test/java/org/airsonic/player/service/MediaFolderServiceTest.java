@@ -2,11 +2,14 @@ package org.airsonic.player.service;
 
 import org.airsonic.player.command.MusicFolderSettingsCommand.MusicFolderInfo;
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.MediaFileDao;
-import org.airsonic.player.dao.MusicFolderDao;
+import org.airsonic.player.domain.CoverArt;
+import org.airsonic.player.domain.MediaFile;
+import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.User;
+import org.airsonic.player.repository.CoverArtRepository;
+import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.repository.MusicFolderRepository;
 import org.airsonic.player.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -25,7 +29,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.transaction.Transactional;
 
+import java.io.File;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 
@@ -57,10 +63,10 @@ public class MediaFolderServiceTest {
     private UserRepository userRepository;
 
     @MockBean
-    private MusicFolderDao musicFolderDao;
+    private CoverArtRepository coverArtRepository;
 
-    @SpyBean
-    private MediaFileDao mediaFileDao;
+    @MockBean
+    private MediaFileRepository mediaFileRepository;
 
     @TempDir
     private static Path tempAirsonicHome;
@@ -76,6 +82,18 @@ public class MediaFolderServiceTest {
 
     @TempDir
     private Path tempMusicFolder2;
+
+    @Mock
+    private MediaFile mockedFile;
+
+    @Mock
+    private MediaFile mockedRootFile;
+
+    @Mock
+    private MediaFile mockedChildFile;
+
+    @Mock
+    private CoverArt mockedCoverArt;
 
     private final String TEST_USER_NAME = "testUserForMediaFolder";
 
@@ -147,7 +165,8 @@ public class MediaFolderServiceTest {
         User user = userRepository.findById(TEST_USER_NAME).get();
         MusicFolder musicFolder = new MusicFolder(tempMusicFolder, "testMusicFolder", Type.MEDIA, true, Instant.now());
         musicFolderRepository.save(musicFolder);
-        MusicFolder musicFolder2 = new MusicFolder(tempMusicFolder.resolve("test2"), "testMusicFolder2", Type.MEDIA, true, Instant.now());
+        MusicFolder musicFolder2 = new MusicFolder(tempMusicFolder.resolve("test2"), "testMusicFolder2", Type.MEDIA,
+                true, Instant.now());
         musicFolderRepository.save(musicFolder2);
 
         // when
@@ -165,11 +184,13 @@ public class MediaFolderServiceTest {
     @Test
     public void testCreateWithSamePath() {
         // given
-        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(existingFolder);
 
         // when and then
-        MusicFolder newFolder = new MusicFolder(tempMusicFolder, "New Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder newFolder = new MusicFolder(tempMusicFolder, "New Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         assertThrows(IllegalArgumentException.class, () -> {
             mediaFolderService.createMusicFolder(newFolder);
         });
@@ -178,53 +199,113 @@ public class MediaFolderServiceTest {
     @Test
     public void testCreateWithAncestorPath() {
         // given
-        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(existingFolder);
+        // children
+        when(mediaFileRepository.findByFolderAndPathStartsWith(existingFolder, "child" + File.separator))
+                .thenReturn(List.of(mockedChildFile));
+        when(mockedChildFile.getRelativePath()).thenReturn(Paths.get("child/test.mp3"));
+        when(mockedChildFile.getRelativeParentPath()).thenReturn(Paths.get("child"));
+        // root
+        when(mediaFileRepository.findByFolderAndPath(existingFolder, "child")).thenReturn(List.of(mockedRootFile));
+        // cover art
+        when(coverArtRepository.findByFolderAndPathStartsWith(existingFolder, "child" + File.separator))
+                .thenReturn(List.of(mockedCoverArt));
+        when(mockedCoverArt.getRelativePath()).thenReturn(Paths.get("child/test.jpg"));
 
         // when
-        MusicFolder newFolder = new MusicFolder(tempMusicFolder.resolve("child"), "New Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder newFolder = new MusicFolder(tempMusicFolder.resolve("child"), "New Folder", MusicFolder.Type.MEDIA,
+                true, Instant.now());
         mediaFolderService.createMusicFolder(newFolder);
 
         // then
         verify(musicFolderRepository).saveAndFlush(newFolder);
-        verify(musicFolderDao).reassignChildren(existingFolder, newFolder);
         assertTrue(musicFolderRepository.findAll().contains(newFolder));
         assertTrue(musicFolderRepository.findAll().contains(existingFolder));
-
+        // root update
+        verify(mockedRootFile).setFolder(newFolder);
+        verify(mockedRootFile).setPath("");
+        verify(mockedRootFile).setParentPath(null);
+        verify(mockedRootFile).setTitle("New Folder");
+        verify(mockedRootFile).setMediaType(MediaType.DIRECTORY);
+        verify(mediaFileRepository).save(mockedRootFile);
+        // child update
+        verify(mockedChildFile).setFolder(newFolder);
+        verify(mockedChildFile).setPath("test.mp3");
+        verify(mockedChildFile).setParentPath("");
+        verify(mediaFileRepository).save(mockedChildFile);
+        // cover art update
+        verify(mockedCoverArt).setFolder(newFolder);
+        verify(mockedCoverArt).setPath("test.jpg");
+        verify(coverArtRepository).save(mockedCoverArt);
     }
 
     @Test
     public void testCreateWithDeletedDecendantPath() {
         // given
-        MusicFolder existingFolder = new MusicFolder(tempMusicFolder.resolve("child"), "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder = new MusicFolder(tempMusicFolder.resolve("child"), "Existing Folder",
+                MusicFolder.Type.MEDIA, true, Instant.now());
         existingFolder.setDeleted(true);
         musicFolderRepository.save(existingFolder);
+        // root
+        when(mediaFileRepository.findByFolderAndPath(existingFolder, "")).thenReturn(List.of(mockedRootFile));
+        when(mediaFileRepository.findByFolder(existingFolder)).thenReturn(List.of(mockedChildFile));
+        // childredn
+        when(mockedChildFile.getPath()).thenReturn("test.mp3");
+        when(mockedChildFile.getParentPath()).thenReturn("");
+        // cover art
+        when(coverArtRepository.findByFolder(existingFolder)).thenReturn(List.of(mockedCoverArt));
+        when(mockedCoverArt.getPath()).thenReturn("test.jpg");
 
         // when
-        MusicFolder newFolder = new MusicFolder(tempMusicFolder, "New Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder newFolder = new MusicFolder(tempMusicFolder, "New Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         mediaFolderService.createMusicFolder(newFolder);
 
         // then
         verify(musicFolderRepository).saveAndFlush(newFolder);
-        verify(musicFolderDao).reassignChildren(existingFolder, newFolder);
         verify(musicFolderRepository).delete(existingFolder);
         assertTrue(musicFolderRepository.findAll().contains(newFolder));
         assertFalse(musicFolderRepository.findAll().contains(existingFolder));
+
+        // root update
+        verify(mockedRootFile).setFolder(newFolder);
+        verify(mockedRootFile).setPath("child");
+        verify(mockedRootFile).setParentPath("");
+        verify(mockedRootFile).setTitle(null);
+        verify(mediaFileRepository).save(mockedRootFile);
+
+        // child update
+        verify(mockedChildFile).setFolder(newFolder);
+        verify(mockedChildFile).setPath("child/test.mp3");
+        verify(mockedChildFile).setParentPath("child");
+        verify(mediaFileRepository).save(mockedChildFile);
+
+        // cover art update
+        verify(mockedCoverArt).setFolder(newFolder);
+        verify(mockedCoverArt).setPath("child/test.jpg");
+        verify(coverArtRepository).save(mockedCoverArt);
     }
 
     @Test
     public void testCreateWithNonDeletedDecendantPath() {
+        Mockito.reset(mediaFileRepository);
+        Mockito.reset(coverArtRepository);
         // given
-        MusicFolder existingFolder = new MusicFolder(tempMusicFolder.resolve("child"), "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder = new MusicFolder(tempMusicFolder.resolve("child"), "Existing Folder",
+                MusicFolder.Type.MEDIA, true, Instant.now());
         musicFolderRepository.save(existingFolder);
 
         // when
-        MusicFolder newFolder = new MusicFolder(tempMusicFolder, "New Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder newFolder = new MusicFolder(tempMusicFolder, "New Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         mediaFolderService.createMusicFolder(newFolder);
 
         // then
         verify(musicFolderRepository).saveAndFlush(newFolder);
-        verify(musicFolderDao, never()).reassignChildren(existingFolder, newFolder);
+        verifyNoInteractions(mediaFileRepository);
+        verifyNoInteractions(coverArtRepository);
         verify(musicFolderRepository, never()).delete(existingFolder);
         assertTrue(musicFolderRepository.findAll().contains(newFolder));
         assertTrue(musicFolderRepository.findAll().contains(existingFolder));
@@ -267,7 +348,8 @@ public class MediaFolderServiceTest {
     @Test
     public void testUpdateWithSamePathShouldSuccess() {
         // given
-        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(existingFolder);
         MusicFolderInfo musicFolderInfo = new MusicFolderInfo(existingFolder, false, "");
         musicFolderInfo.setName("New Name");
@@ -294,9 +376,11 @@ public class MediaFolderServiceTest {
     @Test
     public void testUpdateWithSamePathWithDefferentFolderShouldFail() {
         // given
-        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(existingFolder);
-        MusicFolder existingFolder2 = new MusicFolder(tempMusicFolder2, "Existing Folder2", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder2 = new MusicFolder(tempMusicFolder2, "Existing Folder2", MusicFolder.Type.MEDIA,
+                true, Instant.now());
         musicFolderRepository.save(existingFolder2);
         MusicFolderInfo musicFolderInfo = new MusicFolderInfo(existingFolder, false, "");
         musicFolderInfo.setPath(tempMusicFolder2.toString());
@@ -311,13 +395,14 @@ public class MediaFolderServiceTest {
         verify(musicFolderRepository, never()).save(any(MusicFolder.class));
     }
 
-
     @Test
     public void testUpdateWithAncestorPathOfDifferentFolderShouldFail() {
         // given
-        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(existingFolder);
-        MusicFolder existingFolder2 = new MusicFolder(tempMusicFolder2, "Existing Folder2", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder2 = new MusicFolder(tempMusicFolder2, "Existing Folder2", MusicFolder.Type.MEDIA,
+                true, Instant.now());
         musicFolderRepository.save(existingFolder2);
         MusicFolderInfo musicFolderInfo = new MusicFolderInfo(existingFolder, false, "");
         musicFolderInfo.setPath(tempMusicFolder2.resolve("child").toString());
@@ -335,9 +420,11 @@ public class MediaFolderServiceTest {
     @Test
     public void testUpdateWithDecendantPathOfDifferentFolderShouldFail() {
         // given
-        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(existingFolder);
-        MusicFolder existingFolder2 = new MusicFolder(tempMusicFolder2, "Existing Folder2", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder2 = new MusicFolder(tempMusicFolder2, "Existing Folder2", MusicFolder.Type.MEDIA,
+                true, Instant.now());
         musicFolderRepository.save(existingFolder2);
         MusicFolderInfo musicFolderInfo = new MusicFolderInfo(existingFolder, false, "");
         musicFolderInfo.setPath(tempMusicFolder2.getParent().toString());
@@ -355,7 +442,8 @@ public class MediaFolderServiceTest {
     @Test
     public void testUpdateByInfo() {
         // given
-        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder existingFolder = new MusicFolder(tempMusicFolder, "Existing Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(existingFolder);
         MusicFolderInfo musicFolderInfo = new MusicFolderInfo(existingFolder, false, "");
         musicFolderInfo.setName("New Name");
@@ -393,7 +481,8 @@ public class MediaFolderServiceTest {
     @Test
     public void testEnableNonPodcastFolder() {
         // given
-        MusicFolder mediaFolder = new MusicFolder(tempMusicFolder, "Media Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder mediaFolder = new MusicFolder(tempMusicFolder, "Media Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(mediaFolder);
 
         // when
@@ -407,8 +496,10 @@ public class MediaFolderServiceTest {
     @Test
     public void testEnablePodcastFolderSuccessfully() {
         // given
-        MusicFolder podcastFolder1 = new MusicFolder(tempMusicFolder.resolve("podcast1"), "Podcast Folder 1", MusicFolder.Type.PODCAST, false, Instant.now());
-        MusicFolder podcastFolder2 = new MusicFolder(tempMusicFolder.resolve("podcast2"), "Podcast Folder 2", MusicFolder.Type.PODCAST, true, Instant.now());
+        MusicFolder podcastFolder1 = new MusicFolder(tempMusicFolder.resolve("podcast1"), "Podcast Folder 1",
+                MusicFolder.Type.PODCAST, false, Instant.now());
+        MusicFolder podcastFolder2 = new MusicFolder(tempMusicFolder.resolve("podcast2"), "Podcast Folder 2",
+                MusicFolder.Type.PODCAST, true, Instant.now());
         musicFolderRepository.saveAll(List.of(podcastFolder1, podcastFolder2));
 
         // when
@@ -427,7 +518,7 @@ public class MediaFolderServiceTest {
 
         // given
         Mockito.reset(musicFolderRepository);
-        Mockito.reset(mediaFileDao);
+        Mockito.reset(mediaFileRepository);
 
         // when
         mediaFolderService.deleteMusicFolder(-1);
@@ -435,20 +526,21 @@ public class MediaFolderServiceTest {
         // then
         verify(musicFolderRepository).findByIdAndDeletedFalse(-1);
         verifyNoMoreInteractions(musicFolderRepository);
-        verifyNoInteractions(mediaFileDao);
+        verifyNoInteractions(mediaFileRepository);
     }
 
     @Test
     public void testDeleteMusicFolderWithEmptyFolder() {
 
         // given
-        MusicFolder musicFolder = new MusicFolder(tempMusicFolder, "Music Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder musicFolder = new MusicFolder(tempMusicFolder, "Music Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(musicFolder);
         long count = musicFolderRepository.count();
         Mockito.reset(musicFolderRepository);
-        Mockito.reset(mediaFileDao);
+        Mockito.reset(mediaFileRepository);
 
-        when(mediaFileDao.getMediaFileCount(musicFolder.getId())).thenReturn(0);
+        when(mediaFileRepository.countByFolder(musicFolder)).thenReturn(0);
 
         // when
         mediaFolderService.deleteMusicFolder(musicFolder.getId());
@@ -463,15 +555,28 @@ public class MediaFolderServiceTest {
     public void testDeleteMusicFolderWithAncestors() {
 
         // given
-        MusicFolder musicFolder = new MusicFolder(tempMusicFolder, "Music Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder musicFolder = new MusicFolder(tempMusicFolder, "Music Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(musicFolder);
-        MusicFolder childFolder = new MusicFolder(tempMusicFolder.resolve("child"), "Child Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder childFolder = new MusicFolder(tempMusicFolder.resolve("child"), "Child Folder",
+                MusicFolder.Type.MEDIA, true, Instant.now());
         musicFolderRepository.save(childFolder);
         long count = musicFolderRepository.count();
         Mockito.reset(musicFolderRepository);
-        Mockito.reset(mediaFileDao);
+        Mockito.reset(mediaFileRepository);
 
-        when(mediaFileDao.getMediaFileCount(childFolder.getId())).thenReturn(10);
+        when(mediaFileRepository.countByFolder(childFolder)).thenReturn(10);
+        when(mediaFileRepository.findByFolderAndPresentTrue(childFolder)).thenReturn(List.of(mockedFile));
+
+        // root
+        when(mediaFileRepository.findByFolderAndPath(childFolder, "")).thenReturn(List.of(mockedRootFile));
+        when(mediaFileRepository.findByFolder(childFolder)).thenReturn(List.of(mockedChildFile));
+        // children
+        when(mockedChildFile.getPath()).thenReturn("test.mp3");
+        when(mockedChildFile.getParentPath()).thenReturn("");
+        // cover art
+        when(coverArtRepository.findByFolder(childFolder)).thenReturn(List.of(mockedCoverArt));
+        when(mockedCoverArt.getPath()).thenReturn("test.jpg");
 
         // when
         mediaFolderService.deleteMusicFolder(childFolder.getId());
@@ -479,24 +584,47 @@ public class MediaFolderServiceTest {
         // then
         verify(musicFolderRepository).findByIdAndDeletedFalse(childFolder.getId());
         verify(musicFolderRepository).delete(any(MusicFolder.class));
-        verify(musicFolderDao).reassignChildren(any(MusicFolder.class), any(MusicFolder.class));
-        verify(mediaFileDao).deleteMediaFiles(childFolder.getId());
+        verify(mockedFile).setPresent(false);
+        verify(mockedFile).setChildrenLastUpdated(Instant.ofEpochMilli(1));
+        verify(mediaFileRepository).save(mockedFile);
         assertEquals(count - 1L, musicFolderRepository.count());
+
+        // root update
+        verify(mockedRootFile).setFolder(musicFolder);
+        verify(mockedRootFile).setPath("child");
+        verify(mockedRootFile).setParentPath("");
+        verify(mockedRootFile).setTitle(null);
+        verify(mediaFileRepository).save(mockedRootFile);
+
+        // child update
+        verify(mockedChildFile).setFolder(musicFolder);
+        verify(mockedChildFile).setPath("child/test.mp3");
+        verify(mockedChildFile).setParentPath("child");
+        verify(mediaFileRepository).save(mockedChildFile);
+
+        // cover art update
+        verify(mockedCoverArt).setFolder(musicFolder);
+        verify(mockedCoverArt).setPath("child/test.jpg");
+        verify(coverArtRepository).save(mockedCoverArt);
+
     }
 
     @Test
     public void testDeleteMusicFolderWithDecendants() {
 
         // given
-        MusicFolder musicFolder = new MusicFolder(tempMusicFolder, "Music Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder musicFolder = new MusicFolder(tempMusicFolder, "Music Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(musicFolder);
-        MusicFolder childFolder = new MusicFolder(tempMusicFolder.resolve("child"), "Child Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder childFolder = new MusicFolder(tempMusicFolder.resolve("child"), "Child Folder",
+                MusicFolder.Type.MEDIA, true, Instant.now());
         musicFolderRepository.save(childFolder);
         long count = musicFolderRepository.count();
         Mockito.reset(musicFolderRepository);
-        Mockito.reset(mediaFileDao);
+        Mockito.reset(mediaFileRepository);
 
-        when(mediaFileDao.getMediaFileCount(musicFolder.getId())).thenReturn(10);
+        when(mediaFileRepository.findByFolderAndPresentTrue(musicFolder)).thenReturn(List.of(mockedFile));
+        when(mediaFileRepository.countByFolder(musicFolder)).thenReturn(10);
 
         // when
         mediaFolderService.deleteMusicFolder(musicFolder.getId());
@@ -504,8 +632,14 @@ public class MediaFolderServiceTest {
         // then
         verify(musicFolderRepository).findByIdAndDeletedFalse(musicFolder.getId());
         verify(musicFolderRepository).save(any(MusicFolder.class));
-        verifyNoInteractions(musicFolderDao);
-        verify(mediaFileDao).deleteMediaFiles(musicFolder.getId());
+        verify(mediaFileRepository).countByFolder(musicFolder);
+        verify(mediaFileRepository).findByFolderAndPresentTrue(musicFolder);
+        verify(mediaFileRepository).save(mockedFile);
+        verifyNoInteractions(coverArtRepository);
+        verifyNoMoreInteractions(mediaFileRepository);
+        verify(mockedFile).setPresent(false);
+        verify(mockedFile).setChildrenLastUpdated(Instant.ofEpochMilli(1));
+        verify(mediaFileRepository).save(mockedFile);
         assertEquals(count, musicFolderRepository.count());
         MusicFolder deletedFolder = musicFolderRepository.findById(musicFolder.getId()).get();
         assertTrue(deletedFolder.isDeleted());
@@ -517,13 +651,16 @@ public class MediaFolderServiceTest {
     public void testDeleteMusicFolder() {
 
         // given
-        MusicFolder musicFolder = new MusicFolder(tempMusicFolder, "Music Folder", MusicFolder.Type.MEDIA, true, Instant.now());
+        MusicFolder musicFolder = new MusicFolder(tempMusicFolder, "Music Folder", MusicFolder.Type.MEDIA, true,
+                Instant.now());
         musicFolderRepository.save(musicFolder);
         long count = musicFolderRepository.count();
         Mockito.reset(musicFolderRepository);
-        Mockito.reset(mediaFileDao);
+        Mockito.reset(mediaFileRepository);
+        Mockito.reset(coverArtRepository);
 
-        when(mediaFileDao.getMediaFileCount(musicFolder.getId())).thenReturn(10);
+        when(mediaFileRepository.findByFolderAndPresentTrue(musicFolder)).thenReturn(List.of(mockedFile));
+        when(mediaFileRepository.countByFolder(musicFolder)).thenReturn(10);
 
         // when
         mediaFolderService.deleteMusicFolder(musicFolder.getId());
@@ -531,8 +668,14 @@ public class MediaFolderServiceTest {
         // then
         verify(musicFolderRepository).findByIdAndDeletedFalse(musicFolder.getId());
         verify(musicFolderRepository).save(any(MusicFolder.class));
-        verifyNoInteractions(musicFolderDao);
-        verify(mediaFileDao).deleteMediaFiles(musicFolder.getId());
+        verify(mediaFileRepository).countByFolder(musicFolder);
+        verify(mediaFileRepository).findByFolderAndPresentTrue(musicFolder);
+        verify(mediaFileRepository).save(mockedFile);
+        verifyNoInteractions(coverArtRepository);
+        verifyNoMoreInteractions(mediaFileRepository);
+        verify(mockedFile).setPresent(false);
+        verify(mockedFile).setChildrenLastUpdated(Instant.ofEpochMilli(1));
+        verify(mediaFileRepository).save(mockedFile);
         assertEquals(count, musicFolderRepository.count());
         MusicFolder deletedFolder = musicFolderRepository.findById(musicFolder.getId()).get();
         assertTrue(deletedFolder.isDeleted());

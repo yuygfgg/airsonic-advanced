@@ -116,11 +116,10 @@ public class AlbumServiceTest {
     public void testAlphabeticalAlbums(boolean byArtist, boolean ignoreCase) {
 
         // given
-        when(mockedMusicFolder.getId()).thenReturn(1).thenReturn(2);
         List<MusicFolder> musicFolders = new ArrayList<MusicFolder>(List.of(mockedMusicFolder, mockedMusicFolder));
         Album album1 = new Album();
         List<Album> expected = new ArrayList<Album>(List.of(album1));
-        when(albumRepository.findByFolderIdInAndPresentTrue(any(), any(Sort.class))).thenReturn(expected);
+        when(albumRepository.findByFolderInAndPresentTrue(any(), any(Sort.class))).thenReturn(expected);
 
         // when
         List<Album> actual = albumService.getAlphabeticalAlbums(byArtist, ignoreCase, musicFolders);
@@ -128,7 +127,7 @@ public class AlbumServiceTest {
         // then
         assertEquals(expected, actual);
         ArgumentCaptor<Sort> sortCaptor = ArgumentCaptor.forClass(Sort.class);
-        verify(albumRepository).findByFolderIdInAndPresentTrue(any(), sortCaptor.capture());
+        verify(albumRepository).findByFolderInAndPresentTrue(any(), sortCaptor.capture());
         Sort actualSort = sortCaptor.getValue();
         if (byArtist) {
             assertEquals("artist", actualSort.getOrderFor("artist").getProperty());
@@ -158,11 +157,10 @@ public class AlbumServiceTest {
         int count = 10;
 
         // given
-        when(mockedMusicFolder.getId()).thenReturn(1).thenReturn(2);
         List<MusicFolder> musicFolders = new ArrayList<MusicFolder>(List.of(mockedMusicFolder, mockedMusicFolder));
         Album album1 = new Album();
         List<Album> expected = new ArrayList<Album>(List.of(album1));
-        when(albumRepository.findByFolderIdInAndYearBetweenAndPresentTrue(anyCollection(), anyInt(), anyInt(),
+        when(albumRepository.findByFolderInAndYearBetweenAndPresentTrue(anyCollection(), anyInt(), anyInt(),
                 any(OffsetBasedPageRequest.class))).thenReturn(expected);
 
         // when
@@ -172,7 +170,7 @@ public class AlbumServiceTest {
         assertEquals(expected, actual);
         ArgumentCaptor<OffsetBasedPageRequest> pageRequestCaptor = ArgumentCaptor
                 .forClass(OffsetBasedPageRequest.class);
-        verify(albumRepository).findByFolderIdInAndYearBetweenAndPresentTrue(any(), eq(startYear), eq(endYear),
+        verify(albumRepository).findByFolderInAndYearBetweenAndPresentTrue(any(), eq(startYear), eq(endYear),
                 pageRequestCaptor.capture());
         OffsetBasedPageRequest actualPageRequest = pageRequestCaptor.getValue();
 
@@ -186,7 +184,6 @@ public class AlbumServiceTest {
     public void testGetStarredAlbums() {
 
         // given
-        when(mockedMusicFolder.getId()).thenReturn(1).thenReturn(2);
         List<MusicFolder> musicFolders = new ArrayList<MusicFolder>(List.of(mockedMusicFolder, mockedMusicFolder));
         StarredAlbum starredAlbum = new StarredAlbum();
         Album album = new Album();
@@ -194,7 +191,7 @@ public class AlbumServiceTest {
         starredAlbum.setAlbum(album);
         List<StarredAlbum> starredAlbums = new ArrayList<StarredAlbum>(List.of(starredAlbum));
         List<Album> expected = new ArrayList<Album>(List.of(album));
-        when(starredAlbumRepository.findByUsernameAndAlbumFolderIdInAndAlbumPresentTrue(anyString(), anyCollection(), any(OffsetBasedPageRequest.class))).thenReturn(starredAlbums);
+        when(starredAlbumRepository.findByUsernameAndAlbumFolderInAndAlbumPresentTrue(anyString(), anyCollection(), any(OffsetBasedPageRequest.class))).thenReturn(starredAlbums);
         String username = "username";
 
         // when
@@ -203,7 +200,7 @@ public class AlbumServiceTest {
         // then
         assertEquals(expected, actual);
         ArgumentCaptor<OffsetBasedPageRequest> pageRequestCaptor = ArgumentCaptor.forClass(OffsetBasedPageRequest.class);
-        verify(starredAlbumRepository).findByUsernameAndAlbumFolderIdInAndAlbumPresentTrue(eq(username), anyCollection(), pageRequestCaptor.capture());
+        verify(starredAlbumRepository).findByUsernameAndAlbumFolderInAndAlbumPresentTrue(eq(username), anyCollection(), pageRequestCaptor.capture());
         OffsetBasedPageRequest actualPageRequest = pageRequestCaptor.getValue();
 
         assertEquals(0, actualPageRequest.getOffset());

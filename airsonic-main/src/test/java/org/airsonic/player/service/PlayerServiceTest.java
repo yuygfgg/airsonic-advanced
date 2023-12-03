@@ -1,6 +1,5 @@
 package org.airsonic.player.service;
 
-import org.airsonic.player.dao.PlayerDaoPlayQueueFactory;
 import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.repository.PlayerRepository;
@@ -33,9 +32,6 @@ public class PlayerServiceTest {
     @Mock
     private AsyncWebSocketClient asyncWebSocketClient;
 
-    @Mock
-    private PlayerDaoPlayQueueFactory playerDaoPlayQueueFactory;
-
     @InjectMocks
     private PlayerService playerService;
 
@@ -55,7 +51,6 @@ public class PlayerServiceTest {
             p.setId(1);
             return p;
         });
-        when(playerDaoPlayQueueFactory.createPlayQueue()).thenReturn(new PlayQueue(id -> null));
 
         // when
         Player actual = playerService.createPlayer(player);

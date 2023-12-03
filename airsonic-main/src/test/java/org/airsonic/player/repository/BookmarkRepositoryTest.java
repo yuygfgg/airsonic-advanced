@@ -20,7 +20,6 @@
 package org.airsonic.player.repository;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.Bookmark;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MediaFile.MediaType;
@@ -69,7 +68,7 @@ public class BookmarkRepositoryTest {
     private MusicFolderRepository musicFolderRepository;
 
     @Autowired
-    MediaFileDao mediaFileDao;
+    MediaFileRepository mediaFileRepository;
 
     @Autowired
     JdbcTemplate jdbcTemplate;
@@ -105,7 +104,7 @@ public class BookmarkRepositoryTest {
 
         // media file
         MediaFile baseFile = new MediaFile();
-        baseFile.setFolderId(testFolder.getId());
+        baseFile.setFolder(testFolder);
         baseFile.setPath("bookmark.wav");
         baseFile.setMediaType(MediaType.MUSIC);
         baseFile.setIndexPath("test.cue");
@@ -114,14 +113,21 @@ public class BookmarkRepositoryTest {
         baseFile.setChanged(Instant.now());
         baseFile.setLastScanned(Instant.now());
         baseFile.setChildrenLastUpdated(Instant.now());
-        mediaFileDao.createOrUpdateMediaFile(baseFile, file -> {});
-        baseFile.setId(null);
-        baseFile.setPath("bookmark2.wav");
-        baseFile.setIndexPath("test2.cue");
-        mediaFileDao.createOrUpdateMediaFile(baseFile, file -> {});
-        mediaFile = mediaFileDao.getMediaFilesByRelativePathAndFolderId("bookmark.wav", testFolder.getId()).get(0);
+        mediaFileRepository.save(baseFile);
+        MediaFile base2File = new MediaFile();
+        base2File.setFolder(testFolder);
+        base2File.setMediaType(MediaType.MUSIC);
+        base2File.setStartPosition(MediaFile.NOT_INDEXED);
+        base2File.setCreated(Instant.now());
+        base2File.setChanged(Instant.now());
+        base2File.setLastScanned(Instant.now());
+        base2File.setChildrenLastUpdated(Instant.now());
+        base2File.setPath("bookmark2.wav");
+        base2File.setIndexPath("test2.cue");
+        mediaFileRepository.save(base2File);
+        mediaFile = mediaFileRepository.findByFolderAndPath(testFolder,"bookmark.wav").get(0);
         mediaFileList.add(mediaFile);
-        mediaFileList.add(mediaFileDao.getMediaFilesByRelativePathAndFolderId("bookmark2.wav", testFolder.getId()).get(0));
+        mediaFileList.add(mediaFileRepository.findByFolderAndPath(testFolder, "bookmark2.wav").get(0));
 
         // user
         User user = new User(TEST_USER_NAME, "sindre@activeobjects.no", false, 1000L, 2000L, 3000L, Set.of(Role.ADMIN, Role.COMMENT, Role.COVERART, Role.PLAYLIST, Role.PODCAST, Role.STREAM, Role.JUKEBOX, Role.SETTINGS));

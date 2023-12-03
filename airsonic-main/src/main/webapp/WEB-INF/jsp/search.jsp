@@ -102,7 +102,7 @@
         <c:forEach items="${command.songs}" var="match" varStatus="loopStatus">
 
             <sub:url value="/main.view" var="mainUrl">
-                <sub:param name="path" value="${match.folderId}:${match.parentPath}"/>
+                <sub:param name="path" value="${match.folder.id}:${match.parentPath}"/>
             </sub:url>
 
             <tr class="songRow" ${loopStatus.count > 15 ? "style='display:none'" : ""}>

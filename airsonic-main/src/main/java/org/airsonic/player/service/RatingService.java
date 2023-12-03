@@ -20,19 +20,26 @@
  */
 package org.airsonic.player.service;
 
-import org.airsonic.player.dao.RatingDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.entity.UserRating;
+import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.repository.UserRatingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Provides services for user ratings.
@@ -45,13 +52,11 @@ public class RatingService {
     private static final Logger LOG = LoggerFactory.getLogger(RatingService.class);
 
     @Autowired
-    private RatingDao ratingDao;
-    @Autowired
     private SecurityService securityService;
     @Autowired
-    private MediaFileService mediaFileService;
-    @Autowired
     private UserRatingRepository userRatingRepository;
+    @Autowired
+    private MediaFileRepository mediaFileRepository;
 
     /**
      * Returns the highest rated albums.
@@ -61,12 +66,27 @@ public class RatingService {
      * @param musicFolders Only return albums in these folders.
      * @return The highest rated albums.
      */
+    @Transactional(readOnly = true)
     public List<MediaFile> getHighestRatedAlbums(int offset, int count, List<MusicFolder> musicFolders) {
-        return ratingDao.getHighestRatedAlbums(offset, count, musicFolders)
-                .parallelStream()
-                .map(mediaFileService::getMediaFile)
-                .filter(file -> securityService.isReadAllowed(file, true))
-                .collect(Collectors.toList());
+
+        if (count < 1 || musicFolders.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Map<Integer, Double> averagePerMediaFileId = userRatingRepository.findAll().stream().collect(groupingBy(UserRating::getMediaFileId, Collectors.averagingDouble(UserRating::getRating)));
+
+        List<MediaFile> sortedAlbums = averagePerMediaFileId.entrySet().stream().map(entry -> {
+            return mediaFileRepository.findByIdAndFolderInAndMediaTypeAndPresentTrue(entry.getKey(), musicFolders, MediaFile.MediaType.ALBUM).map(file -> {
+                file.setAverageRating(entry.getValue());
+                return file;
+            }).orElse(null);
+        }).filter(file -> Objects.nonNull(file) && securityService.isReadAllowed(file, true))
+            .sorted(Comparator.comparing(MediaFile::getAverageRating).reversed())
+            .collect(Collectors.toList());
+
+        if (offset >= sortedAlbums.size()) {
+            return Collections.emptyList();
+        }
+        return sortedAlbums.subList(offset, Math.min(offset + count, sortedAlbums.size()));
     }
 
     /**
@@ -122,8 +142,20 @@ public class RatingService {
         return userRatingRepository.findOptByUsernameAndMediaFileId(username, mediaFile.getId()).map(UserRating::getRating).orElse(null);
     }
 
+    /**
+     * Returns the number of albums rated by the given user.
+     *
+     * @param username The user name.
+     * @param musicFolders Only return albums in these folders.
+     * @return The number of albums rated by the given user.
+     */
     public int getRatedAlbumCount(String username, List<MusicFolder> musicFolders) {
-        return ratingDao.getRatedAlbumCount(username, musicFolders);
+        if (musicFolders.isEmpty()) {
+            return 0;
+        }
+        List<MediaFile> albums = mediaFileRepository.findByFolderInAndMediaTypeAndPresentTrue(musicFolders, MediaFile.MediaType.ALBUM, PageRequest.of(0, Integer.MAX_VALUE));
+
+        return userRatingRepository.countByUsernameAndMediaFileIdIn(username, albums.stream().map(MediaFile::getId).collect(Collectors.toList()));
     }
 
 }

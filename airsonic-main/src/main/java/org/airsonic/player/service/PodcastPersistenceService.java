@@ -506,9 +506,8 @@ public class PodcastPersistenceService {
 
         return podcastChannelRepository.findById(channelId).map(channel -> {
             MediaFile mediaFile = channel.getMediaFile();
-            MusicFolder folder = mediaFolderService.getMusicFolderById(mediaFile.getFolderId());
-            FileUtil.delete(mediaFile.getFullPath(folder.getPath()));
-            mediaFileService.refreshMediaFile(mediaFile, folder);
+            FileUtil.delete(mediaFile.getFullPath());
+            mediaFileService.refreshMediaFile(mediaFile);
             podcastChannelRepository.delete(channel);
             return true;
         }).orElse(false);
@@ -537,9 +536,8 @@ public class PodcastPersistenceService {
         // Delete file and update mediaFile
         MediaFile file = episode.getMediaFile();
         if (file != null) {
-            MusicFolder folder = mediaFolderService.getMusicFolderById(file.getFolderId());
-            FileUtil.delete(file.getFullPath(folder.getPath()));
-            mediaFileService.refreshMediaFile(file, folder);
+            FileUtil.delete(file.getFullPath());
+            mediaFileService.refreshMediaFile(file);
         }
 
         if (logicalDelete) {

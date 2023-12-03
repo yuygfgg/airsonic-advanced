@@ -72,7 +72,7 @@ public class ArtistUpnpProcessor extends UpnpContentProcessor <Artist, Album> {
         if (CollectionUtils.isEmpty(allFolders)) {
             return Collections.emptyList();
         }
-        List<Artist> allArtists = artistRepository.findByFolderIdInAndPresentTrue(MusicFolder.toIdList(allFolders), Sort.by(Sort.Direction.ASC, "name"));
+        List<Artist> allArtists = artistRepository.findByFolderInAndPresentTrue(allFolders, Sort.by(Sort.Direction.ASC, "name"));
         // alpha artists doesn't quite work :P
         allArtists.sort((Artist o1, Artist o2) -> o1.getName().replaceAll("\\W", "").compareToIgnoreCase(o2.getName().replaceAll("\\W", "")));
 
@@ -91,7 +91,7 @@ public class ArtistUpnpProcessor extends UpnpContentProcessor <Artist, Album> {
     @Override
     public List<Album> getChildren(Artist artist) {
         List<MusicFolder> allFolders = getDispatcher().getMediaFolderService().getAllMusicFolders();
-        List<Album> allAlbums = albumRepository.findByArtistAndFolderIdInAndPresentTrue(artist.getName(), MusicFolder.toIdList(allFolders));
+        List<Album> allAlbums = albumRepository.findByArtistAndFolderInAndPresentTrue(artist.getName(), allFolders);
         if (allAlbums.size() > 1) {
             // if the artist has more than one album, add in an option to
             // view the tracks in all the albums together

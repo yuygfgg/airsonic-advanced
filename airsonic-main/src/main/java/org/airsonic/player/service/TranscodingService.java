@@ -70,8 +70,6 @@ public class TranscodingService {
     @Autowired
     private SettingsService settingsService;
     @Autowired
-    private MediaFolderService mediaFolderService;
-    @Autowired
     private PlayerRepository playerRepository;;
     @Autowired
     private TranscodingRepository transcodingRepository;
@@ -260,12 +258,12 @@ public class TranscodingService {
             }
 
         } catch (IOException x) {
-            LOG.warn("Transcoder failed for {} in folder {}. Using original file", parameters.getMediaFile().getPath(), parameters.getMediaFile().getFolderId(), x);
+            LOG.warn("Transcoder failed for {} in folder {}. Using original file", parameters.getMediaFile().getPath(), parameters.getMediaFile().getFolder().getId(), x);
         } catch (Exception x) {
-            LOG.warn("Transcoder failed for {} in folder {}. Using original file", parameters.getMediaFile().getPath(), parameters.getMediaFile().getFolderId(), x);
+            LOG.warn("Transcoder failed for {} in folder {}. Using original file", parameters.getMediaFile().getPath(), parameters.getMediaFile().getFolder().getId(), x);
         }
 
-        return new BufferedInputStream(Files.newInputStream(parameters.getMediaFile().getFullPath(mediaFolderService.getMusicFolderById(parameters.getMediaFile().getFolderId()).getPath()).toAbsolutePath()));
+        return new BufferedInputStream(Files.newInputStream(parameters.getMediaFile().getFullPath().toAbsolutePath()));
     }
 
     /**
@@ -343,7 +341,7 @@ public class TranscodingService {
 
         // Work-around for filename character encoding problem on Windows.
         // Create temporary file, and feed this to the transcoder.
-        Path path = mediaFile.getFullPath(mediaFolderService.getMusicFolderById(mediaFile.getFolderId()).getPath()).toAbsolutePath();
+        Path path = mediaFile.getFullPath().toAbsolutePath();
         String pathString = path.toString();
         Path tmpFile = null;
         if (Util.isWindows() && !mediaFile.isVideo() && !StringUtils.isAsciiPrintable(path.toString()) && StringUtils.contains(command, "%s")) {

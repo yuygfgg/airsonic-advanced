@@ -374,7 +374,7 @@ public class CoverArtController {
         }
 
         public String getKey() {
-            return Optional.ofNullable(coverArt).map(c -> coverArt.getFolderId() + "/" + coverArt.getPath())
+            return Optional.ofNullable(coverArt).map(c -> coverArt.getFolder()).map(folder -> folder.getId() + "/" + coverArt.getPath())
                     .orElseGet(keyGenerator);
         }
 
@@ -555,7 +555,7 @@ public class CoverArtController {
 
         private MediaFileCoverArtRequest(MediaFile mediaFile, Integer proxyId) {
             super(coverArtService.get(EntityType.MEDIA_FILE, mediaFile.getId()),
-                () -> mediaFile.getFolderId() + "/" + mediaFile.getPath(),
+                () -> mediaFile.getFolder().getId() + "/" + mediaFile.getPath(),
                 () -> mediaFile.getChanged());
             this.dir = mediaFile;
             this.proxyId = proxyId;
@@ -589,7 +589,7 @@ public class CoverArtController {
         private VideoCoverArtRequest(MediaFile mediaFile, int offset) {
             this.mediaFile = mediaFile;
             this.offset = offset;
-            keyGenerator = () -> mediaFile.getFolderId() + "/" + mediaFile.getPath() + "/" + offset;
+            keyGenerator = () -> mediaFile.getFolder().getId() + "/" + mediaFile.getPath() + "/" + offset;
             lastModifiedGenerator = () -> mediaFile.getChanged();
         }
 

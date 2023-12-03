@@ -21,7 +21,6 @@ package org.airsonic.player.service;
 
 import com.google.common.collect.ImmutableMap;
 import org.airsonic.player.command.PlayerSettingsCommand;
-import org.airsonic.player.dao.PlayerDaoPlayQueueFactory;
 import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.PlayerTechnology;
@@ -80,8 +79,6 @@ public class PlayerService {
     private PlayerRepository playerRepository;
     @Autowired
     private AsyncWebSocketClient asyncWebSocketClient;
-    @Autowired
-    private PlayerDaoPlayQueueFactory playerDaoPlayQueueFactory;
 
     @EventListener
     public void onApplicationEvent(ApplicationReadyEvent event) {
@@ -97,7 +94,7 @@ public class PlayerService {
     private void addPlaylist(Player player) {
         PlayQueue playQueue = playlists.get(player.getId());
         if (playQueue == null) {
-            playQueue = playerDaoPlayQueueFactory.createPlayQueue();
+            playQueue = new PlayQueue();
             playlists.put(player.getId(), playQueue);
         }
         player.setPlayQueue(playQueue);

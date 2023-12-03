@@ -6,11 +6,9 @@ import chameleon.playlist.xspf.Location;
 import chameleon.playlist.xspf.Track;
 import chameleon.playlist.xspf.XspfProvider;
 import org.airsonic.player.domain.CoverArt.EntityType;
-import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.Playlist;
 import org.airsonic.player.repository.PlaylistRepository;
 import org.airsonic.player.service.CoverArtService;
-import org.airsonic.player.service.MediaFolderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,13 +25,10 @@ public class XspfPlaylistExportHandler implements PlaylistExportHandler {
     private static Logger LOG = LoggerFactory.getLogger(XspfPlaylistExportHandler.class);
 
     @Autowired
-    PlaylistRepository playlistRepository;
+    private PlaylistRepository playlistRepository;
 
     @Autowired
-    MediaFolderService mediaFolderService;
-
-    @Autowired
-    CoverArtService coverArtService;
+    private CoverArtService coverArtService;
 
     @Override
     public boolean canHandle(Class<? extends SpecificPlaylistProvider> providerClass) {
@@ -57,7 +52,6 @@ public class XspfPlaylistExportHandler implements PlaylistExportHandler {
         newPlaylist.setDate(Date.from(Instant.now())); //TODO switch to Instant upstream
 
         playlist.getMediaFiles().stream().map(mediaFile -> {
-            MusicFolder folder = mediaFolderService.getMusicFolderById(mediaFile.getFolderId());
             Track track = new Track();
             track.setTrackNumber(mediaFile.getTrackNumber());
             track.setCreator(mediaFile.getArtist());
@@ -66,7 +60,7 @@ public class XspfPlaylistExportHandler implements PlaylistExportHandler {
             track.setDuration((int) Math.round(mediaFile.getDuration())); // TODO switch to Double upstream
             track.setImage(Optional.ofNullable(coverArtService.getFullPath(EntityType.MEDIA_FILE, mediaFile.getId())).map(p -> p.toString()).orElse(null));
             Location location = new Location();
-            location.setText(mediaFile.getFullPath(folder.getPath()).toString());
+            location.setText(mediaFile.getFullPath().toString());
             track.getStringContainers().add(location);
             return track;
         }).forEach(newPlaylist::addTrack);

@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -38,8 +39,6 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import static org.springframework.util.ObjectUtils.isEmpty;
-
 /**
  * Termination used by SearchService.
  *
@@ -62,12 +61,7 @@ public class SearchServiceUtilities {
     @Autowired
     private AlbumRepository albumRepository;
 
-    /*
-     * Search by id only.
-     * Although there is no influence at present,
-     * mediaFileService has a caching mechanism.
-     * Service is used instead of Dao until you are sure you need to use mediaFileDao.
-     */
+    /* Search by id only. */
     @Autowired
     private MediaFileService mediaFileService;
 
@@ -84,7 +78,7 @@ public class SearchServiceUtilities {
     public final BiConsumer<List<MediaFile>, Integer> addMediaFileIfAnyMatch = (dist, id) -> {
         if (!dist.stream().anyMatch(m -> id.equals(m.getId()))) {
             MediaFile mediaFile = mediaFileService.getMediaFile(id);
-            if (!isEmpty(mediaFile)) {
+            if (mediaFile != null) {
                 dist.add(mediaFile);
             }
         }

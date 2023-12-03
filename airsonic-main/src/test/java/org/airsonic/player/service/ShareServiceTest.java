@@ -150,7 +150,6 @@ public class ShareServiceTest {
     public void testGetSharedFiles() {
         // given
         int shareId = 1;
-        int folderId = 3;
         List<MusicFolder> musicFolders = new ArrayList<>();
         MusicFolder folder = new MusicFolder(3, null, null, null, false, null);
         musicFolders.add(folder);
@@ -160,7 +159,7 @@ public class ShareServiceTest {
         for (int i = 0; i < 10; i++) {
             MediaFile file = new MediaFile();
             file.setId(i);
-            file.setFolderId(folderId);
+            file.setFolder(folder);
             file.setPresent(true);
             files.add(file);
             when(mediaFileService.getMediaFile(i)).thenReturn(file);

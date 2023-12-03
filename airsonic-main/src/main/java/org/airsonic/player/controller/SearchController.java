@@ -104,13 +104,13 @@ public class SearchController {
 
             SearchResult artists = searchService.search(criteria, musicFolders, IndexType.ARTIST);
             SearchResult artistsId3 = searchService.search(criteria, musicFolders, IndexType.ARTIST_ID3);
-            artistsId3.getArtists().stream().map(Artist::getName).flatMap(ar -> albumService.getAlbumsByArtist(ar, musicFolders).stream().map(al -> mediaFileService.getMediaFile(al.getPath(), al.getFolderId())).filter(Objects::nonNull).map(MediaFile::getId).map(m -> Pair.of(ar, m))).collect(groupingBy(p -> p.getKey(), mapping(p -> p.getValue(), toSet())));
+            artistsId3.getArtists().stream().map(Artist::getName).flatMap(ar -> albumService.getAlbumsByArtist(ar, musicFolders).stream().map(al -> mediaFileService.getMediaFile(al.getPath(), al.getFolder())).filter(Objects::nonNull).map(MediaFile::getId).map(m -> Pair.of(ar, m))).collect(groupingBy(p -> p.getKey(), mapping(p -> p.getValue(), toSet())));
             artists.getMediaFiles().stream().map(m -> Pair.of(Optional.ofNullable(m.getArtist()).or(() -> Optional.ofNullable(m.getAlbumArtist())).orElse("(Unknown)"), m.getId()));
             command.setArtists(Stream.concat(
                     artistsId3.getArtists().stream()
                         .map(Artist::getName)
                         .flatMap(ar -> albumService.getAlbumsByArtist(ar, musicFolders).stream()
-                                .map(al -> mediaFileService.getMediaFile(al.getPath(), al.getFolderId()))
+                                .map(al -> mediaFileService.getMediaFile(al.getPath(), al.getFolder()))
                                     .filter(Objects::nonNull)
                                 .map(MediaFile::getId)
                                 .map(m -> Pair.of(ar, m))),
@@ -126,7 +126,7 @@ public class SearchController {
             SearchResult albumsId3 = searchService.search(criteria, musicFolders, IndexType.ALBUM_ID3);
             command.setAlbums(Stream
                     .concat(albumsId3.getAlbums().stream()
-                            .map(a -> Optional.ofNullable(mediaFileService.getMediaFile(a.getPath(), a.getFolderId()))
+                            .map(a -> Optional.ofNullable(mediaFileService.getMediaFile(a.getPath(), a.getFolder()))
                                     .map(m -> Pair.of(Pair.of(a.getName(), a.getArtist()), m.getId())).orElse(null))
                             .filter(Objects::nonNull),
                             albums.getMediaFiles().stream()

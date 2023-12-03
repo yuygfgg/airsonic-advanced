@@ -26,7 +26,6 @@ import org.airsonic.player.domain.PodcastChannel;
 import org.airsonic.player.domain.PodcastEpisode;
 import org.airsonic.player.domain.PodcastStatus;
 import org.airsonic.player.service.MediaFileService;
-import org.airsonic.player.service.MediaFolderService;
 import org.airsonic.player.service.PodcastPersistenceService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
@@ -81,9 +80,6 @@ public class PodcastDownloadClient {
 
     @Autowired
     private VersionService versionService;
-
-    @Autowired
-    private MediaFolderService mediaFolderService;
 
     @Autowired
     private SettingsService settingsService;
@@ -163,7 +159,7 @@ public class PodcastDownloadClient {
                     LOG.info("Downloaded {} bytes from Podcast {}", bytesDownloaded, episode.getUrl());
                     MediaFile file = mediaFileService.getMediaFile(relativeFile, folder);
                     episode.setMediaFile(file);
-                    updateTags(file, folder, episode);
+                    updateTags(file, episode);
                     episode.setStatus(PodcastStatus.COMPLETED);
                     podcastPersistenceService.updateEpisode(episode);
                     deleteObsoleteEpisodes(channel);
@@ -180,9 +176,9 @@ public class PodcastDownloadClient {
         return result;
     }
 
-    private void updateTags(MediaFile file, MusicFolder folder, PodcastEpisode episode) {
+    private void updateTags(MediaFile file, PodcastEpisode episode) {
         try {
-            Path fullPath = file.getFullPath(folder.getPath());
+            Path fullPath = file.getFullPath();
             if (StringUtils.isNotBlank(episode.getTitle())) {
                 MetaDataParser parser = metaDataParserFactory.getParser(fullPath);
                 if (!parser.isEditingSupported()) {
@@ -191,7 +187,7 @@ public class PodcastDownloadClient {
                 MetaData metaData = parser.getRawMetaData(fullPath);
                 metaData.setTitle(episode.getTitle());
                 parser.setMetaData(file, metaData);
-                mediaFileService.refreshMediaFile(file, folder);
+                mediaFileService.refreshMediaFile(file);
             }
         } catch (Exception x) {
             LOG.warn("Failed to update tags for podcast {}", episode.getUrl(), x);
@@ -237,8 +233,8 @@ public class PodcastDownloadClient {
         }
 
         MediaFile channelMediaFile = channel.getMediaFile();
-        MusicFolder folder = mediaFolderService.getMusicFolderById(channelMediaFile.getFolderId());
-        Path channelDir = channelMediaFile.getFullPath(folder.getPath());
+        MusicFolder folder = channelMediaFile.getFolder();
+        Path channelDir = channelMediaFile.getFullPath();
 
         Path file = channelDir.resolve(filename + "." + extension);
         for (int i = 0; Files.exists(file); i++) {

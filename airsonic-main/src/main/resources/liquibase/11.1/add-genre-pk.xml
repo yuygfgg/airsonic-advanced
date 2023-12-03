@@ -1,0 +1,20 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="add_genre_pk" author="kagemomiji">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="genre" columnName="name"/>
+            <not>
+                <primaryKeyExists tableName="genre"/>
+            </not>
+        </preConditions>
+        <addPrimaryKey tableName="genre" 
+                       columnNames="name" 
+                       constraintName="gr_n_pk"/>
+        <rollback>
+            <dropPrimaryKey tableName="genre" constraintName="gr_n_pk"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

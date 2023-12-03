@@ -14,52 +14,50 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2023 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.domain;
 
-import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.PlayQueue.RepeatStatus;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test of {@link PlayQueue}.
  *
- * @author Sindre Mehus
+ * @author Sindre Mehus, Y.Tory
  */
 public class PlayQueueTestCase {
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static Path temporaryFolder;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupOnce() throws IOException {
-        Files.createFile(temporaryFolder.getRoot().toPath().resolve("A"));
-        Files.createFile(temporaryFolder.getRoot().toPath().resolve("B"));
-        Files.createFile(temporaryFolder.getRoot().toPath().resolve("C"));
-        Files.createFile(temporaryFolder.getRoot().toPath().resolve("D"));
-        Files.createFile(temporaryFolder.getRoot().toPath().resolve("E"));
-        Files.createFile(temporaryFolder.getRoot().toPath().resolve("F"));
+        Files.createFile(temporaryFolder.resolve("A"));
+        Files.createFile(temporaryFolder.resolve("B"));
+        Files.createFile(temporaryFolder.resolve("C"));
+        Files.createFile(temporaryFolder.resolve("D"));
+        Files.createFile(temporaryFolder.resolve("E"));
+        Files.createFile(temporaryFolder.resolve("F"));
     }
 
     @Test
     public void testEmpty() {
-        PlayQueue playQueue = new PlayQueue(i -> null);
+        PlayQueue playQueue = new PlayQueue();
         assertEquals(0, playQueue.size());
         assertTrue(playQueue.isEmpty());
         assertEquals(0, playQueue.getFiles().size());
@@ -68,7 +66,7 @@ public class PlayQueueTestCase {
 
     @Test
     public void testStatus() {
-        PlayQueue playQueue = new PlayQueue(i -> null);
+        PlayQueue playQueue = new PlayQueue();
         assertEquals(PlayQueue.Status.PLAYING, playQueue.getStatus());
 
         playQueue.setStatus(PlayQueue.Status.STOPPED);
@@ -294,7 +292,7 @@ public class PlayQueueTestCase {
     }
 
     private PlayQueue createPlaylist(int index, String... songs) {
-        PlayQueue playQueue = new PlayQueue(i -> new MusicFolder(i, temporaryFolder.getRoot().toPath(), "meh", Type.MEDIA, true, Instant.now().truncatedTo(ChronoUnit.MICROS)));
+        PlayQueue playQueue = new PlayQueue();
         for (String song : songs) {
             playQueue.addFiles(true, new TestMediaFile(song));
         }
@@ -315,7 +313,10 @@ public class PlayQueueTestCase {
         TestMediaFile(String name) {
             this.name = name;
             setPath(name);
-            setFolderId(0);
+            MusicFolder folder = new MusicFolder();
+            folder.setId(0);
+            folder.setPath(temporaryFolder);
+            setFolder(folder);
         }
 
         TestMediaFile(Integer track, String artist, String album) {
@@ -323,7 +324,10 @@ public class PlayQueueTestCase {
             this.album = album;
             this.artist = artist;
             setPath(artist);
-            setFolderId(track);
+            MusicFolder folder = new MusicFolder();
+            folder.setId(track);
+            folder.setPath(temporaryFolder);
+            setFolder(folder);
         }
 
         @Override

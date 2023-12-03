@@ -20,13 +20,13 @@
 package org.airsonic.player.service.upnp;
 
 import com.google.common.primitives.Ints;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.CoverArtScheme;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.service.AlbumService;
+import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.SearchService;
 import org.fourthline.cling.support.model.BrowseResult;
 import org.fourthline.cling.support.model.DIDLContent;
@@ -57,6 +57,9 @@ public class AlbumUpnpProcessor extends UpnpContentProcessor <Album, MediaFile> 
 
     @Autowired
     SearchService searchService;
+
+    @Autowired
+    private MediaFileService mediaFileService;
 
     public AlbumUpnpProcessor() {
         setRootId(DispatchingContentDirectory.CONTAINER_ID_ALBUM_PREFIX);
@@ -119,7 +122,7 @@ public class AlbumUpnpProcessor extends UpnpContentProcessor <Album, MediaFile> 
 
     @Override
     public List<MediaFile> getChildren(Album album) {
-        List<MediaFile> allFiles = getMediaFileDao().getSongsForAlbum(album.getArtist(), album.getName());
+        List<MediaFile> allFiles = mediaFileService.getSongsForAlbum(album.getArtist(), album.getName());
         if (album.getId() == -1) {
             List<Album> albumList = null;
             if (album.getComment().startsWith(ALL_BY_ARTIST)) {
@@ -132,11 +135,11 @@ public class AlbumUpnpProcessor extends UpnpContentProcessor <Album, MediaFile> 
             }
             for (Album a: albumList) {
                 if (a.getId() != -1) {
-                    allFiles.addAll(getMediaFileDao().getSongsForAlbum(a.getArtist(), a.getName()));
+                    allFiles.addAll(mediaFileService.getSongsForAlbum(a.getArtist(), a.getName()));
                 }
             }
         } else {
-            allFiles = getMediaFileDao().getSongsForAlbum(album.getArtist(), album.getName());
+            allFiles = mediaFileService.getSongsForAlbum(album.getArtist(), album.getName());
         }
         return allFiles;
     }
@@ -170,8 +173,5 @@ public class AlbumUpnpProcessor extends UpnpContentProcessor <Album, MediaFile> 
         return new PersonWithRole[] { new PersonWithRole(artist) };
     }
 
-    public MediaFileDao getMediaFileDao() {
-        return getDispatcher().getMediaFileProcessor().getMediaFileDao();
-    }
 
 }

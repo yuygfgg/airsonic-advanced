@@ -23,7 +23,6 @@ import com.google.common.primitives.Ints;
 import org.airsonic.player.ajax.LyricsInfo;
 import org.airsonic.player.ajax.LyricsWSController;
 import org.airsonic.player.command.UserSettingsCommand;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.dao.PlayQueueDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.Bookmark;
@@ -141,8 +140,6 @@ public class SubsonicRESTController {
     private RatingService ratingService;
     @Autowired
     private SearchService searchService;
-    @Autowired
-    private MediaFileDao mediaFileDao;
     @Autowired
     private ArtistService artistService;
     @Autowired
@@ -265,7 +262,7 @@ public class SubsonicRESTController {
             for (MusicIndex.SortableArtistWithMediaFiles artist : entry.getValue()) {
                 for (MediaFile mediaFile : artist.getMediaFiles()) {
                     if (mediaFile.isDirectory()) {
-                        Instant starredDate = mediaFileDao.getMediaFileStarredDate(mediaFile.getId(), username);
+                        Instant starredDate = mediaFileService.getMediaFileStarredDate(mediaFile, username);
                         org.subsonic.restapi.Artist a = new org.subsonic.restapi.Artist();
                         index.getArtist().add(a);
                         a.setId(String.valueOf(mediaFile.getId()));
@@ -297,7 +294,7 @@ public class SubsonicRESTController {
         request = wrapRequest(request);
         org.subsonic.restapi.Genres genres = new org.subsonic.restapi.Genres();
 
-        for (org.airsonic.player.domain.Genre genre : mediaFileDao.getGenres(false)) {
+        for (org.airsonic.player.domain.Genre genre : mediaFileService.getGenres(false)) {
             org.subsonic.restapi.Genre g = new org.subsonic.restapi.Genre();
             genres.getGenre().add(g);
             g.setContent(genre.getName());
@@ -324,7 +321,7 @@ public class SubsonicRESTController {
         Integer musicFolderId = getIntParameter(request, "musicFolderId");
         List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username, musicFolderId);
 
-        for (MediaFile mediaFile : mediaFileDao.getSongsByGenre(genre, offset, count, musicFolders)) {
+        for (MediaFile mediaFile : mediaFileService.getSongsByGenre(offset, count, genre, musicFolders)) {
             songs.getSong().add(createJaxbChild(player, mediaFile, username));
         }
         Response res = createResponse();
@@ -523,7 +520,7 @@ public class SubsonicRESTController {
         org.subsonic.restapi.Artist result = new org.subsonic.restapi.Artist();
         result.setId(String.valueOf(artist.getId()));
         result.setName(artist.getArtist());
-        Instant starred = mediaFileDao.getMediaFileStarredDate(artist.getId(), username);
+        Instant starred = mediaFileService.getMediaFileStarredDate(artist, username);
         result.setStarred(jaxbWriter.convertDate(starred));
         return result;
     }
@@ -605,7 +602,7 @@ public class SubsonicRESTController {
         }
 
         AlbumWithSongsID3 result = createJaxbAlbum(new AlbumWithSongsID3(), album, username);
-        for (MediaFile mediaFile : mediaFileDao.getSongsForAlbum(album.getArtist(), album.getName())) {
+        for (MediaFile mediaFile : mediaFileService.getSongsForAlbum(album.getArtist(), album.getName())) {
             result.getSong().add(createJaxbChild(player, mediaFile, username));
         }
 
@@ -621,7 +618,7 @@ public class SubsonicRESTController {
         Player player = playerService.getPlayer(request, response, username);
 
         int id = getRequiredIntParameter(request, "id");
-        MediaFile song = mediaFileDao.getMediaFile(id);
+        MediaFile song = mediaFileService.getMediaFile(id);
         if (song == null || song.isDirectory()) {
             error(request, response, ErrorCode.NOT_FOUND, "Song not found.");
             return;
@@ -664,7 +661,7 @@ public class SubsonicRESTController {
             // Ignored.
         }
         directory.setName(dir.getName());
-        directory.setStarred(jaxbWriter.convertDate(mediaFileDao.getMediaFileStarredDate(id, username)));
+        directory.setStarred(jaxbWriter.convertDate(mediaFileService.getMediaFileStarredDate(dir, username)));
         directory.setPlayCount((long) dir.getPlayCount());
 
         if (dir.isAlbum()) {
@@ -1207,7 +1204,7 @@ public class SubsonicRESTController {
         List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
 
         Videos result = new Videos();
-        for (MediaFile mediaFile : mediaFileDao.getVideos(size, offset, musicFolders)) {
+        for (MediaFile mediaFile : mediaFileService.getVideos(musicFolders, size, offset)) {
             result.getVideo().add(createJaxbChild(player, mediaFile, username));
         }
         Response res = createResponse();
@@ -1259,7 +1256,7 @@ public class SubsonicRESTController {
         child.setYear(mediaFile.getYear());
         child.setGenre(mediaFile.getGenre());
         child.setCreated(jaxbWriter.convertDate(mediaFile.getCreated()));
-        child.setStarred(jaxbWriter.convertDate(mediaFileDao.getMediaFileStarredDate(mediaFile.getId(), username)));
+        child.setStarred(jaxbWriter.convertDate(mediaFileService.getMediaFileStarredDate(mediaFile, username)));
         child.setUserRating(ratingService.getRatingForUser(username, mediaFile));
         child.setAverageRating(ratingService.getAverageRating(mediaFile));
         child.setPlayCount((long) mediaFile.getPlayCount());
@@ -1451,15 +1448,15 @@ public class SubsonicRESTController {
 
         String username = securityService.getCurrentUser(request).getUsername();
         for (int id : getIntParameters(request, "id")) {
-            MediaFile mediaFile = mediaFileDao.getMediaFile(id);
+            MediaFile mediaFile = mediaFileService.getMediaFile(id);
             if (mediaFile == null) {
                 error(request, response, ErrorCode.NOT_FOUND, "Media file not found: " + id);
                 return;
             }
             if (star) {
-                mediaFileDao.starMediaFile(id, username);
+                mediaFileService.starMediaFiles(List.of(id), username);
             } else {
-                mediaFileDao.unstarMediaFile(id, username);
+                mediaFileService.unstarMediaFiles(List.of(id), username);
             }
         }
         for (int albumId : getIntParameters(request, "albumId")) {
@@ -1487,13 +1484,13 @@ public class SubsonicRESTController {
         List<org.airsonic.player.domain.MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username, musicFolderId);
 
         Starred result = new Starred();
-        for (MediaFile artist : mediaFileDao.getStarredDirectories(0, Integer.MAX_VALUE, username, musicFolders)) {
+        for (MediaFile artist : mediaFileService.getStarredArtists(0, Integer.MAX_VALUE, username, musicFolders)) {
             result.getArtist().add(createJaxbArtist(artist, username));
         }
-        for (MediaFile album : mediaFileDao.getStarredAlbums(0, Integer.MAX_VALUE, username, musicFolders)) {
+        for (MediaFile album : mediaFileService.getStarredAlbums(0, Integer.MAX_VALUE, username, musicFolders)) {
             result.getAlbum().add(createJaxbChild(player, album, username));
         }
-        for (MediaFile song : mediaFileDao.getStarredFiles(0, Integer.MAX_VALUE, username, musicFolders)) {
+        for (MediaFile song : mediaFileService.getStarredSongs(0, Integer.MAX_VALUE, username, musicFolders)) {
             result.getSong().add(createJaxbChild(player, song, username));
         }
         Response res = createResponse();
@@ -1516,7 +1513,7 @@ public class SubsonicRESTController {
         for (Album album : albumService.getStarredAlbums(username, musicFolders)) {
             result.getAlbum().add(createJaxbAlbum(new AlbumID3(), album, username));
         }
-        for (MediaFile song : mediaFileDao.getStarredFiles(0, Integer.MAX_VALUE, username, musicFolders)) {
+        for (MediaFile song : mediaFileService.getStarredSongs(0, Integer.MAX_VALUE, username, musicFolders)) {
             result.getSong().add(createJaxbChild(player, song, username));
         }
         Response res = createResponse();

@@ -101,8 +101,6 @@ public class DownloadController {
     @Autowired
     private MediaFileService mediaFileService;
     @Autowired
-    private MediaFolderService mediaFolderService;
-    @Autowired
     private CoverArtService coverArtService;
 
     @GetMapping
@@ -126,7 +124,7 @@ public class DownloadController {
         };
 
         MediaFile mediaFile = id.map(mediaFileService::getMediaFile).orElse(null);
-        Collection<Pair<Path, Integer>> additionalFiles = Collections.emptyList();
+        Collection<Pair<Path, MusicFolder>> additionalFiles = Collections.emptyList();
 
         if (mediaFile != null) {
             if (!securityService.isFolderAccessAllowed(mediaFile, user.getUsername())) {
@@ -139,7 +137,7 @@ public class DownloadController {
                 if (indices == null) {
                     CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, mediaFile.getId());
                     if (!CoverArt.NULL_ART.equals(art)) {
-                        additionalFiles = Collections.singletonList(Pair.of(art.getRelativePath(), art.getFolderId()));
+                        additionalFiles = Collections.singletonList(Pair.of(art.getRelativePath(), art.getFolder()));
                     }
                 }
                 response = prepareResponse(mediaFileService.getChildrenOf(mediaFile, true, false, true), indices, statusSupplier, statusCloser, additionalFiles);
@@ -190,7 +188,7 @@ public class DownloadController {
     }
 
     private ResponseDTO prepareResponse(List<MediaFile> files, List<Integer> indices,
-            Supplier<TransferStatus> statusSupplier, Consumer<TransferStatus> statusCloser, Collection<Pair<Path, Integer>> additionalFiles)
+            Supplier<TransferStatus> statusSupplier, Consumer<TransferStatus> statusCloser, Collection<Pair<Path, MusicFolder>> additionalFiles)
             throws IOException {
         if (indices == null) {
             indices = IntStream.range(0, files.size()).boxed().collect(Collectors.toList());
@@ -206,7 +204,7 @@ public class DownloadController {
         if (indices.size() == 1 && (additionalFiles == null || additionalFiles.size() == 0)) {
             // single file
             MediaFile file = files.get(indices.get(0));
-            Path path = file.getFullPath(mediaFolderService.getMusicFolderById(file.getFolderId()).getPath());
+            Path path = file.getFullPath();
             long changed = file.getChanged() == null ? -1 : file.getChanged().toEpochMilli();
             return new ResponseDTO(
                     new MonitoredResource(
@@ -222,10 +220,13 @@ public class DownloadController {
             // get a list of all paths under the tree, plus their zip names and sizes
             Collection<Pair<Path, Pair<String, Long>>> pathsToZip = Stream
                     .concat(
-                            indices.stream().map(index -> Objects.isNull(index) ? null : files.get(index)).filter(Objects::nonNull).map(x -> Pair.of(x.getRelativePath(), x.getFolderId())),
+                            indices.stream()
+                                .map(index -> Objects.isNull(index) ? null : files.get(index))
+                                .filter(Objects::nonNull)
+                                .map(x -> Pair.of(x.getRelativePath(), x.getFolder())),
                             additionalFiles.stream().filter(Objects::nonNull))
                     .flatMap(pf -> {
-                        MusicFolder mf = mediaFolderService.getMusicFolderById(pf.getRight());
+                        MusicFolder mf = pf.getRight();
                         Path p = mf.getPath().resolve(pf.getLeft());
                         Path parent = p.getParent();
                         try (Stream<Path> paths = Files.walk(p)) {

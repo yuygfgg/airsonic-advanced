@@ -127,7 +127,7 @@ public class ExternalPlayerController {
         if (share != null) {
             return shareService.getSharedFiles(share.getId(), musicFolders)
                     .stream()
-                    .filter(f -> Files.exists(f.getFullPath(mediaFolderService.getMusicFolderById(f.getFolderId()).getPath())))
+                    .filter(f -> Files.exists(f.getFullPath()))
                     .flatMap(f -> {
                         if (f.isDirectory()) {
                             return mediaFileService.getVisibleChildrenOf(f, false, true).stream()

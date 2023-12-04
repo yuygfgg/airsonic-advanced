@@ -1,0 +1,59 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <!-- This change set is to remove the duplication of genre name in the database. -->
+    <!-- rename genre to genre_backup-->
+    <changeSet id="rename-genre-to-backup" author="kagemomiji">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <primaryKeyExists tableName="genre"/>
+            </not>
+        </preConditions>
+        <renameTable newTableName="genre_backup" oldTableName="genre"/>
+    </changeSet>
+
+    <!-- crete new genre table -->
+    <changeSet id="create-new-genre-table" author="kagemomiji">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <primaryKeyExists tableName="genre"/>
+            </not>
+        </preConditions>
+        <createTable tableName="genre">
+            <column name="name" type="${varchar_type}"/>
+            <column name="song_count" type="integer"/>
+            <column name="album_count" type="integer"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Copy data from genre_backup to genre -->
+    <changeSet id="copy-distinct-genre-data" author="kagemomiji">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <primaryKeyExists tableName="genre"/>
+            </not>
+        </preConditions>
+        <sql>
+            INSERT INTO genre (name, song_count, album_count)
+            SELECT DISTINCT name, song_count, album_count FROM genre_backup;
+        </sql>
+        <rollback>
+            <dropTable tableName="genre"/>
+            <renameTable oldTableName="genre_backup" newTableName="genre"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Drop the genre_backup table -->
+    <changeSet id="drop-genre-backup-table" author="kagemomiji">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <primaryKeyExists tableName="genre"/>
+            </not>
+        </preConditions>
+        <dropTable tableName="genre_backup"/>
+        <rollback>
+            <dropTable tableName="genre"/>
+            <renameTable oldTableName="genre_backup" newTableName="genre"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

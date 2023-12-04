@@ -35,7 +35,9 @@
         </preConditions>
         <sql>
             INSERT INTO genre (name, song_count, album_count)
-            SELECT DISTINCT name, song_count, album_count FROM genre_backup;
+            SELECT name, MAX(song_count), MAX(album_count)
+            FROM genre_backup
+            GROUP BY name;
         </sql>
         <rollback>
             <dropTable tableName="genre"/>

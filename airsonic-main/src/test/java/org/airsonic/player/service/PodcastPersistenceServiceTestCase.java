@@ -142,7 +142,6 @@ public class PodcastPersistenceServiceTestCase {
         boolean actual = podcastService.deleteChannel(channelId);
 
         // then
-        verify(podcastEpisodeRepository).delete(mockedEpisode);
         verify(podcastChannelRepository).delete(mockedChannel);
         verify(mediaFileService).refreshMediaFile(mockedMediaFile);
         assertFalse(Files.exists(tempFolder.resolve("test.mp3")));

@@ -502,15 +502,23 @@ public class PodcastPersistenceService {
      */
     public boolean deleteChannel(int channelId) {
         // Delete all associated episodes (in case they have files that need to be deleted).
-        getEpisodes(channelId).parallelStream().forEach(ep -> deleteEpisode(ep, false));
-
         return podcastChannelRepository.findById(channelId).map(channel -> {
+            podcastEpisodeRepository.findByChannel(channel).parallelStream()
+                .filter(filterAllowed)
+                .forEach(episode -> {
+                    MediaFile mediaFile = episode.getMediaFile();
+                    if (mediaFile != null) {
+                        FileUtil.delete(mediaFile.getFullPath());
+                        mediaFileService.delete(mediaFile);
+                    }
+                });
             MediaFile mediaFile = channel.getMediaFile();
             FileUtil.delete(mediaFile.getFullPath());
             mediaFileService.refreshMediaFile(mediaFile);
             podcastChannelRepository.delete(channel);
             return true;
         }).orElse(false);
+
     }
 
     /**

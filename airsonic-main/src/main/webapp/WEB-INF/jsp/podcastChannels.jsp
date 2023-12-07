@@ -273,10 +273,10 @@
             onPlayEpisode(newestPodcastTable.row( $(this).parents('tr') ).data().id);
         } );
         $("#newestPodcastTable tbody").on( "click", ".addSongLast", function () {
-            onAddLastMediaFile(newestPodcastTable.row( $(this).parents('tr') ).data().mediaFile.id);
+            onAddLastMediaFile(newestPodcastTable.row( $(this).parents('tr') ).data().mediaFileId);
         } );
         $("#newestPodcastTable tbody").on( "click", ".addSongNext", function () {
-            onAddNextMediaFile(newestPodcastTable.row( $(this).parents('tr') ).data().mediaFile.id);
+            onAddNextMediaFile(newestPodcastTable.row( $(this).parents('tr') ).data().mediaFileId);
         } );
         $(".newestPodcastSelectAll").on( "change", function (e) {
             selectAll(newestPodcastTable, e.target.checked);

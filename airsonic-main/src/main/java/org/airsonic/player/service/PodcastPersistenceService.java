@@ -364,6 +364,10 @@ public class PodcastPersistenceService {
         return podcastChannelRepository.findById(channelId).map(channel -> {
             return podcastEpisodeRepository.findByChannel(channel).stream()
                 .filter(filterAllowed)
+                .map(ep -> {
+                    ep.getMediaFile();
+                    return ep;
+                })
                 .sorted(Comparator.comparing(PodcastEpisode::getPublishDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
         }).orElseGet(() -> {
@@ -514,7 +518,7 @@ public class PodcastPersistenceService {
                 });
             MediaFile mediaFile = channel.getMediaFile();
             FileUtil.delete(mediaFile.getFullPath());
-            mediaFileService.refreshMediaFile(mediaFile);
+            mediaFileService.delete(mediaFile);
             podcastChannelRepository.delete(channel);
             return true;
         }).orElse(false);
@@ -545,7 +549,7 @@ public class PodcastPersistenceService {
         MediaFile file = episode.getMediaFile();
         if (file != null) {
             FileUtil.delete(file.getFullPath());
-            mediaFileService.refreshMediaFile(file);
+            mediaFileService.delete(file);
         }
 
         if (logicalDelete) {

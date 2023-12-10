@@ -365,7 +365,17 @@ public class PodcastPersistenceService {
             return podcastEpisodeRepository.findByChannel(channel).stream()
                 .filter(filterAllowed)
                 .map(ep -> {
-                    ep.getMediaFile();
+                    MediaFile mediaFile = ep.getMediaFile();
+                    if (mediaFile != null) {
+                        // Refresh media file to check if it still exists
+                        mediaFileService.refreshMediaFile(mediaFile);
+                        if (!mediaFile.isPresent() && ep.getStatus() != PodcastStatus.DELETED) {
+                            // If media file is not present anymore, set episode status to deleted
+                            ep.setStatus(PodcastStatus.DELETED);
+                            ep.setErrorMessage(null);
+                            podcastEpisodeRepository.save(ep);
+                        }
+                    }
                     return ep;
                 })
                 .sorted(Comparator.comparing(PodcastEpisode::getPublishDate, Comparator.nullsLast(Comparator.reverseOrder())))
@@ -400,8 +410,22 @@ public class PodcastPersistenceService {
      */
     public PodcastEpisode getEpisode(int episodeId, boolean includeDeleted) {
         return podcastEpisodeRepository.findById(episodeId)
-           .filter(episode -> includeDeleted || episode.getStatus() != PodcastStatus.DELETED)
-           .orElse(null);
+                .map(ep -> {
+                    MediaFile mediaFile = ep.getMediaFile();
+                    if (mediaFile != null) {
+                        // Refresh media file to check if it still exists
+                        mediaFileService.refreshMediaFile(mediaFile);
+                        if (!mediaFile.isPresent() && ep.getStatus() != PodcastStatus.DELETED) {
+                            // If media file is not present anymore, set episode status to deleted
+                            ep.setStatus(PodcastStatus.DELETED);
+                            ep.setErrorMessage(null);
+                            podcastEpisodeRepository.save(ep);
+                        }
+                    }
+                    return ep;
+                })
+                .filter(episode -> includeDeleted || episode.getStatus() != PodcastStatus.DELETED)
+                .orElse(null);
     }
 
     /**

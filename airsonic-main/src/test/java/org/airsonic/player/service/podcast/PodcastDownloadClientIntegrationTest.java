@@ -112,6 +112,8 @@ public class PodcastDownloadClientIntegrationTest {
         channelMediaFile.setCreated(Instant.now());
         channelMediaFile.setParentPath("");
         channelMediaFile.setPath("test");
+        channelMediaFile.setLastScanned(Instant.now());
+        channelMediaFile.setChildrenLastUpdated(Instant.now());
         channelMediaFile.setMediaType(MediaFile.MediaType.PODCAST);
         mediaFileRepository.saveAndFlush(channelMediaFile);
         Files.createDirectories(tempFolder.resolve("test"));

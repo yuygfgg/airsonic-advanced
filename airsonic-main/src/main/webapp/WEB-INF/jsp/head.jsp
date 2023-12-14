@@ -18,5 +18,5 @@
 <script type="text/javascript">
   ${model.keyboardShortcutsEnabled == null ? '//' : ''} var keyboardShortcutsEnabled = ${model.keyboardShortcutsEnabled};
 </script>
-<script defer type="text/javascript" src="<c:url value='/script/mousetrap-1.6.0.js'/>"></script>
+<script defer type="text/javascript" src="<c:url value='/script/mousetrap-1.6.5.min.js'/>"></script>
 <script defer type="text/javascript" src="<c:url value='/script/keyboard_shortcuts.js'/>"></script>

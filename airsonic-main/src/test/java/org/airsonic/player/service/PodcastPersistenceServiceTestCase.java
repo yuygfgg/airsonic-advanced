@@ -142,9 +142,8 @@ public class PodcastPersistenceServiceTestCase {
         boolean actual = podcastService.deleteChannel(channelId);
 
         // then
-        verify(podcastEpisodeRepository).delete(mockedEpisode);
         verify(podcastChannelRepository).delete(mockedChannel);
-        verify(mediaFileService).refreshMediaFile(mockedMediaFile);
+        verify(mediaFileService).delete(mockedMediaFile);
         assertFalse(Files.exists(tempFolder.resolve("test.mp3")));
         assertTrue(actual);
     }
@@ -189,7 +188,7 @@ public class PodcastPersistenceServiceTestCase {
         podcastService.deleteEpisode(1, true);
 
         // then
-        verify(mediaFileService).refreshMediaFile(mockedMediaFile);
+        verify(mediaFileService).delete(mockedMediaFile);
         verify(mockedEpisode).setStatus(PodcastStatus.DELETED);
         verify(mockedEpisode).setErrorMessage(null);
         verify(podcastEpisodeRepository).save(mockedEpisode);
@@ -211,7 +210,7 @@ public class PodcastPersistenceServiceTestCase {
 
         // then
         verify(podcastEpisodeRepository).delete(mockedEpisode);
-        verify(mediaFileService).refreshMediaFile(mockedMediaFile);
+        verify(mediaFileService).delete(mockedMediaFile);
         assertFalse(Files.exists(tempFolder.resolve("test.mp3")));
         verifyNoMoreInteractions(podcastEpisodeRepository);
     }

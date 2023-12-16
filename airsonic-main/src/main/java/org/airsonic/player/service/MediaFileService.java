@@ -142,6 +142,7 @@ public class MediaFileService {
 
     // This may be an expensive op
     public MediaFile getMediaFile(Path fullPath, boolean minimizeDiskAccess) {
+        if (Objects.isNull(fullPath)) return null;
         MusicFolder folder = mediaFolderService.getMusicFolderForFile(fullPath, true, true);
         if (folder == null) {
             // can't look outside folders and not present in folder
@@ -1510,7 +1511,10 @@ public class MediaFileService {
      * @param file media file to delete
      * @return deleted media file
      */
-    private MediaFile delete(MediaFile file) {
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "mediaFilePathCache", key = "#mediaFile.path.concat('-').concat(#mediaFile.folder.id).concat('-').concat(#mediaFile.startPosition == null ? '' : #mediaFile.startPosition.toString())", condition = "#mediaFile != null"),
+        @CacheEvict(cacheNames = "mediaFileIdCache", key = "#mediaFile.id", condition = "#mediaFile != null && #mediaFile.id != null") })
+    public MediaFile delete(MediaFile file) {
         if (file == null) {
             return null;
         }

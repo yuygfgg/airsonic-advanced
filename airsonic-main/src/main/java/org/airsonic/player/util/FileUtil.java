@@ -125,6 +125,10 @@ public final class FileUtil {
     public static boolean isFileInFolder(Path file, Path folder) {
         // not using this to account for / and \\ issues in linux
         // return file.normalize().startsWith(folder.normalize());
+        if (file == null || folder == null) {
+            LOG.debug("File or folder is null");
+            return false;
+        }
         return Paths.get(FilenameUtils.separatorsToUnix(file.toString())).normalize()
                 .startsWith(Paths.get(FilenameUtils.separatorsToUnix(folder.toString())).normalize());
     }

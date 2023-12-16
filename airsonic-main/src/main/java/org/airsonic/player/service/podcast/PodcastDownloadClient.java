@@ -159,6 +159,10 @@ public class PodcastDownloadClient {
                     LOG.info("Downloaded {} bytes from Podcast {}", bytesDownloaded, episode.getUrl());
                     MediaFile file = mediaFileService.getMediaFile(relativeFile, folder);
                     episode.setMediaFile(file);
+                    // Parser may not be able to determine duration for some formats.
+                    if (file.getDuration() == null) {
+                        throw new RuntimeException("Failed to get duration for " + file);
+                    }
                     updateTags(file, episode);
                     episode.setStatus(PodcastStatus.COMPLETED);
                     podcastPersistenceService.updateEpisode(episode);

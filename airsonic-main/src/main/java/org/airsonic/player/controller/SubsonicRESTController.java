@@ -1262,7 +1262,8 @@ public class SubsonicRESTController {
         child.setPlayCount((long) mediaFile.getPlayCount());
 
         if (mediaFile.isFile()) {
-            child.setDuration((int) Math.round(mediaFile.getDuration()));
+            Double mediaFileDuration = mediaFile.getDuration();
+            child.setDuration((int) Math.round(mediaFileDuration == null ? 0 : mediaFileDuration));
             child.setBitRate(mediaFile.getBitRate());
             child.setTrack(mediaFile.getTrackNumber());
             child.setDiscNumber(mediaFile.getDiscNumber());

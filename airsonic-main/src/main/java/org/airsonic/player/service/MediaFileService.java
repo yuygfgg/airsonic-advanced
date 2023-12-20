@@ -754,7 +754,9 @@ public class MediaFileService {
                             updateMediaFile(media);
                         }
                     } else {
-                        media = checkLastModified(media, false); // has to be false, only time it's called
+                        if (!media.hasIndex()) {
+                            media = checkLastModified(media, false); // has to be false, only time it's called
+                        }
                     }
                     return media;
                 })

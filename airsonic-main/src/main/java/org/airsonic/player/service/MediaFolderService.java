@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
@@ -408,11 +409,11 @@ public class MediaFolderService {
      * @param includeNonExisting Whether to include non-existing folders.
      * @return Music folder that contains the file, or null if no music folder contains the file.
      */
-    public MusicFolder getMusicFolderForFile(Path file, boolean includeDisabled, boolean includeNonExisting) {
+    public Optional<MusicFolder> getMusicFolderForFile(Path file, boolean includeDisabled, boolean includeNonExisting) {
         return getAllMusicFolders(includeDisabled, includeNonExisting).stream()
                 .filter(folder -> FileUtil.isFileInFolder(file, folder.getPath()))
                 .sorted(Comparator.comparing(folder -> folder.getPath().getNameCount(), Comparator.reverseOrder()))
-                .findFirst().orElse(null);
+                .findFirst();
     }
 
     /**
@@ -422,6 +423,6 @@ public class MediaFolderService {
      * @return Music folder that contains the file, or null if no music folder contains the file.
      */
     public MusicFolder getMusicFolderForFile(Path file) {
-        return getMusicFolderForFile(file, false, true);
+        return getMusicFolderForFile(file, false, true).orElse(null);
     }
 }

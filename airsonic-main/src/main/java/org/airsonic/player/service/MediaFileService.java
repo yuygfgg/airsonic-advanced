@@ -142,19 +142,16 @@ public class MediaFileService {
 
     // This may be an expensive op
     public MediaFile getMediaFile(Path fullPath, boolean minimizeDiskAccess) {
-        if (Objects.isNull(fullPath)) return null;
-        MusicFolder folder = mediaFolderService.getMusicFolderForFile(fullPath, true, true);
-        if (folder == null) {
-            // can't look outside folders and not present in folder
-            return null;
-        }
-        try {
-            Path relativePath = folder.getPath().relativize(fullPath);
-            return getMediaFile(relativePath, folder, minimizeDiskAccess);
-        } catch (Exception e) {
-            // ignore
-            return null;
-        }
+        return mediaFolderService.getMusicFolderForFile(fullPath, true, true)
+            .map(folder -> {
+                try {
+                    Path relativePath = folder.getPath().relativize(fullPath);
+                    return getMediaFile(relativePath, folder, minimizeDiskAccess);
+                } catch (Exception e) {
+                    // ignore
+                    return null;
+                }
+            }).orElse(null);
     }
 
     public MediaFile getMediaFile(String relativePath, Integer folderId) {
@@ -746,7 +743,7 @@ public class MediaFileService {
         try (Stream<Path> children = Files.list(parent.getFullPath())) {
             Map<String, MediaFile> bareFiles = children.parallel()
                 .filter(this::includeMediaFileByPath)
-                .filter(x -> mediaFolderService.getMusicFolderForFile(x, true, true).getId().equals(folder.getId()))
+                .filter(x -> mediaFolderService.getMusicFolderForFile(x, true, true).map(f -> f.equals(folder)).orElse(false))
                 .map(x -> folder.getPath().relativize(x))
                 .map(x -> {
                     MediaFile media = storedChildrenMap.remove(Pair.of(x.toString(), MediaFile.NOT_INDEXED));
@@ -917,7 +914,7 @@ public class MediaFileService {
         }
 
         //sanity check
-        MusicFolder folderActual = mediaFolderService.getMusicFolderForFile(file, true, true);
+        MusicFolder folderActual = mediaFolderService.getMusicFolderForFile(file, true, true).orElse(mediaFile.getFolder());
         if (!folderActual.getId().equals(mediaFile.getFolder().getId())) {
             LOG.warn("Inconsistent Mediafile folder for media file with path: {}, folder id should be {} and is instead {}", file, folderActual.getId(), mediaFile.getFolder().getId());
         }
@@ -1471,14 +1468,7 @@ public class MediaFileService {
                 Integer savedCount = IntStream.rangeClosed(0, batches).parallel().map(b -> {
                     try {
                         List<String> subList = pathsInFolderList.subList(b * BATCH_SIZE, Math.min((b + 1) * BATCH_SIZE, pathsInFolderList.size()));
-                        List<MediaFile> files = mediaFileRepository.findByFolderAndPathIn(folder, subList);
-                        files.parallelStream().forEach(m -> {
-                                m.setPresent(true);
-                                m.setLastScanned(lastScanned);
-                            }
-                        );
-                        mediaFileRepository.saveAll(files);
-                        return subList.size();
+                        return mediaFileRepository.markPresent(folder, subList, lastScanned);
                     } catch (Exception ex) {
                         LOG.warn("Error marking media files present", ex);
                         return 0;
@@ -1498,11 +1488,7 @@ public class MediaFileService {
      * @param lastScanned last scanned time before which media files are marked non present
      */
     public void markNonPresent(Instant lastScanned) {
-        mediaFileRepository.findByLastScannedBeforeAndPresentTrue(lastScanned).forEach(m -> {
-            m.setPresent(false);
-            m.setChildrenLastUpdated(Instant.ofEpochMilli(1));
-            mediaFileRepository.save(m);
-        });
+        mediaFileRepository.markNonPresent(Instant.ofEpochMilli(1), lastScanned);
     }
 
     /**

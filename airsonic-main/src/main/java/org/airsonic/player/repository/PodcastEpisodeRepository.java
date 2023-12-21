@@ -23,7 +23,9 @@ public interface PodcastEpisodeRepository extends JpaRepository<PodcastEpisode, 
 
     public List<PodcastEpisode> findByChannel(PodcastChannel channel);
 
+    public List<PodcastEpisode> findByChannelAndStatus(PodcastChannel channel, PodcastStatus status);
+
     public List<PodcastEpisode> findByStatusAndPublishDateNotNullAndMediaFilePresentTrueOrderByPublishDateDesc(
-            PodcastStatus status);
+                    PodcastStatus status);
 
 }

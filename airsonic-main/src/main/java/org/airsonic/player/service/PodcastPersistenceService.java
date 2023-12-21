@@ -106,11 +106,9 @@ public class PodcastPersistenceService {
      */
     public void cleanDownloadingEpisodes() {
         podcastChannelRepository.findAll()
-            .parallelStream()
-            .map(PodcastChannel::getId)
-            .map(this::getEpisodes)
-            .flatMap(List::parallelStream)
-            .filter(e -> e.getStatus() == PodcastStatus.DOWNLOADING)
+            .stream()
+            .flatMap(c -> podcastEpisodeRepository.findByChannelAndStatus(c, PodcastStatus.DOWNLOADING).stream())
+            .filter(filterAllowed)
             .forEach(e -> {
                 deleteEpisode(e, false);
                 LOG.info("Deleted Podcast episode '{}' since download was interrupted.", e.getTitle());

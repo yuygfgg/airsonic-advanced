@@ -781,9 +781,15 @@ public class SubsonicRESTController {
         int artistCount = getIntParameter(request, "artistCount", 20);
         int artistOffset = getIntParameter(request, "artistOffset", 0);
         if (StringUtils.isEmpty(query)) {
-            artistService.getArtists(musicFolders, artistCount, artistOffset).forEach(artist -> searchResult.getArtist().add(createJaxbArtist(new ArtistID3(), artist, username)));
-            albumService.getAlbums(musicFolders, albumCount, albumOffset).forEach(album -> searchResult.getAlbum().add(createJaxbAlbum(new AlbumID3(), album, username)));
-            mediaFileService.getSongs(musicFolders, songCount, songOffset).forEach(song -> searchResult.getSong().add(createJaxbChild(player, song, username)));
+            if (artistCount > 0) {
+                artistService.getArtists(musicFolders, artistCount, artistOffset).forEach(artist -> searchResult.getArtist().add(createJaxbArtist(new ArtistID3(), artist, username)));
+            }
+            if (albumCount > 0) {
+                albumService.getAlbums(musicFolders, albumCount, albumOffset).forEach(album -> searchResult.getAlbum().add(createJaxbAlbum(new AlbumID3(), album, username)));
+            }
+            if (songCount > 0) {
+                mediaFileService.getSongs(musicFolders, songCount, songOffset).forEach(song -> searchResult.getSong().add(createJaxbChild(player, song, username)));
+            }
         } else {
             SearchCriteria criteria = new SearchCriteria();
             criteria.setQuery(StringUtils.trimToEmpty(query));

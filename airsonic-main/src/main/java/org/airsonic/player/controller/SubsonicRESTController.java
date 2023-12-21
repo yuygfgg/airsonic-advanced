@@ -774,27 +774,39 @@ public class SubsonicRESTController {
         String query = request.getParameter("query");
         // replace empty string with null
         query = "\"\"".equals(query) ? null : query;
-        SearchCriteria criteria = new SearchCriteria();
-        criteria.setQuery(StringUtils.trimToEmpty(query));
-        criteria.setCount(getIntParameter(request, "artistCount", 20));
-        criteria.setOffset(getIntParameter(request, "artistOffset", 0));
-        org.airsonic.player.domain.SearchResult result = searchService.search(criteria, musicFolders, IndexType.ARTIST_ID3);
-        for (org.airsonic.player.domain.Artist artist : result.getArtists()) {
-            searchResult.getArtist().add(createJaxbArtist(new ArtistID3(), artist, username));
-        }
+        int songCount = getIntParameter(request, "songCount", 20);
+        int songOffset = getIntParameter(request, "songOffset", 0);
+        int albumCount = getIntParameter(request, "albumCount", 20);
+        int albumOffset = getIntParameter(request, "albumOffset", 0);
+        int artistCount = getIntParameter(request, "artistCount", 20);
+        int artistOffset = getIntParameter(request, "artistOffset", 0);
+        if (StringUtils.isEmpty(query)) {
+            artistService.getArtists(musicFolders, artistCount, artistOffset).forEach(artist -> searchResult.getArtist().add(createJaxbArtist(new ArtistID3(), artist, username)));
+            albumService.getAlbums(musicFolders, albumCount, albumOffset).forEach(album -> searchResult.getAlbum().add(createJaxbAlbum(new AlbumID3(), album, username)));
+            mediaFileService.getSongs(musicFolders, songCount, songOffset).forEach(song -> searchResult.getSong().add(createJaxbChild(player, song, username)));
+        } else {
+            SearchCriteria criteria = new SearchCriteria();
+            criteria.setQuery(StringUtils.trimToEmpty(query));
+            criteria.setCount(artistCount);
+            criteria.setOffset(artistOffset);
+            org.airsonic.player.domain.SearchResult result = searchService.search(criteria, musicFolders, IndexType.ARTIST_ID3);
+            for (org.airsonic.player.domain.Artist artist : result.getArtists()) {
+                searchResult.getArtist().add(createJaxbArtist(new ArtistID3(), artist, username));
+            }
 
-        criteria.setCount(getIntParameter(request, "albumCount", 20));
-        criteria.setOffset(getIntParameter(request, "albumOffset", 0));
-        result = searchService.search(criteria, musicFolders, IndexType.ALBUM_ID3);
-        for (Album album : result.getAlbums()) {
-            searchResult.getAlbum().add(createJaxbAlbum(new AlbumID3(), album, username));
-        }
+            criteria.setCount(albumCount);
+            criteria.setOffset(albumOffset);
+            result = searchService.search(criteria, musicFolders, IndexType.ALBUM_ID3);
+            for (Album album : result.getAlbums()) {
+                searchResult.getAlbum().add(createJaxbAlbum(new AlbumID3(), album, username));
+            }
 
-        criteria.setCount(getIntParameter(request, "songCount", 20));
-        criteria.setOffset(getIntParameter(request, "songOffset", 0));
-        result = searchService.search(criteria, musicFolders, IndexType.SONG);
-        for (MediaFile song : result.getMediaFiles()) {
-            searchResult.getSong().add(createJaxbChild(player, song, username));
+            criteria.setCount(songCount);
+            criteria.setOffset(songOffset);
+            result = searchService.search(criteria, musicFolders, IndexType.SONG);
+            for (MediaFile song : result.getMediaFiles()) {
+                searchResult.getSong().add(createJaxbChild(player, song, username));
+            }
         }
 
         Response res = createResponse();

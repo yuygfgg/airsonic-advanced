@@ -54,6 +54,23 @@ public class AlbumService {
     }
 
     /**
+     * Get albums sorted by id
+     *
+     * @param musicFolders music folders to search in
+     * @param count       count
+     * @param offset     offset
+     * @return albums or empty list if not found
+     */
+    public List<Album> getAlbums(List<MusicFolder> musicFolders, int count, int offset) {
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            return Collections.emptyList();
+        }
+        return albumRepository.findByFolderInAndPresentTrue(musicFolders,
+                new OffsetBasedPageRequest(offset, count, Sort.by("id")));
+    }
+
+
+    /**
      * Get album by artist name in music folders
      *
      * @param artist       artist name to get album for

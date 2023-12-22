@@ -20,6 +20,7 @@ package org.airsonic.player.repository;
 
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.MusicFolder;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -40,6 +41,9 @@ public interface ArtistRepository extends JpaRepository<Artist, Integer> {
     public Optional<Artist> findByNameAndFolderIn(String name, Iterable<MusicFolder> folders);
 
     public List<Artist> findByFolderInAndPresentTrue(Iterable<MusicFolder> folders, Sort sort);
+
+    public List<Artist> findByFolderInAndPresentTrue(Iterable<MusicFolder> musicFolders,
+            Pageable pageable);
 
     public List<Artist> findByPresentFalse();
 

@@ -22,6 +22,7 @@ import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.entity.StarredArtist;
 import org.airsonic.player.repository.ArtistRepository;
+import org.airsonic.player.repository.OffsetBasedPageRequest;
 import org.airsonic.player.repository.StarredArtistRepository;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -48,6 +49,14 @@ public class ArtistService {
     public ArtistService(ArtistRepository artistRepository, StarredArtistRepository starredArtistRepository) {
         this.artistRepository = artistRepository;
         this.starredArtistRepository = starredArtistRepository;
+    }
+
+    public List<Artist> getArtists(List<MusicFolder> musicFolders, int count, int offset) {
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            LOG.warn("getArtists: musicFolders is null");
+            return Collections.emptyList();
+        }
+        return artistRepository.findByFolderInAndPresentTrue(musicFolders, new OffsetBasedPageRequest(offset, count, Sort.by("id")));
     }
 
     /**

@@ -336,6 +336,21 @@ public class MediaFileService {
     }
 
     /**
+     * Returns all media files that are in given folders.
+     *
+     * @param folders The folders to search.
+     * @param count  Maximum number of files to return.
+     * @param offset Number of files to skip.
+     * @return All media files in the given folders.
+     */
+    public List<MediaFile> getSongs(List<MusicFolder> folders, int count, int offset) {
+        if (CollectionUtils.isEmpty(folders)) {
+            return Collections.emptyList();
+        }
+        return mediaFileRepository.findByFolderInAndMediaTypeInAndPresentTrue(folders, MediaType.playableTypes(), new OffsetBasedPageRequest(offset, count, Sort.by("id")));
+    }
+
+    /**
      * Returns all songs in the album
      *
      * @param artist The album artist name.

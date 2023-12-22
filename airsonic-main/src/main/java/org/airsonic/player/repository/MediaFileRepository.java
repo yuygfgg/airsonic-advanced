@@ -95,6 +95,9 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public void deleteAllByPresentFalse();
 
+    public List<MediaFile> findByFolderInAndMediaTypeInAndPresentTrue(List<MusicFolder> folders,
+            Iterable<MediaType> playableTypes, Pageable offsetBasedPageRequest);
+
     @Modifying
     @Transactional
     @Query("UPDATE MediaFile m SET m.present = true, m.lastScanned = :lastScanned WHERE m.folder = :folder AND m.path IN :paths")

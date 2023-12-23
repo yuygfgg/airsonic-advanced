@@ -844,11 +844,11 @@ public class MediaFileService {
             !(settingsService.getHideIndexedFiles() && media.hasIndex());
     }
 
-    public boolean includeMediaFile(MediaFile candidate) {
+    private boolean includeMediaFile(MediaFile candidate) {
         return includeMediaFileByPath(candidate.getFullPath());
     }
 
-    public boolean includeMediaFileByPath(Path candidate) {
+    private boolean includeMediaFileByPath(Path candidate) {
         String suffix = FilenameUtils.getExtension(candidate.toString()).toLowerCase();
         return (!isExcluded(candidate) && (Files.isDirectory(candidate) || isAudioFile(suffix) || isVideoFile(suffix)));
     }
@@ -903,7 +903,7 @@ public class MediaFileService {
      * @param mediaFile media file to reflect. Must not be null. path must be set.
      * @return media file reflected from file system
      */
-    public MediaFile updateMediaFileByFile(MediaFile mediaFile) {
+    private MediaFile updateMediaFileByFile(MediaFile mediaFile) {
         return updateMediaFileByFile(mediaFile, false);
     }
 

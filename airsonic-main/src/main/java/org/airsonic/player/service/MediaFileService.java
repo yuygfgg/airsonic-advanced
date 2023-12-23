@@ -1338,11 +1338,11 @@ public class MediaFileService {
         if (mediaFile == null) {
             throw new IllegalArgumentException("mediaFile must not be null");
         } else if (mediaFile.getId() != null && mediaFileRepository.existsById(mediaFile.getId())) {
-            mediaFileRepository.saveAndFlush(mediaFile);
+            mediaFileRepository.save(mediaFile);
         } else {
             mediaFileRepository.findByPathAndFolderAndStartPosition(mediaFile.getPath(), mediaFile.getFolder(), mediaFile.getStartPosition()).ifPresentOrElse(m -> {
                 mediaFile.setId(m.getId());
-                mediaFileRepository.saveAndFlush(mediaFile);
+                mediaFileRepository.save(mediaFile);
             }, () -> {
                     MusicFolder folder = mediaFile.getFolder();
                     if (folder != null) {
@@ -1352,7 +1352,7 @@ public class MediaFileService {
                             mediaFile.setPlayCount(musicFileInfo.getPlayCount());
                         });
                     }
-                    mediaFileRepository.saveAndFlush(mediaFile);
+                    mediaFileRepository.save(mediaFile);
                 });
         }
 
@@ -1616,7 +1616,7 @@ public class MediaFileService {
         if (firstEncounter.get()) {
             album.setFolder(musicFolder);
 
-            albumRepository.saveAndFlush(album);
+            albumRepository.save(album);
             albumCount.computeIfAbsent(artist, k -> new AtomicInteger(0)).incrementAndGet();
             indexManager.index(album);
         }

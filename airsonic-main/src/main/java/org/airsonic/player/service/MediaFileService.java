@@ -92,7 +92,6 @@ import java.util.stream.Stream;
  * @author Sindre Mehus
  */
 @Service
-@Transactional
 public class MediaFileService {
 
     private static final Logger LOG = LoggerFactory.getLogger(MediaFileService.class);
@@ -413,6 +412,7 @@ public class MediaFileService {
      * @param musicFolders Only return songs from these folders.
      * @return The most recently starred songs for this user.
      */
+    @Transactional
     public List<MediaFile> getStarredSongs(int offset, int count, String username, List<MusicFolder> musicFolders) {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
@@ -455,6 +455,7 @@ public class MediaFileService {
      * @param musicFolders Only return artists from these folders.
      * @return The most recently starred artists for this user.
      */
+    @Transactional
     public List<MediaFile> getStarredArtists(int offset, int count, String username, List<MusicFolder> musicFolders) {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
@@ -511,6 +512,7 @@ public class MediaFileService {
      * @param genres The genres to update.
      * @return The updated genres.
      */
+    @Transactional
     public List<Genre> updateGenres(List <Genre> genres) {
         return genreRepository.saveAll(genres);
     }
@@ -569,6 +571,7 @@ public class MediaFileService {
      * @param musicFolders Only return albums from these folders.
      * @return The most recently starred albums for this user.
      */
+    @Transactional
     public List<MediaFile> getStarredAlbums(int offset, int count, String username, List<MusicFolder> musicFolders) {
         if (CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
@@ -659,6 +662,7 @@ public class MediaFileService {
      * Returns random songs matching search criteria.
      *
      */
+    @Transactional
     public List<MediaFile> getRandomSongs(RandomSearchCriteria criteria, String username) {
         if (criteria == null || CollectionUtils.isEmpty(criteria.getMusicFolders())) {
             return Collections.emptyList();
@@ -1185,6 +1189,7 @@ public class MediaFileService {
         return MediaFile.MediaType.MUSIC;
     }
 
+    @Transactional
     public void refreshMediaFile(MediaFile mediaFile) {
         mediaFile = updateMediaFileByFile(mediaFile);
         updateMediaFile(mediaFile);
@@ -1364,6 +1369,7 @@ public class MediaFileService {
      * Increments the play count and last played date for the given media file and its
      * directory and album.
      */
+    @Transactional
     public void incrementPlayCount(MediaFile file) {
         Instant now = Instant.now();
         file.setLastPlayed(now);
@@ -1430,6 +1436,7 @@ public class MediaFileService {
      * @param ids     media file ids to star
      * @param username username who stars the media files
      */
+    @Transactional
     public void starMediaFiles(List<Integer> ids, String username) {
         if (CollectionUtils.isEmpty(ids) || StringUtils.isEmpty(username)) {
             return;
@@ -1452,6 +1459,7 @@ public class MediaFileService {
      * @param ids    media file ids to unstar
      * @param username username who unstars the media files
      */
+    @Transactional
     public void unstarMediaFiles(List<Integer> ids, String username) {
         if (CollectionUtils.isEmpty(ids) || StringUtils.isEmpty(username)) {
             return;
@@ -1466,6 +1474,7 @@ public class MediaFileService {
      * @param lastScanned last scanned time
      * @return true if success, false otherwise
      */
+    @Transactional
     public boolean markPresent(Map<Integer, Set<String>> paths, Instant lastScanned) {
 
         final int BATCH_SIZE = 30000;
@@ -1504,6 +1513,7 @@ public class MediaFileService {
      * mark media files non present
      * @param lastScanned last scanned time before which media files are marked non present
      */
+    @Transactional
     public void markNonPresent(Instant lastScanned) {
         mediaFileRepository.markNonPresent(Instant.ofEpochMilli(1), lastScanned);
     }
@@ -1517,6 +1527,7 @@ public class MediaFileService {
     @Caching(evict = {
         @CacheEvict(cacheNames = "mediaFilePathCache", key = "#mediaFile.path.concat('-').concat(#mediaFile.folder.id).concat('-').concat(#mediaFile.startPosition == null ? '' : #mediaFile.startPosition.toString())", condition = "#mediaFile != null"),
         @CacheEvict(cacheNames = "mediaFileIdCache", key = "#mediaFile.id", condition = "#mediaFile != null && #mediaFile.id != null") })
+    @Transactional
     public MediaFile delete(MediaFile file) {
         if (file == null) {
             return null;
@@ -1530,6 +1541,7 @@ public class MediaFileService {
     /**
      * delete all media files that are not present on disk
      */
+    @Transactional
     public void expunge() {
         mediaFileRepository.deleteAllByPresentFalse();
     }
@@ -1544,6 +1556,7 @@ public class MediaFileService {
      * @param albums albums
      * @param albumsInDb albums in db
      */
+    @Transactional
     public void updateAlbum(MediaFile file, MusicFolder musicFolder,
             Instant lastScanned, Map<String, AtomicInteger> albumCount, Map<String, Album> albums,
             Map<Integer, Album> albumsInDb) {
@@ -1637,6 +1650,7 @@ public class MediaFileService {
      * @param albumCount album count
      * @param artists artists
      */
+    @Transactional
     public void updateArtist(MediaFile file, MusicFolder musicFolder, Instant lastScanned,
             Map<String, AtomicInteger> albumCount, Map<String, Artist> artists) {
         if (file.getAlbumArtist() == null || !file.isAudio()) {
@@ -1676,7 +1690,7 @@ public class MediaFileService {
 
         if (firstEncounter.get()) {
             artist.setFolder(musicFolder);
-            artistRepository.saveAndFlush(artist);
+            artistRepository.save(artist);
             indexManager.index(artist, musicFolder);
         }
     }

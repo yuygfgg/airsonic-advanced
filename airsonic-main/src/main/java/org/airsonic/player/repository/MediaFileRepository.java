@@ -93,6 +93,7 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public int countByFolderInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(List<MusicFolder> folders, MediaType mediaType, Integer playCount);
 
+    @Transactional
     public void deleteAllByPresentFalse();
 
     public List<MediaFile> findByFolderInAndMediaTypeInAndPresentTrue(List<MusicFolder> folders,

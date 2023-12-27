@@ -80,7 +80,6 @@ import java.util.stream.Stream;
  */
 @Service
 @CacheConfig(cacheNames = "userCache")
-@Transactional
 public class SecurityService implements UserDetailsService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SecurityService.class);
@@ -136,6 +135,7 @@ public class SecurityService implements UserDetailsService {
      * @param comment  The comment to add to the credential
      * @return true if the credential was created successfully
      */
+    @Transactional
     public boolean createCredential(String username, CredentialsCommand command, String comment) {
 
         Optional<User> user = userRepository.findByUsername(username);
@@ -171,6 +171,7 @@ public class SecurityService implements UserDetailsService {
      *                                  the new encoder
      * @return true if the credentials were updated successfully
      */
+    @Transactional
     public boolean updateCredentials(String username, CredentialsManagementCommand command, String comment,
             boolean reencodePlaintextNewCreds) {
 
@@ -221,6 +222,7 @@ public class SecurityService implements UserDetailsService {
      * @param comment  The comment to add to the credential
      */
     @CacheEvict(key = "#username", condition = "#username != null")
+    @Transactional
     public void recoverCredential(String username, String password, String comment) {
         if (StringUtils.isBlank(username)) {
             LOG.warn("Can't recover credential for a blank username");
@@ -259,6 +261,7 @@ public class SecurityService implements UserDetailsService {
      * password to create the credential for * @param comment The comment to add to
      * the credential * @return true if the credential was created successfully
      */
+    @Transactional
     private boolean createAirsonicCredentialToUser(User user, String password, String comment) {
         String encoder = getPreferredPasswordEncoder(true);
         try {
@@ -277,6 +280,7 @@ public class SecurityService implements UserDetailsService {
      * * * @param creds The credential to delete * @return true if the credential
      * was deleted successfully
      */
+    @Transactional
     public boolean deleteCredential(UserCredential creds) {
         if (creds == null || creds.getUser() == null) {
             LOG.warn("Can't delete a null credential");
@@ -336,6 +340,7 @@ public class SecurityService implements UserDetailsService {
      * @param useDecodableOnly if true, only migrate to decodable encoders
      * @return true if all credentials were migrated successfully
      */
+    @Transactional
     public boolean migrateLegacyCredsToNonLegacy(boolean useDecodableOnly) {
         String decodableEncoder = settingsService.getDecodablePasswordEncoder();
         String nonDecodableEncoder = useDecodableOnly ? decodableEncoder
@@ -447,6 +452,7 @@ public class SecurityService implements UserDetailsService {
      */
     // TODO: This is not security related. Move to a different service.
     @Cacheable(key = "#username", unless = "#result == null")
+    @Transactional
     public User incrementBytesStreamed(String username, long deltaBytesStreamed) {
         User user = getUserByName(username);
         if (Objects.nonNull(user)) {
@@ -465,6 +471,7 @@ public class SecurityService implements UserDetailsService {
      */
     // TODO: This is not security related. Move to a different service.
     @Cacheable(key = "#username", unless = "#result == null")
+    @Transactional
     public User incrementBytesDownloaded(String username, long deltaBytesDownloaded) {
         User user = getUserByName(username);
         if (Objects.nonNull(user)) {
@@ -483,6 +490,7 @@ public class SecurityService implements UserDetailsService {
      */
     // TODO: This is not security related. Move to a different service.
     @Cacheable(key = "#username", unless = "#result == null")
+    @Transactional
     public User incrementBytesUploaded(String username, long deltaBytesUploaded) {
         User user = getUserByName(username);
         if (Objects.nonNull(user)) {
@@ -499,6 +507,7 @@ public class SecurityService implements UserDetailsService {
      * @param currentUsername current user name.
      */
     @CacheEvict(key = "#username", condition = "#username != null")
+    @Transactional
     public void deleteUser(String username, String currentUsername) {
         if (StringUtils.isNotBlank(username) && username.equals(currentUsername)) {
             throw new SelfDeletionException();
@@ -538,6 +547,7 @@ public class SecurityService implements UserDetailsService {
      * @param user       The user to create.
      * @param credential The raw credential (will be encoded)
      */
+    @Transactional
     public void createUser(User user, String credential, String comment) {
         String defaultEncoder = getPreferredPasswordEncoder(true);
         UserCredential uc = new UserCredential(
@@ -570,6 +580,7 @@ public class SecurityService implements UserDetailsService {
      *
      */
     @Cacheable(key = "#command.username", unless = "#result == null", condition = "#command != null")
+    @Transactional
     public User updateUserByUserSettingsCommand(UserSettingsCommand command) {
         // check
         if (Objects.isNull(command)) {

@@ -61,7 +61,6 @@ import java.util.stream.IntStream;
  * @see TranscodeInputStream
  */
 @Service
-@Transactional
 public class TranscodingService {
 
     private static final Logger LOG = LoggerFactory.getLogger(TranscodingService.class);
@@ -101,6 +100,7 @@ public class TranscodingService {
      * @param player         The player.
      * @param transcodingIds ID's of the active transcodings.
      */
+    @Transactional
     public void setTranscodingsForPlayerByIds(Player player, List<Integer> transcodingIds) {
         List<Transcoding> transcodings = transcodingRepository.findByIdIn(transcodingIds);
         setTranscodingsForPlayer(player, transcodings);
@@ -112,6 +112,7 @@ public class TranscodingService {
      * @param player       The player.
      * @param transcodings The active transcodings.
      */
+    @Transactional
     public void setTranscodingsForPlayer(Player player, List<Transcoding> transcodings) {
         player.setTranscodings(transcodings);
         playerRepository.save(player);
@@ -122,6 +123,7 @@ public class TranscodingService {
      *
      * @param transcoding The transcoding to create.
      */
+    @Transactional
     public void createTranscoding(Transcoding transcoding) {
         // Activate this transcoding for all players?
         transcodingRepository.save(transcoding);
@@ -137,6 +139,7 @@ public class TranscodingService {
      *
      * @param id The transcoding ID.
      */
+    @Transactional
     public void deleteTranscoding(Integer id) {
         transcodingRepository.deleteById(id);
     }
@@ -146,6 +149,7 @@ public class TranscodingService {
      *
      * @param transcoding The transcoding to update.
      */
+    @Transactional
     public void updateTranscoding(Transcoding transcoding) {
         transcodingRepository.save(transcoding);
     }

@@ -48,7 +48,6 @@ import java.util.stream.Stream;
  * @see PlayQueue
  */
 @Service
-@Transactional
 public class PlaylistService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PlaylistService.class);
@@ -128,6 +127,7 @@ public class PlaylistService {
     }
 
     @Cacheable(cacheNames = "playlistUsersCache", unless = "#result == null")
+    @Transactional
     public List<String> getPlaylistUsers(int playlistId) {
         List<User> users = playlistRepository.findById(playlistId).map(Playlist::getSharedUsers).orElse(Collections.emptyList());
         return users.stream().map(User::getUsername).filter(Objects::nonNull).toList();
@@ -148,8 +148,13 @@ public class PlaylistService {
         ).stream().filter(x -> includeNotPresent || x.isPresent()).collect(Collectors.toList());
     }
 
+    @Transactional
     public Playlist setFilesInPlaylist(int id, List<MediaFile> files) {
-        return playlistRepository.findById(id).map(p -> setFilesInPlaylist(p, files)).orElseGet(
+        return playlistRepository.findById(id).map(p -> {
+            Playlist playlist = setFilesInPlaylist(p, files);
+            playlistRepository.saveAndFlush(playlist);
+            return playlist;
+        }).orElseGet(
             () -> {
                 LOG.warn("Playlist {} not found", id);
                 return null;
@@ -161,11 +166,11 @@ public class PlaylistService {
         playlist.setFileCount(files.size());
         playlist.setDuration(files.stream().mapToDouble(MediaFile::getDuration).sum());
         playlist.setChanged(Instant.now());
-        playlistRepository.saveAndFlush(playlist);
         return playlist;
     }
 
     @CacheEvict(cacheNames = "playlistCache", key = "#id")
+    @Transactional
     public void removeFilesInPlaylistByIndices(int id, List<Integer> indices) {
         playlistRepository.findById(id).ifPresentOrElse(p -> {
             List<MediaFile> files = p.getMediaFiles();
@@ -175,7 +180,8 @@ public class PlaylistService {
                     newFiles.add(files.get(i));
                 }
             }
-            setFilesInPlaylist(p, newFiles);
+            Playlist playlist = setFilesInPlaylist(p, newFiles);
+            playlistRepository.save(playlist);
         }, () -> {
                 LOG.warn("Playlist {} not found", id);
             }
@@ -185,6 +191,7 @@ public class PlaylistService {
     /**
      * Refreshes the file count and duration of all playlists.
      */
+    @Transactional
     public List<Playlist> refreshPlaylistsStats() {
         return playlistRepository.findAll().stream().map(p -> {
             p.setFileCount(p.getMediaFiles().size());
@@ -203,6 +210,7 @@ public class PlaylistService {
      * @param username the username of the user that created the playlist
      * @return the created playlist
      */
+    @Transactional
     public Playlist createPlaylist(String name, boolean shared, String username) {
         Instant now = Instant.now();
         Playlist playlist = new Playlist();
@@ -220,6 +228,7 @@ public class PlaylistService {
      * Creates a new playlist.
      * @param playlist
      */
+    @Transactional
     public Playlist createPlaylist(Playlist playlist) {
         Instant now = Instant.now();
         playlist.setCreated(now);
@@ -234,6 +243,7 @@ public class PlaylistService {
     }
 
     @CacheEvict(cacheNames = "playlistUsersCache", key = "#playlist.id")
+    @Transactional
     public void addPlaylistUser(Playlist playlist, String username) {
         userRepository.findByUsername(username).ifPresentOrElse(user -> {
             playlistRepository.findById(playlist.getId()).ifPresentOrElse(p -> {
@@ -256,6 +266,7 @@ public class PlaylistService {
     }
 
     @CacheEvict(cacheNames = "playlistUsersCache", key = "#playlist.id")
+    @Transactional
     public void deletePlaylistUser(Playlist playlist, String username) {
         playlistRepository.findByIdAndSharedUsersUsername(playlist.getId(), username).ifPresentOrElse(p -> {
             p.removeSharedUserByUsername(username);
@@ -299,6 +310,7 @@ public class PlaylistService {
     }
 
     @CacheEvict(cacheNames = "playlistCache")
+    @Transactional
     public void deletePlaylist(int id) {
         playlistRepository.deleteById(id);
         asyncWebSocketClient.send("/topic/playlists/deleted", id);
@@ -319,6 +331,7 @@ public class PlaylistService {
     }
 
     @CacheEvict(cacheNames = "playlistCache", key = "#id")
+    @Transactional
     public void updatePlaylist(Integer id, String name, String comment, Boolean shared) {
         playlistRepository.findById(id).ifPresentOrElse(p -> {
             p.setName(name);
@@ -353,6 +366,7 @@ public class PlaylistService {
      * @param isShared if true, the playlist was shared with other users
      * @param filesChangedBroadcastContext if true, the client will know that the files in the playlist have changed
      */
+    @Transactional(readOnly = true)
     public void broadcastFileChange(Integer id, boolean isShared, boolean filesChangedBroadcastContext) {
         playlistRepository.findById(id).ifPresent(playlist -> {
             BroadcastedPlaylist bp = new BroadcastedPlaylist(playlist, filesChangedBroadcastContext);

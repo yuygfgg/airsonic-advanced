@@ -62,7 +62,6 @@ import java.util.Locale;
 import java.util.Map;
 
 @Service
-@Transactional
 public class PersonalSettingsService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PersonalSettingsService.class);
@@ -242,6 +241,7 @@ public class PersonalSettingsService {
         return detail;
     }
 
+    @Transactional
     @CacheEvict(cacheNames = "userSettingsCache", key = "#username")
     public void updateByCommand(String username, Locale locale, String themeId, PersonalSettingsCommand command) {
 
@@ -311,6 +311,7 @@ public class PersonalSettingsService {
      * @param username The username.
      * @param scheme The transcode scheme.
      */
+    @Transactional
     @CacheEvict(cacheNames = "userSettingsCache", key = "#username")
     public void updateTranscodeScheme(String username, TranscodeScheme scheme) {
 
@@ -330,6 +331,7 @@ public class PersonalSettingsService {
      * @param username The username.
      * @param musicFolderId The music folder id.
      */
+    @Transactional
     @CacheEvict(cacheNames = "userSettingsCache", key = "#username")
     public void updateSelectedMusicFolderId(String username, Integer musicFolderId) {
 
@@ -347,6 +349,7 @@ public class PersonalSettingsService {
      * @param username The username.
      * @param showSideBar The show side bar status.
      */
+    @Transactional
     @CacheEvict(cacheNames = "userSettingsCache", key = "#username")
     public void updateShowSideBarStatus(String username, boolean showSideBar) {
 
@@ -366,6 +369,7 @@ public class PersonalSettingsService {
      * @param username The username.
      * @parama viewAsList The view as list status.
      */
+    @Transactional
     @CacheEvict(cacheNames = "userSettingsCache", key = "#username")
     public void updateViewAsListStatus(String username, boolean viewAsList) {
 

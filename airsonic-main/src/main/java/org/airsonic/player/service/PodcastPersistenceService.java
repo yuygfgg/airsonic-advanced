@@ -62,7 +62,6 @@ import static java.util.stream.Collectors.toSet;
  * @author Sindre Mehus
  */
 @Service
-@Transactional
 public class PodcastPersistenceService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PodcastPersistenceService.class);
@@ -122,6 +121,7 @@ public class PodcastPersistenceService {
      * @param status status to reset
      * @return list of channel ids that were reset
      */
+    @Transactional
     public List<Integer> resetChannelStatus(PodcastStatus status) {
         return podcastChannelRepository.findByStatus(status).stream()
             .map(c -> {
@@ -138,6 +138,7 @@ public class PodcastPersistenceService {
      * @param channelId channel id to refresh
      * @return channel if refresh is prepared, null if channel is already refreshing or not found
      */
+    @Transactional
     public PodcastChannel prepareRefreshChannel(Integer channelId) {
         return podcastChannelRepository.findById(channelId).map(channel -> {
             if (channel.getStatus() == PodcastStatus.DOWNLOADING) {
@@ -162,6 +163,7 @@ public class PodcastPersistenceService {
      * @param element element to update from
      * @return updated channel or original channel if element is null
      */
+    @Transactional
     public PodcastChannel updateChannelByElement(PodcastChannel channel, Element element) {
         if (element == null) {
             return channel;
@@ -182,6 +184,7 @@ public class PodcastPersistenceService {
      * @param channel channel to set error
      * @param errorMessage error message
      */
+    @Transactional
     public void setChannelError(PodcastChannel channel, String errorMessage) {
         podcastChannelRepository.findById(channel.getId()).ifPresent(
             c -> {
@@ -197,6 +200,7 @@ public class PodcastPersistenceService {
      *
      * @param channel channel to set completed
      */
+    @Transactional
     public void setChannelCompleted(PodcastChannel channel) {
         podcastChannelRepository.findById(channel.getId()).ifPresent(
             c -> {
@@ -222,6 +226,7 @@ public class PodcastPersistenceService {
      * @param command command
      * @return PodcastChannelRule
      */
+    @Transactional
     public PodcastChannelRule createOrUpdateChannelRuleByCommand(PodcastRule command) {
 
         if (command == null || !command.isValid()) {
@@ -304,6 +309,7 @@ public class PodcastPersistenceService {
      * @param id id of podcast channel rule
      * @param deleteChannel delete channel or not
      */
+    @Transactional
     public boolean deleteChannelRule(Integer id) {
         return podcastRuleRepository.findById(id).map(rule -> {
             podcastRuleRepository.delete(rule);
@@ -324,6 +330,7 @@ public class PodcastPersistenceService {
         return podcastRuleRepository.findAll();
     }
 
+    @Transactional
     public PodcastChannel createChannel(String url) {
         if (StringUtils.isBlank(url)) {
             return null;
@@ -357,6 +364,7 @@ public class PodcastPersistenceService {
      * @return Possibly empty list of all Podcast episodes for the given channel, sorted in
      *         reverse chronological order (newest episode first).
      */
+    @Transactional
     public List<PodcastEpisode> getEpisodes(Integer channelId) {
         if (Objects.isNull(channelId)) return new ArrayList<>();
         return podcastChannelRepository.findById(channelId).map(channel -> {
@@ -406,6 +414,7 @@ public class PodcastPersistenceService {
      * @param includeDeleted include deleted episodes
      * @return The Podcast episode, or null if not found.
      */
+    @Transactional
     public PodcastEpisode getEpisode(int episodeId, boolean includeDeleted) {
         return podcastEpisodeRepository.findById(episodeId)
                 .map(ep -> {
@@ -414,10 +423,7 @@ public class PodcastPersistenceService {
                         // Refresh media file to check if it still exists
                         mediaFileService.refreshMediaFile(mediaFile);
                         if (!mediaFile.isPresent() && ep.getStatus() != PodcastStatus.DELETED) {
-                            // If media file is not present anymore, set episode status to deleted
-                            ep.setStatus(PodcastStatus.DELETED);
-                            ep.setErrorMessage(null);
-                            podcastEpisodeRepository.save(ep);
+                            deleteEpisode(ep, true);
                         }
                     }
                     return ep;
@@ -449,6 +455,7 @@ public class PodcastPersistenceService {
      * @param episodeId episode id to prepare
      * @return episode if download is prepared, null if episode is already downloading or not found
      */
+    @Transactional
     public PodcastEpisode prepareDownloadEpisode(Integer episodeId) {
         return podcastEpisodeRepository.findById(episodeId).map(episode -> {
             if (episode.getStatus() == PodcastStatus.DELETED) {
@@ -489,6 +496,7 @@ public class PodcastPersistenceService {
      * @param length episode length
      * @return created episode
      */
+    @Transactional
     public PodcastEpisode createEpisode(PodcastChannel channel, String guid, String url, String title, String description, Instant date, String duration, Long length) {
         PodcastEpisode episode = new PodcastEpisode(null, channel, guid, url, null, title, description,
                         date,
@@ -503,6 +511,7 @@ public class PodcastPersistenceService {
      * @param episode episode to update
      * @return updated episode or original episode if element is null
      */
+    @Transactional
     public PodcastEpisode updateEpisode(PodcastEpisode episode) {
         return podcastEpisodeRepository.findById(episode.getId()).map(ep -> {
             ep.setTitle(episode.getTitle());
@@ -526,6 +535,7 @@ public class PodcastPersistenceService {
      * @param channelId The Podcast channel ID.
      * @return Whether the channel was deleted.
      */
+    @Transactional
     public boolean deleteChannel(int channelId) {
         // Delete all associated episodes (in case they have files that need to be deleted).
         return podcastChannelRepository.findById(channelId).map(channel -> {
@@ -554,6 +564,7 @@ public class PodcastPersistenceService {
      * @param logicalDelete Whether to perform a logical delete by setting the
      *                      episode status to {@link PodcastStatus#DELETED}.
      */
+    @Transactional
     public void deleteEpisode(int episodeId, boolean logicalDelete) {
         podcastEpisodeRepository.findById(episodeId).ifPresentOrElse(e -> {
             deleteEpisode(e, logicalDelete);

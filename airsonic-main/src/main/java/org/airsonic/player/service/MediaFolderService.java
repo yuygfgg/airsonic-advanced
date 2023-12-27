@@ -37,7 +37,6 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 @Service
-@Transactional
 public class MediaFolderService {
     private static final Logger LOG = LoggerFactory.getLogger(MediaFolderService.class);
 
@@ -90,6 +89,7 @@ public class MediaFolderService {
      * @param username Username to get music folders for.
      * @return Possibly empty list of music folders.
      */
+    @Transactional
     public List<MusicFolder> getMusicFoldersForUser(String username) {
         return cachedMusicFoldersPerUser.computeIfAbsent(username, u -> {
             return userRepository.findByUsername(u)
@@ -115,6 +115,7 @@ public class MediaFolderService {
                 .collect(toList());
     }
 
+    @Transactional
     public void setMusicFoldersForUser(String username, Collection<Integer> musicFolderIds) {
         List<MusicFolder> folders = musicFolderRepository.findAllById(musicFolderIds);
         userRepository.findByUsername(username).ifPresent(u -> {
@@ -132,6 +133,7 @@ public class MediaFolderService {
         return getAllMusicFolders(includeDisabled, includeNonExisting).stream().filter(folder -> id.equals(folder.getId())).findAny().orElse(null);
     }
 
+    @Transactional
     public void createMusicFolder(MusicFolder musicFolder) {
         List<MusicFolder> registeredMusicFolders = musicFolderRepository.findAll();
         Triple<List<MusicFolder>, List<MusicFolder>, List<MusicFolder>> overlaps = getMusicFolderPathOverlaps(musicFolder, registeredMusicFolders);
@@ -241,6 +243,7 @@ public class MediaFolderService {
      *
      * @param id Music folder id.
      */
+    @Transactional
     public void deleteMusicFolder(Integer id) {
 
         musicFolderRepository.findByIdAndDeletedFalse(id).ifPresentOrElse(folder -> {
@@ -280,6 +283,7 @@ public class MediaFolderService {
      * @param id Music folder id. Must be a podcast folder.
      * @return True if the music folder was enabled, false otherwise.
      */
+    @Transactional
     public boolean enablePodcastFolder(int id) {
         return musicFolderRepository.findByIdAndTypeAndDeletedFalse(id, Type.PODCAST).map(podcastFolder -> {
             try {
@@ -302,6 +306,7 @@ public class MediaFolderService {
     /**
      * Deletes all music folders that are marked as deleted.
      */
+    @Transactional
     public void expunge() {
         musicFolderRepository.deleteAllByDeletedTrue();
     }
@@ -311,6 +316,7 @@ public class MediaFolderService {
      *
      * @param info Music folder info.
      */
+    @Transactional
     public void updateMusicFolderByInfo(MusicFolderInfo info) {
         if (info.getId() == null) {
             throw new IllegalArgumentException("Music folder id must be set.");

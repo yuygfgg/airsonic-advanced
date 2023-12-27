@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 
 @Service
 @CacheConfig(cacheNames = "coverArtCache")
-@Transactional
 public class CoverArtService {
     @Autowired
     MediaFolderService mediaFolderService;
@@ -47,6 +46,7 @@ public class CoverArtService {
     private static final Logger LOG = LoggerFactory.getLogger(CoverArtService.class);
 
     @CacheEvict(key = "#art.entityType.toString().concat('-').concat(#art.entityId)")
+    @Transactional
     public void upsert(CoverArt art) {
         coverArtRepository.save(art);
     }
@@ -111,11 +111,13 @@ public class CoverArtService {
     }
 
     @CacheEvict(key = "#type.toString().concat('-').concat(#id)")
+    @Transactional
     public void delete(EntityType type, int id) {
         coverArtRepository.deleteByEntityTypeAndEntityId(type, id);
     }
 
     @CacheEvict(allEntries = true)
+    @Transactional
     public void expunge() {
         List<CoverArt> expungeCoverArts = coverArtRepository.findAll().stream()
             .filter(art ->

@@ -21,6 +21,7 @@ package org.airsonic.player.service;
 
 import org.airsonic.player.config.AirsonicScanConfig;
 import org.airsonic.player.domain.*;
+import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.service.search.IndexManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,7 @@ import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -332,8 +334,8 @@ public class MediaScannerService {
                         .forEach(child -> scanFile(child, musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres, encountered));
             } else {
                 if (musicFolder.getType() == MusicFolder.Type.MEDIA) {
-                    mediaFileService.updateAlbum(file, musicFolder, statistics.getScanDate(), albumCount, albums, albumsInDb);
-                    mediaFileService.updateArtist(file, musicFolder, statistics.getScanDate(), albumCount, artists);
+                    updateAlbum(file, musicFolder, statistics.getScanDate(), albumCount, albums, albumsInDb);
+                    updateArtist(file, musicFolder, statistics.getScanDate(), albumCount, artists);
                 }
                 statistics.incrementSongs(1);
             }
@@ -363,6 +365,154 @@ public class MediaScannerService {
             genres.incrementAlbumCount(genre, settingsService.getGenreSeparators());
         } else if (file.isAudio()) {
             genres.incrementSongCount(genre, settingsService.getGenreSeparators());
+        }
+    }
+
+    /**
+     * update album stats
+     *
+     * @param file media file
+     * @param musicFolder music folder
+     * @param lastScanned last scanned time
+     * @param albumCount album count
+     * @param albums albums
+     * @param albumsInDb albums in db
+     */
+    private void updateAlbum(MediaFile file, MusicFolder musicFolder,
+            Instant lastScanned, Map<String, AtomicInteger> albumCount, Map<String, Album> albums,
+            Map<Integer, Album> albumsInDb) {
+
+        String artist = file.getAlbumArtist() != null ? file.getAlbumArtist() : file.getArtist();
+        if (file.getAlbumName() == null || artist == null || file.getParentPath() == null || !file.isAudio()) {
+            return;
+        }
+
+        final AtomicBoolean firstEncounter = new AtomicBoolean(false);
+        Album album = albums.compute(file.getAlbumName() + "|" + artist, (k, v) -> {
+            Album a = v;
+
+            if (a == null) {
+                a = albumService.getAlbumByArtistAndName(artist, file.getAlbumName()).map(dbAlbum -> {
+                    albumsInDb.computeIfAbsent(dbAlbum.getId(), aid -> {
+                        // reset stats when first retrieve from the db for new scan
+                        dbAlbum.setDuration(0);
+                        dbAlbum.setSongCount(0);
+                        return dbAlbum;
+                    });
+                    return dbAlbum;
+                }).orElse(null);
+            }
+
+            if (a == null) {
+                a = new Album();
+                a.setPath(file.getParentPath());
+                a.setName(file.getAlbumName());
+                a.setArtist(artist);
+                a.setCreated(file.getChanged());
+            }
+
+            firstEncounter.set(!lastScanned.equals(a.getLastScanned()));
+
+            if (file.getDuration() != null) {
+                a.incrementDuration(file.getDuration());
+            }
+            if (file.isAudio()) {
+                a.incrementSongCount();
+            }
+
+            a.setLastScanned(lastScanned);
+            a.setPresent(true);
+
+            return a;
+        });
+
+        if (file.getMusicBrainzReleaseId() != null) {
+            album.setMusicBrainzReleaseId(file.getMusicBrainzReleaseId());
+        }
+        if (file.getYear() != null) {
+            album.setYear(file.getYear());
+        }
+        if (file.getGenre() != null) {
+            album.setGenre(file.getGenre());
+        }
+
+        if (album.getArt() == null) {
+            MediaFile parent = mediaFileService.getParentOf(file, true); // true because the parent has recently already been scanned
+            if (parent != null) {
+                CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, parent.getId());
+                if (!CoverArt.NULL_ART.equals(art)) {
+                    album.setArt(new CoverArt(-1, EntityType.ALBUM, art.getPath(), art.getFolder(), false));
+                }
+            }
+        }
+
+        if (firstEncounter.get()) {
+            album.setFolder(musicFolder);
+            albumService.save(album);
+            albumCount.computeIfAbsent(artist, k -> new AtomicInteger(0)).incrementAndGet();
+            indexManager.index(album);
+        }
+
+        // Update the file's album artist, if necessary.
+        if (!Objects.equals(album.getArtist(), file.getAlbumArtist())) {
+            file.setAlbumArtist(album.getArtist());
+            mediaFileService.updateMediaFile(file);
+        }
+    }
+
+        /**
+     * update artist stats
+     *
+     * @param file media file
+     * @param musicFolder music folder
+     * @param lastScanned last scanned time
+     * @param albumCount album count
+     * @param artists artists
+     */
+    private void updateArtist(MediaFile file, MusicFolder musicFolder, Instant lastScanned,
+            Map<String, AtomicInteger> albumCount, Map<String, Artist> artists) {
+        if (file.getAlbumArtist() == null || !file.isAudio()) {
+            return;
+        }
+
+        final AtomicBoolean firstEncounter = new AtomicBoolean(false);
+
+        Artist artist = artists.compute(file.getAlbumArtist(), (k, v) -> {
+            Artist a = v;
+
+            if (a == null) {
+                a = artistService.getArtist(k);
+                if (a == null) {
+                    a = new Artist(k);
+                }
+            }
+
+            int n = Math.max(Optional.ofNullable(albumCount.get(a.getName())).map(x -> x.get()).orElse(0),
+                    Optional.ofNullable(a.getAlbumCount()).orElse(0));
+            a.setAlbumCount(n);
+
+            firstEncounter.set(!lastScanned.equals(a.getLastScanned()));
+
+            a.setLastScanned(lastScanned);
+            a.setPresent(true);
+
+            return a;
+        });
+
+        if (artist.getArt() == null) {
+            MediaFile parent = mediaFileService.getParentOf(file, true); // true because the parent has recently already been scanned
+            if (parent != null) {
+                CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, parent.getId());
+                if (!CoverArt.NULL_ART.equals(art)) {
+                    artist.setArt(new CoverArt(-1, EntityType.ARTIST, art.getPath(), art.getFolder(), false));
+                }
+            }
+        }
+
+        if (firstEncounter.get()) {
+            artist.setFolder(musicFolder);
+            artistService.save(artist);
+            indexManager.index(artist, musicFolder);
         }
     }
 }

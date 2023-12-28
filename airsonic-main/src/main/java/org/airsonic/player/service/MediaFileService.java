@@ -31,7 +31,6 @@ import org.airsonic.player.domain.entity.StarredMediaFile;
 import org.airsonic.player.domain.entity.UserRating;
 import org.airsonic.player.i18n.LocaleResolver;
 import org.airsonic.player.repository.AlbumRepository;
-import org.airsonic.player.repository.ArtistRepository;
 import org.airsonic.player.repository.GenreRepository;
 import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.repository.MusicFileInfoRepository;
@@ -43,10 +42,8 @@ import org.airsonic.player.service.metadata.JaudiotaggerParser;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
 import org.airsonic.player.service.metadata.MetaDataParserFactory;
-import org.airsonic.player.service.search.IndexManager;
 import org.airsonic.player.util.FileUtil;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.digitalmediaserver.cuelib.CueParser;
@@ -79,8 +76,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -124,10 +119,6 @@ public class MediaFileService {
     private MusicFileInfoRepository musicFileInfoRepository;
     @Autowired
     private GenreRepository genreRepository;
-    @Autowired
-    private IndexManager indexManager;
-    @Autowired
-    private ArtistRepository artistRepository;
 
     private boolean memoryCacheEnabled = true;
 
@@ -1546,152 +1537,4 @@ public class MediaFileService {
         mediaFileRepository.deleteAllByPresentFalse();
     }
 
-    /**
-     * update album stats
-     *
-     * @param file media file
-     * @param musicFolder music folder
-     * @param lastScanned last scanned time
-     * @param albumCount album count
-     * @param albums albums
-     * @param albumsInDb albums in db
-     */
-    @Transactional
-    public void updateAlbum(MediaFile file, MusicFolder musicFolder,
-            Instant lastScanned, Map<String, AtomicInteger> albumCount, Map<String, Album> albums,
-            Map<Integer, Album> albumsInDb) {
-
-        String artist = file.getAlbumArtist() != null ? file.getAlbumArtist() : file.getArtist();
-        if (file.getAlbumName() == null || artist == null || file.getParentPath() == null || !file.isAudio()) {
-            return;
-        }
-
-        final AtomicBoolean firstEncounter = new AtomicBoolean(false);
-        Album album = albums.compute(file.getAlbumName() + "|" + artist, (k, v) -> {
-            Album a = v;
-
-            if (a == null) {
-                a = albumRepository.findByArtistAndName(artist, file.getAlbumName())
-                        .map(dbAlbum -> {
-                            albumsInDb.computeIfAbsent(dbAlbum.getId(), aid -> {
-                                // reset stats when first retrieve from the db for new scan
-                                dbAlbum.setDuration(0);
-                                dbAlbum.setSongCount(0);
-                                return dbAlbum;
-                            });
-                            return dbAlbum;
-                        }).orElse(null);
-            }
-
-            if (a == null) {
-                a = new Album();
-                a.setPath(file.getParentPath());
-                a.setName(file.getAlbumName());
-                a.setArtist(artist);
-                a.setCreated(file.getChanged());
-            }
-
-            firstEncounter.set(!lastScanned.equals(a.getLastScanned()));
-
-            if (file.getDuration() != null) {
-                a.incrementDuration(file.getDuration());
-            }
-            if (file.isAudio()) {
-                a.incrementSongCount();
-            }
-
-            a.setLastScanned(lastScanned);
-            a.setPresent(true);
-
-            return a;
-        });
-
-        if (file.getMusicBrainzReleaseId() != null) {
-            album.setMusicBrainzReleaseId(file.getMusicBrainzReleaseId());
-        }
-        if (file.getYear() != null) {
-            album.setYear(file.getYear());
-        }
-        if (file.getGenre() != null) {
-            album.setGenre(file.getGenre());
-        }
-
-        if (album.getArt() == null) {
-            MediaFile parent = getParentOf(file, true); // true because the parent has recently already been scanned
-            if (parent != null) {
-                CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, parent.getId());
-                if (!CoverArt.NULL_ART.equals(art)) {
-                    album.setArt(new CoverArt(-1, EntityType.ALBUM, art.getPath(), art.getFolder(), false));
-                }
-            }
-        }
-
-        if (firstEncounter.get()) {
-            album.setFolder(musicFolder);
-
-            albumRepository.save(album);
-            albumCount.computeIfAbsent(artist, k -> new AtomicInteger(0)).incrementAndGet();
-            indexManager.index(album);
-        }
-
-        // Update the file's album artist, if necessary.
-        if (!ObjectUtils.equals(album.getArtist(), file.getAlbumArtist())) {
-            file.setAlbumArtist(album.getArtist());
-            updateMediaFile(file);
-        }
-    }
-
-    /**
-     * update artist stats
-     *
-     * @param file media file
-     * @param musicFolder music folder
-     * @param lastScanned last scanned time
-     * @param albumCount album count
-     * @param artists artists
-     */
-    @Transactional
-    public void updateArtist(MediaFile file, MusicFolder musicFolder, Instant lastScanned,
-            Map<String, AtomicInteger> albumCount, Map<String, Artist> artists) {
-        if (file.getAlbumArtist() == null || !file.isAudio()) {
-            return;
-        }
-
-        final AtomicBoolean firstEncounter = new AtomicBoolean(false);
-
-        Artist artist = artists.compute(file.getAlbumArtist(), (k, v) -> {
-            Artist a = v;
-
-            if (a == null) {
-                a = artistRepository.findByName(k).orElse(new Artist(k));
-            }
-
-            int n = Math.max(Optional.ofNullable(albumCount.get(a.getName())).map(x -> x.get()).orElse(0),
-                    Optional.ofNullable(a.getAlbumCount()).orElse(0));
-            a.setAlbumCount(n);
-
-            firstEncounter.set(!lastScanned.equals(a.getLastScanned()));
-
-            a.setLastScanned(lastScanned);
-            a.setPresent(true);
-
-            return a;
-        });
-
-        if (artist.getArt() == null) {
-            MediaFile parent = getParentOf(file, true); // true because the parent has recently already been scanned
-            if (parent != null) {
-                CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, parent.getId());
-                if (!CoverArt.NULL_ART.equals(art)) {
-                    artist.setArt(new CoverArt(-1, EntityType.ARTIST, art.getPath(), art.getFolder(), false));
-                }
-            }
-        }
-
-        if (firstEncounter.get()) {
-            artist.setFolder(musicFolder);
-            artistRepository.save(artist);
-            indexManager.index(artist, musicFolder);
-        }
-    }
 }

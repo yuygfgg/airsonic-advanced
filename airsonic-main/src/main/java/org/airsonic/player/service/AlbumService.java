@@ -17,6 +17,7 @@ import org.springframework.util.StringUtils;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AlbumService {
@@ -37,6 +38,20 @@ public class AlbumService {
      */
     public Album getAlbum(int albumId) {
         return albumRepository.findById(albumId).orElse(null);
+    }
+
+    /**
+     * Get album by artist and name
+     *
+     * @param artist artist name to get album for
+     * @param name  album name to get album for
+     * @return album or null if not found
+     */
+    public Optional<Album> getAlbumByArtistAndName(String artist, String name) {
+        if (!StringUtils.hasLength(artist) || !StringUtils.hasLength(name)) {
+            return Optional.ofNullable(null);
+        }
+        return albumRepository.findByArtistAndName(artist, name);
     }
 
     /**

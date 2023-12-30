@@ -17,6 +17,7 @@
         <tomcat.server.scope>provided</tomcat.server.scope>
         <!-- For fixing import/export due to https://github.com/liquibase/liquibase/issues/1598 -->
         <liquibase.version>4.22.0</liquibase.version>
+        <logback.version>1.2.13</logback.version>
     </properties>
 
     <dependencies>

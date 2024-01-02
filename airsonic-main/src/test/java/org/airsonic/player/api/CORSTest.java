@@ -1,19 +1,21 @@
 package org.airsonic.player.api;
 
 import org.airsonic.player.TestCaseUtils;
-import org.airsonic.player.util.HomeRule;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
+import java.nio.file.Path;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -22,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CORSTest {
 
@@ -37,7 +39,15 @@ public class CORSTest {
 
     private MockMvc mvc;
 
-    @Before
+    @TempDir
+    private static Path tempAirsonicHome;
+
+    @BeforeAll
+    public static void beforeAll() {
+        System.setProperty("airsonic.home", tempAirsonicHome.toString());
+    }
+
+    @BeforeEach
     public void setup() {
         AIRSONIC_API_VERSION = TestCaseUtils.restApiVersion();
         mvc = MockMvcBuilders
@@ -47,9 +57,6 @@ public class CORSTest {
                 .alwaysDo(print())
                 .build();
     }
-
-    @ClassRule
-    public static final HomeRule classRule = new HomeRule();
 
     @Test
     public void corsHeadersShouldBeAddedToSuccessResponses() throws Exception {

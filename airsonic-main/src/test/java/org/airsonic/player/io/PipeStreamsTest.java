@@ -8,7 +8,7 @@ import org.airsonic.player.io.PipeStreams.MonitoredResource;
 import org.airsonic.player.io.PipeStreams.PipedInputStream;
 import org.airsonic.player.io.PipeStreams.PipedOutputStream;
 import org.airsonic.player.util.FileUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
@@ -20,7 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class PipeStreamsTest {
 

@@ -22,26 +22,28 @@ package org.airsonic.player.service;
 import org.airsonic.player.domain.Bookmark;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.repository.BookmarkRepository;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class BookmarkServiceTest {
 
+    @InjectMocks
     private BookmarkService bookmarkService;
 
     @Mock
@@ -55,9 +57,8 @@ public class BookmarkServiceTest {
 
     private Bookmark bookmark;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        bookmarkService = new BookmarkService(bookmarkRepository, mediaFileService, simpMessagingTemplate);
         bookmark = new Bookmark(1, 2, 5000L, "testUser", "test comment", null, null);
     }
 
@@ -75,7 +76,7 @@ public class BookmarkServiceTest {
         mediaFile.setDuration((double) 10000);
         when(mediaFileService.getMediaFile(2)).thenReturn(mediaFile);
         when(bookmarkRepository.findOptByUsernameAndMediaFileId("testUser", 2)).thenReturn(Optional.empty());
-        when(bookmarkRepository.saveAndFlush(any(Bookmark.class))).thenReturn(bookmark);
+        when(bookmarkRepository.save(any(Bookmark.class))).thenReturn(bookmark);
 
         boolean result = bookmarkService.setBookmark("testUser", 2, 5000L, "test comment");
         assertTrue(result);
@@ -97,7 +98,7 @@ public class BookmarkServiceTest {
         // Assert
         assertFalse(result);
         verify(bookmarkRepository, never()).findOptByUsernameAndMediaFileId(anyString(), anyInt());
-        verify(bookmarkRepository, never()).saveAndFlush(any());
+        verify(bookmarkRepository, never()).save(any());
         verify(simpMessagingTemplate, never()).convertAndSendToUser(anyString(), anyString(), any());
     }
 
@@ -113,7 +114,6 @@ public class BookmarkServiceTest {
         mediaFile.setDuration((double)durationSeconds);
 
         when(mediaFileService.getMediaFile(anyInt())).thenReturn(mediaFile);
-        when(bookmarkRepository.findOptByUsernameAndMediaFileId(anyString(), anyInt())).thenReturn(Optional.empty());
 
         // Act
         boolean result = bookmarkService.setBookmark(username, mediaFileId, 4999L, comment);
@@ -121,7 +121,7 @@ public class BookmarkServiceTest {
         // Assert
         assertFalse(result);
         verify(bookmarkRepository, never()).findOptByUsernameAndMediaFileId(anyString(), anyInt());
-        verify(bookmarkRepository, never()).saveAndFlush(any());
+        verify(bookmarkRepository, never()).save(any());
         verify(simpMessagingTemplate, never()).convertAndSendToUser(anyString(), anyString(), anyInt());
         verify(bookmarkRepository, never()).deleteByUsernameAndMediaFileId(anyString(), anyInt());
     }
@@ -140,7 +140,6 @@ public class BookmarkServiceTest {
         mediaFile.setDuration((double)durationSeconds);
 
         when(mediaFileService.getMediaFile(anyInt())).thenReturn(mediaFile);
-        when(bookmarkRepository.findOptByUsernameAndMediaFileId(anyString(), anyInt())).thenReturn(Optional.empty());
 
         // Act
         boolean result = bookmarkService.setBookmark(username, mediaFileId, durationSeconds * 1000L - 50000L, comment);
@@ -148,7 +147,7 @@ public class BookmarkServiceTest {
         // Assert
         assertFalse(result);
         verify(bookmarkRepository, never()).findOptByUsernameAndMediaFileId(eq(username), eq(mediaFileId));
-        verify(bookmarkRepository, never()).saveAndFlush(any());
+        verify(bookmarkRepository, never()).save(any());
         verify(simpMessagingTemplate, times(1)).convertAndSendToUser(anyString(), anyString(), anyInt());
         verify(bookmarkRepository, times(1)).deleteByUsernameAndMediaFileId(eq(username), eq(mediaFileId));
     }

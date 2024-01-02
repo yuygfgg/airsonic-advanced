@@ -19,11 +19,11 @@
 package org.airsonic.player.service;
 
 import com.google.common.collect.ImmutableMap;
-import org.airsonic.player.dao.PlayQueueDao;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.SavedPlayQueue;
+import org.airsonic.player.repository.SavedPlayQueueRepository;
 import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +40,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -64,7 +65,7 @@ public class PlayQueueServiceTest {
     @Mock
     private MediaFileService mediaFileService;
     @Mock
-    private PlayQueueDao playQueueDao;
+    private SavedPlayQueueRepository savedPlayQueueRepository;
 
     @InjectMocks
     private PlayQueueService playQueueService;
@@ -188,23 +189,24 @@ public class PlayQueueServiceTest {
         when(mockedPlayer.getUsername()).thenReturn("testuser");
         when(mockedPlayQueue.getFiles()).thenReturn(files);
         when(mockedPlayQueue.getFile(index)).thenReturn(files.get(index));
+        when(savedPlayQueueRepository.findByUsername("testuser")).thenReturn(Optional.ofNullable(null));
         doAnswer(invocation -> {
             SavedPlayQueue savedPlayQueue = invocation.getArgument(0, SavedPlayQueue.class);
             savedPlayQueue.setId(1);
-            return null;
-        }).when(playQueueDao).savePlayQueue(any());
+            return savedPlayQueue;
+        }).when(savedPlayQueueRepository).save(any());
 
         // when
         playQueueService.savePlayQueue(mockedPlayer, index, 10L);
 
         // then
         ArgumentCaptor<SavedPlayQueue> captor = ArgumentCaptor.forClass(SavedPlayQueue.class);
-        verify(playQueueDao).savePlayQueue(captor.capture());
+        verify(savedPlayQueueRepository).save(captor.capture());
         SavedPlayQueue savedPlayQueue = captor.getValue();
         assertEquals("testuser", savedPlayQueue.getUsername());
         assertEquals(10L, savedPlayQueue.getPositionMillis());
-        assertEquals(10, savedPlayQueue.getMediaFileIds().size());
-        assertEquals(index, savedPlayQueue.getCurrentMediaFileId());
+        assertEquals(10, savedPlayQueue.getMediaFiles().size());
+        assertEquals(index, savedPlayQueue.getCurrentMediaFile().getId());
         assertNotNull(savedPlayQueue.getChanged());
         assertEquals("testuser", savedPlayQueue.getChangedBy());
     }
@@ -224,21 +226,21 @@ public class PlayQueueServiceTest {
         doAnswer(invocation -> {
             SavedPlayQueue savedPlayQueue = invocation.getArgument(0, SavedPlayQueue.class);
             savedPlayQueue.setId(1);
-            return null;
-        }).when(playQueueDao).savePlayQueue(any());
+            return savedPlayQueue;
+        }).when(savedPlayQueueRepository).save(any());
 
         // when
         playQueueService.savePlayQueue(mockedPlayer, -1, 10L);
 
         // then
         ArgumentCaptor<SavedPlayQueue> captor = ArgumentCaptor.forClass(SavedPlayQueue.class);
-        verify(playQueueDao).savePlayQueue(captor.capture());
+        verify(savedPlayQueueRepository).save(captor.capture());
         verify(mockedPlayQueue, never()).getFile(anyInt());
         SavedPlayQueue savedPlayQueue = captor.getValue();
         assertEquals("testuser", savedPlayQueue.getUsername());
         assertEquals(10L, savedPlayQueue.getPositionMillis());
-        assertEquals(10, savedPlayQueue.getMediaFileIds().size());
-        assertNull(savedPlayQueue.getCurrentMediaFileId());
+        assertEquals(10, savedPlayQueue.getMediaFiles().size());
+        assertNull(savedPlayQueue.getCurrentMediaFile());
         assertNotNull(savedPlayQueue.getChanged());
         assertEquals("testuser", savedPlayQueue.getChangedBy());
     }

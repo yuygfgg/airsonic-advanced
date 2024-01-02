@@ -23,7 +23,6 @@ import com.google.common.primitives.Ints;
 import org.airsonic.player.ajax.LyricsInfo;
 import org.airsonic.player.ajax.LyricsWSController;
 import org.airsonic.player.command.UserSettingsCommand;
-import org.airsonic.player.dao.PlayQueueDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.Bookmark;
 import org.airsonic.player.domain.CoverArt.EntityType;
@@ -146,8 +145,6 @@ public class SubsonicRESTController {
     private AlbumService albumService;
     @Autowired
     private BookmarkService bookmarkService;
-    @Autowired
-    private PlayQueueDao playQueueDao;
     @Autowired
     private MediaScannerService mediaScannerService;
     @Autowired
@@ -1779,7 +1776,7 @@ public class SubsonicRESTController {
         String username = securityService.getCurrentUsername(request);
         Player player = playerService.getPlayer(request, response, username);
 
-        SavedPlayQueue playQueue = playQueueDao.getPlayQueue(username);
+        SavedPlayQueue playQueue = playQueueService.loadSavedPlayQueueForRest(username);
         if (playQueue == null) {
             writeEmptyResponse(request, response);
             return;
@@ -1787,13 +1784,12 @@ public class SubsonicRESTController {
 
         org.subsonic.restapi.PlayQueue restPlayQueue = new org.subsonic.restapi.PlayQueue();
         restPlayQueue.setUsername(playQueue.getUsername());
-        restPlayQueue.setCurrent(playQueue.getCurrentMediaFileId());
+        restPlayQueue.setCurrent(Optional.ofNullable(playQueue.getCurrentMediaFile()).map(MediaFile::getId).orElse(null));
         restPlayQueue.setPosition(playQueue.getPositionMillis());
         restPlayQueue.setChanged(jaxbWriter.convertDate(playQueue.getChanged()));
         restPlayQueue.setChangedBy(playQueue.getChangedBy());
 
-        for (Integer mediaFileId : playQueue.getMediaFileIds()) {
-            MediaFile mediaFile = mediaFileService.getMediaFile(mediaFileId);
+        for (MediaFile mediaFile : playQueue.getMediaFiles()) {
             if (mediaFile != null) {
                 restPlayQueue.getEntry().add(createJaxbChild(player, mediaFile, username));
             }
@@ -1818,8 +1814,8 @@ public class SubsonicRESTController {
             return;
         }
 
-        SavedPlayQueue playQueue = new SavedPlayQueue(null, username, mediaFileIds, current, position, Instant.now(), changedBy);
-        playQueueDao.savePlayQueue(playQueue);
+        playQueueService.savePlayQueue(username, mediaFileIds, current, position, changedBy);
+
         writeEmptyResponse(request, response);
     }
 

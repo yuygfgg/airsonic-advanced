@@ -25,7 +25,7 @@ jobs:
           java-version: 17
           distribution: 'temurin'
       - name: Setup ffmpeg
-        uses: FedericoCarboni/setup-ffmpeg@v2
+        uses: FedericoCarboni/setup-ffmpeg@v3
         id: setup-ffmpeg 
       - name: Cache Maven packages
         uses: actions/cache@v3

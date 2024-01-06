@@ -360,15 +360,8 @@ public class SonosService implements SonosSoap {
 
     @Override
     public CreateContainerResult createContainer(String containerType, String title, String parentId, String seedId) {
-        Instant now = Instant.now();
-        Playlist playlist = new Playlist();
-        playlist.setName(title);
-        playlist.setUsername(getUsername());
-        playlist.setCreated(now);
-        playlist.setChanged(now);
-        playlist.setShared(false);
-
-        playlistService.createPlaylist(playlist);
+        Playlist playlist = playlistService.createPlaylist(title, false, getUsername());
+        playlistService.broadcast(playlist);
         CreateContainerResult result = new CreateContainerResult();
         result.setId(ID_PLAYLIST_PREFIX + playlist.getId());
         addItemToPlaylist(playlist.getId(), seedId, -1);
@@ -380,9 +373,9 @@ public class SonosService implements SonosSoap {
     public DeleteContainerResult deleteContainer(String id) {
         if (id.startsWith(ID_PLAYLIST_PREFIX)) {
             int playlistId = Integer.parseInt(id.replace(ID_PLAYLIST_PREFIX, ""));
-            Playlist playlist = playlistService.getPlaylist(playlistId);
-            if (playlist != null && playlist.getUsername().equals(getUsername())) {
+            if (playlistService.isWriteAllowed(playlistId, getUsername())) {
                 playlistService.deletePlaylist(playlistId);
+                playlistService.broadcastDeleted(playlistId);
             }
         }
         return new DeleteContainerResult();
@@ -392,12 +385,10 @@ public class SonosService implements SonosSoap {
     public RenameContainerResult renameContainer(String id, String title) {
         if (id.startsWith(ID_PLAYLIST_PREFIX)) {
             int playlistId = Integer.parseInt(id.replace(ID_PLAYLIST_PREFIX, ""));
-            Playlist playlist = playlistService.getPlaylist(playlistId);
-            if (playlist != null && playlist.getUsername().equals(getUsername())) {
+            if (playlistService.isWriteAllowed(playlistId, getUsername())) {
                 // create a copy to update
-                playlist = new Playlist(playlist);
-                playlist.setName(title);
-                playlistService.updatePlaylist(playlist);
+                playlistService.updatePlaylist(playlistId, title);
+                playlistService.broadcastFileChange(playlistId, false, false);
             }
         }
         return new RenameContainerResult();
@@ -407,8 +398,7 @@ public class SonosService implements SonosSoap {
     public AddToContainerResult addToContainer(String id, String parentId, int index, String updateId) {
         if (parentId.startsWith(ID_PLAYLIST_PREFIX)) {
             int playlistId = Integer.parseInt(parentId.replace(ID_PLAYLIST_PREFIX, ""));
-            Playlist playlist = playlistService.getPlaylist(playlistId);
-            if (playlist != null && playlist.getUsername().equals(getUsername())) {
+            if (playlistService.isWriteAllowed(playlistId, getUsername())) {
                 addItemToPlaylist(playlistId, id, index);
             }
         }
@@ -442,14 +432,14 @@ public class SonosService implements SonosSoap {
 
         existingSongs.addAll(index, newSongs);
         playlistService.setFilesInPlaylist(playlistId, existingSongs);
+        playlistService.broadcastFileChange(playlistId, false, true);
     }
 
     @Override
     public ReorderContainerResult reorderContainer(String id, String from, int to, String updateId) {
         if (id.startsWith(ID_PLAYLIST_PREFIX)) {
             int playlistId = Integer.parseInt(id.replace(ID_PLAYLIST_PREFIX, ""));
-            Playlist playlist = playlistService.getPlaylist(playlistId);
-            if (playlist != null && playlist.getUsername().equals(getUsername())) {
+            if (playlistService.isWriteAllowed(playlistId, getUsername())) {
 
                 SortedMap<Integer, MediaFile> indexToSong = new ConcurrentSkipListMap<Integer, MediaFile>();
                 List<MediaFile> songs = playlistService.getFilesInPlaylist(playlistId);
@@ -468,6 +458,7 @@ public class SonosService implements SonosSoap {
                 updatedSongs.addAll(indexToSong.tailMap(to).values());
 
                 playlistService.setFilesInPlaylist(playlistId, updatedSongs);
+                playlistService.broadcastFileChange(playlistId, false, true);
             }
         }
         return new ReorderContainerResult();
@@ -477,8 +468,7 @@ public class SonosService implements SonosSoap {
     public RemoveFromContainerResult removeFromContainer(String id, String indices, String updateId) {
         if (id.startsWith(ID_PLAYLIST_PREFIX)) {
             int playlistId = Integer.parseInt(id.replace(ID_PLAYLIST_PREFIX, ""));
-            Playlist playlist = playlistService.getPlaylist(playlistId);
-            if (playlist != null && playlist.getUsername().equals(getUsername())) {
+            if (playlistService.isWriteAllowed(playlistId, getUsername())) {
                 SortedSet<Integer> indicesToRemove = parsePlaylistIndices(indices);
                 List<MediaFile> songs = playlistService.getFilesInPlaylist(playlistId);
                 List<MediaFile> updatedSongs = new ArrayList<MediaFile>();
@@ -488,6 +478,7 @@ public class SonosService implements SonosSoap {
                     }
                 }
                 playlistService.setFilesInPlaylist(playlistId, updatedSongs);
+                playlistService.broadcastFileChange(playlistId, false, true);
             }
         }
         return new RemoveFromContainerResult();

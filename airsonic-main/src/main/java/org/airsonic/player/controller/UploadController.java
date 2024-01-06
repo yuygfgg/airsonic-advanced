@@ -110,7 +110,7 @@ public class UploadController {
         try {
             securityService.checkUploadAllowed(p, checkExistence);
         } catch (AccessDeniedException ade) {
-            if (!user.isAdminRole() || !SecurityService.isFileInFolder(p, homeConfig.getAirsonicHome())) {
+            if (!user.isAdminRole() || !FileUtil.isFileInFolder(p, homeConfig.getAirsonicHome())) {
                 throw ade;
             }
         }
@@ -134,7 +134,7 @@ public class UploadController {
 
         try {
 
-            status = statusService.createUploadStatus(playerService.getPlayer(request, response, false, false));
+            status = statusService.createUploadStatus(playerService.getPlayer(request, response, user.getUsername(), false, false));
             status.setBytesTotal(request.getContentLength());
             brokerTemplate.convertAndSendToUser(status.getPlayer().getUsername(), "/queue/uploads/status",
                     new UploadInfo(status.getId(), 0L, status.getBytesTotal()));
@@ -155,7 +155,11 @@ public class UploadController {
                 MonitoredMultipartFile monitoredFile = new MonitoredMultipartFile(file, listener);
 
                 if (!monitoredFile.isEmpty()) {
-                    String fileName = monitoredFile.getOriginalFilename();
+                    Path filePath = Paths.get(monitoredFile.getOriginalFilename()).normalize();
+                    if (filePath.getNameCount() > 1 || filePath.startsWith("..") || filePath.startsWith("/")) {
+                        throw new AccessDeniedException("Invalid filename: " + filePath);
+                    }
+                    String fileName = filePath.toString();
                     if (!fileName.trim().isEmpty()) {
 
                         Path targetFile = dir.resolve(FilenameUtils.getName(fileName));

@@ -25,7 +25,8 @@ import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.domain.PodcastChannel;
 import org.airsonic.player.domain.PodcastChannelRule;
 import org.airsonic.player.service.MediaFolderService;
-import org.airsonic.player.service.PodcastService;
+import org.airsonic.player.service.PodcastManagementService;
+import org.airsonic.player.service.PodcastPersistenceService;
 import org.airsonic.player.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -54,7 +55,11 @@ public class PodcastSettingsController {
     @Autowired
     private SettingsService settingsService;
     @Autowired
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastPersistenceService;
+
+    @Autowired
+    private PodcastManagementService podcastManagementService;
+
     @Autowired
     private MediaFolderService mediaFolderService;
 
@@ -73,8 +78,8 @@ public class PodcastSettingsController {
                 .filter(f -> f.getType() == Type.PODCAST)
                 .collect(toMap(f -> f.getId(), f -> f.getId() + " - " + f.getName())));
 
-        List<PodcastChannel> channels = podcastService.getAllChannels();
-        List<PodcastChannelRule> rules = podcastService.getAllChannelRules();
+        List<PodcastChannel> channels = podcastPersistenceService.getAllChannels();
+        List<PodcastChannelRule> rules = podcastPersistenceService.getAllChannelRules();
         command.setRules(rules.stream()
                 .map(cr -> new PodcastRule(
                         cr,
@@ -102,20 +107,22 @@ public class PodcastSettingsController {
         settingsService.setPodcastEpisodeRetentionCount(defaultRule.getEpisodeRetentionCount());
         settingsService.setPodcastEpisodeDownloadCount(defaultRule.getEpisodeDownloadCount());
         settingsService.save();
-        podcastService.scheduleDefault();
+        podcastManagementService.scheduleDefault();
 
         boolean success = mediaFolderService.enablePodcastFolder(command.getFolderId());
 
         command.getRules().stream().filter(r -> !r.getId().equals(-1)).forEach(r -> {
             if (r.getDelete()) {
-                podcastService.deleteChannelRule(r.getId());
+                podcastManagementService.deleteChannelRule(r.getId());
             } else {
-                podcastService.createOrUpdateChannelRule(r.toPodcastChannelRule());
+                podcastManagementService.createOrUpdateChannelRuleByCommand(r);
             }
         });
 
-        Optional.ofNullable(command.getNewRule().toPodcastChannelRule())
-                .ifPresent(podcastService::createOrUpdateChannelRule);
+
+
+        Optional.ofNullable(command.getNewRule())
+                .ifPresent(podcastManagementService::createOrUpdateChannelRuleByCommand);
 
         redirectAttributes.addFlashAttribute("settings_toast", success);
         return "redirect:podcastSettings.view";

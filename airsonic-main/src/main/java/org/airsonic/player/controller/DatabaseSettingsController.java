@@ -109,7 +109,7 @@ public class DatabaseSettingsController {
         }
 
         User user = securityService.getUserByName(p.getName());
-        Player transferPlayer = playerService.getPlayer(swr.getRequest(), swr.getResponse(), false, false);
+        Player transferPlayer = playerService.getPlayer(swr.getRequest(), swr.getResponse(), user.getUsername(), false, false);
         Supplier<TransferStatus> statusSupplier = () -> statusService.createDownloadStatus(transferPlayer);
 
         Consumer<TransferStatus> statusCloser = status -> {

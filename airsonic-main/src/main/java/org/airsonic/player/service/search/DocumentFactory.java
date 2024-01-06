@@ -182,7 +182,7 @@ public class DocumentFactory {
         fieldId.accept(doc, album.getId());
         fieldWords.accept(doc, FieldNames.ARTIST, album.getArtist());
         fieldWords.accept(doc, FieldNames.ALBUM, album.getName());
-        fieldFolderId.accept(doc, album.getFolderId());
+        fieldFolderId.accept(doc, album.getFolder().getId());
         return doc;
     }
 

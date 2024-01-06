@@ -1,43 +1,39 @@
 package org.airsonic.player.service;
 
-import org.airsonic.player.TestCaseUtils;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.util.EmbeddedTestCategory;
 import org.airsonic.player.util.FileUtils;
-import org.airsonic.player.util.HomeRule;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.sql.DataSource;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Category(EmbeddedTestCategory.class)
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
 public class LegacyDatabaseStartupTestCase {
 
-    @ClassRule
-    public static final HomeRule airsonicRule = new HomeRule();
+    @TempDir
+    private static Path tempAirsonicHome;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupOnce() throws IOException, URISyntaxException {
-        String homeParent = TestCaseUtils.airsonicHomePathForTest();
-        Path dbDirectory = Paths.get(homeParent, "db");
+        System.setProperty("airsonic.home", tempAirsonicHome.toString());
+        Path dbDirectory = tempAirsonicHome.resolve("db");
         FileUtils.copyRecursively(LegacyDatabaseStartupTestCase.class.getResource("/db/pre-liquibase/db"), dbDirectory);
-        // have to change the url here because old db files are libresonic
-        AirsonicHomeConfig config = new AirsonicHomeConfig(homeParent, null);
+        AirsonicHomeConfig config = new AirsonicHomeConfig(tempAirsonicHome.toString(), null);
         System.setProperty(SettingsService.KEY_DATABASE_URL,
                 config.getDefaultJDBCUrl().replaceAll("airsonic;", "libresonic;"));
         System.setProperty(SettingsService.KEY_DATABASE_USERNAME, "sa");

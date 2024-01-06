@@ -216,18 +216,18 @@
                   className: "detail fit songTitle",
                   title: "[(#{edittags.songtitle})]"
                 },
-                { data: "channelId",
+                { data: "channel",
                   className: "detail truncate",
                   name: "channel",
                   title: "[(#{podcastreceiver.channel})]",
                   render: function(data, type, row) {
                       if (type == "display" && data != null) {
-                          var channels = podcasts.filter(p => p.id == data);
-                          var name = data;
+                          var channels = podcasts.filter(p => p.id == data.id);
+                          var name = data.id;
                           if (channels.length == 1) {
                              name = channels[0].title;
                           }
-                          return $("<a>", {title: name, alt: name, text: name, target: "main"}).attr("href", "podcastChannel.view?id=" + data)[0].outerHTML;
+                          return $("<a>", {title: name, alt: name, text: name, target: "main"}).attr("href", "podcastChannel.view?id=" + data.id)[0].outerHTML;
                       }
                       return data;
                   }
@@ -270,10 +270,10 @@
             onPlayEpisode(newestPodcastTable.row( $(this).parents('tr') ).data().id);
         } );
         $("#newestPodcastTable tbody").on( "click", ".addSongLast", function () {
-            onAddLastMediaFile(newestPodcastTable.row( $(this).parents('tr') ).data().mediaFileId);
+            onAddLastMediaFile(newestPodcastTable.row( $(this).parents('tr') ).data().mediaFile.id);
         } );
         $("#newestPodcastTable tbody").on( "click", ".addSongNext", function () {
-            onAddNextMediaFile(newestPodcastTable.row( $(this).parents('tr') ).data().mediaFileId);
+            onAddNextMediaFile(newestPodcastTable.row( $(this).parents('tr') ).data().mediaFile.id);
         } );
         $(".newestPodcastSelectAll").on( "change", function (e) {
             selectAll(newestPodcastTable, e.target.checked);

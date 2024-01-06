@@ -21,10 +21,11 @@
 package org.airsonic.player.service.search;
 
 import org.airsonic.player.config.AirsonicHomeConfig;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
+import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.repository.AlbumRepository;
 import org.airsonic.player.repository.ArtistRepository;
+import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.Util;
 import org.apache.lucene.document.Document;
@@ -77,16 +78,16 @@ public class IndexManager {
     public IndexManager(
             AnalyzerFactory analyzerFactory,
             DocumentFactory documentFactory,
-            MediaFileDao mediaFileDao,
             ArtistRepository artistRepository,
             AlbumRepository albumRepository,
+            MediaFileRepository mediaFileRepository,
             AirsonicHomeConfig homeConfig
     ) {
         this.analyzerFactory = analyzerFactory;
         this.documentFactory = documentFactory;
-        this.mediaFileDao = mediaFileDao;
         this.artistRepository = artistRepository;
         this.albumRepository = albumRepository;
+        this.mediaFileRepository = mediaFileRepository;
         this.homeConfig = homeConfig;
         this.rootIndexDirectory = homeConfig.getAirsonicHome().resolve(INDEX_ROOT_DIR_NAME.concat(Integer.toString(INDEX_VERSION)));
     }
@@ -94,9 +95,9 @@ public class IndexManager {
 
     private final AnalyzerFactory analyzerFactory;
     private final DocumentFactory documentFactory;
-    private final MediaFileDao mediaFileDao;
     private final ArtistRepository artistRepository;
     private final AlbumRepository albumRepository;
+    private final MediaFileRepository mediaFileRepository;
     private final AirsonicHomeConfig homeConfig;
 
     /**
@@ -173,8 +174,8 @@ public class IndexManager {
     }
 
     public void expunge() {
-        Term[] primarykeys = mediaFileDao.getArtistExpungeCandidates().stream()
-                .map(m -> documentFactory.createPrimarykey(m))
+        Term[] primarykeys = mediaFileRepository.findByMediaTypeAndPresentFalse(MediaType.DIRECTORY).stream()
+                .map(m -> documentFactory.createPrimarykey(m.getId()))
                 .toArray(i -> new Term[i]);
         try {
             writers.get(IndexType.ARTIST).deleteDocuments(primarykeys);
@@ -182,8 +183,8 @@ public class IndexManager {
             LOG.error("Failed to delete artist doc.", e);
         }
 
-        primarykeys = mediaFileDao.getAlbumExpungeCandidates().stream()
-                .map(m -> documentFactory.createPrimarykey(m))
+        primarykeys = mediaFileRepository.findByMediaTypeAndPresentFalse(MediaType.ALBUM).stream()
+                .map(m -> documentFactory.createPrimarykey(m.getId()))
                 .toArray(i -> new Term[i]);
         try {
             writers.get(IndexType.ALBUM).deleteDocuments(primarykeys);
@@ -191,8 +192,8 @@ public class IndexManager {
             LOG.error("Failed to delete album doc.", e);
         }
 
-        primarykeys = mediaFileDao.getSongExpungeCandidates().stream()
-                .map(m -> documentFactory.createPrimarykey(m))
+        primarykeys = mediaFileRepository.findByMediaTypeInAndPresentFalse(MediaType.playableTypes()).stream()
+                .map(m -> documentFactory.createPrimarykey(m.getId()))
                 .toArray(i -> new Term[i]);
         try {
             writers.get(IndexType.SONG).deleteDocuments(primarykeys);

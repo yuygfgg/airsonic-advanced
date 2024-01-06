@@ -3,9 +3,6 @@ package org.airsonic.player.service;
 import com.google.common.collect.ImmutableMap;
 import org.airsonic.player.ajax.MediaFileEntry;
 import org.airsonic.player.ajax.PlayQueueInfo;
-import org.airsonic.player.dao.InternetRadioDao;
-import org.airsonic.player.dao.MediaFileDao;
-import org.airsonic.player.dao.PlayQueueDao;
 import org.airsonic.player.domain.InternetRadio;
 import org.airsonic.player.domain.InternetRadioSource;
 import org.airsonic.player.domain.MediaFile;
@@ -17,11 +14,16 @@ import org.airsonic.player.domain.PodcastEpisode;
 import org.airsonic.player.domain.PodcastStatus;
 import org.airsonic.player.domain.RandomSearchCriteria;
 import org.airsonic.player.domain.SavedPlayQueue;
+import org.airsonic.player.repository.InternetRadioRepository;
+import org.airsonic.player.repository.SavedPlayQueueRepository;
 import org.airsonic.player.service.websocket.AsyncWebSocketClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class PlayQueueService {
@@ -45,17 +48,15 @@ public class PlayQueueService {
     @Autowired
     private RatingService ratingService;
     @Autowired
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastService;
     @Autowired
     private PlaylistService playlistService;
     @Autowired
-    private MediaFileDao mediaFileDao;
-    @Autowired
     private MediaFolderService mediaFolderService;
     @Autowired
-    private PlayQueueDao playQueueDao;
+    private SavedPlayQueueRepository savedPlayQueueRepository;
     @Autowired
-    private InternetRadioDao internetRadioDao;
+    private InternetRadioRepository internetRadioRepository;
     @Autowired
     private JWTSecurityService jwtSecurityService;
     @Autowired
@@ -64,6 +65,8 @@ public class PlayQueueService {
     private AsyncWebSocketClient webSocketClient;
     @Autowired
     private PersonalSettingsService personalSettingsService;
+
+    private static final Logger LOG = LoggerFactory.getLogger(PlayQueueService.class);
 
     public void start(Player player) {
         player.getPlayQueue().setStatus(PlayQueue.Status.PLAYING);
@@ -115,20 +118,40 @@ public class PlayQueueService {
         broadcastPlayQueue(player, pq -> pq.setStartPlayerAt(size), sessionId);
     }
 
+    @Transactional
     public int savePlayQueue(Player player, int index, long offset) {
         PlayQueue playQueue = player.getPlayQueue();
-        List<Integer> ids = MediaFile.toIdList(playQueue.getFiles());
 
-        Integer currentId = index == -1 ? null : playQueue.getFile(index).getId();
-        SavedPlayQueue savedPlayQueue = new SavedPlayQueue(null, player.getUsername(), ids, currentId, offset,
-                Instant.now(), player.getUsername());
-        playQueueDao.savePlayQueue(savedPlayQueue);
+        MediaFile currentFile = index == -1 ? null : playQueue.getFile(index);
+        String username = player.getUsername();
+        SavedPlayQueue savedPlayQueue = savedPlayQueueRepository.findByUsername(username).orElse(new SavedPlayQueue(username));
+        savedPlayQueue.setMediaFiles(playQueue.getFiles());
+        savedPlayQueue.setCurrentMediaFile(currentFile);
+        savedPlayQueue.setPositionMillis(offset);
+        savedPlayQueue.setChanged(Instant.now());
+        savedPlayQueue.setChangedBy(username);
+        savedPlayQueueRepository.save(savedPlayQueue);
 
         return savedPlayQueue.getId();
     }
 
+    @Transactional
+    public int savePlayQueue(String username, List<Integer> mediaFileIds, Integer currentFileId, Long position, String changedBy) {
+        SavedPlayQueue savedPlayQueue = savedPlayQueueRepository.findByUsername(username).orElse(new SavedPlayQueue(username));
+        List<MediaFile> mediaFiles = mediaFileIds.stream().map(mediaFileService::getMediaFile).collect(Collectors.toList());
+        savedPlayQueue.setMediaFiles(mediaFiles);
+        savedPlayQueue.setCurrentMediaFile(mediaFileService.getMediaFile(currentFileId));
+        savedPlayQueue.setPositionMillis(position);
+        savedPlayQueue.setChanged(Instant.now());
+        savedPlayQueue.setChangedBy(changedBy);
+        savedPlayQueueRepository.save(savedPlayQueue);
+
+        return savedPlayQueue.getId();
+    }
+
+    @Transactional
     public void loadSavedPlayQueue(Player player, String sessionId) {
-        SavedPlayQueue savedPlayQueue = playQueueDao.getPlayQueue(player.getUsername());
+        SavedPlayQueue savedPlayQueue = savedPlayQueueRepository.findByUsername(player.getUsername()).orElse(null);
 
         if (savedPlayQueue == null) {
             return;
@@ -136,21 +159,36 @@ public class PlayQueueService {
 
         PlayQueue playQueue = player.getPlayQueue();
         playQueue.clear();
-        for (Integer mediaFileId : savedPlayQueue.getMediaFileIds()) {
-            MediaFile mediaFile = mediaFileService.getMediaFile(mediaFileId);
+        for (MediaFile mediaFile : savedPlayQueue.getMediaFiles()) {
+            mediaFile = mediaFileService.checkLastModified(mediaFile);
             if (mediaFile != null) {
                 playQueue.addFiles(true, mediaFile);
             }
         }
 
         long positionMillis = savedPlayQueue.getPositionMillis() == null ? 0L : savedPlayQueue.getPositionMillis();
-        Integer currentId = savedPlayQueue.getCurrentMediaFileId();
-        int currentIndex = Optional.ofNullable(currentId).map(mediaFileService::getMediaFile)
+        MediaFile currentFile = savedPlayQueue.getCurrentMediaFile();
+        int currentIndex = Optional.ofNullable(currentFile).map(mediaFileService::checkLastModified)
                 .map(c -> playQueue.getFiles().indexOf(c)).orElse(-1);
 
         broadcastPlayQueue(player,
                 currentIndex == -1 ? identity : pq -> pq.setStartPlayerAt(currentIndex).setStartPlayerAtPosition(positionMillis),
                 sessionId);
+    }
+
+    @Transactional
+    public SavedPlayQueue loadSavedPlayQueueForRest(String username) {
+
+        LOG.info("Loading saved play queue for user {}", username);
+        return savedPlayQueueRepository.findByUsername(username).map(sp -> {
+            sp.getMediaFiles().forEach(mf -> {
+                mediaFileService.checkLastModified(mf);
+            });
+            return sp;
+        }).orElseGet(() -> {
+            LOG.info("No saved play queue found for user {}", username);
+            return null;
+        });
     }
 
     public void playMediaFile(Player player, int id, String sessionId) {
@@ -182,14 +220,15 @@ public class PlayQueueService {
      * @throws Exception
      */
     public void playInternetRadio(Player player, int id, Integer index, String sessionId) throws Exception {
-        InternetRadio radio = internetRadioDao.getInternetRadioById(id);
-        if (!radio.isEnabled()) {
-            throw new Exception("Radio is not enabled");
-        } else {
-            internetRadioService.clearInternetRadioSourceCache(radio.getId());
-        }
-
-        doPlay(player, Collections.emptyList(), radio, sessionId);
+        internetRadioRepository.findByIdAndEnabledTrue(id).ifPresentOrElse(
+            radio -> {
+                internetRadioService.clearInternetRadioSourceCache(radio.getId());
+                doPlay(player, Collections.emptyList(), radio, sessionId);
+            },
+            () -> {
+                throw new RuntimeException("Radio is not enabled");
+            }
+        );
     }
 
     /**
@@ -236,7 +275,7 @@ public class PlayQueueService {
         List<MediaFile> files = new ArrayList<>(episodes.size());
         for (PodcastEpisode episode : episodes) {
             if (episode.getStatus() == PodcastStatus.COMPLETED) {
-                MediaFile mediaFile = mediaFileService.getMediaFile(episode.getMediaFileId());
+                MediaFile mediaFile = episode.getMediaFile();
                 if (mediaFile != null && mediaFile.isPresent()) {
                     files.add(mediaFile);
                 }
@@ -250,12 +289,12 @@ public class PlayQueueService {
         boolean queueFollowingSongs = personalSettingsService.getUserSettings(player.getUsername()).getQueueFollowingSongs();
 
         PodcastEpisode episode = podcastService.getEpisode(id, false);
-        List<PodcastEpisode> allEpisodes = podcastService.getEpisodes(episode.getChannelId());
+        List<PodcastEpisode> allEpisodes = podcastService.getEpisodes(episode.getChannel().getId());
         List<MediaFile> files = new ArrayList<>(allEpisodes.size());
 
         for (PodcastEpisode ep : allEpisodes) {
-            if (ep.getStatus() == PodcastStatus.COMPLETED && ep.getMediaFileId() != null) {
-                MediaFile mediaFile = mediaFileService.getMediaFile(ep.getMediaFileId());
+            if (ep.getStatus() == PodcastStatus.COMPLETED) {
+                MediaFile mediaFile = ep.getMediaFile();
                 if (mediaFile != null && mediaFile.isPresent()
                         && (ep.getId().equals(episode.getId()) || queueFollowingSongs && !files.isEmpty())) {
                     files.add(mediaFile);
@@ -268,7 +307,7 @@ public class PlayQueueService {
 
     public void playStarred(Player player, String sessionId) {
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(player.getUsername());
-        List<MediaFile> files = mediaFileDao.getStarredFiles(0, Integer.MAX_VALUE, player.getUsername(), musicFolders);
+        List<MediaFile> files = mediaFileService.getStarredSongs(0, Integer.MAX_VALUE, player.getUsername(), musicFolders);
         doPlay(player, files, null, sessionId);
     }
 

@@ -3,6 +3,8 @@ package org.airsonic.player.dao;
 import org.airsonic.player.util.LambdaUtils.ThrowingBiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.nio.file.Path;
@@ -10,8 +12,11 @@ import java.sql.Connection;
 import java.util.function.Consumer;
 
 @Repository
-public class DatabaseDao extends AbstractDao {
+public class DatabaseDao {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseDao.class);
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     public boolean exportDB(Path tempWorkingDir, ThrowingBiFunction<Path, Connection, Boolean, Exception> exportFunction) throws Exception {
         try (Connection con = jdbcTemplate.getDataSource().getConnection()) {

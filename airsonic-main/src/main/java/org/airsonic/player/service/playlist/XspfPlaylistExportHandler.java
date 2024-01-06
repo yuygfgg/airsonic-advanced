@@ -5,36 +5,30 @@ import chameleon.playlist.SpecificPlaylistProvider;
 import chameleon.playlist.xspf.Location;
 import chameleon.playlist.xspf.Track;
 import chameleon.playlist.xspf.XspfProvider;
-import org.airsonic.player.dao.MediaFileDao;
-import org.airsonic.player.dao.PlaylistDao;
 import org.airsonic.player.domain.CoverArt.EntityType;
-import org.airsonic.player.domain.MediaFile;
-import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.Playlist;
+import org.airsonic.player.repository.PlaylistRepository;
 import org.airsonic.player.service.CoverArtService;
-import org.airsonic.player.service.MediaFolderService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 @Component
 public class XspfPlaylistExportHandler implements PlaylistExportHandler {
 
-    @Autowired
-    MediaFileDao mediaFileDao;
+    private static Logger LOG = LoggerFactory.getLogger(XspfPlaylistExportHandler.class);
 
     @Autowired
-    PlaylistDao playlistDao;
+    private PlaylistRepository playlistRepository;
 
     @Autowired
-    MediaFolderService mediaFolderService;
-
-    @Autowired
-    CoverArtService coverArtService;
+    private CoverArtService coverArtService;
 
     @Override
     public boolean canHandle(Class<? extends SpecificPlaylistProvider> providerClass) {
@@ -42,20 +36,22 @@ public class XspfPlaylistExportHandler implements PlaylistExportHandler {
     }
 
     @Override
+    @Transactional
     public SpecificPlaylist handle(int id, SpecificPlaylistProvider provider) {
         return createXsfpPlaylistFromDBId(id);
     }
 
     chameleon.playlist.xspf.Playlist createXsfpPlaylistFromDBId(int id) {
         chameleon.playlist.xspf.Playlist newPlaylist = new chameleon.playlist.xspf.Playlist();
-        Playlist playlist = playlistDao.getPlaylist(id);
+        Playlist playlist = playlistRepository.findById(id).orElseGet(() -> {
+            LOG.error("Playlist with id {} not found", id);
+            return null;
+        });
         newPlaylist.setTitle(playlist.getName());
         newPlaylist.setCreator("Airsonic user " + playlist.getUsername());
         newPlaylist.setDate(Date.from(Instant.now())); //TODO switch to Instant upstream
-        List<MediaFile> files = mediaFileDao.getFilesInPlaylist(id);
 
-        files.stream().map(mediaFile -> {
-            MusicFolder folder = mediaFolderService.getMusicFolderById(mediaFile.getFolderId());
+        playlist.getMediaFiles().stream().map(mediaFile -> {
             Track track = new Track();
             track.setTrackNumber(mediaFile.getTrackNumber());
             track.setCreator(mediaFile.getArtist());
@@ -64,7 +60,7 @@ public class XspfPlaylistExportHandler implements PlaylistExportHandler {
             track.setDuration((int) Math.round(mediaFile.getDuration())); // TODO switch to Double upstream
             track.setImage(Optional.ofNullable(coverArtService.getFullPath(EntityType.MEDIA_FILE, mediaFile.getId())).map(p -> p.toString()).orElse(null));
             Location location = new Location();
-            location.setText(mediaFile.getFullPath(folder.getPath()).toString());
+            location.setText(mediaFile.getFullPath().toString());
             track.getStringContainers().add(location);
             return track;
         }).forEach(newPlaylist::addTrack);

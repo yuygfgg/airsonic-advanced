@@ -23,6 +23,7 @@ import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.TransferStatus;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.PlayerService;
+import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.StatusService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -52,11 +53,14 @@ public class NowPlayingController {
     private StatusService statusService;
     @Autowired
     private MediaFileService mediaFileService;
+    @Autowired
+    private SecurityService securityService;
 
     @GetMapping
     protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String username = securityService.getCurrentUsername(request);
 
-        Player player = playerService.getPlayer(request, response);
+        Player player = playerService.getPlayer(request, response, username);
         TransferStatus status = statusService.getStreamStatusesForPlayer(player).stream().findFirst()
                 .orElseGet(() -> statusService.getInactiveStreamStatusForPlayer(player));
 

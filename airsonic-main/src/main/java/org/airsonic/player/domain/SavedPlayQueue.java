@@ -14,12 +14,16 @@
  *  You should have received a copy of the GNU General Public License
  *  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
  *
+ *  Copyright 2024 (C) Y.Tory
  *  Copyright 2015 (C) Sindre Mehus
  */
 
 package org.airsonic.player.domain;
 
+import javax.persistence.*;
+
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,22 +35,43 @@ import java.util.List;
  * @author Sindre Mehus
  * @version $Id$
  */
+@Entity
+@Table(name = "play_queue", uniqueConstraints = @UniqueConstraint(columnNames = {"username"}))
 public class SavedPlayQueue {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+    @Column(name = "username", nullable = false)
     private String username;
-    private List<Integer> mediaFileIds;
-    private Integer currentMediaFileId;
+    @ManyToMany
+    @JoinTable(name = "play_queue_file",
+        joinColumns = @JoinColumn(name = "play_queue_id", referencedColumnName = "id"),
+        inverseJoinColumns = @JoinColumn(name = "media_file_id", referencedColumnName = "id"))
+    private List<MediaFile> mediaFiles = new ArrayList<>();
+    @OneToOne
+    @JoinColumn(name = "current_media_file_id", referencedColumnName = "id")
+    private MediaFile currentMediaFile;
+    @Column(name = "position_millis")
     private Long positionMillis;
+    @Column(name = "changed")
     private Instant changed;
+    @Column(name = "changed_by")
     private String changedBy;
 
-    public SavedPlayQueue(Integer id, String username, List<Integer> mediaFileIds, Integer currentMediaFileId,
+    public SavedPlayQueue() {
+    }
+
+    public SavedPlayQueue(String username) {
+        this.username = username;
+    }
+
+    public SavedPlayQueue(Integer id, String username, List<MediaFile> mediaFiles, MediaFile currentMediaFile,
                           Long positionMillis, Instant changed, String changedBy) {
         this.id = id;
         this.username = username;
-        this.mediaFileIds = mediaFileIds;
-        this.currentMediaFileId = currentMediaFileId;
+        this.mediaFiles = mediaFiles;
+        this.currentMediaFile = currentMediaFile;
         this.positionMillis = positionMillis;
         this.changed = changed;
         this.changedBy = changedBy;
@@ -68,20 +93,20 @@ public class SavedPlayQueue {
         this.username = username;
     }
 
-    public List<Integer> getMediaFileIds() {
-        return mediaFileIds;
+    public List<MediaFile> getMediaFiles() {
+        return mediaFiles;
     }
 
-    public void setMediaFileIds(List<Integer> mediaFileIds) {
-        this.mediaFileIds = mediaFileIds;
+    public void setMediaFiles(List<MediaFile> mediaFiles) {
+        this.mediaFiles = mediaFiles;
     }
 
-    public Integer getCurrentMediaFileId() {
-        return currentMediaFileId;
+    public MediaFile getCurrentMediaFile() {
+        return currentMediaFile;
     }
 
-    public void setCurrentMediaFileId(Integer currentMediaFileId) {
-        this.currentMediaFileId = currentMediaFileId;
+    public void setCurrentMediaFile(MediaFile currentMediaFile) {
+        this.currentMediaFile = currentMediaFile;
     }
 
     public Long getPositionMillis() {

@@ -25,6 +25,7 @@ import org.airsonic.player.domain.Player;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.service.JWTSecurityService;
 import org.airsonic.player.service.PlayerService;
+import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.TranscodingService;
 import org.airsonic.player.util.StringUtil;
@@ -57,12 +58,16 @@ public abstract class CustomContentDirectory extends AbstractContentDirectorySer
     private TranscodingService transcodingService;
     @Autowired
     protected JWTSecurityService jwtSecurityService;
+    @Autowired
+    private SecurityService securityService;
 
     public CustomContentDirectory() {
         super(Lists.newArrayList("*"), Lists.newArrayList());
     }
 
     protected Res createResourceForSong(MediaFile song) {
+        // Create a guest user if necessary
+        securityService.createGuestUserIfNotExists();
         Player player = playerService.getGuestPlayer(null);
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString("ext/stream")

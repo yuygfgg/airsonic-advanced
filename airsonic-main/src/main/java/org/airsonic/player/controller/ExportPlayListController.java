@@ -1,6 +1,7 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.Playlist;
+import org.airsonic.player.service.PlaylistFileService;
 import org.airsonic.player.service.PlaylistService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.util.StringUtil;
@@ -26,6 +27,9 @@ public class ExportPlayListController {
     @Autowired
     private SecurityService securityService;
 
+    @Autowired
+    private PlaylistFileService playlistFileService;
+
     @GetMapping
     public ModelAndView exportPlaylist(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -39,7 +43,7 @@ public class ExportPlayListController {
         response.setContentType("application/x-download");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + StringUtil.fileSystemSafe(playlist.getName()) + ".m3u8\"");
 
-        playlistService.exportPlaylist(id, response.getOutputStream());
+        playlistFileService.exportPlaylist(id, response.getOutputStream());
         return null;
     }
 

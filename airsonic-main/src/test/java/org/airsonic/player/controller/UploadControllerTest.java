@@ -137,13 +137,14 @@ class UploadControllerTest {
 
         // Mocks
         UUID callback = UUID.randomUUID();
-        when(playerService.getPlayer(any(), any(), eq(false), eq(false))).thenReturn(mockedPlayer);
+        when(playerService.getPlayer(any(), any(), eq("user"), eq(false), eq(false))).thenReturn(mockedPlayer);
         when(statusService.createUploadStatus(eq(mockedPlayer))).thenReturn(mockedStatus);
         when(mockedStatus.getId()).thenReturn(UUID.randomUUID());
         when(mockedStatus.getBytesTotal()).thenReturn(0L);
         when(mockedStatus.getBytesTransferred()).thenReturn(0L);
         when(mockedStatus.getPlayer()).thenReturn(mockedPlayer);
         when(mockedPlayer.getUsername()).thenReturn("user");
+        when(mockedUser.getUsername()).thenReturn("user");
         when(mockedUser.isAdminRole()).thenReturn(isAdmin);
         when(mockedUser.isUploadRole()).thenReturn(isUploadRole);
         when(securityService.getCurrentUser(any())).thenReturn(mockedUser);
@@ -188,13 +189,14 @@ class UploadControllerTest {
 
         // Mocks
         UUID callback = UUID.randomUUID();
-        when(playerService.getPlayer(any(), any(), eq(false), eq(false))).thenReturn(mockedPlayer);
+        when(playerService.getPlayer(any(), any(), eq("user"), eq(false), eq(false))).thenReturn(mockedPlayer);
         when(statusService.createUploadStatus(eq(mockedPlayer))).thenReturn(mockedStatus);
         when(mockedStatus.getId()).thenReturn(UUID.randomUUID());
         when(mockedStatus.getBytesTotal()).thenReturn(0L);
         when(mockedStatus.getBytesTransferred()).thenReturn(0L);
         when(mockedStatus.getPlayer()).thenReturn(mockedPlayer);
         when(mockedPlayer.getUsername()).thenReturn("user");
+        when(mockedUser.getUsername()).thenReturn("user");
         when(mockedUser.isAdminRole()).thenReturn(false);
         when(mockedUser.isUploadRole()).thenReturn(false);
         when(securityService.getCurrentUser(any())).thenReturn(mockedUser);
@@ -245,13 +247,14 @@ class UploadControllerTest {
 
         // Mocks
         UUID callback = UUID.randomUUID();
-        when(playerService.getPlayer(any(), any(), eq(false), eq(false))).thenReturn(mockedPlayer);
+        when(playerService.getPlayer(any(), any(), eq("user"), eq(false), eq(false))).thenReturn(mockedPlayer);
         when(statusService.createUploadStatus(eq(mockedPlayer))).thenReturn(mockedStatus);
         when(mockedStatus.getId()).thenReturn(UUID.randomUUID());
         when(mockedStatus.getBytesTotal()).thenReturn(0L);
         when(mockedStatus.getBytesTransferred()).thenReturn(0L);
         when(mockedStatus.getPlayer()).thenReturn(mockedPlayer);
         when(mockedPlayer.getUsername()).thenReturn("user");
+        when(mockedUser.getUsername()).thenReturn("user");
         when(mockedUser.isAdminRole()).thenReturn(isAdmin);
         when(mockedUser.isUploadRole()).thenReturn(true);
         when(securityService.getCurrentUser(any())).thenReturn(mockedUser);
@@ -298,13 +301,14 @@ class UploadControllerTest {
 
         // Mocks
         UUID callback = UUID.randomUUID();
-        when(playerService.getPlayer(any(), any(), eq(false), eq(false))).thenReturn(mockedPlayer);
+        when(playerService.getPlayer(any(), any(), eq("user"), eq(false), eq(false))).thenReturn(mockedPlayer);
         when(statusService.createUploadStatus(eq(mockedPlayer))).thenReturn(mockedStatus);
         when(mockedStatus.getId()).thenReturn(UUID.randomUUID());
         when(mockedStatus.getBytesTotal()).thenReturn(0L);
         when(mockedStatus.getBytesTransferred()).thenReturn(0L);
         when(mockedStatus.getPlayer()).thenReturn(mockedPlayer);
         when(mockedPlayer.getUsername()).thenReturn("user");
+        when(mockedUser.getUsername()).thenReturn("user");
         when(mockedUser.isAdminRole()).thenReturn(true);
         when(securityService.getCurrentUser(any())).thenReturn(mockedUser);
         doThrow(new AccessDeniedException(uploadPath.toString(), null, "Specified location is not in writable music folder")).when(securityService).checkUploadAllowed(eq(uploadPath), eq(false));
@@ -351,13 +355,14 @@ class UploadControllerTest {
 
         // Mocks
         UUID callback = UUID.randomUUID();
-        when(playerService.getPlayer(any(), any(), eq(false), eq(false))).thenReturn(mockedPlayer);
+        when(playerService.getPlayer(any(), any(), eq("user"), eq(false), eq(false))).thenReturn(mockedPlayer);
         when(statusService.createUploadStatus(eq(mockedPlayer))).thenReturn(mockedStatus);
         when(mockedStatus.getId()).thenReturn(UUID.randomUUID());
         when(mockedStatus.getBytesTotal()).thenReturn(0L);
         when(mockedStatus.getBytesTransferred()).thenReturn(0L);
         when(mockedStatus.getPlayer()).thenReturn(mockedPlayer);
         when(mockedPlayer.getUsername()).thenReturn("user");
+        when(mockedUser.getUsername()).thenReturn("user");
         when(mockedUser.isAdminRole()).thenReturn(true);
         when(securityService.getCurrentUser(any())).thenReturn(mockedUser);
         when(settingsService.getUploadBitrateLimiter()).thenReturn(RateLimiter.create(10.0));
@@ -406,13 +411,14 @@ class UploadControllerTest {
 
         // Mocks
         UUID callback = UUID.randomUUID();
-        when(playerService.getPlayer(any(), any(), eq(false), eq(false))).thenReturn(mockedPlayer);
+        when(playerService.getPlayer(any(), any(), eq("user"), eq(false), eq(false))).thenReturn(mockedPlayer);
         when(statusService.createUploadStatus(eq(mockedPlayer))).thenReturn(mockedStatus);
         when(mockedStatus.getId()).thenReturn(UUID.randomUUID());
         when(mockedStatus.getBytesTotal()).thenReturn(0L);
         when(mockedStatus.getBytesTransferred()).thenReturn(0L);
         when(mockedStatus.getPlayer()).thenReturn(mockedPlayer);
         when(mockedPlayer.getUsername()).thenReturn("user");
+        when(mockedUser.getUsername()).thenReturn("user");
         when(mockedUser.isAdminRole()).thenReturn(true);
         when(securityService.getCurrentUser(any())).thenReturn(mockedUser);
         when(settingsService.getUploadBitrateLimiter()).thenReturn(RateLimiter.create(1000.0));

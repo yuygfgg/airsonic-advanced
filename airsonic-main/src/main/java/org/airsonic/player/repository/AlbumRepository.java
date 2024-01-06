@@ -1,6 +1,7 @@
 package org.airsonic.player.repository;
 
 import org.airsonic.player.domain.Album;
+import org.airsonic.player.domain.MusicFolder;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,23 +22,23 @@ public interface AlbumRepository extends JpaRepository<Album, Integer> {
 
     public List<Album> findByName(String artist);
 
-    public List<Album> findByArtistAndFolderIdInAndPresentTrue(String artist, Iterable<Integer> musicFolderIds);
+    public List<Album> findByArtistAndFolderInAndPresentTrue(String artist, Iterable<MusicFolder> musicFolders);
 
-    public List<Album> findByArtistAndFolderIdInAndPresentTrue(String artist, Iterable<Integer> musicFolderIds, Pageable pageable);
+    public List<Album> findByArtistAndFolderInAndPresentTrue(String artist, Iterable<MusicFolder> musicFolders, Pageable pageable);
 
-    public int countByFolderIdInAndPresentTrue(Iterable<Integer> musicFolderIds);
+    public int countByFolderInAndPresentTrue(Iterable<MusicFolder> musicFolders);
 
-    public List<Album> findByFolderIdInAndPresentTrue(Iterable<Integer> musicFolderIds, Sort sort);
+    public List<Album> findByFolderInAndPresentTrue(Iterable<MusicFolder> musicFolders, Sort sort);
 
-    public List<Album> findByFolderIdInAndPresentTrue(Iterable<Integer> musicFolderIds, Pageable pageable);
+    public List<Album> findByFolderInAndPresentTrue(Iterable<MusicFolder> musicFolders, Pageable pageable);
 
-    public List<Album> findByGenreAndFolderIdInAndPresentTrue(String genre, Iterable<Integer> musicFolderIds, Pageable pageable);
+    public List<Album> findByGenreAndFolderInAndPresentTrue(String genre, Iterable<MusicFolder> musicFolders, Pageable pageable);
 
-    public List<Album> findByFolderIdInAndPlayCountGreaterThanAndPresentTrue(Iterable<Integer> musicFolderIds, int playCount, Pageable pageable);
+    public List<Album> findByFolderInAndPlayCountGreaterThanAndPresentTrue(Iterable<MusicFolder> musicFolders, int playCount, Pageable pageable);
 
-    public List<Album> findByFolderIdInAndLastPlayedNotNullAndPresentTrue(Iterable<Integer> musicFolderIds, Pageable pageable);
+    public List<Album> findByFolderInAndLastPlayedNotNullAndPresentTrue(Iterable<MusicFolder> musicFolders, Pageable pageable);
 
-    public List<Album> findByFolderIdInAndYearBetweenAndPresentTrue(Iterable<Integer> musicFolderIds, int startYear, int endYear, Pageable pageable);
+    public List<Album> findByFolderInAndYearBetweenAndPresentTrue(Iterable<MusicFolder> musicFolders, int startYear, int endYear, Pageable pageable);
 
     public List<Album> findByPresentFalse();
 

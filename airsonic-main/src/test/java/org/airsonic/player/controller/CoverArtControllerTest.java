@@ -18,7 +18,6 @@
  */
 package org.airsonic.player.controller;
 
-import org.airsonic.player.dao.PlaylistDao;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.CoverArt;
@@ -31,7 +30,8 @@ import org.airsonic.player.service.AlbumService;
 import org.airsonic.player.service.ArtistService;
 import org.airsonic.player.service.CoverArtService;
 import org.airsonic.player.service.MediaFileService;
-import org.airsonic.player.service.PodcastService;
+import org.airsonic.player.service.PlaylistService;
+import org.airsonic.player.service.PodcastPersistenceService;
 import org.airsonic.player.util.ImageUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -86,10 +86,10 @@ public class CoverArtControllerTest {
     private ArtistService artistService;
 
     @MockBean
-    private PlaylistDao playlistDao;
+    private PlaylistService playlistService;
 
     @MockBean
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastService;
 
     @SpyBean
     private CoverArtService coverArtService;
@@ -277,7 +277,7 @@ public class CoverArtControllerTest {
         mockedPlaylist.setName("playlist");
 
         // set up mock
-        when(playlistDao.getPlaylist(anyInt())).thenReturn(mockedPlaylist);
+        when(playlistService.getPlaylist(anyInt())).thenReturn(mockedPlaylist);
 
         // prepare expected
         byte[] expected = PLAYLIST_RESOURCE.getInputStream().readAllBytes();

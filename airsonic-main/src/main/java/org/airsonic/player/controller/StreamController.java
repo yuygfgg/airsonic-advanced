@@ -23,7 +23,6 @@ package org.airsonic.player.controller;
 import com.google.common.io.ByteStreams;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
-import org.airsonic.player.dao.PlayerDaoPlayQueueFactory;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.io.PipeStreams.MonitoredInputStream;
 import org.airsonic.player.io.PipeStreams.PipedInputStream;
@@ -98,8 +97,6 @@ public class StreamController {
     private MediaFileService mediaFileService;
     @Autowired
     private SearchService searchService;
-    @Autowired
-    private PlayerDaoPlayQueueFactory playQueueFactory;
 
     @GetMapping
     public ResponseEntity<Resource> handleRequest(Authentication authentication,
@@ -111,12 +108,13 @@ public class StreamController {
             @RequestParam Optional<String> path,
             @RequestParam(required = false) Double offsetSeconds,
             ServletWebRequest swr) throws Exception {
-        Player player = playerService.getPlayer(swr.getRequest(), swr.getResponse(), false, true);
-        User user = securityService.getUserByName(player.getUsername());
 
+        User user = securityService.getCurrentUser(swr.getRequest());
         if (!(authentication instanceof JWTAuthenticationToken) && !user.isStreamRole()) {
             throw new AccessDeniedException("Streaming is forbidden for user " + user.getUsername());
         }
+
+        Player player = playerService.getPlayer(swr.getRequest(), swr.getResponse(), user.getUsername(), false, true);
 
         Long expectedSize = null;
 
@@ -124,7 +122,7 @@ public class StreamController {
         // play queue (in order to support multiple parallel Podcast streams).
         boolean isPodcast = Objects.nonNull(playlist);
         if (isPodcast) {
-            PlayQueue playQueue = playQueueFactory.createPlayQueue();
+            PlayQueue playQueue = new PlayQueue();
             playQueue.addFiles(false, playlistService.getFilesInPlaylist(playlist));
             player.setPlayQueue(playQueue);
             // Note: does not take transcoding into account
@@ -164,7 +162,7 @@ public class StreamController {
             // Create a new, fake play queue that only contains the
             // currently playing media file, in case multiple streams want
             // to use the same player.
-            PlayQueue playQueue = playQueueFactory.createPlayQueue();
+            PlayQueue playQueue = new PlayQueue();
             playQueue.addFiles(true, file);
             player.setPlayQueue(playQueue);
 
@@ -209,7 +207,7 @@ public class StreamController {
         TransferStatus status = statusService.createStreamStatus(player);
 
         Consumer<MediaFile> fileStartListener = mediaFile -> {
-            LOG.info("{}: {} listening to {} in folder {}", player.getIpAddress(), player.getUsername(), FileUtil.getShortPath(mediaFile.getRelativePath()), mediaFile.getFolderId());
+            LOG.info("{}: {} listening to {} in folder {}", player.getIpAddress(), player.getUsername(), FileUtil.getShortPath(mediaFile.getRelativePath()), mediaFile.getFolder().getId());
             mediaFileService.incrementPlayCount(mediaFile);
             scrobble(mediaFile, player, false);
             status.setMediaFile(mediaFile);

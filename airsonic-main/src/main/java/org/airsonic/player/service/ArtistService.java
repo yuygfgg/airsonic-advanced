@@ -22,6 +22,7 @@ import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.entity.StarredArtist;
 import org.airsonic.player.repository.ArtistRepository;
+import org.airsonic.player.repository.OffsetBasedPageRequest;
 import org.airsonic.player.repository.StarredArtistRepository;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -36,7 +37,6 @@ import java.util.Collections;
 import java.util.List;
 
 @Service
-@Transactional
 public class ArtistService {
 
     private final ArtistRepository artistRepository;
@@ -48,6 +48,14 @@ public class ArtistService {
     public ArtistService(ArtistRepository artistRepository, StarredArtistRepository starredArtistRepository) {
         this.artistRepository = artistRepository;
         this.starredArtistRepository = starredArtistRepository;
+    }
+
+    public List<Artist> getArtists(List<MusicFolder> musicFolders, int count, int offset) {
+        if (CollectionUtils.isEmpty(musicFolders)) {
+            LOG.warn("getArtists: musicFolders is null");
+            return Collections.emptyList();
+        }
+        return artistRepository.findByFolderInAndPresentTrue(musicFolders, new OffsetBasedPageRequest(offset, count, Sort.by("id")));
     }
 
     /**
@@ -90,8 +98,7 @@ public class ArtistService {
             LOG.warn("getArtist: musicFolders is null or artistName is null");
             return null;
         }
-        List<Integer> folderIds = MusicFolder.toIdList(musicFolders);
-        return artistRepository.findByNameAndFolderIdIn(artistName, folderIds).orElse(null);
+        return artistRepository.findByNameAndFolderIn(artistName, musicFolders).orElse(null);
     }
 
     /**
@@ -105,9 +112,8 @@ public class ArtistService {
             LOG.warn("getAlphabeticalArtists: musicFolders is null");
             return Collections.emptyList();
         }
-        List<Integer> folderIds = MusicFolder.toIdList(musicFolders);
         Sort sort = Sort.by(Sort.Direction.ASC, "name");
-        return artistRepository.findByFolderIdInAndPresentTrue(folderIds, sort);
+        return artistRepository.findByFolderInAndPresentTrue(musicFolders, sort);
     }
 
     /**
@@ -117,13 +123,13 @@ public class ArtistService {
      * @param musicFolders music folders. If null or empty, return empty list
      * @return list of starred artists or empty list. Sorted by starred date descending.
      */
+    @Transactional
     public List<Artist> getStarredArtists(String username, List<MusicFolder> musicFolders) {
         if (CollectionUtils.isEmpty(musicFolders) || !StringUtils.hasLength(username)) {
             LOG.warn("getStarredArtists: musicFolders or username is null");
             return Collections.emptyList();
         }
-        List<Integer> folderIds = MusicFolder.toIdList(musicFolders);
-        return starredArtistRepository.findByUsernameAndArtistFolderIdInAndArtistPresentTrue(username, folderIds, Sort.by(Sort.Direction.DESC, "created")).stream().map(StarredArtist::getArtist).toList();
+        return starredArtistRepository.findByUsernameAndArtistFolderInAndArtistPresentTrue(username, musicFolders, Sort.by(Sort.Direction.DESC, "created")).stream().map(StarredArtist::getArtist).toList();
     }
 
     /**
@@ -134,6 +140,7 @@ public class ArtistService {
      * @param star true to star, false to unstar
      * @return true if success, false otherwise
      */
+    @Transactional
     public boolean starOrUnstar(Integer artistId, String username, boolean star) {
         if (artistId == null || !StringUtils.hasLength(username)) {
             LOG.warn("star: artistId or username is null");
@@ -156,6 +163,7 @@ public class ArtistService {
      * @param username username to check. If null or empty, return null
      * @return starred date or null
      */
+    @Transactional
     public Instant getStarredDate(Integer artistId, String username) {
         if (artistId == null || !StringUtils.hasLength(username)) {
             LOG.warn("getStarredDate: artistId or username is null");
@@ -167,8 +175,30 @@ public class ArtistService {
     /**
      * Expunge artists that are not present
      */
+    @Transactional
     public void expunge() {
         artistRepository.deleteAllByPresentFalse();
+    }
+
+    /**
+     * Mark artists that are not present
+     *
+     * @param lastScanned last scanned date
+     */
+    @Transactional
+    public void markNonPresent(Instant lastScanned) {
+        artistRepository.markNonPresent(lastScanned);
+    }
+
+    /**
+     * Save artist
+     *
+     * @param artist artist to save
+     * @return saved artist
+     */
+    @Transactional
+    public Artist save(Artist artist) {
+        return artistRepository.save(artist);
     }
 
 }

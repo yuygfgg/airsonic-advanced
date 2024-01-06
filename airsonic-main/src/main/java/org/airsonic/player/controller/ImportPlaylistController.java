@@ -21,7 +21,8 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.Playlist;
-import org.airsonic.player.service.PlaylistService;
+import org.airsonic.player.domain.User;
+import org.airsonic.player.service.PlaylistFileService;
 import org.airsonic.player.service.SecurityService;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
@@ -51,7 +52,7 @@ public class ImportPlaylistController {
     @Autowired
     private SecurityService securityService;
     @Autowired
-    private PlaylistService playlistService;
+    private PlaylistFileService playlistFileService;
 
     @PostMapping
     protected String handlePost(@RequestParam("file") MultipartFile file,
@@ -67,8 +68,8 @@ public class ImportPlaylistController {
                 }
                 String playlistName = FilenameUtils.getBaseName(file.getOriginalFilename());
                 String fileName = FilenameUtils.getName(file.getOriginalFilename());
-                String username = securityService.getCurrentUsername(request);
-                Playlist playlist = playlistService.importPlaylist(username, playlistName, fileName, null, file.getInputStream(), null);
+                User user = securityService.getCurrentUser(request);
+                Playlist playlist = playlistFileService.importPlaylist(user, playlistName, fileName, null, file.getInputStream(), null);
                 map.put("playlist", playlist);
             } else {
                 throw new Exception("No file specified.");

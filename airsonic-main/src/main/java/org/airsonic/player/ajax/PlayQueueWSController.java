@@ -4,6 +4,7 @@ import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.service.PlayQueueService;
 import org.airsonic.player.service.PlayerService;
+import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.spring.WebsocketConfiguration;
 import org.airsonic.player.util.NetworkUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,8 @@ public class PlayQueueWSController {
     private PlayerService playerService;
     @Autowired
     private PlayQueueService playQueueService;
+    @Autowired
+    private SecurityService securityService;
 
     @SubscribeMapping("/get")
     public PlayQueueInfo getPlayQueue(@DestinationVariable int playerId, SimpMessageHeaderAccessor headers) throws Exception {
@@ -223,7 +226,9 @@ public class PlayQueueWSController {
     //
 
     private Player getPlayer(int playerId, SimpMessageHeaderAccessor headers) throws Exception {
-        return playerService.getPlayer((HttpServletRequest) headers.getSessionAttributes().get(WebsocketConfiguration.UNDERLYING_SERVLET_REQUEST), null, playerId, true, false);
+        HttpServletRequest request = (HttpServletRequest) headers.getSessionAttributes().get(WebsocketConfiguration.UNDERLYING_SERVLET_REQUEST);
+        String username = securityService.getCurrentUsername(request);
+        return playerService.getPlayer(request, null, playerId, username, true, false);
     }
 
     public static class PlayQueueRequest {

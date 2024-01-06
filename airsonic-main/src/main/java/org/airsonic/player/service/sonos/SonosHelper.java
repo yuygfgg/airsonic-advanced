@@ -25,7 +25,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.sonos.services._1.*;
 import org.airsonic.player.controller.CoverArtController;
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.service.*;
 import org.airsonic.player.service.search.IndexType;
@@ -65,15 +64,13 @@ public class SonosHelper {
     @Autowired
     private SearchService searchService;
     @Autowired
-    private MediaFileDao mediaFileDao;
-    @Autowired
     private MediaFolderService mediaFolderService;
     @Autowired
     private RatingService ratingService;
     @Autowired
     private LastFmService lastFmService;
     @Autowired
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastService;
     @Autowired
     private JWTSecurityService jwtSecurityService;
     @Autowired
@@ -324,8 +321,7 @@ public class SonosHelper {
         List<AbstractMedia> result = new ArrayList<AbstractMedia>();
         for (PodcastEpisode episode : podcastService.getEpisodes(channelId)) {
             if (episode.getStatus() == PodcastStatus.COMPLETED) {
-                Integer mediaFileId = episode.getMediaFileId();
-                MediaFile mediaFile = mediaFileService.getMediaFile(mediaFileId);
+                MediaFile mediaFile = episode.getMediaFile();
                 if (mediaFile != null) {
                     result.add(forMediaFile(mediaFile, username, request));
                 }
@@ -486,7 +482,7 @@ public class SonosHelper {
     public List<MediaCollection> forStarredArtists(String username, HttpServletRequest request) {
         List<MediaCollection> result = new ArrayList<MediaCollection>();
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
-        for (MediaFile artist : mediaFileDao.getStarredDirectories(0, Integer.MAX_VALUE, username, musicFolders)) {
+        for (MediaFile artist : mediaFileService.getStarredArtists(0, Integer.MAX_VALUE, username, musicFolders)) {
             MediaCollection mediaCollection = forDirectory(artist, request, username);
             mediaCollection.setItemType(ItemType.ARTIST);
             result.add(mediaCollection);
@@ -497,7 +493,7 @@ public class SonosHelper {
     public List<MediaCollection> forStarredAlbums(String username, HttpServletRequest request) {
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
         List<MediaCollection> result = new ArrayList<MediaCollection>();
-        for (MediaFile album : mediaFileDao.getStarredAlbums(0, Integer.MAX_VALUE, username, musicFolders)) {
+        for (MediaFile album : mediaFileService.getStarredAlbums(0, Integer.MAX_VALUE, username, musicFolders)) {
             MediaCollection mediaCollection = forDirectory(album, request, username);
             mediaCollection.setItemType(ItemType.ALBUM);
             result.add(mediaCollection);
@@ -508,7 +504,7 @@ public class SonosHelper {
     public List<MediaMetadata> forStarredSongs(String username, HttpServletRequest request) {
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
         List<MediaMetadata> result = new ArrayList<MediaMetadata>();
-        for (MediaFile song : mediaFileDao.getStarredFiles(0, Integer.MAX_VALUE, username, musicFolders)) {
+        for (MediaFile song : mediaFileService.getStarredSongs(0, Integer.MAX_VALUE, username, musicFolders)) {
             if (song.isAudio()) {
                 result.add(forSong(song, username, request));
             }
@@ -610,11 +606,11 @@ public class SonosHelper {
     }
 
     public void star(int id, String username) {
-        mediaFileDao.starMediaFile(id, username);
+        mediaFileService.starMediaFiles(List.of(id), username);
     }
 
     public void unstar(int id, String username) {
-        mediaFileDao.unstarMediaFile(id, username);
+        mediaFileService.unstarMediaFiles(List.of(id), username);
     }
 
     public void createBookmark(int id, int offsetMillis, String username) {
@@ -726,10 +722,6 @@ public class SonosHelper {
         this.musicIndexService = musicIndexService;
     }
 
-    public void setMediaFileDao(MediaFileDao mediaFileDao) {
-        this.mediaFileDao = mediaFileDao;
-    }
-
     public void setSearchService(SearchService searchService) {
         this.searchService = searchService;
     }
@@ -742,7 +734,7 @@ public class SonosHelper {
         this.lastFmService = lastFmService;
     }
 
-    public void setPodcastService(PodcastService podcastService) {
+    public void setPodcastService(PodcastPersistenceService podcastService) {
         this.podcastService = podcastService;
     }
 }

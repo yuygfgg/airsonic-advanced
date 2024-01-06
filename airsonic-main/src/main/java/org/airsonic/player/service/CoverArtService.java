@@ -7,6 +7,15 @@ import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.repository.CoverArtRepository;
+import org.airsonic.player.repository.MediaFileRepository;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
@@ -14,20 +23,30 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @CacheConfig(cacheNames = "coverArtCache")
-@Transactional
 public class CoverArtService {
     @Autowired
     MediaFolderService mediaFolderService;
     @Autowired
     private CoverArtRepository coverArtRepository;
+    @Autowired
+    private MediaFileRepository mediaFileRepository;
+    @Autowired
+    private SecurityService securityService;
+
+    private static final Logger LOG = LoggerFactory.getLogger(CoverArtService.class);
 
     @CacheEvict(key = "#art.entityType.toString().concat('-').concat(#art.entityId)")
+    @Transactional
     public void upsert(CoverArt art) {
         coverArtRepository.save(art);
     }
@@ -77,11 +96,11 @@ public class CoverArtService {
 
     public Path getFullPath(CoverArt art) {
         if (art != null && !CoverArt.NULL_ART.equals(art)) {
-            if (art.getFolderId() == null) {
+            if (art.getFolder() == null) {
                 // null folder ids mean absolute paths
                 return art.getRelativePath();
             } else {
-                MusicFolder folder = mediaFolderService.getMusicFolderById(art.getFolderId());
+                MusicFolder folder = art.getFolder();
                 if (folder != null) {
                     return art.getFullPath(folder.getPath());
                 }
@@ -92,11 +111,13 @@ public class CoverArtService {
     }
 
     @CacheEvict(key = "#type.toString().concat('-').concat(#id)")
+    @Transactional
     public void delete(EntityType type, int id) {
         coverArtRepository.deleteByEntityTypeAndEntityId(type, id);
     }
 
     @CacheEvict(allEntries = true)
+    @Transactional
     public void expunge() {
         List<CoverArt> expungeCoverArts = coverArtRepository.findAll().stream()
             .filter(art ->
@@ -105,5 +126,73 @@ public class CoverArtService {
                 (art.getEntityType() == EntityType.MEDIA_FILE && art.getMediaFile() == null))
             .collect(Collectors.toList());
         coverArtRepository.deleteAll(expungeCoverArts);
+    }
+
+    /**
+     * Sets the cover art image for the given media file.
+     *
+     * @param mediaFileId the media file id
+     * @param url         the url of the image
+     * @throws Exception if the image could not be saved
+     */
+    public void setCoverArtImageFromUrl(Integer mediaFileId, String url) throws Exception {
+
+        MediaFile dir = mediaFileRepository.findById(mediaFileId).orElseGet(
+            () -> {
+                LOG.warn("Could not find media file with id {}", mediaFileId);
+                return null;
+            });
+        saveCoverArt(dir, url);
+    }
+
+    private void saveCoverArt(MediaFile dir, String url) throws Exception {
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(20 * 1000) // 20 seconds
+                .setSocketTimeout(20 * 1000) // 20 seconds
+                .build();
+        HttpGet method = new HttpGet(url);
+        method.setConfig(requestConfig);
+
+        // Attempt to resolve proper suffix.
+        String suffix = "jpg";
+        if (url.toLowerCase().endsWith(".gif")) {
+            suffix = "gif";
+        } else if (url.toLowerCase().endsWith(".png")) {
+            suffix = "png";
+        }
+
+        // Check permissions.
+        MusicFolder folder = dir.getFolder();
+        Path fullPath = dir.getFullPath();
+        Path newCoverFile = fullPath.resolve("cover." + suffix);
+        if (!securityService.isWriteAllowed(folder.getPath().relativize(newCoverFile), folder)) {
+            throw new SecurityException("Permission denied: " + StringEscapeUtils.escapeHtml(newCoverFile.toString()));
+        }
+
+        try (CloseableHttpClient client = HttpClients.createDefault();
+                CloseableHttpResponse response = client.execute(method);
+                InputStream input = response.getEntity().getContent()) {
+
+            // If file exists, create a backup.
+            backupCoverArt(newCoverFile, fullPath.resolve("cover." + suffix + ".backup"));
+
+            // Write file.
+            Files.copy(input, newCoverFile, StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        CoverArt coverArt = new CoverArt(dir.getId(), EntityType.MEDIA_FILE,
+                folder.getPath().relativize(newCoverFile).toString(), dir.getFolder(), true);
+        upsert(coverArt);
+    }
+
+    private void backupCoverArt(Path newCoverFile, Path backup) {
+        if (Files.exists(newCoverFile)) {
+            try {
+                Files.move(newCoverFile, backup, StandardCopyOption.REPLACE_EXISTING);
+                LOG.info("Backed up old image file to {}", backup);
+            } catch (IOException e) {
+                LOG.warn("Failed to create image file backup {}", backup, e);
+            }
+        }
     }
 }

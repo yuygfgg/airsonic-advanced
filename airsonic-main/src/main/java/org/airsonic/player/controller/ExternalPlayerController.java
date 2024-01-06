@@ -74,6 +74,8 @@ public class ExternalPlayerController {
     private JWTSecurityService jwtSecurityService;
     @Autowired
     private VideoPlayerController videoPlayerController;
+    @Autowired
+    private SecurityService securityService;
 
     @GetMapping("/{shareName}")
     protected ModelAndView handleRequestInternal(
@@ -103,7 +105,9 @@ public class ExternalPlayerController {
             shareService.updateShare(share);
         }
 
-        Player player = playerService.getGuestPlayer(request);
+        // create guest user if it doesn't exist
+        securityService.createGuestUserIfNotExists();
+        Player player = playerService.getGuestPlayer(request.getRemoteAddr());
 
         Instant expires = authentication instanceof JWTAuthenticationToken ? JWTSecurityService.getExpiration((JWTAuthenticationToken) authentication) : null;
 
@@ -123,7 +127,7 @@ public class ExternalPlayerController {
         if (share != null) {
             return shareService.getSharedFiles(share.getId(), musicFolders)
                     .stream()
-                    .filter(f -> Files.exists(f.getFullPath(mediaFolderService.getMusicFolderById(f.getFolderId()).getPath())))
+                    .filter(f -> Files.exists(f.getFullPath()))
                     .flatMap(f -> {
                         if (f.isDirectory()) {
                             return mediaFileService.getVisibleChildrenOf(f, false, true).stream()

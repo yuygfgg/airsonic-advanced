@@ -19,7 +19,6 @@
  */
 package org.airsonic.player.controller;
 
-import org.airsonic.player.dao.MediaFileDao;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.service.MediaFileService;
 import org.airsonic.player.service.MediaFolderService;
@@ -52,8 +51,6 @@ public class StarredController {
     @Autowired
     private PlayerService playerService;
     @Autowired
-    private MediaFileDao mediaFileDao;
-    @Autowired
     private SecurityService securityService;
     @Autowired
     private PersonalSettingsService personalSettingsService;
@@ -71,9 +68,9 @@ public class StarredController {
         UserSettings userSettings = personalSettingsService.getUserSettings(username);
         List<MusicFolder> musicFolders = mediaFolderService.getMusicFoldersForUser(username);
 
-        List<MediaFile> artists = mediaFileDao.getStarredDirectories(0, Integer.MAX_VALUE, username, musicFolders);
-        List<MediaFile> albums = mediaFileDao.getStarredAlbums(0, Integer.MAX_VALUE, username, musicFolders);
-        List<MediaFile> files = mediaFileDao.getStarredFiles(0, Integer.MAX_VALUE, username, musicFolders);
+        List<MediaFile> artists = mediaFileService.getStarredArtists(0, Integer.MAX_VALUE, username, musicFolders);
+        List<MediaFile> albums = mediaFileService.getStarredAlbums(0, Integer.MAX_VALUE, username, musicFolders);
+        List<MediaFile> files = mediaFileService.getStarredSongs(0, Integer.MAX_VALUE, username, musicFolders);
         mediaFileService.populateStarredDate(artists, username);
         mediaFileService.populateStarredDate(albums, username);
         mediaFileService.populateStarredDate(files, username);
@@ -86,7 +83,7 @@ public class StarredController {
 
         map.put("user", user);
         map.put("partyModeEnabled", userSettings.getPartyModeEnabled());
-        map.put("player", playerService.getPlayer(request, response));
+        map.put("player", playerService.getPlayer(request, response, username));
         map.put("coverArtSize", CoverArtScheme.MEDIUM.getSize());
         map.put("artists", artists);
         map.put("albums", albums);

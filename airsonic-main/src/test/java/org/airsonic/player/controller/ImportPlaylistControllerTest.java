@@ -1,7 +1,8 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.Playlist;
-import org.airsonic.player.service.PlaylistService;
+import org.airsonic.player.domain.User;
+import org.airsonic.player.service.PlaylistFileService;
 import org.airsonic.player.service.SecurityService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,7 +58,7 @@ public class ImportPlaylistControllerTest {
     private SecurityService securityService;
 
     @MockBean
-    private PlaylistService playlistService;
+    private PlaylistFileService playlistFileService;
 
     @TempDir
     private static Path tempDir;
@@ -87,8 +88,11 @@ public class ImportPlaylistControllerTest {
         expectedPlaylist.setName(PLAYLIST_NAME);
         expectedPlaylist.setUsername(USERNAME);
 
-        when(securityService.getCurrentUsername(any())).thenReturn(USERNAME);
-        when(playlistService.importPlaylist(eq(USERNAME), eq(PLAYLIST_NAME), eq(FILE_NAME), isNull(), any(), isNull())).thenReturn(expectedPlaylist);
+        User user = new User();
+        user.setUsername(USERNAME);
+
+        when(securityService.getCurrentUser(any())).thenReturn(user);
+        when(playlistFileService.importPlaylist(eq(user), eq(PLAYLIST_NAME), eq(FILE_NAME), isNull(), any(), isNull())).thenReturn(expectedPlaylist);
 
         MvcResult result = mockMvc.perform(request)
             .andExpect(status().is3xxRedirection())
@@ -121,7 +125,7 @@ public class ImportPlaylistControllerTest {
         Map<String, Object> actual = (Map<String, Object>) result.getFlashMap().get("model");
         assertNull(actual.get("playlist"));
         assertEquals("No file specified.", actual.get("error"));
-        verify(playlistService, never()).importPlaylist(anyString(), anyString(), anyString(), isNull(), any(), isNull());
+        verify(playlistFileService, never()).importPlaylist(any(User.class), anyString(), anyString(), isNull(), any(), isNull());
 
     }
 
@@ -145,7 +149,7 @@ public class ImportPlaylistControllerTest {
         Map<String, Object> actual = (Map<String, Object>) result.getFlashMap().get("model");
         assertNull(actual.get("playlist"));
         assertEquals("The playlist file is too large. Max file size is 5 MB.", actual.get("error"));
-        verify(playlistService, never()).importPlaylist(anyString(), anyString(), anyString(), isNull(), any(), isNull());
+        verify(playlistFileService, never()).importPlaylist(any(User.class), anyString(), anyString(), isNull(), any(), isNull());
 
     }
 }

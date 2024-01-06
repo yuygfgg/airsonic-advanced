@@ -2,12 +2,14 @@ package org.airsonic.player.service;
 
 import com.google.common.collect.Streams;
 import org.airsonic.player.command.MusicFolderSettingsCommand.MusicFolderInfo;
-import org.airsonic.player.dao.MediaFileDao;
-import org.airsonic.player.dao.MusicFolderDao;
+import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
+import org.airsonic.player.repository.CoverArtRepository;
+import org.airsonic.player.repository.MediaFileRepository;
 import org.airsonic.player.repository.MusicFolderRepository;
 import org.airsonic.player.repository.UserRepository;
+import org.airsonic.player.util.FileUtil;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +17,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -23,26 +27,27 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 @Service
-@Transactional
 public class MediaFolderService {
     private static final Logger LOG = LoggerFactory.getLogger(MediaFolderService.class);
 
     @Autowired
-    private MusicFolderDao musicFolderDao;
-    @Autowired
-    private MediaFileDao mediaFileDao;
-    @Autowired
     private MusicFolderRepository musicFolderRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private MediaFileRepository mediaFileRepository;
+    @Autowired
+    private CoverArtRepository coverArtRepository;
 
     private List<MusicFolder> cachedMusicFolders;
     private final ConcurrentMap<String, List<MusicFolder>> cachedMusicFoldersPerUser = new ConcurrentHashMap<>();
@@ -84,6 +89,7 @@ public class MediaFolderService {
      * @param username Username to get music folders for.
      * @return Possibly empty list of music folders.
      */
+    @Transactional
     public List<MusicFolder> getMusicFoldersForUser(String username) {
         return cachedMusicFoldersPerUser.computeIfAbsent(username, u -> {
             return userRepository.findByUsername(u)
@@ -91,7 +97,7 @@ public class MediaFolderService {
                     return user.getMusicFolders()
                         .stream()
                         .filter(folder -> folder.isEnabled() && !folder.isDeleted() && Files.exists(folder.getPath()))
-                        .toList();
+                        .collect(Collectors.toList());
                 })
                 .orElse(new ArrayList<>());
         });
@@ -109,6 +115,7 @@ public class MediaFolderService {
                 .collect(toList());
     }
 
+    @Transactional
     public void setMusicFoldersForUser(String username, Collection<Integer> musicFolderIds) {
         List<MusicFolder> folders = musicFolderRepository.findAllById(musicFolderIds);
         userRepository.findByUsername(username).ifPresent(u -> {
@@ -126,6 +133,7 @@ public class MediaFolderService {
         return getAllMusicFolders(includeDisabled, includeNonExisting).stream().filter(folder -> id.equals(folder.getId())).findAny().orElse(null);
     }
 
+    @Transactional
     public void createMusicFolder(MusicFolder musicFolder) {
         List<MusicFolder> registeredMusicFolders = musicFolderRepository.findAll();
         Triple<List<MusicFolder>, List<MusicFolder>, List<MusicFolder>> overlaps = getMusicFolderPathOverlaps(musicFolder, registeredMusicFolders);
@@ -144,7 +152,7 @@ public class MediaFolderService {
         // if new folder has ancestors, reassign portion of closest ancestor's tree to new folder
         if (!overlaps.getMiddle().isEmpty()) {
             MusicFolder ancestor = overlaps.getMiddle().get(0);
-            musicFolderDao.reassignChildren(ancestor, musicFolder);
+            reassignChildren(ancestor, musicFolder);
             clearMediaFileCache();
         }
 
@@ -154,7 +162,7 @@ public class MediaFolderService {
                 // deleted
                 .filter(f -> f.isDeleted())
                 .forEach(f -> {
-                    musicFolderDao.reassignChildren(f, musicFolder);
+                    reassignChildren(f, musicFolder);
                     musicFolderRepository.delete(f);
                     clearMediaFileCache();
                 });
@@ -164,16 +172,83 @@ public class MediaFolderService {
         clearMusicFolderCache();
     }
 
+    private void reassignChildren(MusicFolder oldFolder, MusicFolder newFolder) {
+        if (oldFolder == null || newFolder == null) {
+            return;
+        }
+
+        if (newFolder.getPath().getNameCount() > oldFolder.getPath().getNameCount()) {
+            MusicFolder ancestor = oldFolder;
+            MusicFolder descendant = newFolder;
+            Path relativePath = ancestor.getPath().relativize(descendant.getPath());
+            mediaFileRepository.findByFolderAndPathStartsWith(oldFolder, relativePath.toString() + File.separator).forEach(f -> {
+                f.setFolder(newFolder);
+                f.setPath(relativePath.relativize(f.getRelativePath()).toString());
+                f.setParentPath(relativePath.relativize(f.getRelativeParentPath()).toString());
+                mediaFileRepository.save(f);
+            });
+
+            coverArtRepository.findByFolderAndPathStartsWith(oldFolder, relativePath.toString() + File.separator).forEach(ca -> {
+                ca.setFolder(newFolder);
+                ca.setPath(relativePath.relativize(ca.getRelativePath()).toString());
+                coverArtRepository.save(ca);
+            });
+
+            // update Root
+            mediaFileRepository.findByFolderAndPath(oldFolder, relativePath.toString()).forEach(f -> {
+                f.setFolder(newFolder);
+                f.setPath("");
+                f.setParentPath(null);
+                f.setTitle(descendant.getName());
+                f.setMediaType(MediaType.DIRECTORY);
+                mediaFileRepository.save(f);
+            });
+        } else {
+            // assign descendant to ancestor
+            MusicFolder ancestor = newFolder;
+            MusicFolder descendant = oldFolder;
+            Path relativePath = ancestor.getPath().relativize(descendant.getPath());
+            // update root
+            mediaFileRepository.findByFolderAndPath(oldFolder, "").forEach(f -> {
+                f.setFolder(newFolder);
+                f.setTitle(null);
+                f.setPath(relativePath.toString());
+                f.setParentPath(relativePath.getParent() == null ? "" : relativePath.getParent().toString());
+                mediaFileRepository.save(f);
+            });
+
+            //update children
+            mediaFileRepository.findByFolder(oldFolder).forEach(f -> {
+                f.setFolder(newFolder);
+                f.setPath(relativePath.resolve(f.getPath()).toString());
+                if (StringUtils.hasLength(f.getParentPath())) {
+                    f.setParentPath(relativePath.resolve(f.getParentPath()).toString());
+                } else {
+                    f.setParentPath(relativePath.toString());
+                }
+                mediaFileRepository.save(f);
+            });
+
+            // update cover art
+            coverArtRepository.findByFolder(oldFolder).forEach(ca -> {
+                ca.setFolder(newFolder);
+                ca.setPath(relativePath.resolve(ca.getPath()).toString());
+                coverArtRepository.save(ca);
+            });
+        }
+    }
+
     /**
      * Deletes a music folder. If the music folder is empty, it is deleted. If the music folder has descendants, it is marked as deleted and disabled.
      *
      * @param id Music folder id.
      */
+    @Transactional
     public void deleteMusicFolder(Integer id) {
 
         musicFolderRepository.findByIdAndDeletedFalse(id).ifPresentOrElse(folder -> {
             // if empty folder, just delete
-            if (mediaFileDao.getMediaFileCount(id) == 0) {
+            if (mediaFileRepository.countByFolder(folder) == 0) {
                 musicFolderRepository.delete(folder);
                 clearMusicFolderCache();
                 return;
@@ -181,7 +256,7 @@ public class MediaFolderService {
             Triple<List<MusicFolder>, List<MusicFolder>, List<MusicFolder>> overlaps = getMusicFolderPathOverlaps(folder, getAllMusicFolders(true, true, true));
             // if folder has ancestors, reassign hierarchy to immediate ancestor and true delete
             if (!overlaps.getMiddle().isEmpty()) {
-                musicFolderDao.reassignChildren(folder, overlaps.getMiddle().get(0));
+                reassignChildren(folder, overlaps.getMiddle().get(0));
                 musicFolderRepository.delete(folder);
             } else {
                 // if folder has descendants, ignore. they'll stay under descendant hierarchy
@@ -189,7 +264,11 @@ public class MediaFolderService {
                 folder.setEnabled(false);
                 musicFolderRepository.save(folder);
             }
-            mediaFileDao.deleteMediaFiles(id);
+            mediaFileRepository.findByFolderAndPresentTrue(folder).forEach(f -> {
+                f.setChildrenLastUpdated(Instant.ofEpochMilli(1));
+                f.setPresent(false);
+                mediaFileRepository.save(f);
+            });
             clearMusicFolderCache();
             clearMediaFileCache();
         }, () -> {
@@ -204,6 +283,7 @@ public class MediaFolderService {
      * @param id Music folder id. Must be a podcast folder.
      * @return True if the music folder was enabled, false otherwise.
      */
+    @Transactional
     public boolean enablePodcastFolder(int id) {
         return musicFolderRepository.findByIdAndTypeAndDeletedFalse(id, Type.PODCAST).map(podcastFolder -> {
             try {
@@ -226,6 +306,7 @@ public class MediaFolderService {
     /**
      * Deletes all music folders that are marked as deleted.
      */
+    @Transactional
     public void expunge() {
         musicFolderRepository.deleteAllByDeletedTrue();
     }
@@ -235,6 +316,7 @@ public class MediaFolderService {
      *
      * @param info Music folder info.
      */
+    @Transactional
     public void updateMusicFolderByInfo(MusicFolderInfo info) {
         if (info.getId() == null) {
             throw new IllegalArgumentException("Music folder id must be set.");
@@ -323,5 +405,30 @@ public class MediaFolderService {
     @CacheEvict(cacheNames = { "mediaFilePathCache", "mediaFileIdCache" }, allEntries = true)
     public void clearMediaFileCache() {
         // TODO: optimize cache eviction
+    }
+
+    /**
+     * Returns the music folder that contains the given file. If multiple music folders contain the file, the one with the longest path is returned.
+     *
+     * @param file             File to get music folder for.
+     * @param includeDisabled Whether to include disabled folders.
+     * @param includeNonExisting Whether to include non-existing folders.
+     * @return Music folder that contains the file, or null if no music folder contains the file.
+     */
+    public Optional<MusicFolder> getMusicFolderForFile(Path file, boolean includeDisabled, boolean includeNonExisting) {
+        return getAllMusicFolders(includeDisabled, includeNonExisting).stream()
+                .filter(folder -> FileUtil.isFileInFolder(file, folder.getPath()))
+                .sorted(Comparator.comparing(folder -> folder.getPath().getNameCount(), Comparator.reverseOrder()))
+                .findFirst();
+    }
+
+    /**
+     * Returns the music folder that contains the given file. If multiple music folders contain the file, the one with the longest path is returned.
+     *
+     * @param file File to get music folder for.
+     * @return Music folder that contains the file, or null if no music folder contains the file.
+     */
+    public MusicFolder getMusicFolderForFile(Path file) {
+        return getMusicFolderForFile(file, false, true).orElse(null);
     }
 }

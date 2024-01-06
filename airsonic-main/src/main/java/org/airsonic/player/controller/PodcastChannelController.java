@@ -19,7 +19,7 @@
 
 package org.airsonic.player.controller;
 
-import org.airsonic.player.service.PodcastService;
+import org.airsonic.player.service.PodcastPersistenceService;
 import org.airsonic.player.service.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -44,7 +44,7 @@ import java.util.Map;
 public class PodcastChannelController {
 
     @Autowired
-    private PodcastService podcastService;
+    private PodcastPersistenceService podcastService;
     @Autowired
     private SecurityService securityService;
 

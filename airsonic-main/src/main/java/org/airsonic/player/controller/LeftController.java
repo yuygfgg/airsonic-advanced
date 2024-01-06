@@ -67,6 +67,9 @@ public class LeftController {
     private MediaFolderService mediaFolderService;
     @Autowired
     private PersonalSettingsService personalSettingsService;
+    @Autowired
+    private InternetRadioService internetRadioService;
+
 
     /**
      * Note: This class intentionally does not implement org.springframework.web.servlet.mvc.LastModified
@@ -108,7 +111,7 @@ public class LeftController {
         }
 
         // When was internet radio table last changed?
-        for (InternetRadio internetRadio : settingsService.getAllInternetRadios()) {
+        for (InternetRadio internetRadio : internetRadioService.getEnabledInternetRadios()) {
             lastModified = Math.max(lastModified, internetRadio.getChanged().toEpochMilli());
         }
 
@@ -140,11 +143,11 @@ public class LeftController {
                 .findAny().orElse(null);
         MusicFolderContent musicFolderContent = musicIndexService.getMusicFolderContent(musicFoldersToUse, refresh);
 
-        map.put("player", playerService.getPlayer(request, response));
+        map.put("player", playerService.getPlayer(request, response, username));
         map.put("scanning", mediaScannerService.isScanning());
         map.put("musicFolders", allMusicFolders);
         map.put("selectedMusicFolder", selectedMusicFolder);
-        map.put("radios", settingsService.getAllInternetRadios());
+        map.put("radios", internetRadioService.getEnabledInternetRadios());
         map.put("shortcuts", musicIndexService.getShortcuts(musicFoldersToUse));
         map.put("partyMode", userSettings.getPartyModeEnabled());
         map.put("organizeByFolderStructure", settingsService.isOrganizeByFolderStructure());

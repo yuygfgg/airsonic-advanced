@@ -34,7 +34,7 @@ import org.airsonic.player.repository.UserRepository;
 import org.airsonic.player.security.GlobalSecurityConfig;
 import org.airsonic.player.security.PasswordDecoder;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +59,6 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -81,7 +80,6 @@ import java.util.stream.Stream;
  */
 @Service
 @CacheConfig(cacheNames = "userCache")
-@Transactional
 public class SecurityService implements UserDetailsService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SecurityService.class);
@@ -137,6 +135,7 @@ public class SecurityService implements UserDetailsService {
      * @param comment  The comment to add to the credential
      * @return true if the credential was created successfully
      */
+    @Transactional
     public boolean createCredential(String username, CredentialsCommand command, String comment) {
 
         Optional<User> user = userRepository.findByUsername(username);
@@ -172,6 +171,7 @@ public class SecurityService implements UserDetailsService {
      *                                  the new encoder
      * @return true if the credentials were updated successfully
      */
+    @Transactional
     public boolean updateCredentials(String username, CredentialsManagementCommand command, String comment,
             boolean reencodePlaintextNewCreds) {
 
@@ -222,6 +222,7 @@ public class SecurityService implements UserDetailsService {
      * @param comment  The comment to add to the credential
      */
     @CacheEvict(key = "#username", condition = "#username != null")
+    @Transactional
     public void recoverCredential(String username, String password, String comment) {
         if (StringUtils.isBlank(username)) {
             LOG.warn("Can't recover credential for a blank username");
@@ -260,6 +261,7 @@ public class SecurityService implements UserDetailsService {
      * password to create the credential for * @param comment The comment to add to
      * the credential * @return true if the credential was created successfully
      */
+    @Transactional
     private boolean createAirsonicCredentialToUser(User user, String password, String comment) {
         String encoder = getPreferredPasswordEncoder(true);
         try {
@@ -278,6 +280,7 @@ public class SecurityService implements UserDetailsService {
      * * * @param creds The credential to delete * @return true if the credential
      * was deleted successfully
      */
+    @Transactional
     public boolean deleteCredential(UserCredential creds) {
         if (creds == null || creds.getUser() == null) {
             LOG.warn("Can't delete a null credential");
@@ -337,6 +340,7 @@ public class SecurityService implements UserDetailsService {
      * @param useDecodableOnly if true, only migrate to decodable encoders
      * @return true if all credentials were migrated successfully
      */
+    @Transactional
     public boolean migrateLegacyCredsToNonLegacy(boolean useDecodableOnly) {
         String decodableEncoder = settingsService.getDecodablePasswordEncoder();
         String nonDecodableEncoder = useDecodableOnly ? decodableEncoder
@@ -448,6 +452,7 @@ public class SecurityService implements UserDetailsService {
      */
     // TODO: This is not security related. Move to a different service.
     @Cacheable(key = "#username", unless = "#result == null")
+    @Transactional
     public User incrementBytesStreamed(String username, long deltaBytesStreamed) {
         User user = getUserByName(username);
         if (Objects.nonNull(user)) {
@@ -466,6 +471,7 @@ public class SecurityService implements UserDetailsService {
      */
     // TODO: This is not security related. Move to a different service.
     @Cacheable(key = "#username", unless = "#result == null")
+    @Transactional
     public User incrementBytesDownloaded(String username, long deltaBytesDownloaded) {
         User user = getUserByName(username);
         if (Objects.nonNull(user)) {
@@ -484,6 +490,7 @@ public class SecurityService implements UserDetailsService {
      */
     // TODO: This is not security related. Move to a different service.
     @Cacheable(key = "#username", unless = "#result == null")
+    @Transactional
     public User incrementBytesUploaded(String username, long deltaBytesUploaded) {
         User user = getUserByName(username);
         if (Objects.nonNull(user)) {
@@ -500,6 +507,7 @@ public class SecurityService implements UserDetailsService {
      * @param currentUsername current user name.
      */
     @CacheEvict(key = "#username", condition = "#username != null")
+    @Transactional
     public void deleteUser(String username, String currentUsername) {
         if (StringUtils.isNotBlank(username) && username.equals(currentUsername)) {
             throw new SelfDeletionException();
@@ -539,6 +547,7 @@ public class SecurityService implements UserDetailsService {
      * @param user       The user to create.
      * @param credential The raw credential (will be encoded)
      */
+    @Transactional
     public void createUser(User user, String credential, String comment) {
         String defaultEncoder = getPreferredPasswordEncoder(true);
         UserCredential uc = new UserCredential(
@@ -556,9 +565,22 @@ public class SecurityService implements UserDetailsService {
     }
 
     /**
+     * create guest user if not exists.
+     */
+    public void createGuestUserIfNotExists() {
+        if (!userRepository.existsById(User.USERNAME_GUEST)) {
+            User user = new User(User.USERNAME_GUEST, null);
+            user.setRoles(Set.of(Role.STREAM));
+            createUser(user, RandomStringUtils.randomAlphanumeric(30),
+                    "Autogenerated for " + User.USERNAME_GUEST + " user");
+        }
+    }
+
+    /**
      *
      */
     @Cacheable(key = "#command.username", unless = "#result == null", condition = "#command != null")
+    @Transactional
     public User updateUserByUserSettingsCommand(UserSettingsCommand command) {
         // check
         if (Objects.isNull(command)) {
@@ -606,8 +628,8 @@ public class SecurityService implements UserDetailsService {
         if (file == null) {
             return false;
         }
-        MusicFolder folder = mediaFolderService.getMusicFolderById(file.getFolderId());
-        return folder.isEnabled() && (!checkExistence || Files.exists(file.getFullPath(folder.getPath())));
+        MusicFolder folder = file.getFolder();
+        return folder.isEnabled() && (!checkExistence || Files.exists(file.getFullPath()));
     }
 
     public boolean isWriteAllowed(Path relativePath, MusicFolder folder) {
@@ -622,7 +644,7 @@ public class SecurityService implements UserDetailsService {
      * @return Whether the given file may be uploaded.
      */
     public void checkUploadAllowed(Path file, boolean checkFileExists) throws IOException {
-        if (getMusicFolderForFile(file) == null) {
+        if (mediaFolderService.getMusicFolderForFile(file) == null) {
             throw new AccessDeniedException(file.toString(), null,
                     "Specified location is not in writable music folder");
         }
@@ -632,27 +654,9 @@ public class SecurityService implements UserDetailsService {
         }
     }
 
-    private MusicFolder getMusicFolderForFile(Path file) {
-        return getMusicFolderForFile(file, false, true);
-    }
-
-    public MusicFolder getMusicFolderForFile(Path file, boolean includeDisabled, boolean includeNonExisting) {
-        return mediaFolderService.getAllMusicFolders(includeDisabled, includeNonExisting).stream()
-                .filter(folder -> isFileInFolder(file, folder.getPath()))
-                .sorted(Comparator.comparing(folder -> folder.getPath().getNameCount(), Comparator.reverseOrder()))
-                .findFirst().orElse(null);
-    }
-
     public boolean isFolderAccessAllowed(MediaFile file, String username) {
         return mediaFolderService.getMusicFoldersForUser(username).parallelStream()
-                .anyMatch(musicFolder -> musicFolder.getId().equals(file.getFolderId()));
-    }
-
-    public static boolean isFileInFolder(Path file, Path folder) {
-        // not using this to account for / and \\ issues in linux
-        // return file.normalize().startsWith(folder.normalize());
-        return Paths.get(FilenameUtils.separatorsToUnix(file.toString())).normalize()
-                .startsWith(Paths.get(FilenameUtils.separatorsToUnix(folder.toString())).normalize());
+                .anyMatch(musicFolder -> musicFolder.getId().equals(file.getFolder().getId()));
     }
 
     public static class UserDetail extends org.springframework.security.core.userdetails.User {

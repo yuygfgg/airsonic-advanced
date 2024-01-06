@@ -19,6 +19,8 @@
  */
 package org.airsonic.player.domain;
 
+import javax.persistence.*;
+
 import java.time.Instant;
 
 /**
@@ -27,30 +29,65 @@ import java.time.Instant;
  * @author Sindre Mehus
  * @see PodcastChannel
  */
+
+@Entity
+@Table(name = "podcast_episode")
 public class PodcastEpisode {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    private Integer mediaFileId;
-    private Integer channelId;
+    @OneToOne
+    @JoinColumn(name = "media_file_id", referencedColumnName = "id")
+    private MediaFile mediaFile;
+
+    @ManyToOne
+    @JoinColumn(name = "channel_id", referencedColumnName = "id")
+    private PodcastChannel channel;
+
+    @Column(name = "episode_guid")
     private String episodeGuid;
+
+    @Column(name = "url", nullable = false)
     private String url;
+
+    @Column(name = "title")
     private String title;
+
+    @Column(name = "description")
     private String description;
+
+    @Column(name = "publish_date")
     private Instant publishDate;
+
+    @Column(name = "duration")
     private String duration;
+
+    @Column(name = "bytes_total")
     private Long bytesTotal;
+
+    @Column(name = "bytes_downloaded")
     private Long bytesDownloaded;
+
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
     private PodcastStatus status;
+
+    @Column(name = "error_message")
     private String errorMessage;
 
-    public PodcastEpisode(Integer id, Integer channelId, String episodeGuid, String url, Integer mediaFileId, String title,
-                          String description, Instant publishDate, String duration, Long length, Long bytesDownloaded,
-                          PodcastStatus status, String errorMessage) {
+    public PodcastEpisode() {
+    }
+
+    public PodcastEpisode(Integer id, PodcastChannel channel, String episodeGuid, String url, MediaFile mediaFile,
+            String title,
+            String description, Instant publishDate, String duration, Long length, Long bytesDownloaded,
+            PodcastStatus status, String errorMessage) {
         this.id = id;
-        this.channelId = channelId;
+        this.channel = channel;
         this.episodeGuid = episodeGuid;
         this.url = url;
-        this.mediaFileId = mediaFileId;
+        this.mediaFile = mediaFile;
         this.title = title;
         this.description = description;
         this.publishDate = publishDate;
@@ -65,8 +102,12 @@ public class PodcastEpisode {
         return id;
     }
 
-    public Integer getChannelId() {
-        return channelId;
+    public PodcastChannel getChannel() {
+        return channel;
+    }
+
+    public void setChannel(PodcastChannel channel) {
+        this.channel = channel;
     }
 
     public String getUrl() {
@@ -154,12 +195,12 @@ public class PodcastEpisode {
         this.errorMessage = errorMessage;
     }
 
-    public Integer getMediaFileId() {
-        return mediaFileId;
+    public MediaFile getMediaFile() {
+        return mediaFile;
     }
 
-    public void setMediaFileId(Integer mediaFileId) {
-        this.mediaFileId = mediaFileId;
+    public void setMediaFile(MediaFile mediaFile) {
+        this.mediaFile = mediaFile;
     }
 
     public String getEpisodeGuid() {
@@ -169,4 +210,5 @@ public class PodcastEpisode {
     public void setEpisodeGuid(String episodeGuid) {
         this.episodeGuid = episodeGuid;
     }
+
 }

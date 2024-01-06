@@ -100,7 +100,7 @@ public class GenreUpnpProcessor extends UpnpContentProcessor <Genre, MediaFile> 
     @Override
     public List<MediaFile> getChildren(Genre item) {
         List<MusicFolder> allFolders = getDispatcher().getMediaFolderService().getAllMusicFolders();
-        return getDispatcher().getMediaFileProcessor().getMediaFileDao().getSongsByGenre(item.getName(), 0, Integer.MAX_VALUE, allFolders);
+        return getDispatcher().getMediaFileProcessor().getMediaFileService().getSongsByGenre(0, Integer.MAX_VALUE, item.getName(), allFolders);
     }
 
     @Override

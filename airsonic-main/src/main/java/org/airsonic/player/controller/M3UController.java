@@ -24,6 +24,7 @@ import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.Player;
 import org.airsonic.player.service.JWTSecurityService;
 import org.airsonic.player.service.PlayerService;
+import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.TranscodingService;
 import org.airsonic.player.util.NetworkUtil;
 import org.airsonic.player.util.StringUtil;
@@ -54,13 +55,17 @@ public class M3UController {
     private TranscodingService transcodingService;
     @Autowired
     private JWTSecurityService jwtSecurityService;
+    @Autowired
+    private SecurityService securityService;
 
     @GetMapping
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
         response.setContentType("audio/x-mpegurl");
         response.setCharacterEncoding(StringUtil.ENCODING_UTF8);
 
-        Player player = playerService.getPlayer(request, response);
+        String username = securityService.getCurrentUsername(request);
+
+        Player player = playerService.getPlayer(request, response, username);
 
         String baseUrl = NetworkUtil.getBaseUrl(request);
         String prefix = "ext/stream?";

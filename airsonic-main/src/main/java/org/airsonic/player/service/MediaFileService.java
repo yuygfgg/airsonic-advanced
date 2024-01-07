@@ -1432,7 +1432,7 @@ public class MediaFileService {
     }
 
     public int getStarredAlbumCount(String username, List<MusicFolder> musicFolders) {
-                if (CollectionUtils.isEmpty(musicFolders)) {
+        if (CollectionUtils.isEmpty(musicFolders)) {
             return 0;
         }
         return starredMediaFileRepository.countByUsernameAndMediaFileMediaTypeAndMediaFileFolderInAndMediaFilePresentTrue(username, MediaType.ALBUM, musicFolders);

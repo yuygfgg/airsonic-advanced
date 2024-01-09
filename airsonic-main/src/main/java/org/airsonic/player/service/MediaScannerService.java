@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2024 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -239,7 +240,7 @@ public class MediaScannerService {
             // Recurse through all files on disk.
             mediaFolderService.getAllMusicFolders()
                 .parallelStream()
-                    .forEach(musicFolder -> scanFile(mediaFileService.getMediaFile(Paths.get(""), musicFolder, false),
+                    .forEach(musicFolder -> scanFile(null, mediaFileService.getMediaFile(Paths.get(""), musicFolder, false),
                             musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres, encountered));
 
             LOG.info("Scanned media library with {} entries.", scanCount.get());
@@ -250,7 +251,7 @@ public class MediaScannerService {
 
             LOG.info("Persisting albums");
             CompletableFuture<Void> albumPersistence = CompletableFuture
-                    .allOf(albums.values().parallelStream()
+                    .allOf(albums.values().stream()
                             .distinct()
                             .map(a -> CompletableFuture.supplyAsync(() -> {
                                 return albumService.save(a);
@@ -264,7 +265,8 @@ public class MediaScannerService {
 
             LOG.info("Persisting artists");
             CompletableFuture<Void> artistPersistence = CompletableFuture
-                    .allOf(artists.values().parallelStream()
+                    .allOf(artists.values().stream()
+                            .distinct()
                             .map(a -> CompletableFuture.supplyAsync(() -> {
                                 return artistService.save(a);
                             }, pool).thenAcceptAsync(coverArtService::persistIfNeeded))
@@ -312,7 +314,7 @@ public class MediaScannerService {
         }
     }
 
-    private void scanFile(MediaFile file, MusicFolder musicFolder, MediaLibraryStatistics statistics,
+    private void scanFile(MediaFile parent, MediaFile file, MusicFolder musicFolder, MediaLibraryStatistics statistics,
             Map<String, AtomicInteger> albumCount, Map<String, Artist> artists, Map<String, Album> albums,
             Map<Integer, Album> albumsInDb, Genres genres, Map<Integer, Set<String>> encountered) {
         if (scanCount.incrementAndGet() % 250 == 0) {
@@ -331,11 +333,11 @@ public class MediaScannerService {
         try {
             if (file.isDirectory()) {
                 mediaFileService.getChildrenOf(file, true, true, false, false).parallelStream()
-                        .forEach(child -> scanFile(child, musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres, encountered));
+                        .forEach(child -> scanFile(file, child, musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres, encountered));
             } else {
                 if (musicFolder.getType() == MusicFolder.Type.MEDIA) {
-                    updateAlbum(file, musicFolder, statistics.getScanDate(), albumCount, albums, albumsInDb);
-                    updateArtist(file, musicFolder, statistics.getScanDate(), albumCount, artists);
+                    updateAlbum(parent, file, musicFolder, statistics.getScanDate(), albumCount, albums, albumsInDb);
+                    updateArtist(parent, file, musicFolder, statistics.getScanDate(), albumCount, artists);
                 }
                 statistics.incrementSongs(1);
             }
@@ -378,7 +380,7 @@ public class MediaScannerService {
      * @param albums albums
      * @param albumsInDb albums in db
      */
-    private void updateAlbum(MediaFile file, MusicFolder musicFolder,
+    private void updateAlbum(MediaFile parent, MediaFile file, MusicFolder musicFolder,
             Instant lastScanned, Map<String, AtomicInteger> albumCount, Map<String, Album> albums,
             Map<Integer, Album> albumsInDb) {
 
@@ -436,13 +438,10 @@ public class MediaScannerService {
             album.setGenre(file.getGenre());
         }
 
-        if (album.getArt() == null) {
-            MediaFile parent = mediaFileService.getParentOf(file, true); // true because the parent has recently already been scanned
-            if (parent != null) {
-                CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, parent.getId());
-                if (!CoverArt.NULL_ART.equals(art)) {
-                    album.setArt(new CoverArt(-1, EntityType.ALBUM, art.getPath(), art.getFolder(), false));
-                }
+        if (album.getArt() == null && parent != null) {
+            CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, parent.getId());
+            if (!CoverArt.NULL_ART.equals(art)) {
+                album.setArt(new CoverArt(-1, EntityType.ALBUM, art.getPath(), art.getFolder(), false));
             }
         }
 
@@ -469,7 +468,7 @@ public class MediaScannerService {
      * @param albumCount album count
      * @param artists artists
      */
-    private void updateArtist(MediaFile file, MusicFolder musicFolder, Instant lastScanned,
+    private void updateArtist(MediaFile parent, MediaFile file, MusicFolder musicFolder, Instant lastScanned,
             Map<String, AtomicInteger> albumCount, Map<String, Artist> artists) {
         if (file.getAlbumArtist() == null || !file.isAudio()) {
             return;
@@ -499,20 +498,17 @@ public class MediaScannerService {
             return a;
         });
 
-        if (artist.getArt() == null) {
-            MediaFile parent = mediaFileService.getParentOf(file, true); // true because the parent has recently already been scanned
-            if (parent != null) {
-                CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, parent.getId());
-                if (!CoverArt.NULL_ART.equals(art)) {
-                    artist.setArt(new CoverArt(-1, EntityType.ARTIST, art.getPath(), art.getFolder(), false));
-                }
-            }
-        }
-
         if (firstEncounter.get()) {
             artist.setFolder(musicFolder);
             artistService.save(artist);
             indexManager.index(artist, musicFolder);
+        }
+
+        if (artist.getArt() == null && parent != null) {
+            CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, parent.getId());
+            if (!CoverArt.NULL_ART.equals(art)) {
+                artist.setArt(new CoverArt(-1, EntityType.ARTIST, art.getPath(), art.getFolder(), false));
+            }
         }
     }
 }

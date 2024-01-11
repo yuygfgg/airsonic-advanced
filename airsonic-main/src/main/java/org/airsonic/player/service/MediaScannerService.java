@@ -199,8 +199,12 @@ public class MediaScannerService {
 
         boolean isFullScan = settingsService.getFullScan();
         long timeoutSeconds = isFullScan ? scanConfig.getFullTimeout() : scanConfig.getTimeout();
+        MediaLibraryStatistics statistics = new MediaLibraryStatistics();
         LOG.info("Starting media library scan with timeout {} seconds.", timeoutSeconds);
-        CompletableFuture.runAsync(() -> doScanLibrary(pool), pool)
+        CompletableFuture.runAsync(() -> {
+            mediaFileService.setMemoryCacheEnabled(false);
+            doScanLibrary(pool, statistics);
+        }, pool)
                 .orTimeout(timeoutSeconds, TimeUnit.SECONDS)
                 .whenComplete((r,e) -> {
                     if (e instanceof TimeoutException) {
@@ -210,17 +214,21 @@ public class MediaScannerService {
                     } else {
                         LOG.info("Media library scan completed.");
                     }
+                    mediaFileService.setMemoryCacheEnabled(true);
+                    indexManager.stopIndexing(statistics);
                 })
                 .thenRunAsync(() -> playlistFileService.importPlaylists(), pool)
                 .whenComplete((r,e) -> {
                     pool.shutdown();
                 })
-                .whenComplete((r,e) -> setScanning(false));
+                .whenComplete((r,e) -> {
+                    setScanning(false);
+                    LOG.info("Media library scan took {}s", ChronoUnit.SECONDS.between(statistics.getScanDate(), Instant.now()));
+                });
     }
 
-    private void doScanLibrary(ForkJoinPool pool) {
+    private void doScanLibrary(ForkJoinPool pool, MediaLibraryStatistics statistics) {
         LOG.info("Starting to scan media library.");
-        MediaLibraryStatistics statistics = new MediaLibraryStatistics();
         LOG.debug("New last scan date is {}", statistics.getScanDate());
 
         try {
@@ -234,7 +242,6 @@ public class MediaScannerService {
 
             scanCount.set(0);
 
-            mediaFileService.setMemoryCacheEnabled(false);
             indexManager.startIndexing();
 
             // Recurse through all files on disk.
@@ -308,8 +315,6 @@ public class MediaScannerService {
         } catch (Throwable x) {
             LOG.error("Failed to scan media library.", x);
         } finally {
-            mediaFileService.setMemoryCacheEnabled(true);
-            indexManager.stopIndexing(statistics);
             LOG.info("Media library scan took {}s", ChronoUnit.SECONDS.between(statistics.getScanDate(), Instant.now()));
         }
     }
@@ -317,6 +322,12 @@ public class MediaScannerService {
     private void scanFile(MediaFile parent, MediaFile file, MusicFolder musicFolder, MediaLibraryStatistics statistics,
             Map<String, AtomicInteger> albumCount, Map<String, Artist> artists, Map<String, Album> albums,
             Map<Integer, Album> albumsInDb, Genres genres, Map<Integer, Set<String>> encountered) {
+
+        if (!isScanning()) {
+            LOG.info("Scan cancelled.");
+            return;
+        }
+
         if (scanCount.incrementAndGet() % 250 == 0) {
             broadcastScanStatus();
             LOG.info("Scanned media library with {} entries.", scanCount.get());

@@ -58,6 +58,7 @@ public class MediaScannerService {
     private static final Logger LOG = LoggerFactory.getLogger(MediaScannerService.class);
 
     private volatile boolean scanning;
+    private volatile boolean mediaScaninng;
 
     public MediaScannerService(
         SettingsService settingsService,
@@ -154,9 +155,20 @@ public class MediaScannerService {
         return scanning;
     }
 
+    /**
+     * Returns whether the media library is currently being scanned.
+     */
+    public boolean isMediaScanning() {
+        return mediaScaninng;
+    }
+
     private void setScanning(boolean scanning) {
         this.scanning = scanning;
         broadcastScanStatus();
+    }
+
+    private void setMediaScanning(boolean mediaScaninng) {
+        this.mediaScaninng = mediaScaninng;
     }
 
     private void broadcastScanStatus() {
@@ -194,6 +206,7 @@ public class MediaScannerService {
             return;
         }
         setScanning(true);
+        setMediaScanning(true);
 
         ForkJoinPool pool = new ForkJoinPool(scannerParallelism, mediaScannerThreadFactory, null, true);
 
@@ -214,6 +227,7 @@ public class MediaScannerService {
                     } else {
                         LOG.info("Media library scan completed.");
                     }
+                    setMediaScanning(false);
                 })
                 .thenRunAsync(() -> playlistFileService.importPlaylists(), pool)
                 .whenComplete((r,e) -> {
@@ -252,6 +266,10 @@ public class MediaScannerService {
 
             LOG.info("Scanned media library with {} entries.", scanCount.get());
 
+            if (!isMediaScanning()) {
+                LOG.info("Scan cancelled.");
+                return;
+            }
             // Update statistics
             statistics.incrementArtists(albumCount.size());
             statistics.incrementAlbums(albumCount.values().parallelStream().mapToInt(x -> x.get()).sum());
@@ -321,7 +339,7 @@ public class MediaScannerService {
             Map<String, AtomicInteger> albumCount, Map<String, Artist> artists, Map<String, Album> albums,
             Map<Integer, Album> albumsInDb, Genres genres, Map<Integer, Set<String>> encountered) {
 
-        if (!isScanning()) {
+        if (!isMediaScanning()) {
             LOG.debug("Scan cancelled.");
             return;
         }

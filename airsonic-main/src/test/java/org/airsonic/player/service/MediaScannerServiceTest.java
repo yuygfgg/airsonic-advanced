@@ -4,9 +4,11 @@ package org.airsonic.player.service;
 
 import org.airsonic.player.TestCaseUtils;
 import org.airsonic.player.config.AirsonicScanConfig;
+import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.repository.MusicFolderRepository;
+import org.airsonic.player.service.search.IndexManager;
 import org.airsonic.player.util.MusicFolderTestData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
@@ -45,6 +47,9 @@ public class MediaScannerServiceTest {
 
     @SpyBean
     private SettingsService settingsService;
+
+    @SpyBean
+    private IndexManager indexManager;
 
     @SpyBean
     private AirsonicScanConfig scanConfig;
@@ -90,9 +95,10 @@ public class MediaScannerServiceTest {
         when(settingsService.getIgnoreSymLinks()).thenReturn(false);
         when(scanConfig.getFullTimeout()).thenReturn(1);
         doAnswer(invocation -> {
+            invocation.callRealMethod();
             Thread.sleep(10000);
             return null;
-        }).when(mediaFileService).setMemoryCacheEnabled(anyBoolean());
+        }).when(indexManager).index(any(MediaFile.class), any(MusicFolder.class));
 
         // Add the "loop" folder to the database
         Path musicFolderFile = MusicFolderTestData.resolveMusicLoopFolderPath();
@@ -112,9 +118,10 @@ public class MediaScannerServiceTest {
         when(settingsService.getIgnoreSymLinks()).thenReturn(false);
         when(scanConfig.getTimeout()).thenReturn(1);
         doAnswer(invocation -> {
+            invocation.callRealMethod();
             Thread.sleep(10000);
             return null;
-        }).when(mediaFileService).setMemoryCacheEnabled(anyBoolean());
+        }).when(indexManager).index(any(MediaFile.class), any(MusicFolder.class));
 
         // Add the "loop" folder to the database
         Path musicFolderFile = MusicFolderTestData.resolveMusicLoopFolderPath();

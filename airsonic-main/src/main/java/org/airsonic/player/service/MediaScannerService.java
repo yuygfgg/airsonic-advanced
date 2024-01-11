@@ -214,8 +214,6 @@ public class MediaScannerService {
                     } else {
                         LOG.info("Media library scan completed.");
                     }
-                    mediaFileService.setMemoryCacheEnabled(true);
-                    indexManager.stopIndexing(statistics);
                 })
                 .thenRunAsync(() -> playlistFileService.importPlaylists(), pool)
                 .whenComplete((r,e) -> {
@@ -223,6 +221,8 @@ public class MediaScannerService {
                 })
                 .whenComplete((r,e) -> {
                     setScanning(false);
+                    mediaFileService.setMemoryCacheEnabled(true);
+                    indexManager.stopIndexing(statistics);
                     LOG.info("Media library scan took {}s", ChronoUnit.SECONDS.between(statistics.getScanDate(), Instant.now()));
                 });
     }
@@ -314,8 +314,6 @@ public class MediaScannerService {
 
         } catch (Throwable x) {
             LOG.error("Failed to scan media library.", x);
-        } finally {
-            LOG.info("Media library scan took {}s", ChronoUnit.SECONDS.between(statistics.getScanDate(), Instant.now()));
         }
     }
 
@@ -324,7 +322,7 @@ public class MediaScannerService {
             Map<Integer, Album> albumsInDb, Genres genres, Map<Integer, Set<String>> encountered) {
 
         if (!isScanning()) {
-            LOG.info("Scan cancelled.");
+            LOG.debug("Scan cancelled.");
             return;
         }
 

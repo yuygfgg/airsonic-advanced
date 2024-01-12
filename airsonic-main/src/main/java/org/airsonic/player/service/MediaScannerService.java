@@ -215,7 +215,6 @@ public class MediaScannerService {
         MediaLibraryStatistics statistics = new MediaLibraryStatistics();
         LOG.info("Starting media library scan with timeout {} seconds.", timeoutSeconds);
         CompletableFuture.runAsync(() -> {
-            mediaFileService.setMemoryCacheEnabled(false);
             doScanLibrary(pool, statistics);
         }, pool)
                 .orTimeout(timeoutSeconds, TimeUnit.SECONDS)
@@ -234,10 +233,8 @@ public class MediaScannerService {
                     pool.shutdown();
                 })
                 .whenComplete((r,e) -> {
-                    setScanning(false);
-                    mediaFileService.setMemoryCacheEnabled(true);
                     indexManager.stopIndexing(statistics);
-                    LOG.info("Media library scan took {}s", ChronoUnit.SECONDS.between(statistics.getScanDate(), Instant.now()));
+                    setScanning(false);
                 });
     }
 
@@ -257,12 +254,18 @@ public class MediaScannerService {
             scanCount.set(0);
 
             indexManager.startIndexing();
+            mediaFileService.setMemoryCacheEnabled(false);
 
             // Recurse through all files on disk.
-            mediaFolderService.getAllMusicFolders()
-                .parallelStream()
-                    .forEach(musicFolder -> scanFile(null, mediaFileService.getMediaFile(Paths.get(""), musicFolder, false),
-                            musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres, encountered));
+            pool.submit(() -> {
+                mediaFolderService.getAllMusicFolders()
+                        .parallelStream()
+                        .forEach(musicFolder -> scanFile(pool, null, mediaFileService.getMediaFile(Paths.get(""), musicFolder, true),
+                                musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres, encountered));
+                // Update statistics
+                statistics.incrementArtists(albumCount.size());
+                statistics.incrementAlbums(albumCount.values().parallelStream().mapToInt(x -> x.get()).sum());
+            }).join();
 
             LOG.info("Scanned media library with {} entries.", scanCount.get());
 
@@ -270,9 +273,6 @@ public class MediaScannerService {
                 LOG.info("Scan cancelled.");
                 return;
             }
-            // Update statistics
-            statistics.incrementArtists(albumCount.size());
-            statistics.incrementAlbums(albumCount.values().parallelStream().mapToInt(x -> x.get()).sum());
 
             LOG.info("Persisting albums");
             CompletableFuture<Void> albumPersistence = CompletableFuture
@@ -321,21 +321,22 @@ public class MediaScannerService {
                     }, pool);
 
             CompletableFuture.allOf(albumPersistence, artistPersistence, mediaFilePersistence, genrePersistence).join();
+            LOG.info("Completed media library scan.");
 
+        } catch (Throwable x) {
+            LOG.error("Failed to scan media library.", x);
+        } finally {
+            mediaFileService.setMemoryCacheEnabled(true);
             if (settingsService.getClearFullScanSettingAfterScan()) {
                 settingsService.setClearFullScanSettingAfterScan(null);
                 settingsService.setFullScan(null);
                 settingsService.save();
             }
-
-            LOG.info("Completed media library scan.");
-
-        } catch (Throwable x) {
-            LOG.error("Failed to scan media library.", x);
+            LOG.info("Media library scan took {}s", ChronoUnit.SECONDS.between(statistics.getScanDate(), Instant.now()));
         }
     }
 
-    private void scanFile(MediaFile parent, MediaFile file, MusicFolder musicFolder, MediaLibraryStatistics statistics,
+    private void scanFile(ForkJoinPool pool, MediaFile parent, MediaFile file, MusicFolder musicFolder, MediaLibraryStatistics statistics,
             Map<String, AtomicInteger> albumCount, Map<String, Artist> artists, Map<String, Album> albums,
             Map<Integer, Album> albumsInDb, Genres genres, Map<Integer, Set<String>> encountered) {
 
@@ -358,28 +359,30 @@ public class MediaScannerService {
         indexManager.index(file, musicFolder);
 
         try {
-            if (file.isDirectory()) {
-                mediaFileService.getChildrenOf(file, true, true, false, false).parallelStream()
-                        .forEach(child -> scanFile(file, child, musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres, encountered));
-            } else {
-                if (musicFolder.getType() == MusicFolder.Type.MEDIA) {
-                    updateAlbum(parent, file, musicFolder, statistics.getScanDate(), albumCount, albums, albumsInDb);
-                    updateArtist(parent, file, musicFolder, statistics.getScanDate(), albumCount, artists);
+            pool.submit(() -> {
+                if (file.isDirectory()) {
+                    mediaFileService.getChildrenOf(file, true, true, false, false).parallelStream()
+                            .forEach(child -> scanFile(pool, file, child, musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres, encountered));
+                } else {
+                    if (musicFolder.getType() == MusicFolder.Type.MEDIA) {
+                        updateAlbum(parent, file, musicFolder, statistics.getScanDate(), albumCount, albums, albumsInDb);
+                        updateArtist(parent, file, musicFolder, statistics.getScanDate(), albumCount, artists);
+                    }
+                    statistics.incrementSongs(1);
                 }
-                statistics.incrementSongs(1);
-            }
 
-            updateGenres(file, genres);
-            encountered.computeIfAbsent(file.getFolder().getId(), k -> ConcurrentHashMap.newKeySet()).add(file.getPath());
+                updateGenres(file, genres);
+                encountered.computeIfAbsent(file.getFolder().getId(), k -> ConcurrentHashMap.newKeySet()).add(file.getPath());
 
-            // don't add indexed tracks to the total duration to avoid double-counting
-            if ((file.getDuration() != null) && (!file.isIndexedTrack())) {
-                statistics.incrementTotalDurationInSeconds(file.getDuration());
-            }
-            // don't add indexed tracks to the total size to avoid double-counting
-            if ((file.getFileSize() != null) && (!file.isIndexedTrack())) {
-                statistics.incrementTotalLengthInBytes(file.getFileSize());
-            }
+                // don't add indexed tracks to the total duration to avoid double-counting
+                if ((file.getDuration() != null) && (!file.isIndexedTrack())) {
+                    statistics.incrementTotalDurationInSeconds(file.getDuration());
+                }
+                // don't add indexed tracks to the total size to avoid double-counting
+                if ((file.getFileSize() != null) && (!file.isIndexedTrack())) {
+                    statistics.incrementTotalLengthInBytes(file.getFileSize());
+                }
+            }).join();
         } catch (Exception e) {
             LOG.warn("scan file failed : {} in {}", file.getPath(), musicFolder.getPath(), e);
         }

@@ -57,8 +57,8 @@ public class MediaScannerService {
 
     private static final Logger LOG = LoggerFactory.getLogger(MediaScannerService.class);
 
-    private volatile boolean scanning;
-    private volatile boolean mediaScaninng;
+    private final AtomicBoolean scanning = new AtomicBoolean(false);
+    private final AtomicBoolean mediaScaninng = new AtomicBoolean(false);
 
     public MediaScannerService(
         SettingsService settingsService,
@@ -152,30 +152,30 @@ public class MediaScannerService {
      * Returns whether the media library is currently being scanned.
      */
     public boolean isScanning() {
-        return scanning;
+        return scanning.get();
     }
 
     /**
      * Returns whether the media library is currently being scanned.
      */
     public boolean isMediaScanning() {
-        return mediaScaninng;
+        return mediaScaninng.get();
     }
 
     private void setScanning(boolean scanning) {
-        this.scanning = scanning;
+        this.scanning.set(scanning);
         broadcastScanStatus();
     }
 
     private void setMediaScanning(boolean mediaScaninng) {
-        this.mediaScaninng = mediaScaninng;
+        this.mediaScaninng.set(mediaScaninng);
     }
 
     private void broadcastScanStatus() {
         CompletableFuture.runAsync(() -> {
             ScanStatus status = new ScanStatus();
             status.setCount(scanCount.longValue());
-            status.setScanning(scanning);
+            status.setScanning(scanning.get());
             messagingTemplate.convertAndSend("/topic/scanStatus", status);
         });
     }
@@ -260,7 +260,7 @@ public class MediaScannerService {
             pool.submit(() -> {
                 mediaFolderService.getAllMusicFolders()
                         .parallelStream()
-                        .forEach(musicFolder -> scanFile(pool, null, mediaFileService.getMediaFile(Paths.get(""), musicFolder, true),
+                        .forEach(musicFolder -> scanFile(pool, null, mediaFileService.getMediaFile(Paths.get(""), musicFolder, false),
                                 musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres, encountered));
                 // Update statistics
                 statistics.incrementArtists(albumCount.size());

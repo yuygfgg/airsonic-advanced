@@ -25,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -89,6 +90,7 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public int countByFolderInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(List<MusicFolder> folders, MediaType mediaType, Integer playCount);
 
+    @Transactional
     public void deleteAllByPresentFalse();
 
     public List<MediaFile> findByFolderInAndMediaTypeInAndPresentTrue(List<MusicFolder> folders,

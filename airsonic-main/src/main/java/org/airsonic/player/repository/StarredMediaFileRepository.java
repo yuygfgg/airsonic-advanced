@@ -27,6 +27,7 @@ import org.airsonic.player.domain.entity.StarredMediaFile;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +48,7 @@ public interface StarredMediaFileRepository extends JpaRepository<StarredMediaFi
     public List<StarredMediaFile> findByUsernameAndMediaFileMediaTypeInAndMediaFileFolderInAndMediaFilePresentTrue(
             String username, Iterable<MediaType> mediaType, Iterable<MusicFolder> folders, Pageable page);
 
+    @Transactional
     public void deleteAllByMediaFileIdInAndUsername(List<Integer> mediaFileIds, String username);
 
 }

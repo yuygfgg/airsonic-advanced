@@ -46,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 /**
  * Provides services for scanning the music library.
@@ -242,13 +243,12 @@ public class MediaScannerService {
         LOG.info("Starting to scan media library.");
         LOG.debug("New last scan date is {}", statistics.getScanDate());
 
+        Map<String, AtomicInteger> albumCount = new ConcurrentHashMap<>();
+        Map<String, Artist> artists = new ConcurrentHashMap<>();
+        Map<String, Album> albums = new ConcurrentHashMap<>();
+        Set<Integer> albumsInDb = Collections.synchronizedSet(new HashSet<>());
         try {
             // Maps from artist name to album count.
-            Map<String, AtomicInteger> albumCount = new ConcurrentHashMap<>();
-            Map<String, Artist> artists = new ConcurrentHashMap<>();
-            Map<String, Album> albums = new ConcurrentHashMap<>();
-            Map<Integer, Album> albumsInDb = new ConcurrentHashMap<>();
-            Map<Integer, Set<String>> encountered = new ConcurrentHashMap<>();
             Genres genres = new Genres();
 
             scanCount.set(0);
@@ -261,7 +261,7 @@ public class MediaScannerService {
                 mediaFolderService.getAllMusicFolders()
                         .parallelStream()
                         .forEach(musicFolder -> scanFile(pool, null, mediaFileService.getMediaFile(Paths.get(""), musicFolder, false),
-                                musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres, encountered));
+                                musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres));
                 // Update statistics
                 statistics.incrementArtists(albumCount.size());
                 statistics.incrementAlbums(albumCount.values().parallelStream().mapToInt(x -> x.get()).sum());
@@ -302,15 +302,6 @@ public class MediaScannerService {
                     }, pool)
                     .thenRunAsync(() -> LOG.info("Artist persistence complete"), pool);
 
-            LOG.info("Marking present files");
-            CompletableFuture<Void> mediaFilePersistence = CompletableFuture
-                    .runAsync(() -> mediaFileService.markPresent(encountered, statistics.getScanDate()), pool)
-                    .thenRunAsync(() -> {
-                        LOG.info("Marking non-present files.");
-                        mediaFileService.markNonPresent(statistics.getScanDate());
-                    }, pool)
-                    .thenRunAsync(() -> LOG.info("File marking complete"), pool);
-
             LOG.info("Persisting genres");
             CompletableFuture<Void> genrePersistence = CompletableFuture
                     .runAsync(() -> {
@@ -320,7 +311,7 @@ public class MediaScannerService {
                         LOG.info("Genre persistence successfully complete: {}", genresSuccessful);
                     }, pool);
 
-            CompletableFuture.allOf(albumPersistence, artistPersistence, mediaFilePersistence, genrePersistence).join();
+            CompletableFuture.allOf(albumPersistence, artistPersistence, genrePersistence).join();
             LOG.info("Completed media library scan.");
 
         } catch (Throwable x) {
@@ -332,13 +323,18 @@ public class MediaScannerService {
                 settingsService.setFullScan(null);
                 settingsService.save();
             }
+            //clearing cache
+            albumCount.clear();
+            artists.clear();
+            albumsInDb.clear();
+            albums.clear();
             LOG.info("Media library scan took {}s", ChronoUnit.SECONDS.between(statistics.getScanDate(), Instant.now()));
         }
     }
 
     private void scanFile(ForkJoinPool pool, MediaFile parent, MediaFile file, MusicFolder musicFolder, MediaLibraryStatistics statistics,
             Map<String, AtomicInteger> albumCount, Map<String, Artist> artists, Map<String, Album> albums,
-            Map<Integer, Album> albumsInDb, Genres genres, Map<Integer, Set<String>> encountered) {
+            Set<Integer> albumsInDb, Genres genres) {
 
         if (!isMediaScanning()) {
             LOG.debug("Scan cancelled.");
@@ -361,8 +357,11 @@ public class MediaScannerService {
         try {
             pool.submit(() -> {
                 if (file.isDirectory()) {
-                    mediaFileService.getChildrenOf(file, true, true, false, false).parallelStream()
-                            .forEach(child -> scanFile(pool, file, child, musicFolder, statistics, albumCount, artists, albums, albumsInDb, genres, encountered));
+                    try (Stream<MediaFile> children = mediaFileService.getChildrenOf(file, true, true, false, false)
+                            .parallelStream()) {
+                        children.forEach(child -> scanFile(pool, file, child, musicFolder, statistics, albumCount,
+                                artists, albums, albumsInDb, genres));
+                    }
                 } else {
                     if (musicFolder.getType() == MusicFolder.Type.MEDIA) {
                         updateAlbum(parent, file, musicFolder, statistics.getScanDate(), albumCount, albums, albumsInDb);
@@ -371,8 +370,11 @@ public class MediaScannerService {
                     statistics.incrementSongs(1);
                 }
 
+                if (file.isPresent() && (file.getLastScanned() == null || file.getLastScanned().isBefore(statistics.getScanDate()))) {
+                    file.setLastScanned(statistics.getScanDate());
+                    mediaFileService.updateMediaFile(file);
+                }
                 updateGenres(file, genres);
-                encountered.computeIfAbsent(file.getFolder().getId(), k -> ConcurrentHashMap.newKeySet()).add(file.getPath());
 
                 // don't add indexed tracks to the total duration to avoid double-counting
                 if ((file.getDuration() != null) && (!file.isIndexedTrack())) {
@@ -412,7 +414,7 @@ public class MediaScannerService {
      */
     private void updateAlbum(MediaFile parent, MediaFile file, MusicFolder musicFolder,
             Instant lastScanned, Map<String, AtomicInteger> albumCount, Map<String, Album> albums,
-            Map<Integer, Album> albumsInDb) {
+            Set<Integer> albumsInDb) {
 
         String artist = file.getAlbumArtist() != null ? file.getAlbumArtist() : file.getArtist();
         if (file.getAlbumName() == null || artist == null || file.getParentPath() == null || !file.isAudio()) {
@@ -425,12 +427,11 @@ public class MediaScannerService {
 
             if (a == null) {
                 a = albumService.getAlbumByArtistAndName(artist, file.getAlbumName()).map(dbAlbum -> {
-                    albumsInDb.computeIfAbsent(dbAlbum.getId(), aid -> {
-                        // reset stats when first retrieve from the db for new scan
+                    if (!albumsInDb.contains(dbAlbum.getId())) {
+                        albumsInDb.add(dbAlbum.getId());
                         dbAlbum.setDuration(0);
                         dbAlbum.setSongCount(0);
-                        return dbAlbum;
-                    });
+                    }
                     return dbAlbum;
                 }).orElse(null);
             }

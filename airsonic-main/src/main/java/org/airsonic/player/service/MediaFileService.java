@@ -734,8 +734,7 @@ public class MediaFileService {
             try (Stream<Path> children = Files.list(parent.getFullPath())) {
                 children.parallel()
                     .filter(x -> {
-                        String ext = FilenameUtils.getExtension(x.toString());
-                        return "cue".equalsIgnoreCase(ext) || "flac".equalsIgnoreCase(ext);
+                        return "cue".equalsIgnoreCase(FilenameUtils.getExtension(x.toString())) || "flac".equalsIgnoreCase(FilenameUtils.getExtension(x.toString()));
                     })
                     .forEach(x -> {
                         CueSheet cueSheet = getCueSheet(x);

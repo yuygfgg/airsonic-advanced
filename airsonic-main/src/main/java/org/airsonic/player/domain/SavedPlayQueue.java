@@ -21,6 +21,7 @@ package org.airsonic.player.domain;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Used to save the play queue state for a user.
@@ -106,5 +107,25 @@ public class SavedPlayQueue {
 
     public void setChangedBy(String changedBy) {
         this.changedBy = changedBy;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || !(other instanceof SavedPlayQueue)) {
+            return false;
+        }
+
+        SavedPlayQueue otherQueue = (SavedPlayQueue) other;
+        return Objects.equals(id, otherQueue.id);
     }
 }

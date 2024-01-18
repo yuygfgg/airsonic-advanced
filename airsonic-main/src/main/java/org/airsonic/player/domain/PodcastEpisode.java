@@ -22,6 +22,7 @@ package org.airsonic.player.domain;
 import javax.persistence.*;
 
 import java.time.Instant;
+import java.util.Objects;
 
 /**
  * A Podcast episode belonging to a channel.
@@ -209,6 +210,22 @@ public class PodcastEpisode {
 
     public void setEpisodeGuid(String episodeGuid) {
         this.episodeGuid = episodeGuid;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+
+        if (obj == null || !(obj instanceof PodcastEpisode)) {
+            return false;
+        }
+
+        PodcastEpisode other = (PodcastEpisode) obj;
+        return Objects.equals(url, other.url);
     }
 
 }

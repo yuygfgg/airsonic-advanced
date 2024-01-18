@@ -23,6 +23,7 @@ package org.airsonic.player.repository;
 import org.airsonic.player.domain.entity.CustomAvatar;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -31,6 +32,7 @@ public interface CustomAvatarRepository extends JpaRepository<CustomAvatar, Inte
 
     public Optional<CustomAvatar> findByUsername(String username);
 
+    @Transactional
     public void deleteAllByUsername(String username);
 
 }

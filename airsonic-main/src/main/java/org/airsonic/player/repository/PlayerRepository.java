@@ -21,6 +21,7 @@ package org.airsonic.player.repository;
 import org.airsonic.player.domain.Player;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -34,7 +35,9 @@ public interface PlayerRepository extends JpaRepository<Player, Integer> {
 
     public List<Player> findByUsernameAndClientId(String username, String clientId);
 
+    @Transactional
     public void deleteAllByNameIsNullAndClientIdIsNullAndLastSeenIsNull();
 
+    @Transactional
     public void deleteAllByNameIsNullAndClientIdIsNullAndLastSeenBefore(Instant lastSeen);
 }

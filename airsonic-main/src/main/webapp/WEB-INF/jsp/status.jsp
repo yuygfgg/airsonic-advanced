@@ -4,7 +4,7 @@
 <html><head>
     <%@ include file="head.jsp" %>
     <%@ include file="jquery.jsp" %>
-    <script type="text/javascript" src="<c:url value='/script/chart-3.5.0.min.js'/>"></script>
+    <script type="text/javascript" src="<c:url value='/script/chart-3.9.1.min.js'/>"></script>
     <meta http-equiv="CACHE-CONTROL" content="NO-CACHE">
     <style>
       #sessionsTable td, .cacheusage, .cachehits, .cachemiss, .cacheputs, .cacheremovals {

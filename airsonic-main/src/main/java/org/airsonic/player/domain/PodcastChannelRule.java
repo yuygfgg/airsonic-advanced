@@ -1,7 +1,8 @@
 package org.airsonic.player.domain;
 
-
 import javax.persistence.*;
+
+import java.util.Objects;
 
 @Entity
 @Table(name = "podcast_channel_rules")
@@ -67,6 +68,26 @@ public class PodcastChannelRule {
 
     public void setDownloadCount(Integer downloadCount) {
         this.downloadCount = downloadCount;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || !(other instanceof PodcastChannelRule)) {
+            return false;
+        }
+
+        PodcastChannelRule otherRule = (PodcastChannelRule) other;
+        return Objects.equals(id, otherRule.id);
     }
 
 }

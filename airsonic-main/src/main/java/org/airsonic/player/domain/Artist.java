@@ -25,6 +25,7 @@ import org.airsonic.player.repository.AtomicIntegerConverter;
 import javax.persistence.*;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -126,5 +127,21 @@ public class Artist {
 
     public void setArt(CoverArt art) {
         this.art = art;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+
+        if (obj == null || !(obj instanceof Artist)) {
+            return false;
+        }
+
+        Artist other = (Artist) obj;
+        return Objects.equals(name, other.name);
     }
 }

@@ -82,7 +82,7 @@ public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer 
                 .setAllowedOriginPatterns("*")
                 .addInterceptors(new ServletRequestCaptureHandshakeInterceptor(contextPath))
                 .withSockJS()
-                .setClientLibraryUrl("../../script/sockjs-1.5.0.min.js");
+                .setClientLibraryUrl("../../script/sockjs-1.6.1.min.js");
     }
 
     public static class ServletRequestCaptureHandshakeInterceptor implements HandshakeInterceptor {

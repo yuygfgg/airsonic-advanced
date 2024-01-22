@@ -26,6 +26,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A Podcast channel. Each channel contain several episodes.
@@ -151,6 +152,26 @@ public class PodcastChannel implements Serializable {
     @JsonIgnore
     public MediaFile getMediaFile() {
         return mediaFile;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || !(other instanceof PodcastChannel)) {
+            return false;
+        }
+
+        PodcastChannel otherChannel = (PodcastChannel) other;
+        return Objects.equals(id, otherChannel.id);
     }
 
 }

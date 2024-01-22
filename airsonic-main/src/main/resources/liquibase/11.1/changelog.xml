@@ -6,4 +6,5 @@
     <include file="add-deleted-column-music-folder.xml" relativeToChangelogFile="true"/>
     <include file="remove-genre-name-duplication.xml" relativeToChangelogFile="true"/>
     <include file="add-genre-pk.xml" relativeToChangelogFile="true"/>
+    <include file="change-hsqldb-table-type.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

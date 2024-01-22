@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -31,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class Scanner {
     public static final String SERVER = System.getProperty("DockerTestingHost", "http://localhost:4040");
@@ -58,7 +58,7 @@ public class Scanner {
     }
 
     public static void doScan() throws Exception {
-        Assert.assertFalse(isScanning());
+        assertFalse(isScanning());
 
         String startScan = rest.getForObject(
                 addRestParameters(UriComponentsBuilder.fromHttpUrl(SERVER + "/rest/startScan")).toUriString(),
@@ -73,7 +73,7 @@ public class Scanner {
             Thread.sleep(sleepTime);
         }
 
-        Assert.assertFalse(isScanning());
+        assertFalse(isScanning());
     }
 
     private static boolean isScanning() {

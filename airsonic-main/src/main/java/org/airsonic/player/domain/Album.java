@@ -29,6 +29,7 @@ import javax.persistence.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -89,7 +90,6 @@ public class Album {
     @OneToMany(mappedBy = "album")
     private List<StarredAlbum> starredAlbums = new ArrayList<>();
 
-    // TODO: add relation to music folder table
     @ManyToOne
     @JoinColumn(name = "folder_id", referencedColumnName = "id")
     private MusicFolder folder;
@@ -285,6 +285,23 @@ public class Album {
 
     public void setArt(CoverArt art) {
         this.art = art;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(path, folder);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+
+        if (obj == null || !(obj instanceof Album)) {
+            return false;
+        }
+
+        Album other = (Album) obj;
+
+        return Objects.equals(path, other.path) && Objects.equals(folder, other.folder);
     }
 
 }

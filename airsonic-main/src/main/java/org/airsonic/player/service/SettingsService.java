@@ -1401,6 +1401,21 @@ public class SettingsService {
         return getString(KEY_DATABASE_URL, DEFAULT_DATABASE_URL);
     }
 
+    public String getDatabaseType() {
+        String url = getDatabaseUrl();
+        if (url.contains("mysql")) {
+            return "mysql";
+        } else if (url.contains("postgresql")) {
+            return "postgresql";
+        } else if (url.contains("hsqldb")) {
+            return "hsqldb";
+        } else if (url.contains("mariadb")) {
+            return "mariadb";
+        } else {
+            return "unknown";
+        }
+    }
+
     public void setDatabaseUrl(String url) {
         setString(KEY_DATABASE_URL, url);
     }

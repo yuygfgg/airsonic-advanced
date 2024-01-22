@@ -23,6 +23,7 @@ package org.airsonic.player.domain;
 import javax.persistence.*;
 
 import java.time.Instant;
+import java.util.Objects;
 
 /**
  * A bookmark within a media file, for a given user.
@@ -133,6 +134,21 @@ public class Bookmark {
 
     public void setChanged(Instant changed) {
         this.changed = changed;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+
+        if (obj == null || !(obj instanceof Bookmark)) {
+            return false;
+        }
+
+        return Objects.equals(id, ((Bookmark) obj).id);
     }
 
 }

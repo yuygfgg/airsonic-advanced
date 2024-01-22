@@ -37,8 +37,8 @@ public class AirsonicScanConfig {
     // Logger
     private static final Logger LOG = LoggerFactory.getLogger(AirsonicHomeConfig.class);
 
-    private static final int DEFAULT_SCAN = 10 * 60;
-    private static final int DEFAULT_FULLSCAN = 60 * 60;
+    private static final int DEFAULT_SCAN = 60 * 60;
+    private static final int DEFAULT_FULLSCAN = 4 * 60 * 60;
 
     @Positive
     private final Integer fullTimeout;

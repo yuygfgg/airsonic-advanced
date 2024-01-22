@@ -7,12 +7,14 @@ import org.airsonic.player.config.AirsonicScanConfig;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
 import org.airsonic.player.repository.MusicFolderRepository;
+import org.airsonic.player.service.search.IndexManager;
 import org.airsonic.player.util.MusicFolderTestData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -26,8 +28,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @TestPropertySource(properties = {
@@ -45,6 +49,9 @@ public class MediaScannerServiceTest {
 
     @SpyBean
     private SettingsService settingsService;
+
+    @SpyBean
+    private IndexManager indexManager;
 
     @SpyBean
     private AirsonicScanConfig scanConfig;
@@ -76,6 +83,7 @@ public class MediaScannerServiceTest {
         TestCaseUtils.waitForScanFinish(mediaScannerService);
         mediaFolderService.clearMediaFileCache();
         mediaFolderService.clearMusicFolderCache();
+        Mockito.reset(indexManager);
     }
 
     @AfterEach
@@ -90,6 +98,7 @@ public class MediaScannerServiceTest {
         when(settingsService.getIgnoreSymLinks()).thenReturn(false);
         when(scanConfig.getFullTimeout()).thenReturn(1);
         doAnswer(invocation -> {
+            invocation.callRealMethod();
             Thread.sleep(10000);
             return null;
         }).when(mediaFileService).setMemoryCacheEnabled(anyBoolean());
@@ -104,6 +113,7 @@ public class MediaScannerServiceTest {
         long end = System.currentTimeMillis();
         // Test that the scan time out is respected
         assertTrue(end - start < 10000);
+        verify(indexManager).stopIndexing(any());
     }
 
     @Test
@@ -112,6 +122,7 @@ public class MediaScannerServiceTest {
         when(settingsService.getIgnoreSymLinks()).thenReturn(false);
         when(scanConfig.getTimeout()).thenReturn(1);
         doAnswer(invocation -> {
+            invocation.callRealMethod();
             Thread.sleep(10000);
             return null;
         }).when(mediaFileService).setMemoryCacheEnabled(anyBoolean());
@@ -126,5 +137,6 @@ public class MediaScannerServiceTest {
         long end = System.currentTimeMillis();
         // Test that the scan time out is respected
         assertTrue(end - start < 10000);
+        verify(indexManager).stopIndexing(any());
     }
 }

@@ -27,6 +27,7 @@ import javax.persistence.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents a remote player. A player has a unique ID, a user-defined name, a
@@ -419,6 +420,21 @@ public class Player {
     @Override
     public String toString() {
         return getDescription();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || !(obj instanceof Player)) {
+            return false;
+        }
+        Player other = (Player) obj;
+        return Objects.equals(id, other.id);
     }
 
 }

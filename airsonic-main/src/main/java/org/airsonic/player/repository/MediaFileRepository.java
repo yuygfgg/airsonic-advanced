@@ -23,6 +23,7 @@ import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -92,6 +93,8 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
     public int countByFolderInAndMediaTypeAndPresentTrue(List<MusicFolder> folders, MediaType mediaType);
 
     public int countByFolderInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(List<MusicFolder> folders, MediaType mediaType, Integer playCount);
+
+    public List<MediaFile> findAll(Specification<MediaFile> spec, Pageable page);
 
     @Transactional
     public void deleteAllByPresentFalse();

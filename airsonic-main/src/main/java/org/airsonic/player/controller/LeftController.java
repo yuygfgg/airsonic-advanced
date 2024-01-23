@@ -126,7 +126,7 @@ public class LeftController {
         boolean musicFolderChanged = saveSelectedMusicFolder(request);
         Map<String, Object> map = new HashMap<>();
 
-        MediaLibraryStatistics statistics = indexManager.getStatistics();
+        MediaLibraryStatistics statistics = Optional.ofNullable(indexManager.getStatistics()).orElse(new MediaLibraryStatistics());
         Locale locale = RequestContextUtils.getLocale(request);
 
         boolean refresh = ServletRequestUtils.getBooleanParameter(request, "refresh", false);

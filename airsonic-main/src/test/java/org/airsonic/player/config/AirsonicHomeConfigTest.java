@@ -41,8 +41,8 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -91,7 +91,7 @@ public class AirsonicHomeConfigTest {
             assertEquals(tempAirsonicDir.resolve("airsonic.properties").toString(), homeConfig.getPropertyFile().toString());
             assertEquals(tempAirsonicDir.resolve("airsonic.log").toString(), homeConfig.getDefaultLogFile().toString());
             assertEquals(
-                "jdbc:hsqldb:file:" + tempAirsonicDir.resolve("db").resolve("airsonic").toString() + ";hsqldb.tx=mvcc;sql.enforce_size=false;sql.char_literal=false;sql.nulls_first=false;sql.pad_space=false;hsqldb.defrag_limit=50;shutdown=true",
+                "jdbc:hsqldb:file:" + tempAirsonicDir.resolve("db").resolve("airsonic").toString() + ";hsqldb.tx=mvcc;sql.enforce_size=false;sql.char_literal=false;sql.nulls_first=false;sql.pad_space=false;hsqldb.defrag_limit=50;hsqldb.default_table_type=CACHED;shutdown=true",
                 homeConfig.getDefaultJDBCUrl());
         }
     }

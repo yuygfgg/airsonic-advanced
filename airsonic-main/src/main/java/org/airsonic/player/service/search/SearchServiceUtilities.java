@@ -32,7 +32,6 @@ import org.airsonic.player.service.MediaFileService;
 import org.apache.lucene.document.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.List;
@@ -50,7 +49,6 @@ import java.util.function.Function;
  * so do not include exception handling in this class.
  */
 @Component
-@Transactional
 public class SearchServiceUtilities {
 
     /* Search by id only. */

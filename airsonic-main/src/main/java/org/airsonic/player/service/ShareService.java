@@ -31,11 +31,11 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.transaction.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -52,7 +52,6 @@ import static java.util.stream.Collectors.toList;
  * @see Share
  */
 @Service
-@Transactional
 public class ShareService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ShareService.class);
@@ -87,6 +86,7 @@ public class ShareService {
         return shareRepository.findByName(name).orElse(null);
     }
 
+    @Transactional
     public List<MediaFile> getSharedFiles(int id, List<MusicFolder> musicFolders) {
 
         if (CollectionUtils.isEmpty(musicFolders)) {
@@ -98,6 +98,7 @@ public class ShareService {
             .collect(toList());
     }
 
+    @Transactional
     public Share createShare(String username, List<MediaFile> files) {
 
         Instant now = Instant.now();
@@ -119,10 +120,12 @@ public class ShareService {
         return shareRepository.save(share);
     }
 
+    @Transactional
     public void updateShare(Share share) {
         shareRepository.save(share);
     }
 
+    @Transactional
     public void deleteShare(int id) {
         shareRepository.deleteById(id);
     }

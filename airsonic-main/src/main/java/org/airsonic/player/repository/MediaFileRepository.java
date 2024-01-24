@@ -23,7 +23,11 @@ import org.airsonic.player.domain.MediaFile.MediaType;
 import org.airsonic.player.domain.MusicFolder;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -90,9 +94,22 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Integer> {
 
     public int countByFolderInAndMediaTypeAndPlayCountGreaterThanAndPresentTrue(List<MusicFolder> folders, MediaType mediaType, Integer playCount);
 
+    public List<MediaFile> findAll(Specification<MediaFile> spec, Pageable page);
+
     @Transactional
     public void deleteAllByPresentFalse();
 
     public List<MediaFile> findByFolderInAndMediaTypeInAndPresentTrue(List<MusicFolder> folders,
             Iterable<MediaType> playableTypes, Pageable offsetBasedPageRequest);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE MediaFile m SET m.present = true, m.lastScanned = :lastScanned WHERE m.folder = :folder AND m.path IN :paths")
+    public int markPresent(@Param("folder") MusicFolder folder, @Param("paths") Iterable<String> paths, @Param("lastScanned") Instant lastScanned);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE MediaFile m SET m.present = false, m.childrenLastUpdated = :childrenLastUpdated WHERE m.lastScanned < :lastScanned")
+    public void markNonPresent(@Param("childrenLastUpdated") Instant childrenLastUpdated, @Param("lastScanned") Instant lastScanned);
+
 }

@@ -97,7 +97,7 @@ The maximum time in seconds that Airsonic will spend scanning  media folders whe
 | item | description |
 | --- | --- |
 | type | integer |
-| default | 3600 |
+| default | 14400 |
 | example | airsonic.scan.full-timeout=3600 |
 | configurable by | Java options, environment variables |
 | environment variable | AIRSONIC_SCAN_FULLTIMEOUT |
@@ -110,7 +110,7 @@ The maximum time in seconds that Airsonic will spend scanning  media folders whe
 | item | description |
 | --- | --- |
 | type | integer |
-| default | 600 |
+| default | 3600 |
 | example | airsonic.scan.timeout=600 |
 | configurable by | Java options, environment variables |
 | environment variable | AIRSONIC_SCAN_TIMEOUT |

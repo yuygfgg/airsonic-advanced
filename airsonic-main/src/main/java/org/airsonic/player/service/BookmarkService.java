@@ -29,7 +29,6 @@ public class BookmarkService {
         this.brokerTemplate = brokerTemplate;
     }
 
-    @Transactional
     public Optional<Bookmark> getBookmark(String username, int mediaFileId) {
         return repository.findOptByUsernameAndMediaFileId(username, mediaFileId);
     }
@@ -61,7 +60,7 @@ public class BookmarkService {
         bookmark.setComment(comment);
         bookmark.setPositionMillis(positionMillis);
         try {
-            repository.saveAndFlush(bookmark);
+            repository.save(bookmark);
         } catch (DataIntegrityViolationException e) {
             LOG.debug("duplicate registeration happend");
             return false;
@@ -78,7 +77,6 @@ public class BookmarkService {
         brokerTemplate.convertAndSendToUser(username, "/queue/bookmarks/deleted", mediaFileId);
     }
 
-    @Transactional
     public List<Bookmark> getBookmarks(String username) {
         return repository.findByUsername(username);
     }

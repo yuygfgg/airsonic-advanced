@@ -37,7 +37,6 @@ import java.util.Collections;
 import java.util.List;
 
 @Service
-@Transactional
 public class ArtistService {
 
     private final ArtistRepository artistRepository;
@@ -124,6 +123,7 @@ public class ArtistService {
      * @param musicFolders music folders. If null or empty, return empty list
      * @return list of starred artists or empty list. Sorted by starred date descending.
      */
+    @Transactional
     public List<Artist> getStarredArtists(String username, List<MusicFolder> musicFolders) {
         if (CollectionUtils.isEmpty(musicFolders) || !StringUtils.hasLength(username)) {
             LOG.warn("getStarredArtists: musicFolders or username is null");
@@ -140,6 +140,7 @@ public class ArtistService {
      * @param star true to star, false to unstar
      * @return true if success, false otherwise
      */
+    @Transactional
     public boolean starOrUnstar(Integer artistId, String username, boolean star) {
         if (artistId == null || !StringUtils.hasLength(username)) {
             LOG.warn("star: artistId or username is null");
@@ -162,6 +163,7 @@ public class ArtistService {
      * @param username username to check. If null or empty, return null
      * @return starred date or null
      */
+    @Transactional
     public Instant getStarredDate(Integer artistId, String username) {
         if (artistId == null || !StringUtils.hasLength(username)) {
             LOG.warn("getStarredDate: artistId or username is null");
@@ -173,6 +175,7 @@ public class ArtistService {
     /**
      * Expunge artists that are not present
      */
+    @Transactional
     public void expunge() {
         artistRepository.deleteAllByPresentFalse();
     }
@@ -182,6 +185,7 @@ public class ArtistService {
      *
      * @param lastScanned last scanned date
      */
+    @Transactional
     public void markNonPresent(Instant lastScanned) {
         artistRepository.markNonPresent(lastScanned);
     }
@@ -192,6 +196,7 @@ public class ArtistService {
      * @param artist artist to save
      * @return saved artist
      */
+    @Transactional
     public Artist save(Artist artist) {
         return artistRepository.save(artist);
     }

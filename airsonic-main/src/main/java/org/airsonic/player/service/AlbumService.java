@@ -17,9 +17,9 @@ import org.springframework.util.StringUtils;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
-@Transactional
 public class AlbumService {
 
     private final AlbumRepository albumRepository;
@@ -38,6 +38,20 @@ public class AlbumService {
      */
     public Album getAlbum(int albumId) {
         return albumRepository.findById(albumId).orElse(null);
+    }
+
+    /**
+     * Get album by artist and name
+     *
+     * @param artist artist name to get album for
+     * @param name  album name to get album for
+     * @return album or null if not found
+     */
+    public Optional<Album> getAlbumByArtistAndName(String artist, String name) {
+        if (!StringUtils.hasLength(artist) || !StringUtils.hasLength(name)) {
+            return Optional.ofNullable(null);
+        }
+        return albumRepository.findByArtistAndName(artist, name);
     }
 
     /**
@@ -234,6 +248,7 @@ public class AlbumService {
      * @param star     true to star, false to unstar
      * @return true if success, false if otherwise
      */
+    @Transactional
     public boolean starOrUnstar(int albumId, String username, boolean star) {
         if (!StringUtils.hasLength(username)) {
             return false;
@@ -260,6 +275,7 @@ public class AlbumService {
      * @param username username to get star date for
      * @return date of album star or null if not starred
      */
+    @Transactional
     public Instant getAlbumStarredDate(Integer albumId, String username) {
         if (albumId == null || !StringUtils.hasLength(username)) {
             return null;
@@ -276,6 +292,7 @@ public class AlbumService {
      * @param musicFolders music folders to search in
      * @return list of starred albums
      */
+    @Transactional
     public List<Album> getStarredAlbums(String username, List<MusicFolder> musicFolders) {
         if (!StringUtils.hasLength(username) || CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
@@ -295,6 +312,7 @@ public class AlbumService {
      * @param musicFolders music folders to search in
      * @return list of starred albums
      */
+    @Transactional
     public List<Album> getStarredAlbums(int offset, int size, String username, List<MusicFolder> musicFolders) {
         if (!StringUtils.hasLength(username) || CollectionUtils.isEmpty(musicFolders)) {
             return Collections.emptyList();
@@ -310,6 +328,7 @@ public class AlbumService {
     /**
      * delete all albums that are not present
      */
+    @Transactional
     public void expunge() {
         albumRepository.deleteAllByPresentFalse();
     }
@@ -341,6 +360,7 @@ public class AlbumService {
      *
      * @param lastScanned last scanned date
      */
+    @Transactional
     public void markNonPresent(Instant lastScanned) {
         albumRepository.markNonPresent(lastScanned);
     }
@@ -350,6 +370,7 @@ public class AlbumService {
      *
      * @param album album to save
      */
+    @Transactional
     public Album save(Album album) {
         return albumRepository.save(album);
     }

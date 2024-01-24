@@ -24,6 +24,7 @@ import org.airsonic.player.repository.AtomicIntegerConverter;
 
 import javax.persistence.*;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -79,5 +80,21 @@ public class Genre {
 
     public void incrementSongCount() {
         songCount.incrementAndGet();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+
+        if (obj == null || !(obj instanceof Genre)) {
+            return false;
+        }
+
+        Genre other = (Genre) obj;
+        return Objects.equals(name, other.name);
     }
 }

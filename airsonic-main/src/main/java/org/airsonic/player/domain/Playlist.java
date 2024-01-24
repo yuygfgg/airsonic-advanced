@@ -26,6 +26,7 @@ import javax.persistence.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Sindre Mehus
@@ -209,6 +210,26 @@ public class Playlist {
         if (mediaFiles != null) {
             this.mediaFiles.addAll(mediaFiles);
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || !(o instanceof Playlist)) {
+            return false;
+        }
+
+        Playlist p = (Playlist) o;
+        return Objects.equals(id, p.id);
     }
 
 }

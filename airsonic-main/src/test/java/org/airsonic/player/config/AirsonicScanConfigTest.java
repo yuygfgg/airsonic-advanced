@@ -54,13 +54,13 @@ public class AirsonicScanConfigTest {
 
         @Test
         public void testFullTimeoutProperty() {
-            Integer expectedFullTimeout = 3600;
+            Integer expectedFullTimeout = 14400;
             assertEquals(expectedFullTimeout, scanConfig.getFullTimeout());
         }
 
         @Test
         public void testTimeoutProperty() {
-            Integer expectedTimeout = 600;
+            Integer expectedTimeout = 3600;
             assertEquals(expectedTimeout, scanConfig.getTimeout());
         }
 

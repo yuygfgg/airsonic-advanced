@@ -62,7 +62,6 @@ import java.util.Optional;
  * @see Player
  */
 @Service
-@Transactional
 @DependsOn("liquibase")
 public class PlayerService {
 
@@ -81,6 +80,7 @@ public class PlayerService {
     private AsyncWebSocketClient asyncWebSocketClient;
 
     @EventListener
+    @Transactional
     public void onApplicationEvent(ApplicationReadyEvent event) {
         deleteOldPlayers(60);
     }
@@ -227,6 +227,7 @@ public class PlayerService {
      *
      * @param player The player to update.
      */
+    @Transactional
     public void updatePlayer(Player player) {
         playerRepository.save(player);
         if (player.getUsername() != null) {
@@ -360,6 +361,7 @@ public class PlayerService {
      *
      * @param id The unique player ID.
      */
+    @Transactional
     public void removePlayerById(int id) {
         playerRepository.findById(id).ifPresentOrElse(player -> {
             playlists.remove(id);
@@ -405,6 +407,7 @@ public class PlayerService {
      *
      * @param player The player to create.
      */
+    @Transactional
     public Player createPlayer(Player player) {
 
         // Set default transcodings.
@@ -469,6 +472,7 @@ public class PlayerService {
      * @param command The command to update the player with.
      * @return The updated player.
      */
+    @Transactional
     public Player updateByCommand(PlayerSettingsCommand command) {
         return playerRepository.findById(command.getPlayerId()).map(player -> {
             String name = StringUtils.trimToNull(command.getName());

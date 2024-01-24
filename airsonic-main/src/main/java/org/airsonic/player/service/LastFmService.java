@@ -29,7 +29,6 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -44,7 +43,6 @@ import java.util.stream.Collectors;
  * @version $Id$
  */
 @Service
-@Transactional(readOnly = true)
 public class LastFmService {
 
     private static final String LAST_FM_KEY = "ece4499898a9440896dfdce5dab26bbf";

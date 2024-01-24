@@ -207,6 +207,16 @@ public class MediaFileService {
                 );
     }
 
+    /**
+     * Return the media file for checking last modified.
+     *
+     * @param mediaFile The media file.
+     * @return updated media file.
+     */
+    public MediaFile checkLastModified(MediaFile mediaFile) {
+        return checkLastModified(mediaFile, settingsService.isFastCacheEnabled());
+    }
+
     private MediaFile checkLastModified(MediaFile mediaFile, boolean minimizeDiskAccess) {
         MusicFolder folder = mediaFile.getFolder();
         if (!needsUpdate(mediaFile, minimizeDiskAccess)) {

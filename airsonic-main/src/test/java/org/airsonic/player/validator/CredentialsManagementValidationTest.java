@@ -5,7 +5,7 @@ import org.airsonic.player.command.CredentialsManagementCommand.CredentialsComma
 import org.airsonic.player.domain.UserCredential.App;
 import org.airsonic.player.validator.CredentialsManagementValidators.CredentialCreateChecks;
 import org.airsonic.player.validator.CredentialsManagementValidators.CredentialUpdateChecks;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.validation.Validation;
 import javax.validation.Validator;

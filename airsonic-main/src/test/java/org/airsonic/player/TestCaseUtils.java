@@ -3,11 +3,9 @@ package org.airsonic.player;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
 import org.airsonic.player.controller.JAXBWriter;
-import org.airsonic.player.dao.AbstractDao;
 import org.airsonic.player.service.MediaScannerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.test.context.TestConfiguration;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -74,11 +72,6 @@ public class TestCaseUtils {
         mediaScannerService.scanLibrary();
 
         waitForScanFinish(mediaScannerService);
-    }
-
-    @TestConfiguration
-    public static class TestDao extends AbstractDao {
-
     }
 
 }

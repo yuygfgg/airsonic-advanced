@@ -1,5 +1,5 @@
 FROM eclipse-temurin:17.0.5_8-jdk AS builder
-WORKDIR target
+WORKDIR /target
 
 COPY run.sh /usr/local/bin/run.sh
 RUN chmod +x /usr/local/bin/run.sh
@@ -8,9 +8,6 @@ RUN chmod +x /usr/local/bin/entry.sh
 
 COPY target/dependency/airsonic-main.jar airsonic.jar
 RUN jar -xf ./airsonic.jar
-#RUN mv BOOT-INF/lib lib
-#RUN mv BOOT-INF/classes/META-INF cMETA-INF
-#RUN mv BOOT-INF/classes/liquibase cliquibase
 
 FROM eclipse-temurin:17.0.8.1_1-jre-jammy
 
@@ -37,14 +34,7 @@ RUN apt-get update \
 COPY --from=builder /usr/local/bin/run.sh /usr/local/bin/run.sh
 COPY --from=builder /usr/local/bin/entry.sh /usr/local/bin/entry.sh
 
-#COPY --from=builder target/BOOT-INF/cMETA-INF /app/classes/META-INF
 COPY --from=builder target/BOOT-INF/lib /app/lib
-
-#COPY --from=builder target/sonos /app/sonos
-#COPY --from=builder target/icons /app/icons
-#COPY --from=builder target/style /app/style
-#COPY --from=builder target/cliquibase /app/WEB-INF/classes/liquibase
-#COPY --from=builder target/script /app/script
 COPY --from=builder target/META-INF /app/META-INF
 COPY --from=builder target/BOOT-INF/classes /app
 

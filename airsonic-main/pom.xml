@@ -649,24 +649,6 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-pmd-plugin</artifactId>
-                <configuration>
-                    <language>jsp</language>
-                    <rulesets>
-                        <ruleset>/category/jsp/codestyle.xml</ruleset>
-                        <ruleset>/category/jsp/errorprone.xml</ruleset>
-                    </rulesets>
-                    <includes>
-                        <include>**/*.jsp</include>
-                        <include>**/*.jspf</include>
-                    </includes>
-                    <compileSourceRoots>
-                        <compileSourceRoot>${basedir}/src/main/webapp/WEB-INF/jsp</compileSourceRoot>
-                    </compileSourceRoots>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
@@ -701,6 +683,7 @@
             <plugin>
               <groupId>org.codehaus.mojo</groupId>
               <artifactId>buildnumber-maven-plugin</artifactId>
+              <version>3.1.0</version>
               <executions>
                 <execution>
                   <phase>generate-resources</phase>

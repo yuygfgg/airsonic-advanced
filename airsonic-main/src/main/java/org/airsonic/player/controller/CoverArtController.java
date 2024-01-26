@@ -19,7 +19,6 @@
  */
 package org.airsonic.player.controller;
 
-import com.google.common.io.MoreFiles;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.CoverArt.EntityType;
@@ -29,6 +28,7 @@ import org.airsonic.player.util.FileUtil;
 import org.airsonic.player.util.ImageUtil;
 import org.airsonic.player.util.StringUtil;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jaudiotagger.tag.images.Artwork;
@@ -39,16 +39,15 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-//import org.springframework.web.context.request.ServletWebRequest;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -225,7 +224,7 @@ public class CoverArtController {
     }
 
     private void sendImage(Path file, HttpServletResponse response) throws IOException {
-        response.setContentType(StringUtil.getMimeType(MoreFiles.getFileExtension(file)));
+        response.setContentType(StringUtil.getMimeType(FilenameUtils.getExtension(file.toString())));
         Files.copy(file, response.getOutputStream());
     }
 
@@ -330,7 +329,7 @@ public class CoverArtController {
             }
         } else {
             is = new BufferedInputStream(Files.newInputStream(file));
-            mimeType = StringUtil.getMimeType(MoreFiles.getFileExtension(file));
+            mimeType = StringUtil.getMimeType(FilenameUtils.getExtension(file.toString()));
         }
         return Pair.of(is, mimeType);
     }

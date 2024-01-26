@@ -21,6 +21,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.event.AbstractAuthenticationFailureEvent;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -42,7 +43,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,12 +69,12 @@ public class GlobalSecurityConfig {
             .put("ldap", new org.springframework.security.crypto.password.LdapShaPasswordEncoder())
             .put("MD4", new org.springframework.security.crypto.password.Md4PasswordEncoder())
             .put("MD5", new org.springframework.security.crypto.password.MessageDigestPasswordEncoder("MD5"))
-            .put("pbkdf2", new Pbkdf2PasswordEncoder())
-            .put("scrypt", new SCryptPasswordEncoder())
+            .put("pbkdf2", Pbkdf2PasswordEncoder.defaultsForSpringSecurity_v5_8())
+            .put("scrypt", SCryptPasswordEncoder.defaultsForSpringSecurity_v5_8())
             .put("SHA-1", new org.springframework.security.crypto.password.MessageDigestPasswordEncoder("SHA-1"))
             .put("SHA-256", new org.springframework.security.crypto.password.MessageDigestPasswordEncoder("SHA-256"))
             .put("sha256", new org.springframework.security.crypto.password.StandardPasswordEncoder())
-            .put("argon2", new Argon2PasswordEncoder())
+            .put("argon2", Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8())
 
             // base decodable encoders
             .put("noop", new PasswordEncoderDecoderWrapper(org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance(), p -> p))
@@ -230,25 +231,22 @@ public class GlobalSecurityConfig {
             , UsernamePasswordAuthenticationFilter.class);
 
         http
-            .antMatcher("/ext/**")
-            .csrf()
-            // .disable()
-            .requireCsrfProtectionMatcher(csrfSecurityRequestMatcher).and()
-            .headers().frameOptions().sameOrigin().and()
-            .authorizeRequests()
-            .antMatchers(
-                    "/ext/stream/**",
-                    "/ext/coverArt*",
-                    "/ext/share/**",
-                    "/ext/hls/**",
-                    "/ext/captions**")
-            .hasAnyRole("TEMP", "USER").and()
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).sessionFixation().none().and()
-            .exceptionHandling().and()
-            .securityContext().and()
-            .requestCache().and()
-            .anonymous().and()
-            .servletApi();
+                .securityMatcher("/ext/**")
+                .csrf((csrf) -> csrf
+                        .requireCsrfProtectionMatcher(csrfSecurityRequestMatcher))
+                .headers(header -> header.frameOptions(fp -> fp.sameOrigin()))
+                .authorizeHttpRequests((authorize) -> authorize
+                        .requestMatchers("/ext/stream/**", "/ext/coverArt*", "/ext/share/**", "/ext/hls/**",
+                                "/ext/captions**")
+                        .hasAnyRole("TEMP", "USER")
+                        .anyRequest().authenticated())
+                .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        .sessionFixation().none())
+                .exceptionHandling(Customizer.withDefaults())
+                .securityContext(Customizer.withDefaults())
+                .requestCache(Customizer.withDefaults())
+                .anonymous(Customizer.withDefaults())
+                .servletApi(Customizer.withDefaults());
         return http.build();
     }
 
@@ -275,60 +273,37 @@ public class GlobalSecurityConfig {
         }
 
         http
-            .cors()
-            .and()
-            //.addFilterBefore(restAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .httpBasic()
-            .and()
+            .cors(Customizer.withDefaults())
+            .addFilterBefore(restAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .httpBasic(Customizer.withDefaults())
             .addFilterAfter(restAuthenticationFilter, BasicAuthenticationFilter.class)
-            .csrf()
-            .ignoringAntMatchers("/ws/Sonos/**")
-            .requireCsrfProtectionMatcher(csrfSecurityRequestMatcher)
-            .and()
-            .headers()
-            .frameOptions()
-            .sameOrigin()
-            .and().authorizeRequests()
-            .antMatchers("/recover*", "/accessDenied*", "/style/**", "/icons/**", "/flash/**", "/script/**",
-                    "/login", "/error", "/sonos/**", "/sonoslink/**", "/ws/Sonos/**")
-            .permitAll()
-            .antMatchers("/personalSettings*",
-                    "/playerSettings*", "/shareSettings*", "/credentialsSettings*")
-            .hasRole("SETTINGS")
-            .antMatchers("/generalSettings*", "/advancedSettings*", "/userSettings*",
-                    "/musicFolderSettings*", "/databaseSettings*", "/transcodeSettings*", "/rest/startScan*")
-            .hasRole("ADMIN")
-            .antMatchers("/deletePlaylist*", "/savePlaylist*")
-            .hasRole("PLAYLIST")
-            .antMatchers("/download*")
-            .hasRole("DOWNLOAD")
-            .antMatchers("/upload*")
-            .hasRole("UPLOAD")
-            .antMatchers("/createShare*")
-            .hasRole("SHARE")
-            .antMatchers("/changeCoverArt*", "/editTags*")
-            .hasRole("COVERART")
-            .antMatchers("/setMusicFileInfo*")
-            .hasRole("COMMENT")
-            .antMatchers("/podcastReceiverAdmin*")
-            .hasRole("PODCAST")
-            .antMatchers("/**")
-            .hasRole("USER")
-            .anyRequest().authenticated()
-            .and().formLogin()
-            .loginPage("/login")
-            .permitAll()
-            .defaultSuccessUrl("/index", true)
-            .failureUrl(FAILURE_URL)
-            .usernameParameter("j_username")
-            .passwordParameter("j_password")
-            .and()
-            .logout(logout -> logout
-                    .deleteCookies("JSESSIONID", "XSRF-TOKEN")
-                    .clearAuthentication(true)
-                    .invalidateHttpSession(true)
-                    .logoutSuccessUrl("/login?logout"))
-            .rememberMe().key(rememberMeKey).userDetailsService(securityService);
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/ws/Sonos/**").requireCsrfProtectionMatcher(csrfSecurityRequestMatcher))
+            .headers(header -> header.frameOptions(fo -> fo.sameOrigin()))
+            .authorizeHttpRequests((authorize) -> authorize.requestMatchers("/recover*", "/accessDenied*", "/style/**", "/icons/**", "/flash/**", "/script/**",
+                    "/login", "/error", "/sonos/**", "/sonoslink/**", "/ws/Sonos/**").permitAll().requestMatchers("/personalSettings*",
+                    "/playerSettings*", "/shareSettings*", "/credentialsSettings*").hasRole("SETTINGS")
+                    .requestMatchers("/generalSettings*", "/advancedSettings*", "/userSettings*", "/musicFolderSettings*",
+                            "/databaseSettings*", "/transcodeSettings*", "/rest/startScan*").hasRole("ADMIN")
+                    .requestMatchers("/deletePlaylist*", "/savePlaylist*").hasRole("PLAYLIST").requestMatchers("/download*").hasRole("DOWNLOAD")
+                    .requestMatchers("/upload*").hasRole("UPLOAD").requestMatchers("/createShare*").hasRole("SHARE")
+                    .requestMatchers("/changeCoverArt*", "/editTags*").hasRole("COVERART").requestMatchers("/setMusicFileInfo*").hasRole("COMMENT")
+                    .requestMatchers("/podcastReceiverAdmin*").hasRole("PODCAST")
+                    .requestMatchers("/**").hasRole("USER").anyRequest().authenticated())
+            .formLogin((login) -> login
+                    .loginPage("/login")
+                    .permitAll()
+                    .defaultSuccessUrl("/index", true)
+                    .failureUrl(FAILURE_URL)
+                    .usernameParameter("j_username")
+                    .passwordParameter("j_password"))
+            .logout((logout) -> logout
+                .deleteCookies("JSESSIONID", "XSRF-TOKEN")
+                .clearAuthentication(true)
+                .invalidateHttpSession(true)
+                .logoutSuccessUrl("/login?logout"))
+            .rememberMe((rememberMe) -> rememberMe
+                .key(rememberMeKey)
+                .userDetailsService(securityService));
         return http.build();
     }
 

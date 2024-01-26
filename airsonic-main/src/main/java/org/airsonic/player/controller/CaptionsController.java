@@ -12,7 +12,7 @@ import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
 import org.airsonic.player.service.metadata.MetaDataParserFactory;
 import org.airsonic.player.util.NetworkUtil;
-import org.apache.commons.compress.utils.FileNameUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -34,7 +34,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -270,7 +270,7 @@ public class CaptionsController {
         try (Stream<Path> children = Files.walk(parentPath)) {
             return children.parallel()
                     .filter(c -> Files.isRegularFile(c))
-                    .filter(c -> CAPTIONS_FORMATS.contains(FileNameUtils.getExtension(c)))
+                    .filter(c -> CAPTIONS_FORMATS.contains(FilenameUtils.getExtension(c.toString())))
                     .collect(Collectors.toList());
         } catch (IOException e) {
             LOG.warn("Could not retrieve directory list for {} to find subtitle files for {}", parentPath, video, e);

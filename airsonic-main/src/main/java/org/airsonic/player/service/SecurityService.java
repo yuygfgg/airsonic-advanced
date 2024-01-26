@@ -579,7 +579,7 @@ public class SecurityService implements UserDetailsService {
     /**
      *
      */
-    @Cacheable(key = "#command.username", unless = "#result == null", condition = "#command != null")
+    @CacheEvict(key = "#command.username", condition = "#command != null and #command.username != null")
     @Transactional
     public User updateUserByUserSettingsCommand(UserSettingsCommand command) {
         // check

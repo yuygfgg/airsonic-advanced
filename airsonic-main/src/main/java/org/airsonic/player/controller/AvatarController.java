@@ -23,7 +23,6 @@ import org.airsonic.player.domain.Avatar;
 import org.airsonic.player.service.PersonalSettingsService;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Controller;
@@ -32,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.HttpServletResponse;
+
+import java.nio.file.Path;
 
 /**
  * Controller which produces avatar images.
@@ -44,8 +45,6 @@ public class AvatarController {
 
     @Autowired
     private ResourceLoader loader;
-    @Value("${resourceRootLocation:}")
-    private String resourceRootLocation = "";
 
     @Autowired
     private PersonalSettingsService personalSettingsService;
@@ -84,13 +83,11 @@ public class AvatarController {
         }
 
         response.setContentType(avatar.getMimeType());
-        Resource res = loader.getResource(avatar.getPath().toString());
+        String avatarPath = Path.of("static").resolve(avatar.getPath()).toString();
+        Resource res = loader.getResource("classpath:" + avatarPath);
         if (!res.exists()) {
-            res = loader.getResource("file:" + resourceRootLocation + avatar.getPath().toString());
+            res = loader.getResource("file:" + avatarPath);
         }
-//        if (!res.exists()) {
-//            res = loader.getResource("file:" + avatar.getPath().toString());
-//        }
         IOUtils.copy(res.getInputStream(), response.getOutputStream());
     }
 }

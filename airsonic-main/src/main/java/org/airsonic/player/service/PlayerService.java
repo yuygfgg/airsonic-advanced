@@ -36,8 +36,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.web.server.Cookie.SameSite;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.event.EventListener;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.ServletRequestUtils;
@@ -181,15 +183,14 @@ public class PlayerService {
         // Set cookie in response.
         if (response != null) {
             String cookieName = COOKIE_NAME + "-" + StringUtil.utf8HexEncode(username);
-            Cookie cookie = new Cookie(cookieName, String.valueOf(player.getId()));
-            cookie.setMaxAge(COOKIE_EXPIRY);
-            cookie.setHttpOnly(true);
             String path = request.getContextPath();
-            if (StringUtils.isEmpty(path)) {
-                path = "/";
-            }
-            cookie.setPath(path);
-            response.addCookie(cookie);
+            ResponseCookie cookie = ResponseCookie.from(cookieName, String.valueOf(player.getId()))
+                    .maxAge(COOKIE_EXPIRY)
+                    .httpOnly(true)
+                    .path(StringUtils.isEmpty(path) ? "/" : path)
+                    .sameSite(SameSite.STRICT.attributeValue())
+                    .build();
+            response.addHeader("Set-Cookie", cookie.toString());
         }
 
         // Save player in session context.

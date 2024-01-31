@@ -58,6 +58,7 @@ public class CaptionsController {
     private static final String CAPTION_FORMAT_VTT = "vtt";
     private static final String CAPTION_FORMAT_SRT = "srt";
     private static final Set<String> CAPTIONS_FORMATS = Set.of(CAPTION_FORMAT_VTT, CAPTION_FORMAT_SRT);
+    private static final Set<String> CAPTIONS_FORMATS_ALLOWED = Set.of(CAPTION_FORMAT_VTT, CAPTION_FORMAT_SRT, "ass", "webvtt");
 
     @Autowired
     private MediaFileService mediaFileService;
@@ -115,6 +116,9 @@ public class CaptionsController {
             }
             time = Files.getLastModifiedTime(captionsFile).toInstant();
         } else {
+            if (!CAPTIONS_FORMATS_ALLOWED.contains(effectiveFormat)) {
+                throw new IllegalArgumentException("Unsupported format: " + effectiveFormat + " for file id: " + id);
+            }
             Path videoFullPath = video.getFullPath();
             resource = getConvertedResource(videoFullPath, res.getIdentifier(), effectiveFormat);
             time = Files.getLastModifiedTime(videoFullPath).toInstant();

@@ -14,13 +14,12 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
- Copyright 2023 (C) Y.Tory
+ Copyright 2023-2024 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.controller;
 
-import com.google.common.io.ByteStreams;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import org.airsonic.player.domain.*;
@@ -47,6 +46,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.ServletRequestUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -62,6 +62,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -78,6 +79,8 @@ import java.util.function.Supplier;
 public class StreamController {
 
     private static final Logger LOG = LoggerFactory.getLogger(StreamController.class);
+
+    private static final Set<String> ICY_IGNORED_CLIENT = Set.of("Tempo");
 
     @Autowired
     private StatusService statusService;
@@ -228,7 +231,8 @@ public class StreamController {
         BiConsumer<InputStream, TransferStatus> streamInit = (i, s) -> {};
 
         // Enabled SHOUTcast, if requested.
-        if ("1".equals(swr.getHeader("icy-metadata"))) {
+        String clientId = Optional.ofNullable(swr.getParameter("c")).orElse("");
+        if (!ICY_IGNORED_CLIENT.contains(clientId) && "1".equals(swr.getHeader("icy-metadata"))) {
             expectedSize = null;
             ShoutcastDetails shoutcastDetails = getShoutcastDetails(playStream);
             playStream = shoutcastDetails.getStream();
@@ -303,9 +307,7 @@ public class StreamController {
                                     .map(TransferStatus::getMediaFile)
                                     .map(MediaFile::getTitle)
                                 .orElseGet(settingsService::getWelcomeTitle))) {
-                    // IOUtils.copy(playStream, shout);
-                    ByteStreams.copy(in, shout);
-                    // StreamUtils.copy(playStream, shout);
+                    StreamUtils.copy(in, shout);
                 } catch (Exception e) {
                     LOG.debug("Error with output to Shoutcast stream", e);
                 }

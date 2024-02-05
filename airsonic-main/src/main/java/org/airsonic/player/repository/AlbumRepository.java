@@ -44,6 +44,8 @@ public interface AlbumRepository extends JpaRepository<Album, Integer> {
 
     public Optional<Album> findByIdAndStarredAlbumsUsername(Integer id, String username);
 
+    public boolean existsByLastScannedBeforeAndPresentTrue(Instant lastScanned);
+
     @Transactional
     public void deleteAllByPresentFalse();
 

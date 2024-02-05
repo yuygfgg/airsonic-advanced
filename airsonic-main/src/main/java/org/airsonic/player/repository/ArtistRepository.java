@@ -49,6 +49,8 @@ public interface ArtistRepository extends JpaRepository<Artist, Integer> {
 
     public boolean existsByName(String name);
 
+    public boolean existsByLastScannedBeforeAndPresentTrue(Instant lastScanned);
+
     @Transactional
     public void deleteAllByPresentFalse();
 

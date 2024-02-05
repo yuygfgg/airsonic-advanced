@@ -187,7 +187,9 @@ public class ArtistService {
      */
     @Transactional
     public void markNonPresent(Instant lastScanned) {
-        artistRepository.markNonPresent(lastScanned);
+        if (artistRepository.existsByLastScannedBeforeAndPresentTrue(lastScanned)) {
+            artistRepository.markNonPresent(lastScanned);
+        }
     }
 
     /**

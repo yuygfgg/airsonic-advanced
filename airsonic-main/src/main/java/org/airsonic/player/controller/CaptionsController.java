@@ -1,7 +1,5 @@
 package org.airsonic.player.controller;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.io.MoreFiles;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.io.InputStreamReaderThread;
@@ -14,6 +12,7 @@ import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
 import org.airsonic.player.service.metadata.MetaDataParserFactory;
 import org.airsonic.player.util.NetworkUtil;
+import org.apache.commons.compress.utils.FileNameUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -58,7 +57,8 @@ public class CaptionsController {
 
     private static final String CAPTION_FORMAT_VTT = "vtt";
     private static final String CAPTION_FORMAT_SRT = "srt";
-    private static final Set<String> CAPTIONS_FORMATS = ImmutableSet.of(CAPTION_FORMAT_VTT, CAPTION_FORMAT_SRT);
+    private static final Set<String> CAPTIONS_FORMATS = Set.of(CAPTION_FORMAT_VTT, CAPTION_FORMAT_SRT);
+    private static final Set<String> CAPTIONS_FORMATS_ALLOWED = Set.of(CAPTION_FORMAT_VTT, CAPTION_FORMAT_SRT, "ass", "webvtt");
 
     @Autowired
     private MediaFileService mediaFileService;
@@ -109,13 +109,16 @@ public class CaptionsController {
 
             if (effectiveFormat.equalsIgnoreCase(res.getFormat())) {
                 resource = getExternalResource(captionsFile, res.getFormat());
-            } else if ("srt".equals(res.getFormat()) && "vtt".equals(requiredFormat)) {
-                resource = getConvertedResource(captionsFile, "0", effectiveFormat);
+            } else if (CAPTION_FORMAT_SRT.equals(res.getFormat()) && CAPTION_FORMAT_VTT.equals(effectiveFormat)) {
+                resource = getConvertedResource(captionsFile, "0", CAPTION_FORMAT_VTT);
             } else {
                 throw new NotFoundException("No captions found for file id: " + id);
             }
             time = Files.getLastModifiedTime(captionsFile).toInstant();
         } else {
+            if (!CAPTIONS_FORMATS_ALLOWED.contains(effectiveFormat)) {
+                throw new IllegalArgumentException("Unsupported format: " + effectiveFormat + " for file id: " + id);
+            }
             Path videoFullPath = video.getFullPath();
             resource = getConvertedResource(videoFullPath, res.getIdentifier(), effectiveFormat);
             time = Files.getLastModifiedTime(videoFullPath).toInstant();
@@ -123,7 +126,7 @@ public class CaptionsController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(CAPTION_FORMAT_VTT.equalsIgnoreCase(effectiveFormat)
-                ? new MediaType("text", "vtt", StandardCharsets.UTF_8)
+                ? new MediaType("text", CAPTION_FORMAT_VTT, StandardCharsets.UTF_8)
                 : new MediaType("text", "plain", StandardCharsets.UTF_8));
         headers.setAccessControlAllowOrigin("*");
 
@@ -162,7 +165,7 @@ public class CaptionsController {
 
     public static String getForceFormat(String format) {
         switch (format) {
-            case "vtt":
+            case CAPTION_FORMAT_VTT:
                 return "webvtt";
             default:
                 return format;
@@ -172,9 +175,9 @@ public class CaptionsController {
     public static String getDisplayFormat(String format) {
         switch (format) {
             case "webvtt":
-                return "vtt";
+                return CAPTION_FORMAT_VTT;
             case "subrip":
-                return "srt";
+                return CAPTION_FORMAT_SRT;
             default:
                 return format;
         }
@@ -222,7 +225,7 @@ public class CaptionsController {
         Stream<CaptionInfo> externalCaptions = findExternalCaptionsForVideo(video).stream()
                 .map(c -> new CaptionInfo(c.toString(), // leaks internal structure for now
                         CaptionInfo.Location.external,
-                        MoreFiles.getFileExtension(c),
+                        FileNameUtils.getExtension(c),
                         c.getFileName().toString(),
                         getUrl(basePath, externalUser, externalExpiration, video.getId(),
                                 URLEncoder.encode(c.toString(), StandardCharsets.UTF_8))));
@@ -250,7 +253,7 @@ public class CaptionsController {
     }
 
     private Resource getExternalResource(Path captionsFile, String format) throws IOException {
-        if ("vtt".equals(format)) {
+        if (CAPTION_FORMAT_VTT.equals(format)) {
             return new PathResource(captionsFile);
         } else {
             return new InputStreamResource(new BOMInputStream(Files.newInputStream(captionsFile)));
@@ -267,7 +270,7 @@ public class CaptionsController {
         try (Stream<Path> children = Files.walk(parentPath)) {
             return children.parallel()
                     .filter(c -> Files.isRegularFile(c))
-                    .filter(c -> CAPTIONS_FORMATS.contains(MoreFiles.getFileExtension(c)))
+                    .filter(c -> CAPTIONS_FORMATS.contains(FileNameUtils.getExtension(c)))
                     .collect(Collectors.toList());
         } catch (IOException e) {
             LOG.warn("Could not retrieve directory list for {} to find subtitle files for {}", parentPath, video, e);

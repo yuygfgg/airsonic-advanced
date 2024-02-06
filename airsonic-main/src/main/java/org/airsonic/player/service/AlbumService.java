@@ -362,7 +362,9 @@ public class AlbumService {
      */
     @Transactional
     public void markNonPresent(Instant lastScanned) {
-        albumRepository.markNonPresent(lastScanned);
+        if (albumRepository.existsByLastScannedBeforeAndPresentTrue(lastScanned)) {
+            albumRepository.markNonPresent(lastScanned);
+        }
     }
 
     /**

@@ -3,6 +3,27 @@
 # kagemomiji/airsonic-advanced
 # -->
 
+## v11.1.3 - 6 Feb 2024
+
+Fixes:
+- Fixed some issues about GUI
+- Fixed user creation issue when valid music folder is not set
+- Fixed CPU usage issue when media scanning
+- Fixed Jukebox issue caused by VerifyError
+
+Changes:
+- Replace DAO to Spring Data JPA
+- Add option to disable CUE sheet support
+- Partially support Symphonium
+- Add timeout mechanism to prevent infinite loop on media scanning
+  - Add `airsonic.scan.timeout` property
+  - Add `airsonic.scan.fulltimeout` property
+
+Security:
+- Bump up spring-boot-starter-parent to 2.7.18 for CVEs
+- Fix some vulnerabilities from Java codes detected by CodeQL
+
+
 ## v11.1.2 - 29 Apr 2023
 
 Fixes:

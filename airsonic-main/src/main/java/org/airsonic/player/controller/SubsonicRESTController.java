@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2024 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -1393,7 +1394,7 @@ public class SubsonicRESTController {
             @RequestParam Optional<Integer> maxBitRate,
             @RequestParam Optional<Integer> id,
             @RequestParam Optional<String> path,
-            @RequestParam(required = false) Double offsetSeconds,
+            @RequestParam(required = false) Double timeOffset,
             ServletWebRequest swr) throws Exception {
         HttpServletRequest request = wrapRequest(swr.getRequest());
         User user = securityService.getUserByName(authentication.getName());
@@ -1402,7 +1403,7 @@ public class SubsonicRESTController {
         }
 
         return streamController.handleRequest(authentication, playlist, format, suffix, maxBitRate, id, path,
-                offsetSeconds, new ServletWebRequest(request, swr.getResponse()));
+                timeOffset, new ServletWebRequest(request, swr.getResponse()));
     }
 
     @RequestMapping("/hls")

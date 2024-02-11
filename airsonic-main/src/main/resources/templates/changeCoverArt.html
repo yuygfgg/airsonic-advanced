@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
 
 <html><head>
-    <%@ include file="head.jsp" %>
-    <%@ include file="jquery.jsp" %>
+    <th:block th:replace="head" />
+    <th:block th:replace="jquery" />
 
-    <script type="text/javascript" language="javascript">
+    <script type="text/javascript" th:inline="javascript">
         function cloneNodeBySelector(selector, idToAppend) {
             var cloned = $(selector).clone();
             cloned.each(function() {
@@ -29,7 +28,10 @@
             $("#error").hide();
             $("#errorDetails").hide();
             $("#noImagesFound").hide();
-            top.StompClient.send("/app/coverart/set", JSON.stringify({id: ${model.id}, url: imageUrl}));
+            top.StompClient.send("/app/coverart/set", JSON.stringify({
+                id: /*[[${command.id}]]*/ 0, 
+                url: imageUrl
+            }));
         }
 
         function setImageComplete(errorDetails) {
@@ -82,7 +84,7 @@
         }
 
         function init() {
-            top.StompClient.subscribe("changeCoverArt.jsp", {
+            top.StompClient.subscribe("changeCoverArt.html", {
                 "/user/queue/coverart/search": function(msg) {
                     searchComplete(JSON.parse(msg.body));
                 },
@@ -94,33 +96,30 @@
     </script>
 </head>
 <body class="mainframe bgcolor1" onload="init()">
-<h1><fmt:message key="changecoverart.title"/></h1>
-<form action="javascript:search()">
-    <sec:csrfInput />
+<h1 th:text="#{changecoverart.title}"></h1>
+<form th:action="@{/changeCoverArt}" onsubmit="search(); return false;" th:object="${command}">
     <table class="indent"><tr>
-        <td><input id="artist" name="artist" placeholder="<fmt:message key='changecoverart.artist'/>" size="35" type="text" value="${model.artist}" onclick="select()"/></td>
-        <td><input id="album" name="album" placeholder="<fmt:message key='changecoverart.album'/>" size="35" type="text" value="${model.album}" onclick="select()"/></td>
-        <td style="padding-left:0.5em"><input type="submit" value="<fmt:message key='changecoverart.search'/>"/></td>
+        <td><input th:field="*{artist}" th:placeholder="#{changecoverart.artist}" size="35" type="text" onclick="select()"/></td>
+        <td><input th:field="*{album}" th:placeholder="#{changecoverart.album}" size="35" type="text" onclick="select()"/></td>
+        <td style="padding-left:0.5em"><input type="submit" th:value="#{changecoverart.search}"/></td>
     </tr></table>
 </form>
 
-<form action="javascript:setImage($('input[name=\'url\']').val())">
-    <sec:csrfInput />
+<form th:action="@{/changeCoverArt}" onsubmit="setImage($('input[name=\'url\']').val()); return false;">
     <table><tr>
-        <td><label for="url"><fmt:message key="changecoverart.address"/></label></td>
-        <td style="padding-left:0.5em"><input type="text" name="url" size="50" id="url" value="http://" onclick="select()"/></td>
-        <td style="padding-left:0.5em"><input type="submit" value="<fmt:message key='common.ok'/>"></td>
+        <td><label for="url" th:text="#{changecoverart.address}"></label></td>
+        <td style="padding-left:0.5em"><input type="text" name="url" id="url" size="50" placeholder="http://" onclick="select()"/></td>
+        <td style="padding-left:0.5em"><input type="submit" th:value="#{common.ok}"/></td>
     </tr></table>
 </form>
-<sub:url value="main.view" var="backUrl"><sub:param name="id" value="${model.id}"/></sub:url>
 <div style="padding-top:0.5em;padding-bottom:0.5em">
-    <div class="back"><a href="${backUrl}"><fmt:message key="common.back"/></a></div>
+    <div class="back"><a th:href="@{/main.view(id=${command.id})}" th:text="#{common.back}"></a></div>
 </div>
 
-<h2 id="wait" style="display:none"><fmt:message key="changecoverart.wait"/></h2>
-<h2 id="noImagesFound" style="display:none"><fmt:message key="changecoverart.noimagesfound"/></h2>
-<h2 id="success" style="display:none"><fmt:message key="changecoverart.success"/></h2>
-<h2 id="error" style="display:none"><fmt:message key="changecoverart.error"/></h2>
+<h2 id="wait" style="display:none" th:text="#{changecoverart.wait}"></h2>
+<h2 id="noImagesFound" style="display:none" th:text="#{changecoverart.noimagesfound}"></h2>
+<h2 id="success" style="display:none" th:text="#{changecoverart.success}"></h2>
+<h2 id="error" style="display:none" th:text="#{changecoverart.error}"></h2>
 <div id="errorDetails" class="warning" style="display:none">
 </div>
 
@@ -129,9 +128,9 @@
     <div id="images"></div>
     <div style="clear:both;"></div>
     <a href="https://last.fm/" target="_blank" rel="noopener noreferrer">
-        <img alt="Lastfm icon" src="<c:url value='/icons/lastfm.gif'/>">
+        <img alt="Lastfm icon" th:src="@{/icons/lastfm.gif}"/>
     </a>
-    <span class="detail" style="padding-left:1em"><fmt:message key="changecoverart.courtesy"/></span>
+    <span class="detail" style="padding-left:1em" th:text="#{changecoverart.courtesy}"></span>
 </div>
 
 <div id="template" class="coverart dropshadow" style="float:left;margin-right:2.0em;margin-bottom:2.0em;width:250px;display:none">
@@ -145,4 +144,3 @@
 </div>
 
 </body></html>
-

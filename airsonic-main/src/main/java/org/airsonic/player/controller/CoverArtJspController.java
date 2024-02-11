@@ -27,6 +27,8 @@ public class CoverArtJspController {
         model.put("caption2", request.getParameter("caption2"));
         model.put("caption3", request.getParameter("caption3"));
         model.put("captionCount", request.getParameter("captionCount"));
+        model.put("showChange", "true".equalsIgnoreCase(request.getParameter("showChange")));
+        model.put("showZoom", "true".equalsIgnoreCase(request.getParameter("showZoom")));
 
         return new ModelAndView("coverArt", model);
     }

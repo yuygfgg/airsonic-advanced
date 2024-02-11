@@ -14,11 +14,13 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2024 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
 package org.airsonic.player.controller;
 
+import org.airsonic.player.service.RuntimeService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.VersionService;
@@ -64,6 +66,8 @@ public class HelpController {
     private SettingsService settingsService;
     @Autowired
     private SecurityService securityService;
+    @Autowired
+    private RuntimeService runtimeService;
 
     @GetMapping
     protected ModelAndView handleRequestInternal(HttpServletRequest request,
@@ -81,9 +85,6 @@ public class HelpController {
             map.put("newVersionAvailable", false);
         }
 
-        long totalMemory = Runtime.getRuntime().totalMemory();
-        long freeMemory = Runtime.getRuntime().freeMemory();
-
         String serverInfo = request.getSession().getServletContext().getServerInfo() +
                             ", java " + System.getProperty("java.version") +
                             ", " + System.getProperty("os.name");
@@ -94,8 +95,8 @@ public class HelpController {
         map.put("buildDate", versionService.getLocalBuildDate());
         map.put("buildNumber", versionService.getLocalBuildNumber());
         map.put("serverInfo", serverInfo);
-        map.put("usedMemory", StringUtil.formatBytes(totalMemory - freeMemory, locale));
-        map.put("totalMemory", StringUtil.formatBytes(totalMemory, locale));
+        map.put("usedMemory", StringUtil.formatBytes(runtimeService.getUsedMemory(), locale));
+        map.put("totalMemory", StringUtil.formatBytes(runtimeService.getTotalMemory(), locale));
         Path logFile = Paths.get(settingsService.getLogFile());
         List<String> latestLogEntries = getLatestLogEntries(logFile);
         map.put("logEntries", latestLogEntries);

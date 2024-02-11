@@ -55,8 +55,8 @@
             <th:block th:replace="coverArt::art(
             albumId=${album.id},
             unknownAlbumName=#{common.unknown},
-            caption1=${#strings.isEmpty(album.name) ? album.name : unknownAlbumName},
-            caption2=${album.artist},
+            caption1=${#strings.isEmpty(album.name) ? #strings.escapeXml(album.name) : unknownAlbumName},
+            caption2=${#strings.escapeXml(album.artist)},
             coverArtSize=${model.coverArtSize},
             showLink=${true},
             appearAfter=${loopStatus.count * 30},
@@ -111,7 +111,7 @@
 
                 <td class="truncate" th:text="${song.title}"></td>
                 <td class="truncate">
-                    <a th:href="@{/main(path=${song.parentPath})}"><span class="detail" th:text="${song.albumName}"></span></a>
+                    <a th:href="@{/main(path=|${song.folder.id}:${song.parentPath}|)}"><span class="detail" th:text="${song.albumName}"></span></a>
                 </td>
 
                 <td class="truncate">
@@ -149,7 +149,7 @@
                 )" /> <!-- TODO CDC fix 'asTable' -->
                 </td>
                 <td class="truncate">
-                    <a th:href="@{/videoPlayer(id=${video.id})}">${fn:escapeXml(video.name)}</a>
+                    <a th:href="@{/videoPlayer(id=${video.id})}">${#strings.escapeXml(video.name)}</a>
                 </td>
             </tr>
         </th:block>

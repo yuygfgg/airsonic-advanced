@@ -99,7 +99,7 @@
         }
 
         $(function() {
-            let uploadRole = [[${model.user.uploadRole}]];
+            let uploadRole = /*[[${model.user.uploadRole}]]*/ false;
             if(uploadRole) {
                 top.StompClient.subscribe("more.html", {
                     '/user/queue/uploads/status': uploadStatus
@@ -132,11 +132,7 @@
         <span style="vertical-align: middle" th:text="#{more.random.title}"></span>
     </h2>
 
-    <form id="randomPlayQueue" method="post" action="randomPlayQueue.view?">
-        <input
-                type="hidden"
-                th:name="${_csrf.parameterName}"
-                th:value="${_csrf.token}" />
+    <form id="randomPlayQueue" method="post" th:action="@{randomPlayQueue.view}" >
         <table>
             <tr>
                 <td th:text="#{more.random.text}"></td>
@@ -155,10 +151,11 @@
                     <select style="width: 100%;" name="year">
                         <option value="any" th:text="#{more.random.anyyear}"></option>
 
-                        <option th:each="yearOffset: ${#numbers.sequence(0, (model.currentYear - 2010))}"
+                        <option th:each="yearOffset: ${#numbers.sequence(0, (model.currentYear - 2015))}"
                                 th:with="year=${model.currentYear - yearOffset}"
                                 th:value="|${year} ${year}|" th:text="${year}"></option>
 
+                        <option value="2015 2020">2015 &ndash; 2020</option>
                         <option value="2010 2015">2010 &ndash; 2015</option>
                         <option value="2005 2010">2005 &ndash; 2010</option>
                         <option value="2000 2005">2000 &ndash; 2005</option>

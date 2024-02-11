@@ -19,7 +19,7 @@
 <p th:if="${!#strings.isEmpty(model['error'])}" class="warning" th:utext="#{avataruploadresult.failure}">
 </p>
 
-<div class="back"><a href="personalSettings.view?" th:text="#{common.back}"></a></div>
+<div class="back"><a th:href="@{/personalSettings.view}" th:text="#{common.back}"></a></div>
 
 </body>
 </html>

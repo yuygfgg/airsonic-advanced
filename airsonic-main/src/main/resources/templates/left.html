@@ -25,7 +25,7 @@
             });
 
             var mainLocation = top.main.location.href;
-            if ([[${model.musicFolderChanged}]]) {
+            if (/*[[${model.musicFolderChanged}]]*/ false) {
                 if (mainLocation.indexOf("/home") != -1) {
                     top.main.location.href = mainLocation;
                 }

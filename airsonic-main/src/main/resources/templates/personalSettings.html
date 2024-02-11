@@ -5,10 +5,10 @@
     <th:block th:replace="jquery" />
     <script type="text/javascript" th:src="@{/script/utils.js}"></script>
 
-    <script type="text/javascript" th:inline="javascript">
-        var lastfmCredsAbsent = [[${lastfmCredsAbsent}]];
-        var listenBrainzCredsAbsent = [[${listenBrainzCredsAbsent}]];
-        var podcastIndexCredsAbsent = [[${podcastIndexCredsAbsent}]];
+    <script th:inline="javascript">
+        var lastfmCredsAbsent = /*[[${lastfmCredsAbsent}]]*/ false;
+        var listenBrainzCredsAbsent = /*[[${listenBrainzCredsAbsent}]]*/ false;
+        var podcastIndexCredsAbsent = /*[[${podcastIndexCredsAbsent}]]*/ false;
         function enableFields() {
             $("#lastFm").is(":checked") ? $(".lastFmRow").show() : $(".lastFmRow").hide();
             if (lastfmCredsAbsent) {
@@ -41,19 +41,15 @@
 <h2 th:text="#{personalsettings.title(${command.user.username})}"></h2>
 
 
-<form method="post" action="personalSettings.view" >
-    <input
-            type="hidden"
-            th:name="${_csrf.parameterName}"
-            th:value="${_csrf.token}" />
+<form method="post" th:action="@{/personalSettings}" th:object="${command}" >
     <table style="white-space:nowrap" class="indent">
 
         <tr>
             <td th:text="#{personalsettings.language}"></td>
             <td>
-                <select name="localeIndex" th:value="${command.localeIndex}" style="width:15em">
-                    <option value="-1" th:text="#{common.default}"></option>
-                    <option th:each="locale,loopStatus: ${command.locales}" th:value="${loopStatus.count - 1}" th:text="${locale}"></option>
+                <select th:field="*{localeIndex}" style="width:15em">
+                    <option th:value="-1" th:text="#{common.default}"></option>
+                    <option th:each="locale,loopStatus: *{locales}" th:value="${loopStatus.count - 1}" th:text="${locale}"></option>
                 </select>
                 <th:block th:replace="helpToolTip(topic=language)" />
             </td>
@@ -62,9 +58,9 @@
         <tr>
             <td th:text="#{personalsettings.theme}"></td>
             <td>
-                <select name="themeIndex" th:value="${command.themeIndex}" style="width:15em">
-                    <option value="-1" th:text="#{common.default}"></option>
-                    <option th:each="theme,loopStatus: ${command.themes}" th:value="${loopStatus.count - 1}" th:text="${theme.name}"></option>
+                <select th:field="*{themeIndex}" style="width:15em">
+                    <option th:value="-1" th:text="#{common.default}"></option>
+                    <option th:each="theme,loopStatus: *{themes}" th:value="${loopStatus.count - 1}" th:text="${theme.name}"></option>
                 </select>
                 <th:block th:replace="helpToolTip(topic=theme)" />
             </td>
@@ -73,8 +69,8 @@
         <tr>
             <td th:text="#{personalsettings.albumlist}"></td>
             <td>
-                <select name="albumListId" th:value="${albumListId}" style="width:15em">
-                    <option th:each="albumList,loopStatus: ${command.albumLists}" th:value="${albumList.id}" th:text="#{home.__${albumList.id}__.title}"></option>
+                <select th:field="*{albumListId}" style="width:15em">
+                    <option th:each="albumList,loopStatus: *{albumLists}" th:value="${albumList.id}" th:text="#{home.__${albumList.id}__.title}"></option>
                 </select>
             </td>
         </tr>
@@ -92,109 +88,109 @@
         </tr>
         <tr>
             <td th:text="#{personalsettings.header}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.headerVisible" th:checked="${command.mainVisibility.headerVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.headerVisible" th:checked="${command.playlistVisibility.headerVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.headerVisible" th:checked="${command.playqueueVisibility.headerVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.headerVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.headerVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.headerVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.tracknumber}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.trackNumberVisible" th:checked="${command.mainVisibility.trackNumberVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.trackNumberVisible" th:checked="${command.playlistVisibility.trackNumberVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.trackNumberVisible" th:checked="${command.playqueueVisibility.trackNumberVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.trackNumberVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.trackNumberVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.trackNumberVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.discnumber}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.discNumberVisible" th:checked="${command.mainVisibility.discNumberVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.discNumberVisible" th:checked="${command.playlistVisibility.discNumberVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.discNumberVisible" th:checked="${command.playqueueVisibility.discNumberVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.discNumberVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.discNumberVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.discNumberVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.artist}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.artistVisible" th:checked="${command.mainVisibility.artistVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.artistVisible" th:checked="${command.playlistVisibility.artistVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.artistVisible" th:checked="${command.playqueueVisibility.artistVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.artistVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.artistVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.artistVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.albumartist}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.albumArtistVisible" th:checked="${command.mainVisibility.albumArtistVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.albumArtistVisible" th:checked="${command.playlistVisibility.albumArtistVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.albumArtistVisible" th:checked="${command.playqueueVisibility.albumArtistVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.albumArtistVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.albumArtistVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.albumArtistVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.album}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.albumVisible" th:checked="${command.mainVisibility.albumVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.albumVisible" th:checked="${command.playlistVisibility.albumVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.albumVisible" th:checked="${command.playqueueVisibility.albumVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.albumVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.albumVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.albumVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.genre}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.genreVisible" th:checked="${command.mainVisibility.genreVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.genreVisible" th:checked="${command.playlistVisibility.genreVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.genreVisible" th:checked="${command.playqueueVisibility.genreVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.genreVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.genreVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.genreVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.year}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.yearVisible" th:checked="${command.mainVisibility.yearVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.yearVisible" th:checked="${command.playlistVisibility.yearVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.yearVisible" th:checked="${command.playqueueVisibility.yearVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.yearVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.yearVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.yearVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.bitrate}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.bitRateVisible" th:checked="${command.mainVisibility.bitRateVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.bitRateVisible" th:checked="${command.playlistVisibility.bitRateVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.bitRateVisible" th:checked="${command.playqueueVisibility.bitRateVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.bitRateVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.bitRateVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.bitRateVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.duration}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.durationVisible" th:checked="${command.mainVisibility.durationVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.durationVisible" th:checked="${command.playlistVisibility.durationVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.durationVisible" th:checked="${command.playqueueVisibility.durationVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.durationVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.durationVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.durationVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.format}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.formatVisible" th:checked="${command.mainVisibility.formatVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.formatVisible" th:checked="${command.playlistVisibility.formatVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.formatVisible" th:checked="${command.playqueueVisibility.formatVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.formatVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.formatVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.formatVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.filesize}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.fileSizeVisible" th:checked="${command.mainVisibility.fileSizeVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.fileSizeVisible" th:checked="${command.playlistVisibility.fileSizeVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.fileSizeVisible" th:checked="${command.playqueueVisibility.fileSizeVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.fileSizeVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.fileSizeVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.fileSizeVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.playcount}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.playCountVisible" th:checked="${command.mainVisibility.playCountVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.playCountVisible" th:checked="${command.playlistVisibility.playCountVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.playCountVisible" th:checked="${command.playqueueVisibility.playCountVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.playCountVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.playCountVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.playCountVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.lastplayed}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.lastPlayedVisible" th:checked="${command.mainVisibility.lastPlayedVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.lastPlayedVisible" th:checked="${command.playlistVisibility.lastPlayedVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.lastPlayedVisible" th:checked="${command.playqueueVisibility.lastPlayedVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.lastPlayedVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.lastPlayedVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.lastPlayedVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.lastscanned}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.lastScannedVisible" th:checked="${command.mainVisibility.lastScannedVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.lastScannedVisible" th:checked="${command.playlistVisibility.lastScannedVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.lastScannedVisible" th:checked="${command.playqueueVisibility.lastScannedVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.lastScannedVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.lastScannedVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.lastScannedVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.created}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.createdVisible" th:checked="${command.mainVisibility.createdVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.createdVisible" th:checked="${command.playlistVisibility.createdVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.createdVisible" th:checked="${command.playqueueVisibility.createdVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.createdVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.createdVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.createdVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.changed}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.changedVisible" th:checked="${command.mainVisibility.changedVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playlistVisibility.changedVisible" th:checked="${command.playlistVisibility.changedVisible}" class="checkbox"/></td>
-            <td style="text-align:center"><input type="checkbox" name="playqueueVisibility.changedVisible" th:checked="${command.playqueueVisibility.changedVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.changedVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playlistVisibility.changedVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{playqueueVisibility.changedVisible}" class="checkbox"/></td>
         </tr>
         <tr>
             <td th:text="#{personalsettings.entrytype}"></td>
-            <td style="text-align:center"><input type="checkbox" name="mainVisibility.entryTypeVisible" th:checked="${command.mainVisibility.entryTypeVisible}" class="checkbox"/></td>
+            <td style="text-align:center"><input type="checkbox" th:field="*{mainVisibility.entryTypeVisible}" class="checkbox"/></td>
             <td style="text-align:center"></td>
             <td style="text-align:center"></td>
         </tr>
@@ -202,23 +198,23 @@
 
     <table class="indent">
         <tr>
-            <td><input type="checkbox" name="showNowPlayingEnabled" th:checked="${command.showNowPlayingEnabled}" id="nowPlaying" class="checkbox"/></td>
+            <td><input type="checkbox" th:field="*{showNowPlayingEnabled}" id="nowPlaying" class="checkbox"/></td>
             <td><label for="nowPlaying" th:text="#{personalsettings.shownowplaying}"></label></td>
-            <td style="padding-left:2em"><input type="checkbox" name="showArtistInfoEnabled" th:checked="${command.showArtistInfoEnabled}" id="artistInfo" class="checkbox"/></td>
+            <td style="padding-left:2em"><input type="checkbox" th:field="*{showArtistInfoEnabled}" id="artistInfo" class="checkbox"/></td>
             <td><label for="artistInfo" th:text="#{personalsettings.showartistinfo}"></label></td>
         </tr>
         <tr>
-            <td><input type="checkbox" name="nowPlayingAllowed" th:checked="${command.nowPlayingAllowed}" id="nowPlayingAllowed" class="checkbox"/></td>
+            <td><input type="checkbox" th:field="*{nowPlayingAllowed}" id="nowPlayingAllowed" class="checkbox"/></td>
             <td><label for="nowPlayingAllowed" th:text="#{personalsettings.nowplayingallowed}"></label></td>
-            <td style="padding-left:2em"><input type="checkbox" name="autoHidePlayQueue" th:checked="${command.autoHidePlayQueue}" id="autoHidePlayQueue" class="checkbox"/></td>
+            <td style="padding-left:2em"><input type="checkbox" th:field="*{autoHidePlayQueue}" id="autoHidePlayQueue" class="checkbox"/></td>
             <td><label for="autoHidePlayQueue" th:text="#{personalsettings.autohideplayqueue}"></label></td>
-            <td style="padding-left:2em"><input type="checkbox" name="partyModeEnabled" th:checked="${command.partyModeEnabled}" id="partyModeEnabled" class="checkbox"/></td>
+            <td style="padding-left:2em"><input type="checkbox" th:field="*{partyModeEnabled}" id="partyModeEnabled" class="checkbox"/></td>
             <td><label for="partyModeEnabled" th:text="#{personalsettings.partymode}"></label>
                 <th:block th:replace="helpToolTip(topic=partymode)" />
             </td>
         </tr>
         <tr>
-            <td><input type="checkbox" name="queueFollowingSongs" th:checked="${command.queueFollowingSongs}" id="queueFollowingSongs" class="checkbox"/></td>
+            <td><input type="checkbox" th:field="*{queueFollowingSongs}" id="queueFollowingSongs" class="checkbox"/></td>
             <td><label for="queueFollowingSongs" th:text="#{personalsettings.queuefollowingsongs}"></label></td>
             <td></td>
             <td></td>
@@ -229,22 +225,22 @@
 
     <table class="indent">
         <tr>
-            <td><input type="checkbox" name="finalVersionNotificationEnabled" th:checked="${command.finalVersionNotificationEnabled}" id="final" class="checkbox"/></td>
+            <td><input type="checkbox" th:field="*{finalVersionNotificationEnabled}" id="final" class="checkbox"/></td>
             <td><label for="final" th:text="#{personalsettings.finalversionnotification}"></label></td>
         </tr>
         <tr>
-            <td><input type="checkbox" name="betaVersionNotificationEnabled" th:checked="${command.betaVersionNotificationEnabled}" id="beta" class="checkbox"/></td>
+            <td><input type="checkbox" th:field="*{betaVersionNotificationEnabled}" id="beta" class="checkbox"/></td>
             <td><label for="beta" th:text="#{personalsettings.betaversionnotification}"></label></td>
         </tr>
         <tr>
-            <td><input type="checkbox" name="songNotificationEnabled" th:checked="${command.songNotificationEnabled}" id="song" class="checkbox"/></td>
+            <td><input type="checkbox" th:field="*{songNotificationEnabled}" id="song" class="checkbox"/></td>
             <td><label for="song" th:text="#{personalsettings.songnotification}"></label></td>
         </tr>
     </table>
 
     <table class="indent">
         <tr>
-            <td><input type="checkbox" name="lastFmEnabled" th:checked="${command.lastFmEnabled}" id="lastFm" class="checkbox" onclick="enableFields()"/></td>
+            <td><input type="checkbox" th:field="*{lastFmEnabled}" id="lastFm" class="checkbox" onclick="enableFields()"/></td>
             <td><label for="lastFm" th:utext="#{personalsettings.lastfmenabled}"></label></td>
             <td></td>
         </tr>
@@ -256,14 +252,14 @@
             </td>
         </tr>
         <tr>
-            <td><input type="checkbox" name="listenBrainzEnabled" th:checked="${command.listenBrainzEnabled}" id="listenBrainz" class="checkbox" onclick="enableFields()"/></td>
+            <td><input type="checkbox" th:field="*{listenBrainzEnabled}" id="listenBrainz" class="checkbox" onclick="enableFields()"/></td>
             <td><label for="listenBrainz" th:utext="#{personalsettings.listenbrainzenabled}"></label></td>
             <td></td>
         </tr>
         <tr class="listenBrainzRow">
             <td></td>
             <td th:text="#{personalsettings.listenbrainzurl}"></td>
-            <td><input name="listenBrainzUrl" th:value="${command.listenBrainzUrl}" size="36"/></td>
+            <td><input th:field="*{listenBrainzUrl}" size="36"/></td>
         </tr>
         <tr id="listenBrainzStatus" class="listenBrainzRow">
             <td></td>
@@ -273,14 +269,14 @@
             </td>
         </tr>
         <tr>
-            <td><input type="checkbox" name="podcastIndexEnabled" th:checked="${command.podcastIndexEnabled}" id="podcastIndex" class="checkbox" onclick="enableFields()"/></td>
+            <td><input type="checkbox" th:field="*{podcastIndexEnabled}" id="podcastIndex" class="checkbox" onclick="enableFields()"/></td>
             <td><label for="podcastIndex" th:utext="#{personalsettings.podcastindexenabled}"></label></td>
             <td></td>
         </tr>
         <tr class="podcastIndexRow">
             <td></td>
             <td th:text="#{personalsettings.podcastindexurl}"></td>
-            <td><input name="podcastIndexUrl" th:value="${command.podcastIndexUrl}" size="36"/></td>
+            <td><input th:field="*{podcastIndexUrl}" size="36"/></td>
         </tr>
         <tr id="podcastIndexStatus" class="podcastIndexRow">
             <td></td>
@@ -293,30 +289,30 @@
 
     <table class="indent">
         <tr>
-            <td><input type="checkbox" name="autoBookmark" th:checked="${command.autoBookmark}" id="autoBookmark" class="checkbox"/></td>
+            <td><input type="checkbox" th:field="*{autoBookmark}" id="autoBookmark" class="checkbox"/></td>
             <td><label for="autoBookmark" th:text="#{personalsettings.autobookmark}"></label>
                 <th:block th:replace="helpToolTip(topic=autobookmark)" /></td>
         </tr>
         <tr>
             <td colspan="2" th:text="#{personalsettings.audiobookmarkfrequency}"></td>
-            <td><input name="audioBookmarkFrequency" th:value="${command.audioBookmarkFrequency}" size="10"/></td>
+            <td><input th:field="*{audioBookmarkFrequency}" size="10"/></td>
         </tr>
         <tr>
             <td colspan="2" th:text="#{personalsettings.videobookmarkfrequency}"></td>
-            <td><input name="videoBookmarkFrequency" th:value="${command.videoBookmarkFrequency}" size="10"/></td>
+            <td><input th:field="*{videoBookmarkFrequency}" size="10"/></td>
         </tr>
     </table>
 
     <table class="indent">
         <tr>
             <td colspan="2" th:text="#{personalsettings.searchcount}"></td>
-            <td><input name="searchCount" th:value="${command.searchCount}" size="10"/></td>
+            <td><input th:field="*{searchCount}" size="10"/></td>
         </tr>
     </table>
 
     <table class="indent">
         <tr>
-            <td><input type="checkbox" name="keyboardShortcutsEnabled"th:checked="${command.keyboardShortcutsEnabled}" id="keyboardShortcutsEnabled" class="checkbox"/></td>
+            <td><input type="checkbox" th:field="*{keyboardShortcutsEnabled}" id="keyboardShortcutsEnabled" class="checkbox"/></td>
             <td><label for="keyboardShortcutsEnabled" th:text="#{personalsettings.keyboardshortcutsenabled}"></label></td>
         </tr>
     </table>
@@ -332,46 +328,46 @@
         </tr>
         <tr>
             <td th:text="#{personalsettings.paginationsize}"></td>
-            <td style="text-align:center"><input name="paginationSizeFiles" th:value="${command.paginationSizeFiles}" size="10"/></td>
-            <td style="text-align:center"><input name="paginationSizeFolders" th:value="${command.paginationSizeFolders}" size="10"/></td>
-            <td style="text-align:center"><input name="paginationSizePlaylist" th:value="${command.paginationSizePlaylist}" size="10"/></td>
-            <td style="text-align:center"><input name="paginationSizePlayqueue" th:value="${command.paginationSizePlayqueue}" size="10"/></td>
-            <td style="text-align:center"><input name="paginationSizeBookmarks" th:value="${command.paginationSizeBookmarks}" size="10"/></td>
+            <td style="text-align:center"><input th:field="*{paginationSizeFiles}" size="10"/></td>
+            <td style="text-align:center"><input th:field="*{paginationSizeFolders}" size="10"/></td>
+            <td style="text-align:center"><input th:field="*{paginationSizePlaylist}" size="10"/></td>
+            <td style="text-align:center"><input th:field="*{paginationSizePlayqueue}" size="10"/></td>
+            <td style="text-align:center"><input th:field="*{paginationSizeBookmarks}" size="10"/></td>
         </tr>
     </table>
 
     <p style="padding-top:1em;padding-bottom:1em">
         <input type="submit" th:value="#{common.save}" style="margin-right:0.3em"/>
-        <a href='nowPlaying.view'><input type="button" th:value="#{common.cancel}"></a>
+        <a th:href="@{nowPlaying}"><input type="button" th:value="#{common.cancel}"></a>
     </p>
 
     <h2 th:text="#{personalsettings.avatar.title}"></h2>
 
     <p style="padding-top:1em">
-        <th:block th:each="avatar:${command.avatars}">
+        <th:block th:each="avatar:*{avatars}">
             <span style="white-space:nowrap;">
-                <input type="radio" th:id="|avatar-${avatar.id}|" name="avatarId" th:checked="${command.avatarId eq avatar.id}" th:value="${avatar.id}"/>
-                <label th:for="|avatar-${avatar.id}|">
+                <input type="radio" th:field="*{avatarId}" th:value="${avatar.id}"/>
+                <label th:for="${#ids.prev('avatarId')}">
                     <img th:src="@{/avatar.view(id=${avatar.id})}" th:alt="${avatar.name}" th:width="${avatar.width}" th:height="${avatar.height}" style="padding-right:2em;padding-bottom:1em"/></label>
             </span>
         </th:block>
     </p>
     <p>
-        <input type="radio" id="noAvatar" name="avatarId" th:checked="${command.avatarId eq -1}" value="-1"/>
+        <input type="radio" th:id="noAvatar" th:field="*{avatarId}" th:value="-1"/>
         <label for="noAvatar" th:text="#{personalsettings.avatar.none}"></label>
     </p>
     <p>
-        <input type="radio" id="customAvatar" name="avatarId" th:checked="${command.avatarId eq -2}" value="-2"/>
+        <input type="radio" th:id="customAvatar" th:field="*{avatarId}" th:value="-2"/>
         <label for="customAvatar"><span th:text="#{personalsettings.avatar.custom}"></span>
             <th:block th:if="${!#strings.isEmpty(command.customAvatar)}">
-                <img th:src="@{avatar.view(username=${command.user.username}, forceCustom=true)}"
-                     th:alt="${command.customAvatar.name}" th:width="${command.customAvatar.width}" th:height="${command.customAvatar.height}" style="padding-right:2em"/>
+                <img th:src="@{avatar.view(username=*{user.username}, forceCustom=true)}"
+                     th:alt="*{customAvatar.name}" th:width="*{customAvatar.width}" th:height="*{customAvatar.height}" style="padding-right:2em"/>
             </th:block>
         </label>
     </p>
 </form>
 
-<form method="post" enctype="multipart/form-data" th:action="|avatarUpload.view?${_csrf.parameterName}=${_csrf.token}|">
+<form method="post" enctype="multipart/form-data" th:action="@{avatarUpload}">
     <table>
         <tr>
             <td style="padding-right:1em" th:text="#{personalsettings.avatar.changecustom}"></td>

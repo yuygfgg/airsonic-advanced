@@ -4,12 +4,12 @@
     <th:block th:replace="head" />
     <th:block th:replace="jquery" />
 
-    <script type="text/javascript" th:inline="javascript">
+    <script th:inline="javascript">
         function init() {
             $("#newMusicFolderName").attr("placeholder", "[(#{musicfoldersettings.name})]");
             $("#newMusicFolderPath").attr("placeholder", "[(#{musicfoldersettings.path})]");
 
-            let settingsReload = [[${settings_reload}]];
+            let settingsReload = /*[[${settings_reload}]]*/ false;
             if(settingsReload) {
                 parent.frames.left.location.href="left";
             }
@@ -17,26 +17,32 @@
             updateEnableCueIndexing();
             updateClearFullScan();
 
-            $("#fullScan1").change(function() { updateClearFullScan(); });
-            $("#enableCueIndexing1").change(function() { updateEnableCueIndexing(); });
+            /*[+
+            $([[|#${#ids.next('fullScan')}|]]).change(function() {updateClearFullScan();});
+            $([[|#${#ids.next('enableCueIndexing')}|]]).change(function() {updateEnableCueIndexing();});
+            +]*/
         }
 
         function updateClearFullScan() {
-            if (!$("#fullScan1").prop("checked")) {
-                $("#clearFullScanSettingAfterScan1").prop("disabled", true);
-                $("#clearFullScanSettingAfterScan1").prop("checked", false);
+            /*[+
+            if (!$([[|#${#ids.next('fullScan')}|]]).prop("checked")) {
+                $([[|#${#ids.next('clearFullScanSettingAfterScan')}|]]).prop("disabled", true);
+                $([[|#${#ids.next('clearFullScanSettingAfterScan')}|]]).prop("checked", false);
             } else {
-                $("#clearFullScanSettingAfterScan1").prop("disabled", false);
+                $([[|#${#ids.next('clearFullScanSettingAfterScan')}|]]).prop("disabled", false);
             }
+            +]*/
         }
 
         function updateEnableCueIndexing() {
-            if (!$("#enableCueIndexing1").prop("checked")) {
-                $("#hideIndexedFiles1").prop("disabled", true)
-                $("#hideIndexedFiles1").prop("checked", false);
+            /*[+
+            if (!$([[|#${#ids.next('enableCueIndexing')}|]]).prop("checked")) {
+                $([[|#${#ids.next('hideIndexedFiles')}|]]).prop("disabled", true)
+                $([[|#${#ids.next('hideIndexedFiles')}|]]).prop("checked", false)
             } else {
-                $("#hideIndexedFiles").prop("disabled", false)
+                $([[|#${#ids.next('hideIndexedFiles')}|]]).prop("disabled", false)
             }
+            +]*/
         }
 
         function podcastEnabler(event, el) {
@@ -53,9 +59,6 @@
 <th:block th:replace="settingsHeader::header(cat='musicFolder',toast=${settings_toast})" />
 
 <form th:action="@{/musicFolderSettings}" th:object="${command}" method="post">
-    <input type="hidden"
-            th:name="${_csrf.parameterName}"
-            th:value="${_csrf.token}" />
 <table class="indent">
     <tr>
         <th th:text="#{musicfoldersettings.name}"></th>

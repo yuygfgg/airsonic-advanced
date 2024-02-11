@@ -41,11 +41,11 @@
     var subDirsTable = null;
     var subDirsTableData = [];
     var thumbsData = [];
-    var viewAsList = [[${model.viewAsList == true}]];
+    var viewAsList = /*[[${model.viewAsList == true}]]*/ false;
     var topSongs = [];
     var artistTopSongsTable = null;
-    var initialIds = [(${model.initialIdsJSON})];
-    var initialPaths = [(${model.initialPathsJSON})];
+    var initialIds = /*[[(${model.initialIds})]]*/ [];
+    var initialPaths = /*[[(${model.initialPaths})]]*/ {};
 
     function getMediaDirectory(mediaFileId) {
         getMediaDirectories([mediaFileId]);
@@ -82,7 +82,7 @@
         generateMediaDirThumb();
         refreshViewDependentComponents();
 
-        let showArtistInfo = [[${model.showArtistInfo}]]
+        let showArtistInfo = /*[[${model.showArtistInfo}]]*/ false;
         if(showArtistInfo) { loadArtistInfo(); }
 
         // directory star
@@ -260,8 +260,8 @@
             resizeStop: function (event, ui) { setJQueryUiDialogPlaylistSize("mediaMain", ui.size) }
         });
 
-        var ratingOnImage = [[${#themes.code('ratingOnImage')}]];
-        var ratingOffImage = [[${#themes.code('ratingOffImage')}]];
+        var ratingOnImage = /*[[${#themes.code('ratingOnImage')}]]*/ "icons\/default\/ratingOn.svg";
+        var ratingOffImage = /*[[${#themes.code('ratingOffImage')}]]*/ "icons\/default\/ratingOff.svg";
 
         /** FILES **/
         filesTable = $("#filesTable").DataTable( {
@@ -279,8 +279,19 @@
             order: [],
             //orderFixed: [ 0, 'asc' ],
             orderMulti: true,
-            pageLength: [[${model.initialPaginationSizeFiles}]],
-            lengthMenu: [ [10, 20, 50, 100, -1 [(${paginationaddition})] ], [10, 20, 50, 100, "All" [(${paginationaddition})] ] ],
+            pageLength: /*[[${model.initialPaginationSizeFiles}]]*/ 10,
+            /*[+
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1 [(${paginationaddition})] ], 
+                [10, 20, 50, 100, "All" [(${paginationaddition})] ] 
+            ],
+            +]*/
+            /*[- */
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1], 
+                [10, 20, 50, 100, "All"] 
+            ],
+            /* -]*/
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -313,14 +324,14 @@
                 { data: null,
                   searchable: false,
                   name: "play",
-                  visible: [[${model.user.streamRole and !model.partyMode}]],
+                  visible: /*[[${model.user.streamRole and !model.partyMode}]]*/ true,
                   className: "fit not-draggable centeralign",
                   defaultContent: "<img class='playSong' src=\"[(${#themes.code('playImage')})]\" style='height:18px;' alt=\"[(#{common.play})]\" title=\"[(#{common.play})]\">"
                 },
                 { data: "entryType",
                   searchable: false,
                   name: "addLast",
-                  visible: [[${model.user.streamRole and !model.partyMode}]],
+                  visible: /*[[${model.user.streamRole and !model.partyMode}]]*/ true,
                   className: "fit not-draggable centeralign",
                   render: function(entryType, type, row) {
                       if (type == "display" && entryType != "VIDEO" && entryType != "DIRECTORY" && entryType != "ALBUM") {
@@ -332,7 +343,7 @@
                 { data: "entryType",
                   searchable: false,
                   name: "addNext",
-                  visible: [[${model.user.streamRole and !model.partyMode}]],
+                  visible: /*[[${model.user.streamRole and !model.partyMode}]]*/ true,
                   className: "fit not-draggable centeralign",
                   render: function(entryType, type, row) {
                       if (type == "display" && entryType != "VIDEO" && entryType != "DIRECTORY" && entryType != "ALBUM") {
@@ -347,11 +358,11 @@
                   className: "fit not-draggable songIndex centeralign",
                   defaultContent: "<input type='checkbox'>"
                 },
-                { data: "trackNumber", className: "detail fit", visible: [[${model.visibility.trackNumberVisible}]], title: [[#{personalsettings.tracknumber}]] },
-                { data: "discNumber", className: "detail fit", visible: [[${model.visibility.discNumberVisible}]], title: [[#{personalsettings.discnumber}]] },
+                { data: "trackNumber", className: "detail fit", visible: /*[[${model.visibility.trackNumberVisible}]]*/ true, title: /*[[#{personalsettings.tracknumber}]]*/ "track" },
+                { data: "discNumber", className: "detail fit", visible: /*[[${model.visibility.discNumberVisible}]]*/ true, title: /*[[#{personalsettings.discnumber}]]*/ "disc" },
                 { data: "title",
                   className: "detail songTitle truncate",
-                  title: [[#{edittags.songtitle}]],
+                  title: /*[[#{edittags.songtitle}]]*/ "title",
                   render: function(title, type, row) {
                       if (type == "display" && title != null) {
                           return $("<span>", {title: title, alt: title, text: title})[0].outerHTML;
@@ -361,8 +372,8 @@
                 },
                 { data: "album",
                   className: "detail truncate",
-                  visible: [[${model.visibility.albumVisible}]],
-                  title: [[#{personalsettings.album}]],
+                  visible: /*[[${model.visibility.albumVisible}]]*/ true,
+                  title: /*[[#{personalsettings.album}]]*/ "album",
                   render: function(album, type, row) {
                       if (type == "display" && album != null) {
                           return $("<span>", {title: album, alt: album, text: album})[0].outerHTML;
@@ -372,8 +383,8 @@
                 },
                 { data: "artist",
                   className: "detail truncate",
-                  visible: [[${model.visibility.artistVisible}]],
-                  title: [[#{personalsettings.artist}]],
+                  visible: /*[[${model.visibility.artistVisible}]]*/ false,
+                  title: /*[[#{personalsettings.artist}]]*/ "artist",
                   render: function(artist, type) {
                       if (type == "display" && artist != null) {
                           return $("<span>", {title: artist, alt: artist, text: artist})[0].outerHTML;
@@ -383,8 +394,8 @@
                 },
                 { data: "albumArtist",
                   className: "detail truncate",
-                  visible: [[${model.visibility.albumArtistVisible}]],
-                  title: [[#{personalsettings.albumartist}]],
+                  visible: /*[[${model.visibility.albumArtistVisible}]]*/ false,
+                  title: /*[[#{personalsettings.albumartist}]]*/ "AlbumArtist",
                   render: function(artist, type) {
                       if (type == "display" && artist != null) {
                           return $("<span>", {title: artist, alt: artist, text: artist})[0].outerHTML;
@@ -394,8 +405,8 @@
                 },
                 { data: "genre",
                   className: "detail truncate",
-                  visible: [[${model.visibility.genreVisible}]],
-                  title: [[#{personalsettings.genre}]],
+                  visible: /*[[${model.visibility.genreVisible}]]*/ true,
+                  title: /*[[#{personalsettings.genre}]]*/ "genre",
                   render: function(genre, type) {
                       if (type == "display" && genre != null) {
                           return $("<span>", {title: genre, alt: genre, text: genre})[0].outerHTML;
@@ -403,13 +414,13 @@
                       return genre;
                   }
                 },
-                { data: "year", className: "detail fit rightalign", visible: [[${model.visibility.yearVisible}]], title: [[#{personalsettings.year}]] },
-                { data: "format", className: "detail fit rightalign", visible: [[${model.visibility.formatVisible}]], title: [[#{personalsettings.format}]] },
-                { data: "fileSize", className: "detail fit rightalign", visible: [[${model.visibility.fileSizeVisible}]], title: [[#{personalsettings.filesize}]] },
+                { data: "year", className: "detail fit rightalign", visible: /*[[${model.visibility.yearVisible}]]*/ true, title: /*[[#{personalsettings.year}]]*/ "year" },
+                { data: "format", className: "detail fit rightalign", visible: /*[[${model.visibility.formatVisible}]]*/ true, title: /*[[#{personalsettings.format}]]*/ "format" },
+                { data: "fileSize", className: "detail fit rightalign", visible: /*[[${model.visibility.fileSizeVisible}]]*/ true, title: /*[[#{personalsettings.filesize}]]*/ "size" },
                 { data: "duration",
                   className: "detail fit rightalign",
-                  visible: [[${model.visibility.durationVisible}]],
-                  title: [[#{personalsettings.duration}]],
+                  visible: /*[[${model.visibility.durationVisible}]]*/ false,
+                  title: /*[[#{personalsettings.duration}]]*/ "duration",
                   render: function(data, type, row) {
                       if (type == "display" && data != null) {
                           return formatDuration(Math.round(data));
@@ -417,12 +428,12 @@
                       return data;
                   }
                 },
-                { data: "bitRate", className: "detail fit rightalign", visible: [[${model.visibility.bitRateVisible}]], title: [[#{personalsettings.bitrate}]] },
-                { data: "playCount", className: "detail fit rightalign", visible: [[${model.visibility.playCountVisible}]], title: [[#{personalsettings.playcount}]] },
+                { data: "bitRate", className: "detail fit rightalign", visible: /*[[${model.visibility.bitRateVisible}]]*/ true, title: /*[[#{personalsettings.bitrate}]]*/ "bitrate" },
+            { data: "playCount", className: "detail fit rightalign", visible: /*[[${model.visibility.playCountVisible}]]*/ true, title: /*[[#{personalsettings.playcount}]]*/ "playcount" },
                 { data: "lastPlayed",
                   className: "detail fit rightalign",
-                  visible: [[${model.visibility.lastPlayedVisible}]],
-                  title: [[#{personalsettings.lastplayed}]],
+                  visible: /*[[${model.visibility.lastPlayedVisible}]]*/ false,
+                  title: /*[[#{personalsettings.lastplayed}]]*/ "lastplayed",
                   render: function(data, type, row) {
                       if (data != null) {
                           if (type == "display") {
@@ -435,8 +446,8 @@
                 },
                 { data: "lastScanned",
                   className: "detail fit rightalign",
-                  visible: [[${model.visibility.lastScannedVisible}]],
-                  title: [[#{personalsettings.lastscanned}]],
+                  visible: /*[[${model.visibility.lastScannedVisible}]]*/ true,
+                  title: /*[[#{personalsettings.lastscanned}]]*/ "lastscanned",
                   render: function(data, type, row) {
                       if (data != null) {
                           if (type == "display") {
@@ -449,8 +460,8 @@
                 },
                 { data: "created",
                   className: "detail fit rightalign",
-                  visible: [[${model.visibility.createdVisible}]],
-                  title: [[#{personalsettings.created}]],
+                  visible: /*[[${model.visibility.createdVisible}]]*/ false,
+                  title: /*[[#{personalsettings.created}]]*/ "created",
                   render: function(data, type, row) {
                       if (data != null) {
                           if (type == "display") {
@@ -463,8 +474,8 @@
                 },
                 { data: "changed",
                   className: "detail fit rightalign",
-                  visible: [[${model.visibility.changedVisible}]],
-                  title: [[#{personalsettings.changed}]],
+                  visible: /*[[${model.visibility.changedVisible}]]*/ false,
+                  title: /*[[#{personalsettings.changed}]]*/ "changed",
                   render: function(data, type, row) {
                       if (data != null) {
                           if (type == "display") {
@@ -477,8 +488,8 @@
                 },
                 { data: "entryType",
                   className: "detail fit rightalign truncate",
-                  visible: [[${model.visibility.entryTypeVisible}]],
-                  title: [[#{personalsettings.entrytype}]],
+                  visible: /*[[${model.visibility.entryTypeVisible}]]*/ true,
+                  title: /*[[#{personalsettings.entrytype}]]*/ "entrytype",
                   render: function(entryType, type, row) {
                       if (type == "display" && entryType != null) {
                           var media = entryType.toLowerCase();
@@ -524,8 +535,19 @@
             order: [],
             orderFixed: [ 0, 'asc' ],
             orderMulti: false,
-            pageLength: [[${model.initialPaginationSizeFolders}]],
-            lengthMenu: [ [10, 20, 50, 100, -1 [(${paginationadditionFolders})] ], [10, 20, 50, 100, "All" [(${paginationadditionFolders})] ] ],
+            pageLength: /*[[${model.initialPaginationSizeFolders}]]*/ 10,
+            /*[+
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1 [(${paginationadditionFolders})] ], 
+                [10, 20, 50, 100, "All" [(${paginationadditionFolders})] ] 
+            ],
+            +]*/
+            /*[- */
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1], 
+                [10, 20, 50, 100, "All"] 
+            ],
+            /* -]*/
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -544,14 +566,14 @@
                 { data: null,
                   searchable: false,
                   name: "play",
-                  visible: [[${model.user.streamRole and !model.partyMode}]],
+                  visible: /*[[${model.user.streamRole and !model.partyMode}]]*/ true,
                   className: "fit not-draggable centeralign",
                   defaultContent: "<img class='playSong' src=\"[(${#themes.code('playImage')})]\" style='height:18px;' alt=\"[(#{common.play})]\" title=\"[(#{common.play})]\">"
                 },
                 { data: "entryType",
                   searchable: false,
                   name: "addLast",
-                  visible: [[${model.user.streamRole and !model.partyMode}]],
+                  visible: /*[[${model.user.streamRole and !model.partyMode}]]*/ true,
                   className: "fit not-draggable centeralign",
                   render: function(entryType, type, row) {
                       if (type == "display") {
@@ -563,7 +585,7 @@
                 { data: "entryType",
                   searchable: false,
                   name: "addNext",
-                  visible: [[${model.user.streamRole and !model.partyMode}]],
+                  visible: /*[[${model.user.streamRole and !model.partyMode}]]*/ true,
                   className: "fit not-draggable centeralign",
                   render: function(entryType, type, row) {
                       if (type == "display") {
@@ -608,8 +630,19 @@
             order: [],
             orderFixed: [ 0, 'asc' ],
             orderMulti: false,
-            pageLength: [[${model.initialPaginationSizeFolders}]],
-            lengthMenu: [ [10, 20, 50, 100, -1 [(${paginationadditionFolders})] ], [10, 20, 50, 100, "All" [(${paginationadditionFolders})] ] ],
+            pageLength: /*[[${model.initialPaginationSizeFolders}]]*/ 10,
+            /*[+
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1 [(${paginationadditionFolders})] ], 
+                [10, 20, 50, 100, "All" [(${paginationadditionFolders})] ] 
+            ],
+            +]*/
+            /*[- */
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1], 
+                [10, 20, 50, 100, "All"] 
+            ],
+            /* -]*/
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -717,13 +750,13 @@
                 playlistSelectionCallback(JSON.parse(msg.body));
             },
             '/user/queue/playlists/files/append': function(msg) {
-                $().toastmessage("showSuccessToast", [[#{playlist.toast.appendtoplaylist}]]);
+                $().toastmessage("showSuccessToast", /*[[#{playlist.toast.appendtoplaylist}]]*/ null);
             },
             "/user/queue/settings/viewAsList": function(msg) {
                 viewChangedCallback(JSON.parse(msg.body));
             }
         }
-        let showArtistInfo = [[${model.showArtistInfo}]];
+        let showArtistInfo = /*[[${model.showArtistInfo}]]*/ true;
         if(showArtistInfo) {
            subs["/user/queue/artist/info"] = function(msg) {
                loadArtistInfoCallback(JSON.parse(msg.body));
@@ -812,9 +845,9 @@
 
     function updateStarImage() {
         if (mediaDir.starred) {
-            $("#starImage").attr("src", [[${#themes.code('ratingOnImage')}]]);
+            $("#starImage").attr("src", /*[[${#themes.code('ratingOnImage')}]]*/ "icons\/default\/ratingOn.svg");
         } else {
-            $("#starImage").attr("src", [[${#themes.code('ratingOffImage')}]]);
+            $("#starImage").attr("src", /*[[${#themes.code('ratingOffImage')}]]*/ "icons\/default\/ratingOff.svg");
         }
     }
 
@@ -837,7 +870,7 @@
     function onPlay(row) {
         var data = row.data();
         if (data.entryType == 'VIDEO') {
-            var urlBase = [[@{/videoPlayer}]];
+            var urlBase = /*[[@{/videoPlayer}]]*/ '/videoPlayer';
             var url = urlBase + "?id=" + data.id;
             top.main.location = url;
         } else {
@@ -846,11 +879,11 @@
     }
     function onAdd(row) {
         top.playQueue.onAdd(row.data().id);
-        $().toastmessage('showSuccessToast', [[#{main.addlast.toast}]])
+        $().toastmessage('showSuccessToast', /*[[#{main.addlast.toast}]]*/ null)
     }
     function onAddNext(row) {
         top.playQueue.onAddNext(row.data().id);
-        $().toastmessage('showSuccessToast', [[#{main.addnext.toast}]])
+        $().toastmessage('showSuccessToast', /*[[#{main.addnext.toast}]]*/ null)
     }
 
     function playAll() {
@@ -1119,11 +1152,7 @@
 <div id="comment" class="albumComment"></div>
 
 <div id="commentForm" style="display:none">
-    <form method="post" action="setMusicFileInfo">
-        <input
-                type="hidden"
-                th:name="${_csrf.parameterName}"
-                th:value="${_csrf.token}" />
+    <form method="post" th:action="@{/setMusicFileInfo}">
         <input type="hidden" name="action" value="comment">
         <input type="hidden" id="commentFormId" name="id" value="">
         <textarea name="comment" rows="6" cols="70"></textarea>

@@ -38,6 +38,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
@@ -68,6 +69,9 @@ public class AlbumRepositoryTest {
     @Autowired
     private MusicFolderRepository musicFolderRepository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @TempDir
     private static Path tempDir;
 
@@ -88,6 +92,7 @@ public class AlbumRepositoryTest {
         testFolders.add(musicFolder2);
         testFolders.add(musicFolder3);
         musicFolderRepository.saveAll(testFolders);
+        jdbcTemplate.execute("DELETE FROM album WHERE present = false");
     }
 
     @AfterEach
@@ -113,7 +118,6 @@ public class AlbumRepositoryTest {
             assertTrue(result.isPresent());
             assertEquals(album, result.get());
             assertFalse(notFound.isPresent());
-
         }
 
         @Test
@@ -145,7 +149,6 @@ public class AlbumRepositoryTest {
         public void testMarkNonPresent() {
 
             // given
-
             long count = albumRepository.findByPresentFalse().size();
             Instant now = Instant.now().minusSeconds(3600);
             Album album1 = new Album("path1", "name1", "artist1", Instant.now(), now, true, testFolders.get(0));

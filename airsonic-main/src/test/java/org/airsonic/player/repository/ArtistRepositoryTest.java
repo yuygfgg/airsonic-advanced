@@ -38,6 +38,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
@@ -66,6 +67,9 @@ public class ArtistRepositoryTest {
     @Autowired
     private MusicFolderRepository musicFolderRepository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @TempDir
     private static Path tempDir;
 
@@ -83,6 +87,7 @@ public class ArtistRepositoryTest {
         testFolders.add(musicFolder);
         testFolders.add(musicFolder2);
         musicFolderRepository.saveAll(testFolders);
+        jdbcTemplate.execute("DELETE FROM artist WHERE present = false");
     }
 
     @AfterEach

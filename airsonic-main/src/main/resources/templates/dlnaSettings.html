@@ -15,6 +15,7 @@
   ~ You should have received a copy of the GNU General Public License
   ~ along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
   ~
+  ~ Copyright 2024 (C) Y.Tory
   ~ Copyright 2013 (C) Sindre Mehus
   -->
 
@@ -30,36 +31,30 @@
 
 <th:block th:replace="settingsHeader::header(cat='dlna',toast=${settings_toast})" />
 
-<form method="post" action="dlnaSettings.view">
-    <input
-            type="hidden"
-            th:name="${_csrf.parameterName}"
-            th:value="${_csrf.token}" />
+<form method="post" th:action="@{/dlnaSettings.view}" th:object="${command}">
 
     <div>
-        <input type="checkbox" name="dlnaEnabled" id="dlnaEnabled" th:checked="${model.dlnaEnabled}" />
-        <label for="dlnaEnabled" th:text="#{dlnasettings.enabled}"></label>
+        <input type="checkbox" th:field="*{dlnaEnabled}" />
+        <label th:for="${#ids.prev('dlnaEnabled')}" th:text="#{dlnasettings.enabled}"></label>
     </div>
     <p class="detail" style="width:60%;white-space:normal" th:text="#{dlnasettings.description}"></p>
 
     <div>
         <span th:text="#{dlnasettings.servername}"></span>
-        <input name="dlnaServerName" id="dlnaServerName" size="40"
-               th:value="${model.dlnaServerName}" />
+        <input th:field="*{dlnaServerName}" size="40" />
     </div>
     <p class="detail" style="width:60%;white-space:normal;padding-top:0" th:text="#{dlnasettings.servername.description}">
     </p>
 
     <div>
-        <label for="dlnaBaseLANURL" th:text="#{dlnasettings.baselanurl}"></label>
-        <input type="text" size="50" name="dlnaBaseLANURL" id="dlnaBaseLANURL"
-               th:value="${model.dlnaBaseLANURL}" />
+        <label th:for="${#ids.next('dlnaBaseLANURL')}" th:text="#{dlnasettings.baselanurl}"></label>
+        <input type="text" size="50" th:field="*{dlnaBaseLANURL}" />
     </div>
     <p class="detail" style="width:60%;white-space:normal" th:text="#{dlnasettings.lanurl.description}"></p>
 
     <p>
         <input type="submit" th:value="#{common.save}" style="margin-right:0.3em">
-        <a href='nowPlaying.view'><input type="button" th:value="#{common.cancel}"></a>
+        <a th:href='@{nowPlaying.view}'><input type="button" th:value="#{common.cancel}"></a>
     </p>
 
 </form>

@@ -46,6 +46,7 @@ public class ConfigurationPropertiesService {
         Path propertyFile = homeConfig.getPropertyFile();
         if (!Files.exists(propertyFile)) {
             try {
+                Files.createFile(propertyFile);
                 Files.setLastModifiedTime(propertyFile, FileTime.from(Instant.now()));
             } catch (IOException e) {
                 throw new RuntimeException("Could not create new property file", e);

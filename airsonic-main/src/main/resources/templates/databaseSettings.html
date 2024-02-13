@@ -76,12 +76,22 @@
             $().toastmessage('showSuccessToast', 'Export DB: ' + msg);
         }
 
+        function bindComponentHandling() {
+            // blur out sensitive data
+            $('.sensitive').hover(function() {
+              $(this).removeClass('blur');
+            }).mouseout(function() {
+              $(this).addClass('blur');
+            });
+        }
+
         $(document).ready(function () {
             updateShownOptions();
+            bindComponentHandling();
             $('select#configType').on('change', function () {
                 updateShownOptions();
             });
-            top.StompClient.subscribe("databaseSettingsController.jsp", {
+            top.StompClient.subscribe("databaseSettings.html", {
                 '/user/queue/uploads/status': function(msg) { uploadStatus(JSON.parse(msg.body)); },
                 '/topic/backupStatus': function(msg) { backupStatus(msg.body); },
                 '/topic/importStatus': function(msg) { importStatus(msg.body); },
@@ -98,14 +108,14 @@
 
 <th:block th:replace="settingsHeader::header(cat='database',toast=${settings_toast})" />
 
-<form action="databaseSettings.view" method="post">
+<form th:action="@{/databaseSettings.view}" th:object="${command}" method="post">
     <p th:utext="#{databasesettings.moreinfo}"></p>
 
     <table style="white-space:nowrap" class="indent">
         <tr>
             <td th:text="#{databasesettings.configtype}"></td>
             <td>
-                <select name="configType" style="width:12em" id="configType">
+                <select th:field="*{configType}" style="width:12em">
                     <option value="BUILTIN" th:text="Built-in"></option>
                     <option value="EXTERNAL" th:text="External"></option>
                     <option value="JNDI" th:text="JNDI"></option>
@@ -121,26 +131,26 @@
                 <tr>
                     <td th:text="#{databasesettings.driver}"></td>
                     <td>
-                        <input name="driver" th:value="${command.driver}" size="30"/>
+                        <input th:field="*{driver}" size="30"/>
                         <th:block th:replace="helpToolTip(topic=jdbcdriver)" />
                     </td>
                 </tr>
                 <tr>
                     <td th:text="#{databasesettings.url}"></td>
                     <td>
-                        <input name="url" th:value="${command.url}" size="58"/>
+                        <input th:field="*{url}" size="58"/>
                     </td>
                 </tr>
                 <tr>
                     <td th:text="#{databasesettings.username}"></td>
                     <td>
-                        <input name="username" th:value="${command.username}" size="36"/>
+                        <input type="text" th:field="*{username}" size="36" class="sensitive blur"/>
                     </td>
                 </tr>
                 <tr>
                     <td th:text="#{databasesettings.password}"></td>
                     <td>
-                        <input name="password" th:value="${command.password}" size="36"/>
+                        <input th:field="*{jdbcPassword}" size="36" class="sensitive blur"/>
                     </td>
                 </tr>
             </table>
@@ -152,7 +162,7 @@
             <tr>
                 <td th:text="#{databasesettings.jndiname}"></td>
                 <td>
-                    <input name="JNDIName" th:value="${command.JNDIName}" size="36"/>
+                    <input type="text" th:field="*{JNDIName}" size="36"/>
                     <th:block th:replace="helpToolTip(topic=jndiname)" />
                 </td>
             </tr>
@@ -163,24 +173,24 @@
             <tr>
                 <td th:text="#{databasesettings.mysqlvarcharmaxlength}"></td>
                 <td>
-                    <input name="mysqlVarcharMaxlength" th:value="${command.mysqlVarcharMaxlength}" size="8"/>
+                    <input th:field="*{mysqlVarcharMaxlength}" size="8"/>
                     <th:block th:replace="helpToolTip(topic=mysqlvarcharmaxlength)" />
                 </td>
             </tr>
         </table>
-        <p class="warning" th:text="#{databasesettings.jdbclibrary}"></p>
+        <p class="warning" th:utext="#{databasesettings.jdbclibrary}"></p>
     </div>
 
     <p class="warning" th:text="#{databasettings.restartRequired}"></p>
 
-   <th:block th:if="${command.backuppable}">
+   <th:block th:if="*{backuppable}">
     <p th:text="#{databasesettings.autodbbackup}"></p>
     <table>
       <tr>
         <td th:text="#{databasesettings.dbbackupschedule}"></td>
 
         <td>
-          <select name="dbBackupInterval" style="width:20em">
+          <select th:field="*{dbBackupInterval}" style="width:20em">
               <option value="-1" th:text="#{podcastsettings.interval.manually}"></option>
               <option value="1" th:text="#{podcastsettings.interval.hourly}"></option>
               <option value="24" th:text="#{podcastsettings.interval.daily}"></option>
@@ -193,10 +203,9 @@
         <td th:text="#{podcastsettings.keep}"></td>
 
         <td>
-          <select name="dbBackupRetentionCount" style="width:20em">
+          <select th:field="*{dbBackupRetentionCount}" style="width:20em">
               <option value="-1" th:text="#{databasesettings.keep.all}" ></option>
               <option value="1" th:text="#{databasesettings.keep.one}"></option>
-
               <option th:each="count: ${ {2, 3, 4, 5, 10, 20, 30, 50, 100, 500, 1000} }"
                     th:value="${count}" th:text="#{databasesettings.keep.many(${count})}"></option>
 
@@ -205,14 +214,14 @@
       </tr>
     </table>
    </th:block>
-   <th:block th:if="${!command.backuppable}">
-    <input type="hidden" name="dbBackupInterval" th:value="${command.dbBackupInterval}"/>
-    <input type="hidden" name="dbBackupRetentionCount" th:value="${command.dbBackupRetentionCount}"/>
+   <th:block th:if="*{!backuppable}">
+    <input type="hidden" th:field="*{dbBackupInterval}"/>
+    <input type="hidden" th:field="*{dbBackupRetentionCount}"/>
    </th:block>
 
     <p>
         <input type="submit" th:value="#{common.save}" style="margin-right:0.3em">
-        <a href="nowPlaying.view"><input type="button" th:value="#{common.cancel}"></a>
+        <a th:href="@{/nowPlaying.view}"><input type="button" th:value="#{common.cancel}"></a>
     </p>
 
 </form>
@@ -234,13 +243,9 @@
       </button>
     </div>
 
-    <form method="post" enctype="multipart/form-data" action="upload.view?" onsubmit="importDB()">
-        <input
-                type="hidden"
-                th:name="${_csrf.parameterName}"
-                th:value="${_csrf.token}" />
-        <input type="hidden" id="dir" name="dir" th:value="${command.importFolder}"/>
-        <input type="hidden" name="callback" th:value="${command.callback}"/>
+    <form method="post" enctype="multipart/form-data" th:action="@{upload.view}" th:object="${command}" onsubmit="importDB()">
+        <input type="hidden" id="dir" name="dir" th:value="*{importFolder}"/>
+        <input type="hidden" name="callback" th:value="*{callback}"/>
         <input type="hidden" name="unzip" value="true"/>
         <div style="display:table-cell; padding:0.5em; padding-right:0;"><input type="file" id="file" name="file" size="40" multiple="multiple"/></div>
         <div style="display:table-cell; padding:0.5em; padding-left:0;">

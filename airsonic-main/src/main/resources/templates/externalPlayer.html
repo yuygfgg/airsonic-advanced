@@ -31,7 +31,7 @@
         <h1>
                 <span th:if="${#strings.isEmpty(model.share) or #lists.isEmpty(model.media)}">
                     Sorry, the content is not available.
-                </span>>
+                </span>
                 <span th:if="${#strings.isEmpty(model.share) or #lists.isEmpty(model.media)}"
                       th:text="${#strings.isEmpty(model.share.description) ? model.media[0].file.artist : model.share.description}">
                 </span>
@@ -62,7 +62,7 @@
     var player = new MediaElementPlayer('player', {
         useDefaultControls: true,
         features: ['speed', 'quality', 'chromecast', 'playlist', 'prevtrack', 'nexttrack', 'shuffle', 'loop'],
-        iconSprite: "[(@{/script/mediaelement/mejs-controls.svg})]",
+        iconSprite: /*[[@{/script/mediaelement/mejs-controls.svg}]]*/ 'mejs.controls.svg',
         currentMessage: "",
         defaultSpeed: "1.00",
         speeds: ["8.00", "2.00", "1.50", "1.25", "1.00", "0.75", "0.5"],
@@ -70,18 +70,18 @@
         castAppID: "4FBFE470",
         castPolicy: "tab",
         castEnableTracks: true,
-        playlistTitle: "[(${model.share.description})]",
+        playlistTitle: /*[[${model.share.description}]]*/ 'Airsonic',
         playlist: [
-            [# th:each="song:${model.media}" ]
+            /*[# th:each="song:${model.media}"]*/
             {
-                "src": "[(${song.streamUrl})]",
-                "title": [[${song.file.title}]],
-                "type": "[(${song.contentType})]",
-                "data-playlist-thumbnail": "[(${song.coverArtUrl})]",
-                "data-playlist-description": [[${song.file.artist}]],
-                "data-playlist-caption": "[(${song.captionsUrl})]"
+                "src": /*[[${song.streamUrl}]]*/ 'src',
+                "title": /*[[${song.file.title}]]*/ 'title',
+                "type": /*[[${song.contentType}]]*/ 'type',
+                "data-playlist-thumbnail": /*[[${song.coverArtUrl}]]*/ 'thumbnail',
+                "data-playlist-description": /*[[${song.file.artist}]]*/ 'description',
+                "data-playlist-caption": /*[[${song.captionsUrl}]]*/ 'caption'
             },
-            [/]
+            /*[/]*/
         ],
         audioWidth: 600,
         success: function(m, n, p) {

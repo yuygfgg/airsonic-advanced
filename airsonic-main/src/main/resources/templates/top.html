@@ -131,7 +131,7 @@
         </td>
         <td style="min-width:3em;padding-right:1em;text-align: center">
             <a th:href="@{/nowPlaying}" target="main"><img th:src="${#themes.code('nowPlayingImage')}" th:title="#{top.now_playing}" th:alt="#{top.now_playing}"></a>
-            <div class="topHeader"><a th:href="@{nowPlaying}" target="main" th:utext="#{top.now_playing}">Top Now Playing</a></div>
+            <div class="topHeader"><a th:href="@{/nowPlaying}" target="main" th:utext="#{top.now_playing}">Top Now Playing</a></div>
         </td>
         <td style="min-width:3em;padding-right:1em;text-align: center">
             <a th:href="@{/starred}" target="main"><img th:src="${#themes.code('starredImage')}" th:title="#{top.starred}" th:alt="#{top.starred}"></a>

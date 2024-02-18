@@ -18,7 +18,7 @@
 
 <th:block th:replace="settingsHeader::header(cat='advanced',toast=${settings_toast})" />
 
-<form method="post" th:action="@{advancedSettings.view}" th:object="${command}">
+<form method="post" th:action="@{/advancedSettings.view}" th:object="${command}">
 
     <table style="white-space:nowrap" class="indent">
         <tr>

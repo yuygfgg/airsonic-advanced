@@ -2,7 +2,7 @@
 <html><head>
     <th:block th:replace="head" />
     <th:block th:replace="websocket" />
-    <link rel="alternate" type="application/rss+xml" title="Airsonic Podcast" th:href="@{podcast.view(suffix=.rss)}">
+    <link rel="alternate" type="application/rss+xml" title="Airsonic Podcast" th:href="@{/podcast.view(suffix=.rss)}">
     <style>
         iframe {
             border: none;

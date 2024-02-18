@@ -506,16 +506,16 @@
     <span class="header"><a href="javascript:void(0)" onclick="onPlayAll();" th:text="#{common.play}"></a></span>
         | <span class="header"><a href="javascript:void(0)" onclick="onAddAll();" th:text="#{main.addall}"></a></span>
     <th:block th:if="${model.user.downloadRole}">
-        | <span class="header"><a th:href="@{download(playlist=${model.playlist.id})}" th:text="#{common.download}"></a></span>
+        | <span class="header"><a th:href="@{/download(playlist=${model.playlist.id})}" th:text="#{common.download}"></a></span>
     </th:block>
     <th:block th:if="${model.user.shareRole}">
-        | <span class="header"><a th:href="@{createShare(playlist=${model.playlist.id})}" th:text="#{share.title}"></a></span>
+        | <span class="header"><a th:href="@{/createShare(playlist=${model.playlist.id})}" th:text="#{share.title}"></a></span>
     </th:block>
     <th:block th:if="${model.editAllowed}">
         | <span class="header"><a href="javascript:void(0)" onclick="onEditPlaylist();" th:text="#{common.edit}"></a></span>
         | <span class="header"><a href="javascript:void(0)" onclick="onDeletePlaylist();" th:text="#{common.delete}"></a></span>
     </th:block>
-    | <span class="header"><a th:href="@{exportPlaylist(id=${model.playlist.id})}" th:text="#{playlist2.export}"></a></span>
+    | <span class="header"><a th:href="@{/exportPlaylist(id=${model.playlist.id})}" th:text="#{playlist2.export}"></a></span>
 
 </h2>
 

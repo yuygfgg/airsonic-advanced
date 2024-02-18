@@ -338,7 +338,7 @@
 
     <p style="padding-top:1em;padding-bottom:1em">
         <input type="submit" th:value="#{common.save}" style="margin-right:0.3em"/>
-        <a th:href="@{nowPlaying}"><input type="button" th:value="#{common.cancel}"></a>
+        <a th:href="@{/nowPlaying}"><input type="button" th:value="#{common.cancel}"></a>
     </p>
 
     <h2 th:text="#{personalsettings.avatar.title}"></h2>
@@ -360,14 +360,14 @@
         <input type="radio" th:id="customAvatar" th:field="*{avatarId}" th:value="-2"/>
         <label for="customAvatar"><span th:text="#{personalsettings.avatar.custom}"></span>
             <th:block th:if="${!#strings.isEmpty(command.customAvatar)}">
-                <img th:src="@{avatar.view(username=*{user.username}, forceCustom=true)}"
+                <img th:src="@{/avatar.view(username=*{user.username}, forceCustom=true)}"
                      th:alt="*{customAvatar.name}" th:width="*{customAvatar.width}" th:height="*{customAvatar.height}" style="padding-right:2em"/>
             </th:block>
         </label>
     </p>
 </form>
 
-<form method="post" enctype="multipart/form-data" th:action="@{avatarUpload}">
+<form method="post" enctype="multipart/form-data" th:action="@{/avatarUpload}">
     <table>
         <tr>
             <td style="padding-right:1em" th:text="#{personalsettings.avatar.changecustom}"></td>

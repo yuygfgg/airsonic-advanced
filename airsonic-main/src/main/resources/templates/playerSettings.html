@@ -56,11 +56,11 @@ $(document).ready(function() {
             <tr>
 
                 <td style="padding-right:1em"><div class="forward">
-                    <a th:href="@{playerSettings.view(delete=${command.playerId})}" th:text="#{playersettings.forget}"></a>
+                    <a th:href="@{/playerSettings.view(delete=${command.playerId})}" th:text="#{playersettings.forget}"></a>
                 </div></td>
 
                 <td><div class="forward">
-                    <a th:href="@{playerSettings.view(clone=${command.playerId})}" th:text="#{playersettings.clone}"></a>
+                    <a th:href="@{/playerSettings.view(clone=${command.playerId})}" th:text="#{playersettings.clone}"></a>
                 </div></td>
             </tr>
         </table>

@@ -31,7 +31,7 @@
                 <td style="padding-left:1em"><input type="text" th:name="|description[${share.id}]|" size="40" th:value="${share.description}"/></td>
                 <td style="padding-left:1em" th:text="${#temporals.format(share.lastVisited, 'SHORT')}"></td>
                 <td style="padding-left:1em; text-align:right" th:text="${share.visitCount}"></td>
-                <td style="padding-left:1em"><a th:href="@{main.view(id=${shareInfo.dir.id})}" th:title="${shareInfo.dir.name}"
+                <td style="padding-left:1em"><a th:href="@{/main.view(id=${shareInfo.dir.id})}" th:title="${shareInfo.dir.name}"
                     th:text="${#strings.abbreviate(shareInfo.dir.name, 30)}"></a></td>
                 <td style="padding-left:1em" th:text="${#temporals.format(share.expires, 'SHORT')}"></td>
                 <td style="padding-left:1em">

@@ -243,7 +243,7 @@
       </button>
     </div>
 
-    <form method="post" enctype="multipart/form-data" th:action="@{upload.view}" th:object="${command}" onsubmit="importDB()">
+    <form method="post" enctype="multipart/form-data" th:action="@{/upload.view}" th:object="${command}" onsubmit="importDB()">
         <input type="hidden" id="dir" name="dir" th:value="*{importFolder}"/>
         <input type="hidden" name="callback" th:value="*{callback}"/>
         <input type="hidden" name="unzip" value="true"/>

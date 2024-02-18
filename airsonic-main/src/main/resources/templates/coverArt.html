@@ -67,7 +67,7 @@ PARAMETERS
         <th:block th:if="${showChange== true or showZoom == true}">
             <div style="padding-top:6px;text-align:right">
                 <th:block th:if="${showChange}">
-                    <a class="detail" th:href="@{changeCoverArt(id=${albumId})}" th:text="#{coverart.change}">change</a>
+                    <a class="detail" th:href="@{/changeCoverArt(id=${albumId})}" th:text="#{coverart.change}">change</a>
                 </th:block>
 
                 <th:block th:if="${showZoom and showChange}">

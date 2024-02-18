@@ -105,7 +105,7 @@
 <a id="top"></a>
 
 <div style="padding-bottom:1.5em">
-    <a href="home" target="main">
+    <a th:href="@{/home}" target="main">
       <img th:src="${#themes.code('logoImage')}" style="width:196px" th:title="#{top.help}" alt="">
     </a>
 </div>
@@ -127,8 +127,8 @@
 
 <div style="padding-bottom:0.5em">
     <div class="forward">
-        <a th:if="${model.scanning}" href="left" th:text="#{common.refresh}">Refresh</a>
-        <a th:unless="${model.scanning}" href="left?refresh=true" th:text="#{common.refresh}">Refresh</a>
+        <a th:if="${model.scanning}" th:href="@{/left}" th:text="#{common.refresh}">Refresh</a>
+        <a th:unless="${model.scanning}" th:href="@{/left(refresh=true)}" th:text="#{common.refresh}">Refresh</a>
     </div>
 </div>
 
@@ -146,7 +146,7 @@
     <div style="padding-top: 0.3em"></div>
     <div class="forward" id="showAllPlaylists" style="display: none"><a href="#" onclick="showAllPlaylists()" th:text="#{left.showallplaylists}">show all</a></div>
     <div class="forward"><a href="#" onclick="createEmptyPlaylist()" th:text="#{left.createplaylist}">create</a></div>
-    <div class="forward"><a href="importPlaylist" target="main" th:text="#{left.importplaylist}">import</a></div>
+    <div class="forward"><a th:href="@{/importPlaylist}" target="main" th:text="#{left.importplaylist}">import</a></div>
 </div>
 
 <th:block th:if="${#lists.isEmpty(model.radios)}">

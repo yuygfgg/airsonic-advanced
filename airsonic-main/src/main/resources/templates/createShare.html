@@ -30,7 +30,7 @@
         </div>
     </th:block>
     <th:block th:if="${model.user.settingsRole}">
-        <div class="forward" style="float:left"><a href="shareSettings.view" th:text="#{share.manage}"></a></div>
+        <div class="forward" style="float:left"><a th:href="@{/shareSettings.view}" th:text="#{share.manage}"></a></div>
     </th:block>
 </div>
 </body>

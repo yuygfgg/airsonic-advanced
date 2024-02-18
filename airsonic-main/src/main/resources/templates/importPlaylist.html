@@ -10,8 +10,7 @@
     <p th:if="${!#lists.isEmpty(model?.playlist)}">
         <span th:text="#{importPlaylist.success(${model.playlist.name})}"></span>
         <script type="text/javascript" th:inline="javascript">
-            top.left.updatePlaylists();
-            top.main.location.href = "playlist.view?id=[[${model.playlist.id}]]";
+            top.main.location.href = /*[[@{playlist.view(id=${model.playlist.id})}]]*/ '' ;
         </script>
     </p>
 
@@ -19,11 +18,7 @@
 
 <div style="padding-bottom: 0.25em" th:text="#{importPlaylist.text}">
 </div>
-<form method="post" enctype="multipart/form-data" action="importPlaylist.view?">
-    <input
-            type="hidden"
-            th:name="${_csrf.parameterName}"
-            th:value="${_csrf.token}" />
+<form method="post" enctype="multipart/form-data" th:action="@{/importPlaylist.view}">
     <input type="file" id="file" name="file" size="40"/>
     <input type="submit" th:value="#{common.ok}"/>
 </form>

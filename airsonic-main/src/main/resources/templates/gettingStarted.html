@@ -24,14 +24,14 @@
     <tr>
         <td style="font-size:26pt;padding:20pt">1</td>
         <td>
-            <div style="font-size:14pt"><a href="userSettings.view?userIndex=0" th:text="#{gettingStarted.step1.title}"></a></div>
+            <div style="font-size:14pt"><a th:href="@{/userSettings.view(userIndex=0)}" th:text="#{gettingStarted.step1.title}"></a></div>
             <div style="padding-top:5pt" th:text="#{gettingStarted.step1.text}"></div>
         </td>
     </tr>
     <tr>
         <td style="font-size:26pt;padding:20pt">2</td>
         <td>
-            <div style="font-size:14pt"><a href="musicFolderSettings.view" th:text="#{gettingStarted.step2.title}"></a></div>
+            <div style="font-size:14pt"><a th:href="@{/musicFolderSettings.view}" th:text="#{gettingStarted.step2.title}"></a></div>
             <div style="padding-top:5pt" th:text="#{gettingStarted.step2.text}"></div>
         </td>
     </tr>

@@ -15,6 +15,7 @@
   ~  You should have received a copy of the GNU General Public License
   ~  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
   ~
+  ~  Copyright 2024 (C) Y.Tory
   ~  Copyright 2015 (C) Sindre Mehus
   -->
 
@@ -26,13 +27,23 @@
         function init() {
             $("#dialog-delete").dialog({resizable: false, height: 170, autoOpen: false,
                 buttons: {
-                    "[(#{common.delete})]": function() {
-                        location.href = "podcastReceiverAdmin.view?channelId=[(${model.channel.id})]" +
-                                "&deleteChannel=${model.channel.id}";
+                    /*[+
+                    [(#{common.delete})]: function() {
+                        location.href = "[(@{/podcastReceiverAdmin.view(channelId=${model.channel.id}, deleteChannel=${model.channel.id})})]";
                     },
-                    "[(#{common.cancel})]": function() {
+                    [(#{common.cancel})]: function() {
                         $(this).dialog("close");
                     }
+                    +]*/
+                    /*[-*/
+                    "Delete": function() {
+                        location.href = "podcastReceiverAdmin.view?channelId=0" +
+                                "&deleteChannel=0";
+                    },
+                    "Cancel": function() {
+                        $(this).dialog("close");
+                    }
+                    /*-]*/
                 }});
                 
               $( '#episodessa' ).click( function () {
@@ -41,8 +52,14 @@
         }
 
         function downloadSelected() {
-            location.href = "podcastReceiverAdmin.view?channelId=[(${model.channel.id})]&" +
+            /*[+
+            location.href = "[(|@{/podcastReceiverAdmin.view(channelId=${model.channel.id})}&|)]" +
                     getSelectedEpisodes().map(i => "downloadEpisode=" + i).join("&");
+            +]*/
+            /*[-*/
+            location.href = "podcastReceiverAdmin.view?channelId=0&" +
+                    getSelectedEpisodes().map(i => "downloadEpisode=" + i).join("&");
+            /*-]*/
         }
 
         function deleteChannel() {
@@ -50,21 +67,37 @@
         }
 
         function deleteSelected() {
-            location.href = "podcastReceiverAdmin.view?channelId=[(${model.channel.id})]&" +
+            /*[+
+            location.href = "[(|@{/podcastReceiverAdmin.view(channelId=${model.channel.id})}&|)]" +
                     getSelectedEpisodes().map(i => "deleteEpisode=" + i).join("&");
+            +]*/
+            /*[-*/
+            location.href = "podcastReceiverAdmin.view?channelId=0&" +
+                    getSelectedEpisodes().map(i => "deleteEpisode=" + i).join("&");
+            /*-]*/ 
         }
 
         function refreshChannels() {
-            location.href = "podcastReceiverAdmin.view?refresh&channelId=[(${model.channel.id})]";
+            /*[+
+            location.href = "[(@{/podcastReceiverAdmin.view(refresh,channelId=${model.channel.id})})]";
+            +]*/
+            /*[-*/
+            location.href = "podcastReceiverAdmin.view?refresh&channelId=0";
+            /*-]*/
         }
 
         function refreshPage() {
-            location.href = "podcastChannel.view?id=[(${model.channel.id})]";
+            /*[+
+            location.href = "[(@{/podcastChannel.view(id=${model.channel.id})})]";
+            +]*/
+            /*[-*/
+            location.href = "podcastChannel.view?id=0";
+            /*-]*/
         }
 
         function getSelectedEpisodes() {
             var result = [];
-            for (var i = 0; i < [(${#lists.size(model.episodes)})]; i++) {
+            for (var i = 0; i < /*[(${#lists.size(model.episodes)})]*/ 3; i++) {
                 var checkbox = $("#episode" + i);
                 if (checkbox.is(":checked")) {
                     result.push(checkbox.val());
@@ -86,13 +119,10 @@
 <body class="mainframe bgcolor1" onload="init()">
 
 <div style="float:left;margin-right:1.5em;margin-bottom:1.5em">
-<c:import url="coverArt.jsp">
-    <c:param name="podcastChannelId" value="${model.channel.id}"/>
-    <c:param name="coverArtSize" value="160"/>
-</c:import>
+    <th:block th:replace="coverArt::art(podcastChannelId=${model.channel.id}, coverArtSize=${160})" />
 </div>
 
-<h1 id="name"><a href="podcastChannels.view" th:text="#{podcastreceiver.title}"></a> &raquo; <span th:text="${model.channel.title}"></span></h1>
+<h1 id="name"><a th:href="@{/podcastChannels.view}" th:text="#{podcastreceiver.title}"></a> &raquo; <span th:text="${model.channel.title}"></span></h1>
 <h2>
     <span class="header"><a th:href="|javascript:top.playQueue.onPlayPodcastChannel(${model.channel.id})|" th:text="#{common.play}"></a></span>
 
@@ -115,7 +145,7 @@
 <table class="music">
         <tr>
             <th class="fit center"><input type="checkbox" id="episodessa" value="all"/></th>
-            <th ></th>
+            <th colspan="4"></th>
             <th class="truncate left" th:text="#{podcastreceiver.episode}"></th>
             <th class="fit center" th:text="#{personalsettings.duration}"></th>
             <th class="fit left" th:text="#{podcastreceiver.published}"></th>
@@ -126,20 +156,17 @@
 
             <td class="fit center"><input type="checkbox" th:id="|episode${i.index}|" th:value="${episode.id}"/></td>
 
-            <th:block th:if="${#strings.isEmpty(episode.mediaFileId) or episode.status.name ne 'COMPLETED'}">
-                <td></td>
+            <th:block th:if="${#strings.isEmpty(episode.mediaFile?.id) or episode.status.name ne 'COMPLETED'}">
+                <td colspan="4"></td>
             </th:block>
-            <th:block th:if="${!#strings.isEmpty(episode.mediaFileId) && episode.status.name eq 'COMPLETED'}">
-                <td>
-
+            <th:block th:if="${!#strings.isEmpty(episode.mediaFile?.id) && episode.status.name eq 'COMPLETED'}">
                     <th:block th:replace="playButtons::buttons(
-                        id=${episode.mediaFileId},
+                        id=${episode.mediaFile.id},
                         playEnabled=${model.user.streamRole and model['partyModeEnabled'] != true},
                         addEnabled=${model.user.streamRole and model['partyModeEnabled'] != true},
+                        asTable=true,
                         podcastId=${episode.id}
                     )" />
-                </td>
-
             </th:block>
 
             <td class="truncate">
@@ -180,7 +207,7 @@
     </th:block>
     <td style="padding-right:2em"><div class="forward"><a href="javascript:refreshPage()" th:text="#{podcastreceiver.refresh}"></a></div></td>
     <th:block th:if="${model.user.adminRole}">
-        <td style="padding-right:2em"><div class="forward"><a href="podcastSettings.view?" th:text="#{podcastreceiver.settings}"></a></div></td>
+        <td style="padding-right:2em"><div class="forward"><a th:href="@{/podcastSettings.view}" th:text="#{podcastreceiver.settings}"></a></div></td>
     </th:block>
 </tr></table>
 

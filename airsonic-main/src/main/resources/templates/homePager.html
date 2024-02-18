@@ -1,49 +1,49 @@
-<table>
+<table th:object="${model}">
     <tr>
-        <th:block th:if="${!#strings.isEmpty(model.musicFolder)}">
+        <th:block th:if="*{!#strings.isEmpty(musicFolder)}">
             <td style="padding-right: 2em">
                 <div th:style="|border:1px solid #${#themes.code('detailColor')}; padding-left: 0.5em;padding-right: 0.5em|"
-                th:text="${model.musicFolder.name}">
+                th:text="*{musicFolder.name}">
                 </div>
             </td>
         </th:block>
 
-        <th:block th:if="${model.listType ne 'random'}">
-            <th:block th:if="${#lists.size(model.albums) gt 0}">
-                <td style="padding-right:0.5em" th:utext="#{home.albums(${model.listOffset + 1},${model.listOffset + #lists.size(model.albums)})}">
+        <th:block th:if="*{listType ne 'random'}">
+            <th:block th:if="*{#lists.size(albums) gt 0}">
+                <td style="padding-right:0.5em" th:utext="#{home.albums(*{listOffset + 1},*{listOffset + #lists.size(albums)})}">
                 </td>
 
-                <td th:if="${model.listOffset gt 0}">
-                    <a th:href="@{/home(listType=${model.listType},listOffset=${model.listOffset - model.listSize},genre=${model['genre']}, decade=${model['decade']})}"><img th:src="${#themes.code('backImage')}" alt=""></a>
+                <td th:if="*{listOffset gt 0}">
+                    <a th:href="@{/home(listType=*{listType},listOffset=*{listOffset - listSize},genre=*{genre}, decade=*{decade})}"><img th:src="${#themes.code('backImage')}" alt=""></a>
                 </td>
 
-                <td th:if="${#lists.size(model.albums) eq model.listSize}">
-                    <a th:href="@{/home(listType=${model.listType},listOffset=${model.listOffset + model.listSize},genre=${model['genre']}, decade=${model['decade']})}">
+                <td th:if="*{#lists.size(albums) eq listSize}">
+                    <a th:href="@{/home(listType=*{listType},listOffset=*{listOffset + listSize},genre=*{genre}, decade=*{decade})}">
                         <img th:src="${#themes.code('forwardImage')}" alt=""></a>
                 </td>
                 <td style="padding-right: 2em">
                 </td>
             </th:block>
 
-            <th:block th:if="${model.listType eq 'decade'}" >
+            <th:block th:if="*{listType eq 'decade'}" >
                 <td th:text="#{home.decade.text}"></td>
                 <td style="padding-right: 2em">
-                    <select name="decade"
-                            th:data-listtype="${model.listType}"
+                    <select th:field="*{decade}"
+                            th:data-listtype="*{listType}"
                             onchange="location='home?listType='+this.getAttribute('data-listtype')+'&amp;decade=' + options[selectedIndex].value">
-                            <option th:each="decade: ${model.decades}" th:selected="${decade eq model.decade}"
-                             th:value="${decade}" th:text="${decade}">1990</option>
+                            <option th:each="item: *{decades}" 
+                             th:value="${item}" th:text="${item}">1990</option>
                     </select>
                 </td>
             </th:block>
-            <th:block th:if="${model.listType eq 'genre'}">
+            <th:block th:if="*{listType eq 'genre'}">
                 <td th:text="#{home.genre.text}"></td>
                 <td style="padding-right: 2em">
                     <select name="genre"
-                            th:data-listtype="${model.listType}"
+                            th:data-listtype="*{listType}"
                             onchange="location='home?listType='+this.getAttribute('data-listtype')+'&amp;genre=' + encodeURIComponent(options[selectedIndex].value)">
-                        <option th:each="genre: ${model.genres}" th:selected="${genre.name eq model.genre}" th:value="${genre.name}"
-                        th:text="|${genre.name} (${genre.albumCount})|"></option>
+                        <option th:each="item: *{genres}" th:value="${item.name}"
+                        th:text="|${item.name} (${item.albumCount})|"></option>
                     </select>
                 </td>
             </th:block>

@@ -7,12 +7,7 @@
 
 <th:block th:replace="settingsHeader::header(cat='share',toast=${settings_toast}, restricted=${!model.user.adminRole})" />
 
-<form method="post" action="shareSettings.view">
-    <input
-            type="hidden"
-            th:name="${_csrf.parameterName}"
-            th:value="${_csrf.token}" />
-
+<form method="post" th:action="@{/shareSettings.view}">
     <table class="music indent">
         <tr>
             <th style="padding-left:1em" th:text="#{sharesettings.name}"></th>
@@ -55,7 +50,7 @@
 
     <p style="padding-top:1em">
         <input type="submit" th:value="#{common.save}" style="margin-right:0.3em">
-        <a href='nowPlaying.view'><input type="button" th:value="#{common.cancel}" style="margin-right:2.0em"></a>
+        <a th:href="@{/nowPlaying.view}"><input type="button" th:value="#{common.cancel}" style="margin-right:2.0em"></a>
         <input type="checkbox" id="deleteExpired" name="deleteExpired"/>
         <label for="deleteExpired" th:text="#{sharesettings.deleteexpired}"></label>
     </p>

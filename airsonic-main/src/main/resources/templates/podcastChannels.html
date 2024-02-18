@@ -4,12 +4,15 @@
     <th:block th:replace="jquery" />
     <th:block th:replace="table" />
     <script type="text/javascript" th:src="@{/script/utils.js}"></script>
-    <script type="text/javascript" th:inline="javascript">
+    <script type="text/javascript" th:inline="javascript"
+        th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSize ?: '') ) ?
+                            '' : ', '.concat(model.initialPaginationSizeFiles ?: '')}"
+    >
       var podcasts = [];
       var searchResults = [];
       var newestPodcasts = [];
       var user = "[(${model['username']})]";
-      var viewAsList = [[${model.viewAsList}]];
+      var viewAsList = /*[[${model.viewAsList}]]*/ false;
       var podcastsTable;
       var podcastIndexTable;
       var newestPodcastTable;
@@ -31,9 +34,19 @@
             order: [],
             //orderFixed: [ 0, 'asc' ],
             orderMulti: true,
-            pageLength: [[${model.initialPaginationSize}]],
-//          <c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSize)) ? '' : ', '.concat(model.initialPaginationSizeFiles)}" />--%>
-            lengthMenu: [ [10, 20, 50, 100, -1 ], [10, 20, 50, 100, "All" ] ],
+            pageLength: /*[[${model.initialPaginationSize}]]*/ 10,
+            /*[+
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1 [(${paginationaddition})] ], 
+                [10, 20, 50, 100, "All" [(${paginationaddition})] ] 
+            ],
+            +]*/
+            /*[- */
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1], 
+                [10, 20, 50, 100, "All"] 
+            ],
+            /* -]*/
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -158,8 +171,19 @@
             order: [],
             //orderFixed: [ 0, 'asc' ],
             orderMulti: true,
-            pageLength: [[${model.initialPaginationSize}]],
-          //<c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSize)) ? '' : ', '.concat(model.initialPaginationSizeFiles)}" />
+            pageLength: /*[[${model.initialPaginationSize}]]*/ 10,
+            /*[+
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1 [(${paginationaddition})] ], 
+                [10, 20, 50, 100, "All" [(${paginationaddition})] ] 
+            ],
+            +]*/
+            /*[- */
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1], 
+                [10, 20, 50, 100, "All"] 
+            ],
+            /* -]*/
             lengthMenu: [ [10, 20, 50, 100, -1 ], [10, 20, 50, 100, "All" ] ],
             processing: true,
             autoWidth: true,
@@ -193,21 +217,21 @@
                 },
                 { data: null,
                   searchable: false,
-                  visible: [[${model.user.streamRole and model['partyMode'] != true}]],
+                  visible: /*[[${model.user.streamRole and model['partyMode'] != true}]]*/ false,
                   name: "play",
                   className: "fit not-draggable centeralign",
                   defaultContent: "<img class='playSong' src=\"[(${#themes.code('playImage')})]\" style='height:18px;' alt=\"[(#{common.play})]\" title=\"[(#{common.play})]\">"
                 },
                 { data: null,
                   searchable: false,
-                  visible: [[${model.user.streamRole and model['partyMode'] != true}]],
+                  visible: /*[[${model.user.streamRole and model['partyMode'] != true}]]*/ false,
                   name: "addLast",
                   className: "fit not-draggable centeralign",
                   defaultContent: "<img class='addSongLast' src=\"[(${#themes.code('addImage')})]\" style='height:18px;' alt=\"[(#{common.add})]\" title=\"[(#{common.add})]\">"
                 },
                 { data: null,
                   searchable: false,
-                  visible: [[${model.user.streamRole and model['partyMode'] != true}]],
+                  visible: /*[[${model.user.streamRole and model['partyMode'] != true}]]*/ false,
                   name: "addNext",
                   className: "fit not-draggable centeralign",
                   defaultContent: "<img class='addSongNext' src=\"[(${#themes.code('addNextImage')})]\" style='height:18px;' alt=\"[(#{main.addnext})]\" title=\"[(#{main.addnext})]\">"
@@ -295,9 +319,19 @@
             order: [],
             //orderFixed: [ 0, 'asc' ],
             orderMulti: true,
-            pageLength: [[${model.initialPaginationSize}]],
-          //<c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSize)) ? '' : ', '.concat(model.initialPaginationSizeFiles)}" />
-            lengthMenu: [ [10, 20, 50, 100, -1 ], [10, 20, 50, 100, "All" ] ],
+            pageLength: /*[[${model.initialPaginationSize}]]*/ 10,
+            /*[+
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1 [(${paginationaddition})] ], 
+                [10, 20, 50, 100, "All" [(${paginationaddition})] ] 
+            ],
+            +]*/
+            /*[- */
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1], 
+                [10, 20, 50, 100, "All"] 
+            ],
+            /* -]*/
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -583,7 +617,7 @@
         //append container first to keep order intact when async callback happens
         $('#thumbs').append('<div class="albumThumb" id="podcastThumb-' + podcast.id + '"></div>');
         var delayString = delay ? ("&appearAfter=" + delay) : "";
-        $.get(urlBase + '?hideOverflow=true&showLink=true' + delayString + '&coverArtSize=160&captionCount=2&caption2=' + encodeURIComponent(podcast.fileCount + ' [(#{podcastreceiver.episodes('')})] ') + '&caption1=' + encodeURIComponent(podcast.title) +'&podcastChannelId=' + podcast.id, data => {
+        $.get(urlBase + '?hideOverflow=true&showLink=true' + delayString + '&coverArtSize=160&captionCount=2&caption2=' + encodeURIComponent(podcast.fileCount + " [(#{podcastreceiver.episodes('')})] ") + '&caption1=' + encodeURIComponent(podcast.title) +'&podcastChannelId=' + podcast.id, data => {
             $('#podcastThumb-' + podcast.id).append(data);
         });
       }

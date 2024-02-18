@@ -73,7 +73,6 @@
     <table class="music indent">
         <th:block th:each="artist:${model.artists}">
             <tr>
-                <td>
                 <th:block th:replace="playButtons::buttons(
                     id=${artist.id},
                     playEnabled=${model.user.streamRole and !model.partyModeEnabled},
@@ -82,7 +81,6 @@
                     starred=${!#strings.isEmpty(artist.starredDate)},
                     asTable=true
                 )" />
-                </td>
                 <td class="truncate">
                     <a th:href="@{/main(id=${artist.id})}" th:text="${artist.name}"></a>
                 </td>
@@ -97,7 +95,6 @@
         <th:block th:each="song:${model.songs}">
 
             <tr>
-                <td>
                 <th:block th:replace="playButtons::buttons(
                     id=${song.id},
                     playEnabled=${model.user.streamRole and !model.partyModeEnabled},
@@ -106,9 +103,7 @@
                     starred=${!#strings.isEmpty(song.starredDate)},
                     video=${false},
                     asTable=true
-                )" /> <!-- TODO CDC fix 'asTable' -->
-                </td>
-
+                )" /> 
                 <td class="truncate" th:text="${song.title}"></td>
                 <td class="truncate">
                     <a th:href="@{/main(path=|${song.folder.id}:${song.parentPath}|)}"><span class="detail" th:text="${song.albumName}"></span></a>
@@ -137,7 +132,6 @@
     <table class="music indent">
         <th:block th:each="video:${model.videos}">
             <tr>
-                <td>
                 <th:block th:replace="playButtons::buttons(
                     id=${video.id},
                     playEnabled=${model.user.streamRole and !model.partyModeEnabled},
@@ -146,8 +140,7 @@
                     starred=${!#strings.isEmpty(video.starredDate)},
                     video=${model.player.web},
                     asTable=true
-                )" /> <!-- TODO CDC fix 'asTable' -->
-                </td>
+                )" /> 
                 <td class="truncate">
                     <a th:href="@{/videoPlayer(id=${video.id})}">${#strings.escapeXml(video.name)}</a>
                 </td>

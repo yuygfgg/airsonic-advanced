@@ -19,18 +19,27 @@ PARAMETERS
                 video=${video ?: false},
                 starEnabled=${starEnabled ?: false},
                 starred=${starred ?: false},
-                podcastId=${podcastId ?: ''}">
-    <th:block th:if="${starEnabled}">
-        <img th:if="starred" th:id="|starImage${id}|" th:src="${#themes.code('ratingOnImage')}" alt="" style="cursor:pointer;height:18px;"
-             th:onclick="|toggleStar(${id}, '#starImage${id}'); return false;|">
-        <img th:unless="starred" th:id="|starImage${id}|" th:src="${#themes.code('ratingOffImage')}" alt="" style="cursor:pointer;height:18px;"
-             th:onclick="|toggleStar(${id}, '#starImage${id}'); return false;|">
-    </th:block>
+                podcastId=${podcastId ?: ''},
+                asTable=${asTable ?: false}">
 
-    <th:block th:if="${playEnabled}">
-        <a th:if="${video}" th:href="@{/videoPlayer(id=${id})}" target="main">
-            <img th:src="${#themes.code('playImage')}" th:alt="#{common.play}" th:title="#{common.play}">
-        </a>
+     <th:block th:if="${starEnabled}">
+          <th:block th:if="${asTable}"><td class="fit"></th:block>
+          <img th:if="starred" th:id="|starImage${id}|"
+               th:src="${#themes.code('ratingOnImage')}" alt="" style="cursor:pointer;height:18px;"
+               th:onclick="|toggleStar(${id}, '#starImage${id}'); return false;|"> <img th:unless="starred"
+               th:id="|starImage${id}|" th:src="${#themes.code('ratingOffImage')}" alt=""
+               style="cursor:pointer;height:18px;" th:onclick="|toggleStar(${id}, '#starImage${id}'); return false;|">
+
+          <th:block th:if="${asTable}"></td></th:block>
+     </th:block>
+
+     <th:block th:if="${asTable}">
+          <td class="fit">
+     </th:block>
+     <th:block th:if="${playEnabled}">
+          <a th:if="${video}" th:href="@{/videoPlayer(id=${id})}" target="main">
+               <img th:src="${#themes.code('playImage')}" th:alt="#{common.play}" th:title="#{common.play}">
+          </a>
 
         <img th:if="${!#strings.isEmpty(podcastId)}" th:src="${#themes.code('playImage')}"
              th:alt="#{common.play}" style="cursor:pointer; height:18px;"
@@ -41,21 +50,34 @@ PARAMETERS
              th:data-id="${id}" onclick="top.playQueue.onPlay(this.getAttribute('data-id')); return false;" th:title="#{common.play}">
     </th:block>
 
-    <img th:if="${addEnabled && !video}" th:id="|add${id}|" th:src="${#themes.code('addImage')}"
-         th:alt="#{main.addlast}"
-         th:data-id="${id}"
-         th:data-toast-msg="#{main.addlast.toast}"
-         onclick="top.playQueue.onAdd(this.getAttribute('data-id')); $().toastmessage('showSuccessToast', this.getAttribute('data-toast-msg')); return false;"
-         style="cursor:pointer; height:18px;" th:title="#{main.addlast}">
+     <th:block th:if="${asTable}">
+          <td class="fit">
+     </th:block>
+     <img th:if="${addEnabled && !video}" th:id="|add${id}|" th:src="${#themes.code('addImage')}"
+          th:alt="#{main.addlast}" th:data-id="${id}" th:data-toast-msg="#{main.addlast.toast}"
+          onclick="top.playQueue.onAdd(this.getAttribute('data-id')); $().toastmessage('showSuccessToast', this.getAttribute('data-toast-msg')); return false;"
+          style="cursor:pointer; height:18px;" th:title="#{main.addlast}">
+     <th:block th:if="${asTable}">
+          </td>
+     </th:block>
+     <th:block th:if="${asTable}">
+          <td class="fit">
+     </th:block>
+     <img th:if="${addEnabled && !video}" th:id="|add${id}|" th:src="${#themes.code('addNextImage')}"
+          th:alt="#{main.addnext}" th:data-id="${id}" th:data-toast-msg="#{main.addnext.toast}"
+          th:onclick="top.playQueue.onAddNext(this.getAttribute('data-id')); $().toastmessage('showSuccessToast', this.getAttribute('data-toast-msg')); return false;"
+          style="cursor:pointer; height:18px;" th:title="#{main.addnext}">
+     <th:block th:if="${asTable}">
+          </td>
+     </th:block>
 
-    <img th:if="${addEnabled && !video}" th:id="|add${id}|" th:src="${#themes.code('addNextImage')}" th:alt="#{main.addnext}"
-         th:data-id="${id}"
-         th:data-toast-msg="#{main.addnext.toast}"
-         th:onclick="top.playQueue.onAddNext(this.getAttribute('data-id')); $().toastmessage('showSuccessToast', this.getAttribute('data-toast-msg')); return false;"
-         style="cursor:pointer; height:18px;" th:title="#{main.addnext}">
-
-    <a th:if="${downloadEnabled}" th:href="@{/download(id=${id})}">
-        <img th:src="${#themes.code('downloadImage')}" th:alt="#{common.download}"
-             th:title="#{common.download}" >
-    </a>
+     <th:block th:if="${asTable}">
+          <td class="fit">
+     </th:block>
+     <a th:if="${downloadEnabled}" th:href="@{/download(id=${id})}">
+          <img th:src="${#themes.code('downloadImage')}" th:alt="#{common.download}" th:title="#{common.download}">
+     </a>
+     <th:block th:if="${asTable}">
+          </td>
+     </th:block>
 </th:block>

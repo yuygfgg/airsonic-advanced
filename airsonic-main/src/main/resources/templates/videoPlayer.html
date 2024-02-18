@@ -46,23 +46,23 @@
         }
 
         var videoModel = {
-          duration: [(${#strings.isEmpty(model.video.duration) ? -1 : model.video.duration})],
+          duration: /*[(${#strings.isEmpty(model.video.duration) ? -1 : model.video.duration})]*/ -1,
           videoTitle: "[(${model.video.title})]",
-          streamable: [(${model.streamable})],
-          castable: [(${model.castable})],
-          streamUrls: [[${model.streamUrls}]],
+          streamable: /*[(${model.streamable})]*/ false,
+          castable: /*[(${model.castable})]*/ false,
+          streamUrls: /*[[${model.streamUrls}]]*/ {},
           remoteCoverArtUrl: "[(${model.remoteCoverArtUrl})]",
           remoteStreamUrl: "[(${model.remoteStreamUrl})]",
           remoteCaptionsListUrl: "[(${model.remoteCaptionsUrl})]",
           remoteCaptions: [],
           currentUrl: "[(${model.defaultBitRate})]",
           videoId: "[(${model.video.id})]",
-          position: [(${model.position})],
-          autoBookmark: [(${model.autoBookmark})],
-          videoBookmarkFrequency: [(${model.videoBookmarkFrequency})],
+          position: /*[(${model.position})]*/ 0,
+          autoBookmark: /*[(${model.autoBookmark})]*/ false,
+          videoBookmarkFrequency: /*[(${model.videoBookmarkFrequency})]*/ 30,
           contentType: "[(${model.contentType})]",
-          hideShare: [(${model.user.shareRole ? 'true': 'false'})],
-          hideDownload: [(${model.user.downloadRole ? 'true': 'false'})]
+          hideShare: /*[(${model.user.shareRole ? 'true': 'false'})]*/ false,
+          hideDownload: /*[(${model.user.downloadRole ? 'true': 'false'})]*/ false
         }
 
         function setBookmark() {
@@ -108,11 +108,11 @@
                         instance.media.rendererName = "html5";
                         instance.buildspeed(instance, instance.getElement(instance.controls), instance.getElement(instance.layers), instance.media);
                     }
-                    let shareRole = [[${model.user.shareRole} == true]];
+                    let shareRole = /*[[${model.user.shareRole} == true]]*/ false;
 					if(shareRole) {
 						$("#share").on('click', () => location.href = "createShare.view?id=" + videoModel.videoId);
 					}
-					let downloadRole = [[${model.user.downloadRole} == true]];
+					let downloadRole = /*[[${model.user.downloadRole} == true]]*/ false;
 					if(downloadRole) {
 						$("#download").on('click', () => location.href = "download.view?id=" + videoModel.videoId);
 					}

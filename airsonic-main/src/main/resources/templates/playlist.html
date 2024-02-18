@@ -5,13 +5,16 @@
     <th:block th:replace="jquery" />
     <th:block th:replace="table" />
     <script type="text/javascript" th:src="@{/script/utils.js}"></script>
-    <script type="text/javascript" th:inline="javascript">
-        var playlistId = [[${model.playlist.id}]];
+    <script type="text/javascript" th:inline="javascript"
+        th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSize ?: '') ) ?
+                            '' : ', '.concat(model.initialPaginationSize ?: '')}"
+    >
+        var playlistId = /*[[${model.playlist.id}]]*/ 0;
         var songs = [];
 
         function init() {
-            var ratingOnImage = [[${#themes.code('ratingOnImage')}]];
-            var ratingOffImage = [[${#themes.code('ratingOffImage')}]];
+            var ratingOnImage = /*[[${#themes.code('ratingOnImage')}]]*/ "";
+            var ratingOffImage = /*[[${#themes.code('ratingOffImage')}]]*/ "";
 
             let dataTableConfig = {
                 deferRender: true,
@@ -29,10 +32,20 @@
                 order: [],
                 orderFixed: [ 0, 'asc' ],
                 orderMulti: false,
-                pageLength: [[${model.initialPaginationSize}]],
-                // <c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSize)) ? '' : ', '.concat(model.initialPaginationSize)}" />
-                //TODO CDC add back pagination
-                lengthMenu: [ [10, 20, 50, 100, -1 ], [10, 20, 50, 100, "All" ] ],
+                pageLength: /*[[${model.initialPaginationSize}]]*/ 10,
+                /*[+
+                lengthMenu: [ 
+                    [10, 20, 50, 100, -1 [(${paginationaddition})] ], 
+                    [10, 20, 50, 100, "All" [(${paginationaddition})] ] 
+                ],
+                +]*/
+                /*[- */
+                lengthMenu: [ 
+                    [10, 20, 50, 100, -1], 
+                    [10, 20, 50, 100, "All"] 
+                ],
+                /* -]*/
+
                 processing: true,
                 autoWidth: true,
                 scrollCollapse: true,
@@ -41,7 +54,7 @@
                     selector: ".playlistSongIndex"
                 },
                 language: {
-                    emptyTable: [[#{playlist2.empty}]]
+                    emptyTable: /*[[#{playlist2.empty}]]*/ "",
                 },
                 ajax: function(ajaxData, callback) {
                     for ( var i=0, len=songs.length ; i<len ; i++ ) {
@@ -128,8 +141,8 @@
                         return present ? "available" : "missing";
                     }
                 },
-                { data: "trackNumber", className: "detail fit", visible: [[${model.visibility.trackNumberVisible}]], title: "[(#{personalsettings.tracknumber})]" },
-                { data: "discNumber", className: "detail fit", visible: [[${model.visibility.discNumberVisible}]], title: "[(#{personalsettings.discnumber})]" },
+                { data: "trackNumber", className: "detail fit", visible: /*[[${model.visibility.trackNumberVisible}]]*/ false, title: "[(#{personalsettings.tracknumber})]" },
+                { data: "discNumber", className: "detail fit", visible: /*[[${model.visibility.discNumberVisible}]]*/ false, title: "[(#{personalsettings.discnumber})]" },
                 { data: "title",
                     className: "detail songTitle truncate",
                     title: "[(#{edittags.songtitle})]",
@@ -142,7 +155,7 @@
                 },
                 { data: "album",
                     className: "detail truncate",
-                    visible: [[${model.visibility.albumVisible}]],
+                    visible: /*[[${model.visibility.albumVisible}]]*/ true,
                     title: "[(#{personalsettings.album})]",
                     render: function(album, type, row) {
                         if (type == "display" && album != null) {
@@ -153,7 +166,7 @@
                 },
                 { data: "artist",
                     className: "detail truncate",
-                    visible: [[${model.visibility.artistVisible}]],
+                    visible: /*[[${model.visibility.artistVisible}]]*/ true,
                     title: "[(#{personalsettings.artist})]",
                     render: function(artist, type, row) {
                         if (type == "display" && artist != null) {
@@ -164,7 +177,7 @@
                 },
                 { data: "albumArtist",
                     className: "detail truncate",
-                    visible: [[${model.visibility.albumArtistVisible}]],
+                    visible: /*[[${model.visibility.albumArtistVisible}]]*/ true,
                     title: "[(#{personalsettings.albumartist})]",
                     render: function(artist, type, row) {
                         if (type == "display" && artist != null) {
@@ -175,7 +188,7 @@
                 },
                 { data: "genre",
                     className: "detail truncate",
-                    visible: [[${model.visibility.genreVisible}]],
+                    visible: /*[[${model.visibility.genreVisible}]]*/ true,
                     title: "[(#{personalsettings.genre})]",
                     render(genre, type) {
                         if (type == "display" && genre != null) {
@@ -184,12 +197,12 @@
                         return genre;
                     }
                 },
-                { data: "year", className: "detail fit rightalign", visible: [[${model.visibility.yearVisible}]], title: "[(#{personalsettings.year})]" },
-                { data: "format", className: "detail fit rightalign", visible: [[${model.visibility.formatVisible}]], title: "[(#{personalsettings.format})]" },
-                { data: "fileSize", className: "detail fit rightalign", visible: [[${model.visibility.fileSizeVisible}]], title: "[(#{personalsettings.filesize})]" },
+                { data: "year", className: "detail fit rightalign", visible: /*[[${model.visibility.yearVisible}]]*/ false, title: "[(#{personalsettings.year})]" },
+                { data: "format", className: "detail fit rightalign", visible: /*[[${model.visibility.formatVisible}]]*/ false, title: "[(#{personalsettings.format})]" },
+                { data: "fileSize", className: "detail fit rightalign", visible: /*[[${model.visibility.fileSizeVisible}]]*/ false, title: "[(#{personalsettings.filesize})]" },
                 { data: "duration",
                     className: "detail fit rightalign",
-                    visible: [[${model.visibility.durationVisible}]],
+                    visible: /*[[${model.visibility.durationVisible}]]*/ true,
                     title: "[(#{personalsettings.duration})]",
                     render: function(data, type, row) {
                         if (type == "display" && data != null) {
@@ -198,11 +211,11 @@
                         return data;
                     }
                 },
-                { data: "bitRate", className: "detail fit rightalign", visible: [[${model.visibility.bitRateVisible}]], title: "[(#{personalsettings.bitrate})]" },
-                { data: "playCount", className: "detail fit rightalign", visible: [[${model.visibility.playCountVisible}]], title: "[(#{personalsettings.playcount})]" },
+                { data: "bitRate", className: "detail fit rightalign", visible: /*[[${model.visibility.bitRateVisible}]]*/ false, title: "[(#{personalsettings.bitrate})]" },
+                { data: "playCount", className: "detail fit rightalign", visible: /*[[${model.visibility.playCountVisible}]]*/ false, title: "[(#{personalsettings.playcount})]" },
                 { data: "lastPlayed",
                     className: "detail fit rightalign",
-                    visible: [[${model.visibility.lastPlayedVisible}]],
+                    visible: /*[[${model.visibility.lastPlayedVisible}]]*/ false,
                     title: "[(#{personalsettings.lastplayed})]",
                     render: function(data, type, row) {
                         if (data != null) {
@@ -216,7 +229,7 @@
                 },
                 { data: "lastScanned",
                     className: "detail fit rightalign",
-                    visible: [[${model.visibility.lastScannedVisible}]],
+                    visible: /*[[${model.visibility.lastScannedVisible}]]*/ false,
                     title: "[(#{personalsettings.lastscanned})]",
                     render: function(data, type, row) {
                         if (data != null) {
@@ -230,7 +243,7 @@
                 },
                 { data: "created",
                     className: "detail fit rightalign",
-                    visible: [[${model.visibility.createdVisible}]],
+                    visible: /*[[${model.visibility.createdVisible}]]*/ false,
                     title: "[(#{personalsettings.created})]",
                     render: function(data, type, row) {
                         if (data != null) {
@@ -244,7 +257,7 @@
                 },
                 { data: "changed",
                     className: "detail fit rightalign",
-                    visible: [[${model.visibility.changedVisible}]],
+                    visible: /*[[${model.visibility.changedVisible}]]*/ false,
                     title: "[(#{personalsettings.changed})]",
                     render: function(data, type, row) {
                         if (data != null) {
@@ -259,14 +272,14 @@
                 { data: null,
                     searchable: false,
                     name: "remove",
-                    visible: [[${model.editAllowed}]],
+                    visible: /*[[${model.editAllowed}]]*/ false,
                     className: "fit not-draggable centeralign",
                     defaultContent: "<img class='removeSong' src=\"[(${#themes.code('removeImage')})]\" style='height:18px;' alt=\"[(#{playlist.remove})]\" title=\"[(#{playlist.remove})]\">"
                 }
             ]
             }
 
-            let editAllowed = [[${model.editAllowed}]];
+            let editAllowed = /*[[${model.editAllowed}]]*/ false;
             if(editAllowed) {
                 dataTableConfig['rowReorder'] = {
                     dataSrc: "seq",
@@ -488,7 +501,7 @@
     <th:block th:replace="coverArt::art(playlistId=${model.playlist.id}, coverArtSize=${160})" />
 </div>
 
-<h1><a href="playlists" th:text="#{left.playlists}"></a> &raquo; <span id="name"></span></h1>
+<h1><a th:href="@{/playlists}" th:text="#{left.playlists}"></a> &raquo; <span id="name"></span></h1>
 <h2>
     <span class="header"><a href="javascript:void(0)" onclick="onPlayAll();" th:text="#{common.play}"></a></span>
         | <span class="header"><a href="javascript:void(0)" onclick="onAddAll();" th:text="#{main.addall}"></a></span>
@@ -524,7 +537,7 @@
 
 <div style="height:0.7em;clear:both"></div>
 
-<table class="music indent hover nowrap stripe compact <c:if test='${!model.visibility.headerVisible}'>hide-table-header</c:if>" id="playlistMusic" style="cursor: pointer; width: 100%;">
+<table class="music indent hover nowrap stripe compact" th:classappend="${model.visibility.headerVisible != true?'hide-table-header':''}" id="playlistMusic" style="cursor: pointer; width: 100%;">
 </table>
 
 <th:block th:if="${model.editAllowed}">

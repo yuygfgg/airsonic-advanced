@@ -31,7 +31,7 @@
         display: inline-block;
     }
 </style>
-<script type="text/javascript" th:inline="javascript"
+<script type="text/javascript" th:inline="javascript" language="javascript"
 th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(model['initialPaginationSize'] ?: '') ) ?
                             '' : ', '.concat(model['initialPaginationSize'] ?: '')}">
     "use strict";
@@ -81,8 +81,8 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
         songs: [],
         
         bookmarks: {},
-        autoBookmark: [(${model['autoBookmark'] ?: false})],
-        audioBookmarkFrequency: [[${model['audioBookmarkFrequency']}]],
+        autoBookmark: /*[(${model['autoBookmark'] ?: false})]*/ false,
+        audioBookmarkFrequency: /*[[${model['audioBookmarkFrequency']}]]*/ 10,
 
         // Stream URL of the media being played
         currentStreamUrl: null,
@@ -132,11 +132,23 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
                 order: [],
                 orderFixed: [ 0, 'asc' ],
                 orderMulti: false,
-                pageLength: [[${model['initialPaginationSize']}]],
-                lengthMenu: [ [10, 20, 50, 100, -1 [(${paginationaddition})] ], [10, 20, 50, 100, "All" [(${paginationaddition})]  ] ],
+                pageLength: /*[[${model['initialPaginationSize']}]]*/ 10,
+                /*[+
+                lengthMenu: [ 
+                    [10, 20, 50, 100, -1 [(${paginationaddition})] ], 
+                    [10, 20, 50, 100, "All" [(${paginationaddition})] ] 
+                ],
+                +]*/
+                /*[- */
+                lengthMenu: [ 
+                    [10, 20, 50, 100, -1], 
+                    [10, 20, 50, 100, "All"] 
+                ],
+                /* -]*/
+
                 buttons: [
                     {
-                      text: [[#{main.nowplaying}]],
+                      text: /*[[#{main.nowplaying}]]*/ "Now Playing",
                       action: function (e, dt, node, config) {
                           if (pq.currentSongIndex != -1) {
                               dt.row(pq.currentSongIndex).show().draw(false);
@@ -166,7 +178,7 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
                     selector: "td:not(.not-draggable)"
                 },
                 language: {
-                    emptyTable: [[#{playlist.empty}]]
+                    emptyTable: /*[[#{playlist.empty}]]*/ "No data available in table"
                 },
                 ajax(ajaxData, callback) {
                     for ( var i=0, len=pq.songs.length ; i<len ; i++ ) {
@@ -202,11 +214,11 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
                       defaultContent: "<img class='removeSong' src=\"[( ${#themes.code('removeImage')} )]\" style='height:18px;' " +
                           "alt=\"[(#{playlist.remove})]\" title=\"[(#{playlist.remove})]\">"
                     },
-                    { data: "trackNumber", className: "detail fit", visible: [( ${model['visibility']?.trackNumberVisible == true} )], title: [[#{personalsettings.tracknumber}]] },
-                    { data: "discNumber", className: "detail fit", visible: [( ${model['visibility']?.discNumberVisible} == true)], title: [[#{personalsettings.discnumber}]] },
+                    { data: "trackNumber", className: "detail fit", visible: /*[( ${model['visibility']?.trackNumberVisible == true} )]*/ false, title: /*[[#{personalsettings.tracknumber}]]*/ "Track" },
+                    { data: "discNumber", className: "detail fit", visible: /*[( ${model['visibility']?.discNumberVisible} == true)]*/ false, title: /*[[#{personalsettings.discnumber}]]*/ "Disc" },
                     { data: "title",
                       className: "detail songTitle truncate",
-                      title: [[#{edittags.songtitle}]],
+                      title: /*[[#{edittags.songtitle}]]*/ "Title",
                       render(title, type, row) {
                           if (type == "display") {
                               var img = "<img class='currentImage' src=\"[( ${#themes.code('currentImage')} )]\" alt='' style='display: none; padding-right: 0.5em' />";
@@ -221,8 +233,8 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
                     },
                     { data: "album",
                       className: "detail truncate",
-                      visible: [[${model['visibility']?.albumVisible == true} ]],
-                      title: [[ #{personalsettings.album} ]],
+                      visible: /*[[${model['visibility']?.albumVisible == true} ]]*/ true,
+                      title: /*[[ #{personalsettings.album} ]]*/ "Album",
                       render(album, type, row) {
                           if (type == "display" && album != null) {
                               return $("<a>", {title: album, alt: album, text: album}).attr("href", row.albumUrl).attr("target", !pq.internetRadioEnabled ? "main" : "_blank").attr("rel", !pq.internetRadioEnabled ? "" : "noopener noreferrer")[0].outerHTML;
@@ -232,8 +244,8 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
                     },
                     { data: "artist",
                       className: "detail truncate",
-                      visible: [[ ${model['visibility']?.artistVisible =true} ]],
-                      title: [[#{personalsettings.artist}]],
+                      visible: /*[[ ${model['visibility']?.artistVisible =true} ]]*/ true,
+                      title: /*[[#{personalsettings.artist}]]*/ "Artist",
                       render(artist, type) {
                           if (type == "display" && artist != null) {
                               return $("<span>", {title: artist, alt: artist, text: artist})[0].outerHTML;
@@ -243,8 +255,8 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
                     },
                     { data: "albumArtist",
                       className: "detail truncate",
-                      visible: [[ ${model['visibility']?.albumArtistVisible == true} ]],
-                      title: [[ #{personalsettings.albumartist} ]],
+                      visible: /*[[ ${model['visibility']?.albumArtistVisible == true} ]]*/ true,
+                      title: /*[[ #{personalsettings.albumartist} ]]*/ "Album Artist",
                       render(artist, type) {
                           if (type == "display" && artist != null) {
                               return $("<span>", {title: artist, alt: artist, text: artist})[0].outerHTML;
@@ -254,8 +266,8 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
                     },
                     { data: "genre",
                       className: "detail truncate",
-                      visible: [[${model['visibility']?.genreVisible == true}]],
-                      title: [[ #{personalsettings.genre} ]],
+                      visible: /*[[${model['visibility']?.genreVisible == true}]]*/ true,
+                      title: /*[[ #{personalsettings.genre} ]]*/ "Genre",
                       render(genre, type) {
                           if (type == "display" && genre != null) {
                               return $("<span>", {title: genre, alt: genre, text: genre})[0].outerHTML;
@@ -263,13 +275,13 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
                           return genre;
                       }
                     },
-                    { data: "year", className: "detail fit rightalign", visible: [[${model['visibility']?.yearVisible}]], title: [[ #{personalsettings.year} ]] },
-                    { data: "format", className: "detail fit rightalign", visible: [[${model['visibility']?.formatVisible}]], title: [[ #{personalsettings.format} ]] },
-                    { data: "fileSize", className: "detail fit rightalign", visible: [[${model['visibility']?.fileSizeVisible}]], title: [[ #{personalsettings.filesize} ]] },
+                    { data: "year", className: "detail fit rightalign", visible: /*[[${model['visibility']?.yearVisible}]]*/ true, title: /*[[ #{personalsettings.year} ]]*/ "Year" },
+                    { data: "format", className: "detail fit rightalign", visible: /*[[${model['visibility']?.formatVisible}]]*/ true, title: /*[[ #{personalsettings.format} ]]*/ "Format" },
+                    { data: "fileSize", className: "detail fit rightalign", visible: /*[[${model['visibility']?.fileSizeVisible}]]*/ true, title: /*[[ #{personalsettings.filesize} ]]*/ "File Size" },
                     { data: "duration",
                       className: "detail fit rightalign",
-                      visible: [[${model['visibility']?.durationVisible == true}]],
-                      title: [[#{personalsettings.duration}]],
+                      visible: /*[[${model['visibility']?.durationVisible == true}]]*/ true,
+                      title: /*[[#{personalsettings.duration}]]*/ "Duration",
                       render: function(data, type, row) {
                           if (type == "display" && data != null) {
                               return formatDuration(Math.round(data));
@@ -277,12 +289,12 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
                           return data;
                       }
                     },
-                    { data: "bitRate", className: "detail fit rightalign", visible: [[${model['visibility']?.bitRateVisible}]], title: [[#{personalsettings.bitrate}]] },
-                    { data: "playCount", className: "detail fit rightalign", visible: [[${model['visibility']?.playCountVisible}]], title: [[#{personalsettings.playcount}]] },
+                    { data: "bitRate", className: "detail fit rightalign", visible: /*[[${model['visibility']?.bitRateVisible}]]*/ false, title: /*[[#{personalsettings.bitrate}]]*/ "Bit Rate" },
+                    { data: "playCount", className: "detail fit rightalign", visible: /*[[${model['visibility']?.playCountVisible}]]*/ false, title: /*[[#{personalsettings.playcount}]]*/ "Play Count" },
 	                { data: "lastPlayed",
 	                  className: "detail fit rightalign",
-	                  visible: [[${model['visibility']?.lastPlayedVisible == true}]],
-	                  title: [[#{personalsettings.lastplayed}]],
+	                  visible: /*[[${model['visibility']?.lastPlayedVisible == true}]]*/ false,
+	                  title: /*[[#{personalsettings.lastplayed}]]*/ "Last Played",
 	                  render: function(data, type, row) {
 	                      if (data != null) {
 	                          if (type == "display") {
@@ -295,8 +307,8 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
 	                },
 	                { data: "lastScanned",
 	                  className: "detail fit rightalign",
-	                  visible: [[${model['visibility']?.lastScannedVisible == true}]],
-	                  title: [[#{personalsettings.lastscanned}]],
+	                  visible: /*[[${model['visibility']?.lastScannedVisible == true}]]*/ false,
+	                  title: /*[[#{personalsettings.lastscanned}]]*/ "Last Scanned",
 	                  render: function(data, type, row) {
 	                      if (data != null) {
 	                          if (type == "display") {
@@ -309,8 +321,8 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
 	                },
 	                { data: "created",
 	                  className: "detail fit rightalign",
-	                  visible: [[${model['visibility']?.createdVisible == true }]],
-	                  title: [[#{personalsettings.created}]],
+	                  visible: /*[[${model['visibility']?.createdVisible == true }]]*/ false,
+	                  title: /*[[#{personalsettings.created}]]*/ "Created",
 	                  render: function(data, type, row) {
 	                      if (data != null) {
 	                          if (type == "display") {
@@ -323,8 +335,8 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
 	                },
 	                { data: "changed",
 	                  className: "detail fit rightalign",
-	                  visible: [[${model['visibility']?.changedVisible == true}]],
-	                  title: [[#{personalsettings.changed}]],
+	                  visible: /*[[${model['visibility']?.changedVisible == true}]]*/ false,
+	                  title: /*[[#{personalsettings.changed}]]*/ "Changed",
 	                  render: function(data, type, row) {
 	                      if (data != null) {
 	                          if (type == "display") {
@@ -388,10 +400,10 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
                     pq.playlistSelectionCallback(JSON.parse(msg.body));
                 },
                 '/user/queue/playlists/files/append'(msg) {
-                    pq.playlistUpdatedCallback(JSON.parse(msg.body), [[#{playlist.toast.appendtoplaylist}]]);
+                    pq.playlistUpdatedCallback(JSON.parse(msg.body), /*[[#{playlist.toast.appendtoplaylist}]]*/ "Added to playlist");
                 },
                 '/user/queue/playlists/create/playqueue'(msg) {
-                    pq.playlistUpdatedCallback(JSON.parse(msg.body), [[#{playlist.toast.saveasplaylist}]]);
+                    pq.playlistUpdatedCallback(JSON.parse(msg.body), /*[[#{playlist.toast.saveasplaylist}]]*/ "Saved as playlist");
                 },
 
                 // Players
@@ -424,20 +436,30 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
             var dialogSize = getJQueryUiDialogPlaylistSize("playQueue");
             $("#dialog-select-playlist").dialog({resizable: true, height: dialogSize.height, width: dialogSize.width, autoOpen: false,
                 buttons: {
+                    /*[+
                     [[#{common.add}]]: function() {
                         pq.appendPlaylists();
                     },
                     [[#{common.cancel}]]: function() {
                         $(this).dialog("close");
                     }
+                    +]*/
+                    /*[-*/
+                    "Add": function() {
+                        pq.appendPlaylists();
+                    },
+                    "Cancel": function() {
+                        $(this).dialog("close");
+                    }
+                    /*-]*/
                 },
                 resizeStop: function (event, ui) { setJQueryUiDialogPlaylistSize("playQueue", ui.size) }
             });
 
             pq.createMediaElementPlayer();
-            let initAutoHide = [[${model['autoHidePlayQueue'] == true}]]
+            let initAutoHide = /*[[${model['autoHidePlayQueue'] == true}]]*/ false;
             if(initAutoHide) {pq.initAutoHide();}
-            pq.onTogglePlayQueue([[${model['autoHidePlayQueue'] != true}]]);
+            pq.onTogglePlayQueue(/*[[${model['autoHidePlayQueue'] != true}]]*/ true);
 
             // load default player
             pq.onPlayerChanged(null);
@@ -445,7 +467,7 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
 
         onPlayerChanged(playerId) {
             var pq = this;
-            var playerUrl = [[@{/playQueue/player}]];
+            var playerUrl = "[(@{/playQueue/player})]";
             if (playerId) {
                 playerUrl = playerUrl + "?player=" + playerId;
             }
@@ -682,7 +704,7 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
                 alwaysShowControls: true,
                 enableKeyboard: false,
                 useDefaultControls: true,
-                iconSprite: [[@{/script/mediaelement/mejs-controls.svg}]],
+                iconSprite: /*[[@{/script/mediaelement/mejs-controls.svg}]]*/ "",
                 castAppID: "4FBFE470",
                 features: ["speed", "chromecast"],
                 defaultSpeed: "1.00",
@@ -711,9 +733,9 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
 
         onClear() {
             var ok = true;
-            var partyMode = [[${model['partyMode']}]];
+            var partyMode = /*[[${model['partyMode']}]]*/ false;
             if(partyMode) {
-                ok = confirm([[#{playlist.confirmclear}]]);
+                ok = confirm(/*[[#{playlist.confirmclear}]]*/ "Are you sure you want to clear the play queue?");
             }
 
             if (ok) {
@@ -801,7 +823,7 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
             this.updateWindowTitle(song);
             this.showMediaSessionMetadata(song);
 
-            let notify = [[${model['notify']}]];
+            let notify = /*[[${model['notify']}]]*/ true;
             if(notify) {
                 this.showNotification(song);
             }
@@ -1019,15 +1041,15 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
             this.repeatStatus = incomingStatus;
             if ($("#toggleRepeat").length != 0) {
                 if (this.shuffleRadioEnabled) {
-                    $("#toggleRepeat").html([[#{playlist.repeat_radio}]]);
+                    $("#toggleRepeat").html(/*[[#{playlist.repeat_radio}]]*/ "Repeat Radio");
                 } else if (this.repeatStatus == 'QUEUE') {
-                    $("#toggleRepeat").attr('src', [[${#themes.code('repeatAll')}]]);
+                    $("#toggleRepeat").attr('src', /*[[${#themes.code('repeatAll')}]]*/ "");
                     $("#toggleRepeat").attr('alt', 'Repeat All/Queue');
                 } else if (this.repeatStatus == 'OFF') {
-                    $("#toggleRepeat").attr('src', [[${#themes.code('repeatOff')}]]);
+                    $("#toggleRepeat").attr('src', /*[[${#themes.code('repeatOff')}]]*/ "");
                     $("#toggleRepeat").attr('alt', 'Repeat Off');
                 } else if (this.repeatStatus == 'TRACK') {
-                    $("#toggleRepeat").attr('src', [[${#themes.code('repeatOne')}]]);
+                    $("#toggleRepeat").attr('src', /*[[${#themes.code('repeatOne')}]]*/ "");
                     $("#toggleRepeat").attr('alt', 'Repeat One/Track');
                 }
             }
@@ -1040,7 +1062,7 @@ th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(m
 
             // If an internet radio has no sources, display a message to the user.
             if (this.internetRadioEnabled && this.songs.length == 0) {
-                top.main.$().toastmessage("showErrorToast", [[#{playlist.toast.radioerror}]]);
+                top.main.$().toastmessage("showErrorToast", /*[[#{playlist.toast.radioerror}]]*/ "No sources available for this internet radio.");
                 this.onStop();
             }
 

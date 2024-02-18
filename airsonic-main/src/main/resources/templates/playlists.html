@@ -5,10 +5,13 @@
     <th:block th:replace="table" />
     <script type="text/javascript" th:src="@{/script/utils.js}"></script>
 
-    <script type="text/javascript" th:inline="javascript">
+    <script type="text/javascript" th:inline="javascript"
+        th:with="paginationaddition=${#strings.contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSize ?: '') ) ?
+                            '' : ', '.concat(model.initialPaginationSize ?: '')}"
+    >
       var playlists = [];
-      var user = "[(${model.username})]";
-      var viewAsList = [(${model.viewAsList})];
+      var user = /*[(${model.username})]*/ "username";
+      var viewAsList = /*[(${model.viewAsList})]*/ false;
       var playlistsTable;
 
       function init() {
@@ -28,9 +31,19 @@
             order: [],
             //orderFixed: [ 0, 'asc' ],
             orderMulti: true,
-            pageLength: [(${model.initialPaginationSize})],
-          //<c:set var="paginationaddition" value="${fn:contains(' 10 20 50 100 -1', ' '.concat(model.initialPaginationSize)) ? '' : ', '.concat(model.initialPaginationSizeFiles)}" />
-            lengthMenu: [ [10, 20, 50, 100, -1 ], [10, 20, 50, 100, "All" ] ],
+            pageLength: /*[(${model.initialPaginationSize})]*/ 10,
+               /*[+
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1 [(${paginationaddition})] ], 
+                [10, 20, 50, 100, "All" [(${paginationaddition})] ] 
+            ],
+            +]*/
+            /*[- */
+            lengthMenu: [ 
+                [10, 20, 50, 100, -1], 
+                [10, 20, 50, 100, "All"] 
+            ],
+            /* -]*/
             processing: true,
             autoWidth: true,
             scrollCollapse: true,
@@ -392,7 +405,7 @@
 
 <h2>
   <span class="header"><a href="javascript:void(0)" onclick="createEmptyPlaylist();" th:text="#{left.createplaylist}"></a></span> |
-  <span class="header"><a href="importPlaylist.view" target="main" th:text="#{left.importplaylist}"></a></span>
+  <span class="header"><a th:href="@{/importPlaylist.view}" target="main" th:text="#{left.importplaylist}"></a></span>
 </h2>
 
 </body>

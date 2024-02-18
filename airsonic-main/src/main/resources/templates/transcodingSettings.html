@@ -9,11 +9,7 @@
 
 <th:block th:replace="settingsHeader::header(cat='transcoding',toast=${settings_toast})" />
 
-<form method="post" action="transcodingSettings.view">
-    <input
-            type="hidden"
-            th:name="${_csrf.parameterName}"
-            th:value="${_csrf.token}" />
+<form method="post" th:action="@{/transcodingSettings.view}" th:object="${command}">
 <table class="indent">
     <tr>
         <th th:text="#{transcodingsettings.name}"></th>
@@ -21,16 +17,19 @@
         <th th:text="#{transcodingsettings.targetformat}"></th>
         <th th:text="#{transcodingsettings.step1}"></th>
         <th th:text="#{transcodingsettings.step2}"></th>
+        <th style="padding-left:1em" th:text="#{common.default}"></th>
         <th style="padding-left:1em" th:text="#{common.delete}"></th>
     </tr>
 
-    <tr th:each="transcoding:${model.transcodings}">
-        <td><input class="monospace" th:name="|name[${transcoding.id}]|" size="10" th:value="${transcoding.name}"/></td>
-        <td><input class="monospace" th:name="|sourceFormats[${transcoding.id}]|" size="36" th:value="${transcoding.sourceFormats}"/></td>
-        <td><input class="monospace" th:name="|targetFormat[${transcoding.id}]|" size="10" th:value="${transcoding.targetFormat}"/></td>
-        <td><input class="monospace" th:name="|step1[${transcoding.id}]|" size="60" th:value="${transcoding.step1}"/></td>
-        <td><input class="monospace" th:name="|step2[${transcoding.id}]|" size="22" th:value="${transcoding.step2}"/></td>
-        <td align="center" style="padding-left:1em"><input type="checkbox" th:name="|delete[${transcoding.id}]|"/></td>
+    <tr th:each="tr, loopStatus:*{transcodings}">
+        <input type="hidden" th:field="*{transcodings[__${loopStatus.index}__].id}"/>
+        <td><input class="monospace" th:field="*{transcodings[__${loopStatus.index}__].name}" size="10" /></td>
+        <td><input class="monospace" th:field="*{transcodings[__${loopStatus.index}__].sourceFormats}" size="36" /></td>
+        <td><input class="monospace" th:field="*{transcodings[__${loopStatus.index}__].targetFormat}" size="10" /></td>
+        <td><input class="monospace" th:field="*{transcodings[__${loopStatus.index}__].step1}" size="60" /></td>
+        <td><input class="monospace" th:field="*{transcodings[__${loopStatus.index}__].step2}" size="22" /></td>
+        <td align="center" style="padding-left:1em"><input type="checkbox" th:field="*{transcodings[__${loopStatus.index}__].defaultActive}"/></td>
+        <td align="center" style="padding-left:1em"><input type="checkbox" th:field="*{transcodings[__${loopStatus.index}__].delete}"/></td>
     </tr>
 
     <tr>
@@ -38,19 +37,19 @@
     </tr>
 
     <tr>
-        <td><input class="monospace" name="name" size="10" th:placeholder="#{transcodingsettings.name}" /></td>
-        <td><input class="monospace" name="sourceFormats" size="36" th:placeholder="#{transcodingsettings.sourceformat}" /></td>
-        <td><input class="monospace" name="targetFormat" size="10" th:placeholder="#{transcodingsettings.targetformat}" /></td>
-        <td><input class="monospace" name="step1" size="60" th:placeholder="#{transcodingsettings.step1}" /></td>
-        <td><input class="monospace" name="step2" size="22" th:placeholder="#{transcodingsettings.step2}" /></td>
+        <td><input class="monospace" th:field="*{newTranscoding.name}" size="10" th:placeholder="#{transcodingsettings.name}" /></td>
+        <td><input class="monospace" th:field="*{newTranscoding.sourceFormats}" size="36" th:placeholder="#{transcodingsettings.sourceformat}" /></td>
+        <td><input class="monospace" th:field="*{newTranscoding.targetFormat}" size="10" th:placeholder="#{transcodingsettings.targetformat}" /></td>
+        <td><input class="monospace" th:field="*{newTranscoding.step1}" size="60" th:placeholder="#{transcodingsettings.step1}" /></td>
+        <td><input class="monospace" th:field="*{newTranscoding.step2}" size="22" th:placeholder="#{transcodingsettings.step2}" /></td>
         <td></td>
     </tr>
 
     <tr>
         <td colspan="6" style="padding-top:0.1em">
-            <input type="checkbox" id="defaultActive" name="defaultActive" checked/>
-            <label for="defaultActive" th:text="#{transcodingsettings.defaultactive}"></label>
-        </td>
+            <input type="checkbox" th:field="*{newTranscoding.defaultActive}"/>
+            <label th:for="${#ids.prev('newTranscoding.defaultActive')}" th:text="#{transcodingsettings.defaultactive}"></label>
+        </td> 
     </tr>
 </table>
 
@@ -62,7 +61,7 @@
                 <th:block th:replace="helpToolTip(topic=downsamplecommand)" />
             </td>
             <td>
-                <input class="monospace" type="text" name="downsampleCommand" size="100" th:value="${model.downsampleCommand}"/>
+                <input class="monospace" type="text" th:field="*{downsampleCommand}" size="100" />
             </td>
         </tr>
         <tr>
@@ -71,7 +70,7 @@
                 <th:block th:replace="helpToolTip(topic=splitoptions)" />
             </td>
             <td>
-                <input class="monospace" type="text" name="splitOptions" size="100" th:value="${model.splitOptions}"/>
+                <input class="monospace" type="text" th:field="*{splitOptions}" size="100" />
             </td>
         </tr>
         <tr>
@@ -80,7 +79,7 @@
                 <th:block th:replace="helpToolTip(topic=splitcommand)" />
             </td>
             <td>
-                <input class="monospace" type="text" name="splitCommand" size="100" th:value="${model.splitCommand}"/>
+                <input class="monospace" type="text" th:field="*{splitCommand}" size="100" />
             </td>
         </tr>
         <tr>
@@ -89,7 +88,7 @@
                 <th:block th:replace="helpToolTip(topic=hlscommand)" />
             </td>
             <td>
-                <input class="monospace" type="text" name="hlsCommand" size="100" th:value="${model.hlsCommand}"/>
+                <input class="monospace" type="text" th:field="*{hlsCommand}" size="100" />
             </td>
         </tr>
         <tr>
@@ -98,7 +97,7 @@
                 <th:block th:replace="helpToolTip(topic=jukeboxcommand)" />
             </td>
             <td>
-                <input class="monospace" type="text" name="jukeboxCommand" size="100" th:value="${model.jukeboxCommand}"/>
+                <input class="monospace" type="text" th:field="*{jukeboxCommand}" size="100" />
             </td>
         </tr>
         <tr>
@@ -107,7 +106,7 @@
                 <th:block th:replace="helpToolTip(topic=videoimagecommand)" />
             </td>
             <td>
-                <input class="monospace" type="text" name="videoImageCommand" size="100" th:value="${model.videoImageCommand}"/>
+                <input class="monospace" type="text" th:field="*{videoImageCommand}" size="100" />
             </td>
         </tr>
         <tr>
@@ -116,7 +115,7 @@
                 <th:block th:replace="helpToolTip(topic=subtitlesextractioncommand)" />
             </td>
             <td>
-                <input class="monospace" type="text" name="subtitlesExtractionCommand" size="100" th:value="${model.subtitlesExtractionCommand}"/>
+                <input class="monospace" type="text" th:field="*{subtitlesExtractionCommand}" size="100" />
             </td>
         </tr>
     </table>
@@ -128,7 +127,7 @@
                 <th:block th:replace="helpToolTip(topic=transcodeestimatetimepadding)" />
             </td>
             <td>
-                <input class="monospace" name="transcodeEstimateTimePadding" size="8" th:value="${model.transcodeEstimateTimePadding}"/>
+                <input class="monospace" th:field="*{transcodeEstimateTimePadding}" size="8" />
             </td>
         </tr>
         <tr>
@@ -137,14 +136,14 @@
                 <th:block th:replace="helpToolTip(topic=transcodeestimatebytepadding)" />
             </td>
             <td>
-                <input class="monospace" name="transcodeEstimateBytePadding" size="8" th:value="${model.transcodeEstimateBytePadding}"/>
+                <input class="monospace" th:field="*{transcodeEstimateBytePadding}" size="8" />
             </td>
         </tr>
     </table>
 
     <p style="padding-top:0.75em">
         <input type="submit" th:value="#{common.save}" style="margin-right:0.3em">
-        <a href='nowPlaying.view'><input type="button" th:value="#{common.cancel}" style="margin-right:1.3em"></a>
+        <a th:href="@{/nowPlaying.view}"><input type="button" th:value="#{common.cancel}" style="margin-right:1.3em"></a>
         <a href="https://airsonic.github.io/docs/transcode/" target="_blank" rel="noopener noreferrer" th:text="#{transcodingsettings.recommended}"></a>
     </p>
 
@@ -152,6 +151,6 @@
 
 <p th:if="${!#strings.isEmpty(error)}" class="warning" th:text="#{__${error}__}"></p>
 
-<div style="width:80%" th:utext="#{transcodingsettings.info(${model.brand})}">
+<div style="width:80%" th:utext="#{transcodingsettings.info(${command.transcodeDirectory}, ${command.brand})}">
 </div>
 </body></html>

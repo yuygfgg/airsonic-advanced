@@ -5,15 +5,18 @@
 
     <script type="text/javascript" th:inline="javascript">
         function init() {
-            let musicFoldersExist = [[${model.musicFoldersExist}]];
+            let musicFoldersExist = /*[[${model.musicFoldersExist}]]*/ false;
+            /*[+
             if(!musicFoldersExist) {
                 $().toastmessage("showNoticeToast", [[#{top.missing}]]);
             }
-
-            let isIndexBeingCreated = [[${model.isIndexBeingCreated}]];
+            +]*/
+            let isIndexBeingCreated = /*[[${model.isIndexBeingCreated}]]*/ false;
+            /*[+
             if(isIndexBeingCreated) {
                 $().toastmessage("showNoticeToast", [[#{home.scan}]]);
             }
+            +]*/
         }
 
         function refresh() {
@@ -21,7 +24,9 @@
         }
 
         function playShuffle() {
+            /*[+
             top.playQueue.onPlayShuffle([[${model.listType}]], [[${model.listOffset}]], [[${model.listSize}]], '[(${model['genre']})]', '[(${model['decade']})]');
+            +]*/
         }
 
     </script>

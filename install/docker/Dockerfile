@@ -1,15 +1,4 @@
-FROM eclipse-temurin:17.0.5_8-jdk AS builder
-WORKDIR /target
-
-COPY run.sh /usr/local/bin/run.sh
-RUN chmod +x /usr/local/bin/run.sh
-COPY entry.sh /usr/local/bin/entry.sh
-RUN chmod +x /usr/local/bin/entry.sh
-
-COPY target/dependency/airsonic-main.jar airsonic.jar
-RUN jar -xf ./airsonic.jar
-
-FROM eclipse-temurin:17.0.8.1_1-jre-jammy
+FROM eclipse-temurin:17.0.10_7-jre-jammy
 
 LABEL description="Airsonic-Advanced is a free, web-based media streamer, providing ubiquitous access to your music." \
       url="https://github.com/kagemomiji/airsonic-advanced"
@@ -31,12 +20,12 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/local/bin/run.sh /usr/local/bin/run.sh
-COPY --from=builder /usr/local/bin/entry.sh /usr/local/bin/entry.sh
+COPY run.sh /usr/local/bin/run.sh
+COPY entry.sh /usr/local/bin/entry.sh
+RUN chmod +x /usr/local/bin/run.sh && \
+    chmod +x /usr/local/bin/entry.sh
 
-COPY --from=builder target/BOOT-INF/lib /app/lib
-COPY --from=builder target/META-INF /app/META-INF
-COPY --from=builder target/BOOT-INF/classes /app
+COPY target/dependency/airsonic-main.jar /app/airsonic.jar
 
 EXPOSE $AIRSONIC_PORT
 

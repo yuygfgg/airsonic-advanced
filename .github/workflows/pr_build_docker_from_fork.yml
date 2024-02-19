@@ -40,11 +40,11 @@ jobs:
         run: echo ${{ steps.buildx.outputs.platforms }}
       - name: Build with Maven
         run: mvn package -DskipTests -B -P docker
-      - name: Upload war file
+      - name: Upload jar file
         uses: actions/upload-artifact@v4
         with:
           name: airsonic-advanced
-          path: airsonic-main/target/airsonic.war
+          path: airsonic-main/target/airsonic.jar
           retention-days: 30
           overwrite: true
       - name: Login to GitHub Container Registry

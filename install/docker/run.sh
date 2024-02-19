@@ -21,7 +21,6 @@ if [[ $# -lt 1 ]] || [[ ! "$1" == "java"* ]]; then
         java_opts_array+=( "$item" )
     done < <([[ $JAVA_OPTS ]] && xargs printf '%s\0' <<<"$JAVA_OPTS")
     exec java -Xmx256m \
-     -cp /app:/app/lib/* \
      -Dserver.address=0.0.0.0 \
      -Dserver.port=$AIRSONIC_PORT \
      -Dserver.servlet.context-path=$CONTEXT_PATH \
@@ -32,7 +31,8 @@ if [[ $# -lt 1 ]] || [[ ! "$1" == "java"* ]]; then
      -DUPnpPort=$UPNP_PORT \
      -Djava.awt.headless=true \
      "${java_opts_array[@]}" \
-     org.airsonic.player.Application "$@"
+     -jar /app/airsonic.jar "$@"
+     #org.airsonic.player.Application "$@"
 fi
 
 exec "$@"

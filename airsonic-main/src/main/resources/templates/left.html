@@ -149,13 +149,13 @@
     <div class="forward"><a th:href="@{/importPlaylist}" target="main" th:text="#{left.importplaylist}">import</a></div>
 </div>
 
-<th:block th:if="${#lists.isEmpty(model.radios)}">
+<th:block th:unless="${#lists.isEmpty(model.radios)}">
     <h2 class="bgcolor1" style="padding-left: 2px" th:utext="#{left.radio}">radio</h2>
     <iframe id="radio-playlist-data" style="display:none;"></iframe>
     <th:block th:each="radio : ${model.radios}">
         <p class="dense truncate" style="padding-left: 2px">
         <a target="hidden" th:href="${radio.streamUrl}" class="radio-play" th:data-id="${radio.id}">
-            <img th:src="${#themes.code('playImage')}" />" th:alt="#{common.play}" th:title="#{common.play}"></a>
+            <img th:src="${#themes.code('playImage')}" th:alt="#{common.play}" th:title="#{common.play}"></a>
             <span style="vertical-align: middle">
                 <span th:if="${#strings.isEmpty(radio.homepageUrl)}" th:title="${radio.name}" th:text="${radio.name}">name</span>
                 <a th:unless="${#strings.isEmpty(radio.homepageUrl)}" target="_blank" rel="noopener" th:href="${radio.homepageUrl}" th:title="|Visit ${radio.name}|" th:text="${radio.name}">name</a>

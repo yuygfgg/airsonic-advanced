@@ -334,7 +334,7 @@ public class PlaylistService {
     @Transactional
     public void updatePlaylist(Integer id, String name, String comment, Boolean shared) {
         playlistRepository.findById(id).ifPresentOrElse(p -> {
-            p.setName(name);
+            if (name != null) p.setName(name);
             if (comment != null) p.setComment(comment);
             if (shared != null) p.setShared(shared);
             p.setChanged(Instant.now());

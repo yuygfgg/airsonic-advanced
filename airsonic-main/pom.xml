@@ -3,6 +3,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>airsonic-main</artifactId>
+    <packaging>war</packaging>
     <name>Airsonic Main</name>
 
     <parent>
@@ -653,6 +654,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>org.airsonic.player.Application</mainClass>
+                    <layout>WAR</layout>
                 </configuration>
             </plugin>
             <plugin>

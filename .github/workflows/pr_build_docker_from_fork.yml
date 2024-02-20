@@ -44,7 +44,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: airsonic-advanced
-          path: airsonic-main/target/airsonic.jar
+          path: airsonic-main/target/airsonic.war
           retention-days: 30
           overwrite: true
       - name: Login to GitHub Container Registry

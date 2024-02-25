@@ -23,7 +23,6 @@ import com.google.common.net.MediaType;
 import org.airsonic.player.controller.SubsonicRESTController.APIException;
 import org.airsonic.player.util.StringUtil;
 import org.apache.commons.lang3.tuple.Pair;
-import org.eclipse.persistence.jaxb.JAXBContext;
 import org.eclipse.persistence.jaxb.MarshallerProperties;
 import org.jdom2.Attribute;
 import org.jdom2.Document;
@@ -36,6 +35,7 @@ import org.subsonic.restapi.ResponseStatus;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeFactory;
@@ -46,6 +46,7 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.time.Instant;
 import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import static org.airsonic.player.util.XMLUtil.createSAXBuilder;
@@ -66,8 +67,10 @@ public class JAXBWriter {
     private final String SERVER_TYPE = "Airsonic-Advanced";
 
     public JAXBWriter() {
+        Map<String, Object> properties = Map.of(JAXBContext.JAXB_CONTEXT_FACTORY, "org.eclipse.persistence.jaxb.JAXBContextFactory");
+        Class<?>[] classes = {Response.class};
         try {
-            jaxbContext = JAXBContext.newInstance(Response.class);
+            jaxbContext = JAXBContext.newInstance(classes, properties);
             datatypeFactory = DatatypeFactory.newInstance();
         } catch (Exception x) {
             throw new RuntimeException(x);
@@ -91,7 +94,7 @@ public class JAXBWriter {
             Marshaller marshaller;
             marshaller = jaxbContext.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_ENCODING, StringUtil.ENCODING_UTF8);
-            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
             marshaller.setProperty(MarshallerProperties.MEDIA_TYPE, "application/json");
             marshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, true);
             return marshaller;

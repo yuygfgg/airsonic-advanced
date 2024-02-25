@@ -17,8 +17,8 @@
         <tomcat.server.scope>provided</tomcat.server.scope>
         <!-- For fixing import/export due to https://github.com/liquibase/liquibase/issues/1598 -->
         <liquibase.version>4.22.0</liquibase.version>
-        <logback.version>1.2.13</logback.version>
-        <mockito.version>5.8.0</mockito.version>
+        <logback.version>1.4.14</logback.version>
+        <mockito.version>5.10.0</mockito.version>
         <mariadb.version>3.3.2</mariadb.version>
     </properties>
 
@@ -301,20 +301,13 @@
         <dependency>
             <groupId>org.eclipse.persistence</groupId>
             <artifactId>org.eclipse.persistence.moxy</artifactId>
-            <version>3.0.4</version>
+            <version>4.0.2</version>
         </dependency>
 
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.web</groupId>
-            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
-            <version>1.2.6</version>
-            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -351,7 +344,6 @@
             <artifactId>mockito-inline</artifactId>
             <version>5.2.0</version>
             <scope>test</scope>
-            <version>5.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
@@ -447,6 +439,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-spring-boot-autoconfigure</artifactId>
+            <version>4.0.3</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
         </dependency>
@@ -528,6 +526,10 @@
                 <exclusion>
                     <groupId>commons-collections</groupId>
                     <artifactId>commons-collections</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-io</groupId>
+                    <artifactId>commons-io</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

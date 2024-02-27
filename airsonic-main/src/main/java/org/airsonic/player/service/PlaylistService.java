@@ -29,7 +29,6 @@ import org.airsonic.player.service.websocket.AsyncWebSocketClient;
 import org.airsonic.player.util.LambdaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
@@ -56,7 +55,6 @@ public class PlaylistService {
     private final PlaylistRepository playlistRepository;
     private final AsyncWebSocketClient asyncWebSocketClient;
 
-    @Autowired
     public PlaylistService(UserRepository userRepository,
                            PlaylistRepository playlistRepository,
                            AsyncWebSocketClient asyncWebSocketClient) {

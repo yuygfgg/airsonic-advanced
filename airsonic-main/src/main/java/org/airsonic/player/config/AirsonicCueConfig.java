@@ -1,6 +1,7 @@
 package org.airsonic.player.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 
 @ConfigurationProperties(prefix = "airsonic.cue")
 public class AirsonicCueConfig {
@@ -9,6 +10,7 @@ public class AirsonicCueConfig {
     private final boolean enabled;
     private final boolean hideIndexedFiles;
 
+    @ConstructorBinding
     public AirsonicCueConfig(
         boolean enabled,
         boolean hideIndexedFiles) {

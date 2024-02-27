@@ -1,18 +1,16 @@
 package org.airsonic.player.security;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.common.io.BaseEncoding;
 import org.airsonic.player.service.JWTSecurityService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.service.SettingsService;
 import org.airsonic.player.service.sonos.SonosLinkSecurityInterceptor.SonosJWTVerification;
+import org.apache.commons.codec.binary.Base16;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -24,8 +22,8 @@ import org.springframework.security.authentication.event.AbstractAuthenticationF
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -42,8 +40,7 @@ import org.springframework.security.web.context.request.async.WebAsyncManagerInt
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import jakarta.servlet.ServletContext;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,8 +51,7 @@ import java.util.stream.Collectors;
 import static org.airsonic.player.security.MultipleCredsMatchingAuthenticationProvider.SALT_TOKEN_MECHANISM_SPECIALIZATION;
 
 @Configuration
-@Order(SecurityProperties.BASIC_AUTH_ORDER - 2)
-@EnableMethodSecurity(securedEnabled = true)
+@EnableWebSecurity(debug = true)
 public class GlobalSecurityConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(GlobalSecurityConfig.class);
@@ -78,29 +74,29 @@ public class GlobalSecurityConfig {
 
             // base decodable encoders
             .put("noop", new PasswordEncoderDecoderWrapper(org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance(), p -> p))
-            .put("hex", HexPasswordEncoder.getInstance())
+            .put("hex", new HexPasswordEncoder())
             .put("encrypted-AES-GCM", new AesGcmPasswordEncoder()) // placeholder (real instance created below)
 
             // base decodable encoders that rely on salt+token being passed in (not stored in db with this type)
             .put("noop" + SALT_TOKEN_MECHANISM_SPECIALIZATION, new SaltedTokenPasswordEncoder(p -> p))
-            .put("hex" + SALT_TOKEN_MECHANISM_SPECIALIZATION, new SaltedTokenPasswordEncoder(HexPasswordEncoder.getInstance()))
+            .put("hex" + SALT_TOKEN_MECHANISM_SPECIALIZATION, new SaltedTokenPasswordEncoder(new HexPasswordEncoder()))
             .put("encrypted-AES-GCM" + SALT_TOKEN_MECHANISM_SPECIALIZATION, new SaltedTokenPasswordEncoder(new AesGcmPasswordEncoder())) // placeholder (real instance created below)
 
             // TODO: legacy marked base encoders, to be upgraded to one-way formats at breaking version change
             .put("legacynoop", new PasswordEncoderDecoderWrapper(org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance(), p -> p))
-            .put("legacyhex", HexPasswordEncoder.getInstance())
+            .put("legacyhex", new HexPasswordEncoder())
 
             .put("legacynoop" + SALT_TOKEN_MECHANISM_SPECIALIZATION, new SaltedTokenPasswordEncoder(p -> p))
-            .put("legacyhex" + SALT_TOKEN_MECHANISM_SPECIALIZATION, new SaltedTokenPasswordEncoder(HexPasswordEncoder.getInstance()))
+            .put("legacyhex" + SALT_TOKEN_MECHANISM_SPECIALIZATION, new SaltedTokenPasswordEncoder(new HexPasswordEncoder()))
             .build());
 
-    public static final Set<String> OPENTEXT_ENCODERS = ImmutableSet.of("noop", "hex", "legacynoop", "legacyhex");
-    public static final Set<String> DECODABLE_ENCODERS = ImmutableSet.<String>builder().addAll(OPENTEXT_ENCODERS).add("encrypted-AES-GCM").build();
+    public static final Set<String> OPENTEXT_ENCODERS = Set.of("noop", "hex", "legacynoop", "legacyhex");
+    public static final Set<String> DECODABLE_ENCODERS = Set.of("noop", "hex", "logacynoop", "encrypted-AES-GCM");
     public static final Set<String> NONLEGACY_ENCODERS = ENCODERS.keySet().stream()
             .filter(e -> !StringUtils.containsAny(e, "legacy", SALT_TOKEN_MECHANISM_SPECIALIZATION))
             .collect(Collectors.toSet());
-    public static final Set<String> NONLEGACY_DECODABLE_ENCODERS = Sets.intersection(DECODABLE_ENCODERS, NONLEGACY_ENCODERS);
-    public static final Set<String> NONLEGACY_NONDECODABLE_ENCODERS = Sets.difference(NONLEGACY_ENCODERS, DECODABLE_ENCODERS);
+    public static final Set<String> NONLEGACY_DECODABLE_ENCODERS = SetUtils.intersection(DECODABLE_ENCODERS, NONLEGACY_ENCODERS);
+    public static final Set<String> NONLEGACY_NONDECODABLE_ENCODERS = SetUtils.difference(NONLEGACY_ENCODERS, DECODABLE_ENCODERS);
 
     @Autowired
     private CsrfSecurityRequestMatcher csrfSecurityRequestMatcher;
@@ -118,9 +114,6 @@ public class GlobalSecurityConfig {
     @Autowired
     SonosJWTVerification sonosJwtVerification;
 
-    @Autowired
-    private ServletContext servletContext;
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         boolean generatedKeys = false;
@@ -136,7 +129,8 @@ public class GlobalSecurityConfig {
         String encryptionKeySalt = settingsService.getEncryptionSalt();
         if (StringUtils.isBlank(encryptionKeySalt)) {
             LOG.warn("Generating new encryption key salt");
-            encryptionKeySalt = BaseEncoding.base16().encode(KeyGenerators.secureRandom(16).generateKey());
+            Base16 base16 = new Base16();
+            encryptionKeySalt = base16.encodeToString(KeyGenerators.secureRandom(16).generateKey());
             settingsService.setEncryptionSalt(encryptionKeySalt);
             generatedKeys = true;
         }
@@ -209,7 +203,7 @@ public class GlobalSecurityConfig {
             settingsService.save();
         }
         JWTAuthenticationProvider jwtAuth = new JWTAuthenticationProvider(jwtKey);
-        jwtAuth.addAdditionalCheck(servletContext.getContextPath() + "/ws/Sonos", sonosJwtVerification);
+        jwtAuth.addAdditionalCheck("/ws/Sonos", sonosJwtVerification);
         auth.authenticationProvider(jwtAuth);
         auth.authenticationProvider(multipleCredsProvider);
     }
@@ -273,8 +267,8 @@ public class GlobalSecurityConfig {
         }
 
         http
-            .cors(Customizer.withDefaults())
-            .addFilterBefore(restAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .cors((cors) -> cors.configurationSource(corsConfigurationSource()))
+            //.addFilterBefore(restAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .httpBasic(Customizer.withDefaults())
             .addFilterAfter(restAuthenticationFilter, BasicAuthenticationFilter.class)
             .csrf(csrf -> csrf.ignoringRequestMatchers("/ws/Sonos/**").requireCsrfProtectionMatcher(csrfSecurityRequestMatcher))
@@ -307,7 +301,11 @@ public class GlobalSecurityConfig {
         return http.build();
     }
 
-    @Bean
+    @Bean(name = "mvcHandlerMappingIntrospector")
+    public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
+        return new HandlerMappingIntrospector();
+    }
+
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Collections.singletonList("*"));

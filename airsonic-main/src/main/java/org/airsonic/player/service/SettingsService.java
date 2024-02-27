@@ -272,13 +272,9 @@ public class SettingsService {
     @Autowired
     private AirsonicCueConfig cueConfig;
 
-    private Set<String> cachedCoverArtFileTypes;
     private Set<String> cachedMusicFileTypes;
     private Set<String> cachedVideoFileTypes;
     private Set<String> cachedPlayableFileTypes;
-    private RateLimiter downloadRateLimiter;
-    private RateLimiter uploadRateLimiter;
-    private Pattern excludePattern;
 
     // Array of obsolete properties. Used to clean property file.
     private static final List<String> OBSOLETE_KEYS = Arrays.asList("PortForwardingPublicPort", "PortForwardingLocalPort",

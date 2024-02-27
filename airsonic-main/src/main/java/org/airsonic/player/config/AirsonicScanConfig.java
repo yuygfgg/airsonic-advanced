@@ -22,6 +22,7 @@ package org.airsonic.player.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.validation.constraints.Positive;
@@ -52,6 +53,7 @@ public class AirsonicScanConfig {
      * @param fullscan full scan timeout in seconds. null means default value
      * @param scan scan timeout in seconds. null means default value
      */
+    @ConstructorBinding
     public AirsonicScanConfig(
         Integer fullTimeout,
         Integer timeout,

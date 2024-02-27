@@ -46,7 +46,6 @@ public class TaskSchedulingService implements ScheduledTaskHolder {
     private final Map<ScheduledTask, TaskMetaData> taskMetadata = new ConcurrentHashMap<>();
 
 
-    @Autowired
     public TaskSchedulingService(ThreadPoolTaskSchedulerBuilder builder) throws IOException {
         ThreadPoolTaskScheduler taskScheduler = builder.build();
         taskScheduler.setDaemon(true);
@@ -68,7 +67,7 @@ public class TaskSchedulingService implements ScheduledTaskHolder {
                 v.cancel();
             }
             ScheduledTask task = scheduledTask.apply(registrar);
-            taskMetadata.put(task,  new TaskMetaData(k, Instant.now()));
+            taskMetadata.put(task, new TaskMetaData(k, Instant.now()));
             LOG.info("Task {} scheduled", k);
             return task;
         });
@@ -220,6 +219,7 @@ public class TaskSchedulingService implements ScheduledTaskHolder {
             }
         }
     }
+
     private static class TaskMetaData {
         private final String name;
         private final Instant created;

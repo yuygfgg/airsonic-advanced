@@ -225,7 +225,7 @@ public class CaptionsController {
         Stream<CaptionInfo> externalCaptions = findExternalCaptionsForVideo(video).stream()
                 .map(c -> new CaptionInfo(c.toString(), // leaks internal structure for now
                         CaptionInfo.Location.external,
-                        FileNameUtils.getExtension(c),
+                        FilenameUtils.getExtension(c.toString()),
                         c.getFileName().toString(),
                         getUrl(basePath, externalUser, externalExpiration, video.getId(),
                                 URLEncoder.encode(c.toString(), StandardCharsets.UTF_8))));

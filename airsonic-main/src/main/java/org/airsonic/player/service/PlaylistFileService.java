@@ -15,9 +15,9 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
-
-import jakarta.annotation.PostConstruct;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,8 +56,8 @@ public class PlaylistFileService {
     }
 
 
-    @PostConstruct
-    public void init() throws IOException {
+    @EventListener
+    public void init(ApplicationStartedEvent event) throws IOException {
         addPlaylistFolderWatcher();
     }
 

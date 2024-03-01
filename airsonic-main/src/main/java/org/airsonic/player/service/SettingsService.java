@@ -366,11 +366,10 @@ public class SettingsService {
             env.getProperty("libresonic.home")
         );
 
-        AirsonicDefaultFolderConfig defaultFolderConfig = new AirsonicDefaultFolderConfig(
-            env.getProperty("airsonic.defaultMusicFolder"),
-            env.getProperty("airsonic.defaultPodcastFolder"),
-            env.getProperty("airsonic.defaultPlaylistFolder")
-        );
+        AirsonicDefaultFolderConfig defaultFolderConfig = new AirsonicDefaultFolderConfig();
+        defaultFolderConfig.setDefaultMusicFolder(env.getProperty("airsonic.defaultMusicFolder"));
+        defaultFolderConfig.setDefaultPodcastFolder(env.getProperty("airsonic.defaultPodcastFolder"));
+        defaultFolderConfig.setDefaultPlaylistFolder(env.getProperty("airsonic.defaultPlaylistFolder"));
 
         // if jndi is set, everything datasource-related is ignored
         if (StringUtils.isBlank(env.getProperty(KEY_DATABASE_URL))) {

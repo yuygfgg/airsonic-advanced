@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 import static org.airsonic.player.security.MultipleCredsMatchingAuthenticationProvider.SALT_TOKEN_MECHANISM_SPECIALIZATION;
 
 @Configuration
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity
 public class GlobalSecurityConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(GlobalSecurityConfig.class);

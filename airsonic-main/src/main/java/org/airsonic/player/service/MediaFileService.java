@@ -1313,8 +1313,8 @@ public class MediaFileService {
     }
 
     @Caching(evict = {
-        @CacheEvict(cacheNames = "mediaFilePathCache", key = "#mediaFile.path.concat('-').concat(#mediaFile.folder.id).concat('-').concat(#mediaFile.startPosition == null ? '' : #mediaFile.startPosition.toString())"),
-        @CacheEvict(cacheNames = "mediaFileIdCache", key = "#mediaFile.id", condition = "#mediaFile.id != null") })
+        @CacheEvict(cacheNames = "mediaFilePathCache", key = "#mediaFile.path.concat('-').concat(#mediaFile.folder.id).concat('-').concat(#mediaFile.startPosition == null ? '' : #mediaFile.startPosition.toString())", condition = "#mediaFile != null"),
+        @CacheEvict(cacheNames = "mediaFileIdCache", key = "#mediaFile.id", condition = "#mediaFile != null && #mediaFile.id != null") })
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void updateMediaFile(MediaFile mediaFile) {
         if (mediaFile == null) {

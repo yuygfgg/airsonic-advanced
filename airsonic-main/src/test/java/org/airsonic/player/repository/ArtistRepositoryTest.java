@@ -18,7 +18,6 @@
  */
 package org.airsonic.player.repository;
 
-import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Artist;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.domain.MusicFolder.Type;
@@ -53,8 +52,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest
-@EnableConfigurationProperties({AirsonicHomeConfig.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@EnableConfigurationProperties
 @Transactional
 public class ArtistRepositoryTest {
 

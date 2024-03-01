@@ -18,7 +18,6 @@
  */
 package org.airsonic.player.repository;
 
-import org.airsonic.player.config.AirsonicDefaultFolderConfig;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.airsonic.player.domain.Album;
 import org.airsonic.player.domain.MusicFolder;
@@ -56,8 +55,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest
-@EnableConfigurationProperties({ AirsonicHomeConfig.class, AirsonicDefaultFolderConfig.class })
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@EnableConfigurationProperties({ AirsonicHomeConfig.class})
 @Transactional
 public class AlbumRepositoryTest {
 

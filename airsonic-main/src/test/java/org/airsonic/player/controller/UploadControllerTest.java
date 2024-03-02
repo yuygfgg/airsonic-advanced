@@ -224,8 +224,7 @@ class UploadControllerTest {
 
         // Check that model contains expected values
         assertEquals(1, model.get("exceptions").size());
-        assertTrue(model.get("exceptions").get(0) instanceof AccessDeniedException);
-        assertEquals("User does not have privileges to upload", ((AccessDeniedException) model.get("exceptions").get(0)).getMessage());
+        assertEquals("User does not have privileges to upload", model.get("exceptions").get(0));
         assertEquals(List.of(), model.get("unzippedFiles"));
         assertEquals(List.of(), model.get("uploadedFiles"));
 
@@ -283,8 +282,7 @@ class UploadControllerTest {
 
         // Check that model contains expected values
         assertEquals(1, model.get("exceptions").size());
-        assertTrue(model.get("exceptions").get(0) instanceof AccessDeniedException);
-        assertEquals(uploadPath.toString() + ": Specified location is not in writable music folder", ((AccessDeniedException) model.get("exceptions").get(0)).getMessage());
+        assertEquals(uploadPath.toString() + ": Specified location is not in writable music folder", model.get("exceptions").get(0));
         assertEquals(List.of(), model.get("unzippedFiles"));
         assertEquals(List.of(), model.get("uploadedFiles"));
 
@@ -390,8 +388,7 @@ class UploadControllerTest {
 
         // Check that model contains expected values
         assertEquals(1, model.get("exceptions").size());
-        assertTrue(model.get("exceptions").get(0) instanceof FileAlreadyExistsException);
-        assertEquals(uploadPath.toString() + ": File already exists", ((FileAlreadyExistsException) model.get("exceptions").get(0)).getMessage());
+        assertEquals(uploadPath.toString() + ": File already exists", model.get("exceptions").get(0));
         assertEquals(List.of(), model.get("unzippedFiles"));
         assertEquals(1, model.get("uploadedFiles").size());
         assertTrue(model.get("uploadedFiles").contains(tempUploadDir.resolve("test2.txt")));

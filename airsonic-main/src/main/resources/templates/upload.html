@@ -14,7 +14,7 @@
 </th:block>
 
 <th:block th:each="exception:${model.exceptions}">
-    <p th:utext="#{upload.failed(${#strings.escapeXml(exception.message)})}"></p>
+    <p th:utext="#{upload.failed(${#strings.escapeXml(exception)})}"></p>
 </th:block>
 
     <th:block th:if="${#lists.isEmpty(model.uploadedFiles)}">

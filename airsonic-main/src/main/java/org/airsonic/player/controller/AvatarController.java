@@ -65,9 +65,9 @@ public class AvatarController {
 
     @GetMapping
     public void handleRequest(
-            @RequestParam(required = false) Integer id,
-            @RequestParam(required = false) String username,
-            @RequestParam(defaultValue = "false") boolean forceCustom,
+            @RequestParam(name = "id", required = false) Integer id,
+            @RequestParam(name = "username", required = false) String username,
+            @RequestParam(name = "forceCustom", defaultValue = "false") boolean forceCustom,
             HttpServletResponse response) throws Exception {
 
         if (id == null && username == null) {

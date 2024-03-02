@@ -122,9 +122,9 @@ public class CoverArtController {
 
     @GetMapping
     public void handleRequest(
-            @RequestParam(required = false) String id,
-            @RequestParam(required = false) Integer size,
-            @RequestParam(defaultValue = "60") int offset,
+            @RequestParam(name = "id", required = false) String id,
+            @RequestParam(name = "size", required = false) Integer size,
+            @RequestParam(name = "offset", defaultValue = "60") int offset,
             HttpServletRequest request,
             HttpServletResponse response) throws Exception {
 

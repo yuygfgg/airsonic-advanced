@@ -1293,7 +1293,6 @@ public class MediaFileService {
     private Path findTagCover(Collection<Path> candidates) {
         // Look for embedded images in audiofiles.
         return candidates.stream()
-                .filter(parser::isApplicable)
                 .filter(JaudiotaggerParser::isImageAvailable)
                 .findFirst()
                 .orElse(null);

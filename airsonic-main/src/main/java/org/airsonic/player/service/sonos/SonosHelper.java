@@ -580,7 +580,6 @@ public class SonosHelper {
         result.setItemType(ItemType.TRACK);
         result.setMimeType(StringUtil.getMimeType(suffix, true));
         result.setTitle(song.getTitle());
-        result.setGenre(song.getGenre());
         result.setIsFavorite(song.getStarredDate() != null);
 //        result.setDynamic();// TODO: For starred songs
 
@@ -594,6 +593,7 @@ public class SonosHelper {
         trackMetadata.setAlbumArtURI(albumArtURI);
         trackMetadata.setDuration((int) Math.round(song.getDuration()));
         trackMetadata.setTrackNumber(song.getTrackNumber());
+        trackMetadata.setGenre(song.getGenre());
 
         MediaFile parent = mediaFileService.getParentOf(song);
         if (parent != null && parent.isAlbum()) {

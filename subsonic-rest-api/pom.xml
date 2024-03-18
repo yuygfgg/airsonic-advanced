@@ -28,23 +28,29 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>jaxb2-maven-plugin</artifactId>
-                <version>3.1.0</version>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-xjc-plugin</artifactId>
+                <version>4.0.0</version>
+                <configuration>
+                    <sourceRoot>${basedir}/target/generated/src/main/java</sourceRoot>
+                    <xsdOptions>
+                        <xsdOption>
+                            <xsd>${basedir}/src/main/resources/subsonic-rest-api.xsd</xsd>
+                            <packagename>org.subsonic.restapi</packagename>
+                        </xsdOption>
+                    </xsdOptions>
+                </configuration>
                 <executions>
                     <execution>
                         <id>xjc</id>
-                        <goals>
-                            <goal>xjc</goal>
-                        </goals>
+                            <goals>
+                                <goal>xsdtojava</goal>
+                            </goals>
+                        <phase>generate-sources</phase>
                     </execution>
                 </executions>
-                <configuration>
-                    <sources>
-                        <source>src/main/resources/subsonic-rest-api.xsd</source>
-                    </sources>
-                </configuration>
             </plugin>
         </plugins>
     </build>
+
 </project>

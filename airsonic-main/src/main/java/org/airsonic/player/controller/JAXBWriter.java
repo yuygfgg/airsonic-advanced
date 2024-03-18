@@ -67,7 +67,7 @@ public class JAXBWriter {
     private final String SERVER_TYPE = "Airsonic-Advanced";
 
     public JAXBWriter() {
-        Map<String, Object> properties = Map.of(JAXBContext.JAXB_CONTEXT_FACTORY, "org.eclipse.persistence.jaxb.JAXBContextFactory");
+        Map<String, Object> properties = Map.of(JAXBContext.JAXB_CONTEXT_FACTORY, "org.glassfish.jaxb.runtime.v2.ContextFactory");
         Class<?>[] classes = {Response.class};
         try {
             jaxbContext = JAXBContext.newInstance(classes, properties);

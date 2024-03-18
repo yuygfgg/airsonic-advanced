@@ -25,7 +25,7 @@
         <failOnDependencyWarning>true</failOnDependencyWarning>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>17</java.version>
-        <cxf.version>4.0.3</cxf.version>
+        <cxf.version>4.0.4</cxf.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <docker.container.repo>ghcr.io/kagemomiji/airsonic-advanced</docker.container.repo>
     </properties>
@@ -329,6 +329,7 @@
                                 <ignoredUsedUndeclaredDependency>org.springframework.data:spring-data-commons:*</ignoredUsedUndeclaredDependency>
                                 <ignoredUsedUndeclaredDependency>commons-collections:commons-collections:*</ignoredUsedUndeclaredDependency>
                                 <ignoredUsedUndeclaredDependency>com.sun.mail:jakarta.mail*</ignoredUsedUndeclaredDependency>
+                                <ignoredUsedUndeclaredDependency>org.glassfish.jaxb:jaxb-runtime</ignoredUsedUndeclaredDependency>
                             </ignoredUsedUndeclaredDependencies>
                             <ignoredUnusedDeclaredDependencies>
                                 <ignoredUnusedDeclaredDependency>com.google.code.findbugs:jsr305:*</ignoredUnusedDeclaredDependency>
@@ -349,7 +350,9 @@
                                 <ignoredUnusedDeclaredDependency>jakarta.annotation:jakarta.annotation-api</ignoredUnusedDeclaredDependency>
 				                <ignoredUnusedDeclaredDependency>org.springframework:spring-aspects</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.yaml:snakeyaml</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.glassfish.jaxb:jaxb-runtime</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.eclipse.persistence:org.eclipse.persistence.moxy</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.apache.cxf:cxf-tools-wsdlto-databinding-jaxb</ignoredUnusedDeclaredDependency>
+                                <ignoredUsedUndeclaredDependency>org.glassfish.jaxb:jaxb-runtime</ignoredUsedUndeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>

@@ -40,7 +40,6 @@ import org.springframework.security.web.context.request.async.WebAsyncManagerInt
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -301,10 +300,12 @@ public class GlobalSecurityConfig {
         return http.build();
     }
 
+    /*
     @Bean(name = "mvcHandlerMappingIntrospector")
     public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
         return new HandlerMappingIntrospector();
     }
+    */
 
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

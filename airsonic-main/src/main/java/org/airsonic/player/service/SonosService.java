@@ -31,9 +31,9 @@ import org.airsonic.player.domain.SonosLink;
 import org.airsonic.player.repository.SonosLinkRepository;
 import org.airsonic.player.service.search.IndexType;
 import org.airsonic.player.service.sonos.SonosHelper;
-import org.airsonic.player.service.sonos.SonosLinkSecurityInterceptor;
 import org.airsonic.player.service.sonos.SonosServiceRegistration;
 import org.airsonic.player.service.sonos.SonosSoapFault;
+import org.airsonic.player.service.sonos.SonosUtilComponent;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -117,6 +117,8 @@ public class SonosService implements SonosSoap {
     private SonosServiceRegistration registration;
     @Autowired
     private SonosLinkRepository sonosLinkRepository;
+    @Autowired
+    private SonosUtilComponent sonosUtil;
 
     /**
      * The context for the request. This is used to get the Auth information
@@ -672,7 +674,7 @@ public class SonosService implements SonosSoap {
     @Override
     public DeviceAuthTokenResult refreshAuthToken() throws CustomFault {
         try {
-            Credentials expiredCreds = SonosLinkSecurityInterceptor.getCredentials(getMessage());
+            Credentials expiredCreds = sonosUtil.getCredentials(getMessage());
             return refreshAuthToken(expiredCreds, getRequest());
         } catch (Exception e) {
             throw new SonosSoapFault.LoginInvalid();

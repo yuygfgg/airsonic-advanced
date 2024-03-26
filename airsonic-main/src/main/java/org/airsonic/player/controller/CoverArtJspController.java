@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/coverArtJsp")
+@RequestMapping({"/coverArtJsp", "/coverArtJsp.view"})
 public class CoverArtJspController {
     @GetMapping
     public ModelAndView get(HttpServletRequest request, HttpServletResponse response) {

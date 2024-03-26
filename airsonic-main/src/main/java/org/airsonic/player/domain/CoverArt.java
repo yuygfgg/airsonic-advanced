@@ -36,7 +36,7 @@ public class CoverArt {
     @Column(name = "path", nullable = false)
     private String path;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "folder_id", referencedColumnName = "id")
     private MusicFolder folder;
 
@@ -111,6 +111,14 @@ public class CoverArt {
 
     public Path getRelativePath() {
         return Paths.get(path);
+    }
+
+    public Path getFullPath() {
+        if (folder == null) {
+            return getRelativePath();
+        } else {
+            return folder.getPath().resolve(path);
+        }
     }
 
     public Path getFullPath(Path relativeMediaFolderPath) {

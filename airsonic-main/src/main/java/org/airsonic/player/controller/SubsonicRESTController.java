@@ -1336,9 +1336,9 @@ public class SubsonicRESTController {
 
     @RequestMapping("/download")
     public ResponseEntity<Resource> download(Principal p,
-            @RequestParam(required = false) String id,
-            @RequestParam(required = false) Integer playlist,
-            @RequestParam(required = false) Integer player,
+            @RequestParam(required = false, name = "id") String id,
+            @RequestParam(required = false, name = "playlist") Integer playlist,
+            @RequestParam(required = false, name = "player") Integer player,
             @RequestParam(required = false, name = "i") List<Integer> indices,
             ServletWebRequest swr) throws Exception {
         HttpServletRequest request = wrapRequest(swr.getRequest());
@@ -1387,13 +1387,13 @@ public class SubsonicRESTController {
 
     @RequestMapping("/stream")
     public ResponseEntity<Resource> stream(Authentication authentication,
-            @RequestParam(required = false) Integer playlist,
-            @RequestParam(required = false) String format,
-            @RequestParam(required = false) String suffix,
-            @RequestParam Optional<Integer> maxBitRate,
-            @RequestParam Optional<Integer> id,
-            @RequestParam Optional<String> path,
-            @RequestParam(required = false) Double timeOffset,
+            @RequestParam(required = false, name = "playlist") Integer playlist,
+            @RequestParam(required = false, name = "format") String format,
+            @RequestParam(required = false, name = "suffix") String suffix,
+            @RequestParam("maxBitRate") Optional<Integer> maxBitRate,
+            @RequestParam("id") Optional<Integer> id,
+            @RequestParam("path") Optional<String> path,
+            @RequestParam(required = false, name = "timeOffset") Double timeOffset,
             ServletWebRequest swr) throws Exception {
         HttpServletRequest request = wrapRequest(swr.getRequest());
         User user = securityService.getUserByName(authentication.getName());

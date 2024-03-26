@@ -104,9 +104,9 @@ public class DownloadController {
 
     @GetMapping
     public ResponseEntity<Resource> handleRequest(Principal p,
-            @RequestParam Optional<Integer> id,
-            @RequestParam(required = false) Integer playlist,
-            @RequestParam(required = false) Integer player,
+            @RequestParam("id") Optional<Integer> id,
+            @RequestParam(required = false, name = "playlist") Integer playlist,
+            @RequestParam(required = false, name = "playser") Integer player,
             @RequestParam(required = false, name = "i") List<Integer> indices,
             ServletWebRequest swr) throws Exception {
         User user = securityService.getUserByName(p.getName());

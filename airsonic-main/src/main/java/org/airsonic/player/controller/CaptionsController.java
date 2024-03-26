@@ -74,8 +74,8 @@ public class CaptionsController {
     @GetMapping
     public ResponseEntity<Resource> handleRequest(
             Authentication authentication,
-            @RequestParam int id,
-            @RequestParam(required = false) String captionId,
+            @RequestParam("id") int id,
+            @RequestParam(required = false, name = "captionId") String captionId,
             @RequestParam(required = false, name = "format") String requiredFormat,
             HttpServletRequest request)
             throws Exception {
@@ -184,7 +184,7 @@ public class CaptionsController {
     }
 
     @GetMapping("/list")
-    public @ResponseBody List<CaptionInfo> listCaptions(Authentication authentication, @RequestParam int id, HttpServletRequest request) {
+    public @ResponseBody List<CaptionInfo> listCaptions(Authentication authentication, @RequestParam("id") int id, HttpServletRequest request) {
         MediaFile video = mediaFileService.getMediaFile(id);
         if (!(authentication instanceof JWTAuthenticationToken)
                 && !securityService.isFolderAccessAllowed(video, authentication.getName())) {

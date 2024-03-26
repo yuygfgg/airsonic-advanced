@@ -33,7 +33,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/status")
+@RequestMapping({"/status", "/status.view"})
 public class StatusController {
     @GetMapping
     protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) {

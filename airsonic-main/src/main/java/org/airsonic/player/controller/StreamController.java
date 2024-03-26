@@ -75,7 +75,7 @@ import java.util.function.Supplier;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping({ "/stream/**", "/ext/stream/**" })
+@RequestMapping({ "/stream", "/ext/stream" })
 public class StreamController {
 
     private static final Logger LOG = LoggerFactory.getLogger(StreamController.class);
@@ -103,13 +103,13 @@ public class StreamController {
 
     @GetMapping
     public ResponseEntity<Resource> handleRequest(Authentication authentication,
-            @RequestParam(required = false) Integer playlist,
-            @RequestParam(required = false) String format,
-            @RequestParam(required = false) String suffix,
-            @RequestParam Optional<Integer> maxBitRate,
-            @RequestParam Optional<Integer> id,
-            @RequestParam Optional<String> path,
-            @RequestParam(required = false) Double offsetSeconds,
+            @RequestParam(required = false, name = "playlist") Integer playlist,
+            @RequestParam(required = false, name = "format") String format,
+            @RequestParam(required = false, name = "suffix") String suffix,
+            @RequestParam("maxBitRate") Optional<Integer> maxBitRate,
+            @RequestParam("id") Optional<Integer> id,
+            @RequestParam("path") Optional<String> path,
+            @RequestParam(required = false, name = "offsetSeconds") Double offsetSeconds,
             ServletWebRequest swr) throws Exception {
 
         User user = securityService.getCurrentUser(swr.getRequest());

@@ -40,7 +40,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/podcastChannel")
+@RequestMapping({"/podcastChannel", "/podcastChannel.view"})
 public class PodcastChannelController {
 
     @Autowired

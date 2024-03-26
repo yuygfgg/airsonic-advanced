@@ -21,7 +21,7 @@ import java.util.Map;
  * Spring MVC Controller that serves the login page.
  */
 @Controller
-@RequestMapping("/login")
+@RequestMapping({"/login", "/login.view"})
 public class LoginController {
 
     @Autowired

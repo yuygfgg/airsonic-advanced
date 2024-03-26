@@ -35,7 +35,7 @@ import java.util.Objects;
 @Table(name = "bookmark", uniqueConstraints = @UniqueConstraint(columnNames = {"username","media_file_id"}))
 public class Bookmark {
 
-    public Bookmark(){}
+    public Bookmark() {}
 
     public Bookmark(int mediaFileId, String username) {
         this.mediaFileId = mediaFileId;

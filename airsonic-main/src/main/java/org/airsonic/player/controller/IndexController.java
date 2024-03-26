@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/index")
+@RequestMapping({"/index", "/index.view"})
 public class IndexController {
 
     @Autowired

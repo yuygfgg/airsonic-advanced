@@ -38,7 +38,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/setMusicFileInfo")
+@RequestMapping({"/setMusicFileInfo", "/setMusicFileInfo.view"})
 public class SetMusicFileInfoController {
 
     @Autowired

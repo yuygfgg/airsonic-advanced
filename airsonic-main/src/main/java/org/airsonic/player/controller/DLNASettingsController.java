@@ -40,7 +40,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/dlnaSettings")
+@RequestMapping({"/dlnaSettings", "/dlnaSettings.view"})
 public class DLNASettingsController {
 
     @Autowired

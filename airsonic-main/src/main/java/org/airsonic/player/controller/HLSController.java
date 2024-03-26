@@ -90,7 +90,7 @@ import java.util.stream.Collectors;
  * @author Sindre Mehus
  */
 @Controller("hlsController")
-@RequestMapping({ "/hls", "/ext/hls" })
+@RequestMapping({ "/hls", "/ext/hls", "/hls.view", "/ext/hls.view"})
 public class HLSController {
 
     private static final Logger LOG = LoggerFactory.getLogger(HLSController.class);

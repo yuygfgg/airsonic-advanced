@@ -44,7 +44,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/importPlaylist")
+@RequestMapping({"/importPlaylist", "/importPlaylist.view"})
 public class ImportPlaylistController {
 
     private static final long MAX_PLAYLIST_SIZE_MB = 5L;

@@ -33,14 +33,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/gettingStarted")
+@RequestMapping({"/gettingStarted", "/gettingStarted.view"})
 public class GettingStartedController {
 
     @Autowired
     private SettingsService settingsService;
 
     @GetMapping
-    public ModelAndView gettingStarted(HttpServletRequest request) {
+    public ModelAndView get(HttpServletRequest request) {
 
         if (request.getParameter("hide") != null) {
             settingsService.setGettingStartedEnabled(false);

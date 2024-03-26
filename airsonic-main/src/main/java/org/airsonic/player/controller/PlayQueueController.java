@@ -45,7 +45,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/playQueue")
+@RequestMapping({"/playQueue", "/playQueue.view"})
 public class PlayQueueController {
 
     @Autowired

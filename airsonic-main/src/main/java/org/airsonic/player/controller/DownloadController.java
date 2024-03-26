@@ -20,7 +20,6 @@
 package org.airsonic.player.controller;
 
 import org.airsonic.player.domain.*;
-import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.io.PipeStreams.MonitoredResource;
 import org.airsonic.player.io.PipeStreams.PipedInputStream;
 import org.airsonic.player.io.PipeStreams.PipedOutputStream;
@@ -83,7 +82,7 @@ import java.util.zip.ZipOutputStream;
  */
 
 @Controller
-@RequestMapping("/download")
+@RequestMapping({"/download", "/download.view"})
 public class DownloadController {
 
     private static final Logger LOG = LoggerFactory.getLogger(DownloadController.class);
@@ -135,7 +134,7 @@ public class DownloadController {
                 defaultDownloadName = FilenameUtils.getName(mediaFile.getPath());
             } else {
                 if (indices == null) {
-                    CoverArt art = coverArtService.get(EntityType.MEDIA_FILE, mediaFile.getId());
+                    CoverArt art = coverArtService.getMediaFileArt(mediaFile.getId());
                     if (!CoverArt.NULL_ART.equals(art)) {
                         additionalFiles = Collections.singletonList(Pair.of(art.getRelativePath(), art.getFolder()));
                     }

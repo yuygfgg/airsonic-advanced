@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/more")
+@RequestMapping({"/more", "/more.view"})
 public class MoreController {
 
     @Autowired

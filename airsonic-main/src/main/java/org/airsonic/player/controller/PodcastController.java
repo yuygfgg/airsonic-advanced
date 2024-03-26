@@ -43,7 +43,7 @@ import java.util.*;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/podcast")
+@RequestMapping({"/podcast", "/podcast.view"})
 public class PodcastController {
 
     @Autowired

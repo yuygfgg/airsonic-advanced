@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * Spring MVC Controller that serves the login page.
  */
 @Controller
-@RequestMapping("/exportPlaylist")
+@RequestMapping({"/exportPlaylist", "/exportPlaylist.view"})
 public class ExportPlayListController {
 
     @Autowired

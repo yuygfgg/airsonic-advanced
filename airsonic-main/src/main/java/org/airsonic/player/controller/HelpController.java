@@ -53,7 +53,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/help")
+@RequestMapping({"/help", "/help.view"})
 public class HelpController {
 
     private static final Logger LOG = LoggerFactory.getLogger(HelpController.class);

@@ -58,7 +58,7 @@ import static java.util.stream.Collectors.toList;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/ext/share")
+@RequestMapping({"/ext/share", "/ext/share.view"})
 public class ExternalPlayerController {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExternalPlayerController.class);

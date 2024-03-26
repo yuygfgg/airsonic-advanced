@@ -45,7 +45,7 @@ import java.util.*;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/left")
+@RequestMapping({"/left", "/left.view"})
 public class LeftController {
 
     // Update this time if you want to force a refresh in clients.

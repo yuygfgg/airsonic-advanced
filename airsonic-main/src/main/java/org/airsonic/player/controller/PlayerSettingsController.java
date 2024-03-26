@@ -47,7 +47,7 @@ import java.util.List;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/playerSettings")
+@RequestMapping({"/playerSettings", "/playerSettings.view"})
 public class PlayerSettingsController {
 
     @Autowired

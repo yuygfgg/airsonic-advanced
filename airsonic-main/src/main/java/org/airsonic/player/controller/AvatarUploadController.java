@@ -44,7 +44,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/avatarUpload")
+@RequestMapping({"/avatarUpload", "/avatarUpload.view"})
 public class AvatarUploadController {
 
     private static final Logger LOG = LoggerFactory.getLogger(AvatarUploadController.class);

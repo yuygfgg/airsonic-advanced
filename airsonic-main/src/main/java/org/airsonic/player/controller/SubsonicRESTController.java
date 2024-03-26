@@ -26,7 +26,6 @@ import org.airsonic.player.ajax.LyricsWSController;
 import org.airsonic.player.command.UserSettingsCommand;
 import org.airsonic.player.domain.*;
 import org.airsonic.player.domain.Bookmark;
-import org.airsonic.player.domain.CoverArt.EntityType;
 import org.airsonic.player.domain.PlayQueue;
 import org.airsonic.player.domain.User;
 import org.airsonic.player.i18n.LocaleResolver;
@@ -508,7 +507,7 @@ public class SubsonicRESTController {
         jaxbArtist.setName(artist.getName());
         jaxbArtist.setStarred(jaxbWriter.convertDate(artistService.getStarredDate(artist.getId(), username)));
         jaxbArtist.setAlbumCount(artist.getAlbumCount());
-        if (!CoverArt.NULL_ART.equals(coverArtService.get(EntityType.ARTIST, artist.getId()))) {
+        if (!CoverArt.NULL_ART.equals(coverArtService.getArtistArt(artist.getId()))) {
             jaxbArtist.setCoverArt(CoverArtController.ARTIST_COVERART_PREFIX + artist.getId());
         }
         return jaxbArtist;
@@ -556,7 +555,7 @@ public class SubsonicRESTController {
                 jaxbAlbum.setArtistId(String.valueOf(artist.getId()));
             }
         }
-        if (!CoverArt.NULL_ART.equals(coverArtService.get(EntityType.ALBUM, album.getId()))) {
+        if (!CoverArt.NULL_ART.equals(coverArtService.getAlbumArt(album.getId()))) {
             jaxbAlbum.setCoverArt(CoverArtController.ALBUM_COVERART_PREFIX + album.getId());
         }
         jaxbAlbum.setSongCount(album.getSongCount());
@@ -1329,7 +1328,7 @@ public class SubsonicRESTController {
 
     private String findCoverArt(MediaFile mediaFile, MediaFile parent) {
         MediaFile dir = mediaFile.isDirectory() ? mediaFile : parent;
-        if (dir != null && !CoverArt.NULL_ART.equals(coverArtService.get(EntityType.MEDIA_FILE, dir.getId()))) {
+        if (dir != null && !CoverArt.NULL_ART.equals(coverArtService.getMediaFileArt(dir.getId()))) {
             return String.valueOf(dir.getId());
         }
         return null;
@@ -1944,7 +1943,7 @@ public class SubsonicRESTController {
     @RequestMapping("/getCoverArt")
     public void getCoverArt(HttpServletRequest request, HttpServletResponse response) throws Exception {
         request = wrapRequest(request);
-        coverArtController.handleRequest(
+        coverArtController.get(
                 ServletRequestUtils.getStringParameter(request, "id"),
                 ServletRequestUtils.getIntParameter(request, "size"),
                 ServletRequestUtils.getIntParameter(request, "offset", 60),

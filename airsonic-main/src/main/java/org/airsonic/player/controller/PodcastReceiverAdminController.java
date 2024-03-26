@@ -41,7 +41,7 @@ import java.util.List;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/podcastReceiverAdmin")
+@RequestMapping({"/podcastReceiverAdmin", "/podcastReceiverAdmin.view"})
 public class PodcastReceiverAdminController {
 
     @Autowired

@@ -45,7 +45,7 @@ import java.util.List;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/editTags")
+@RequestMapping({"/editTags", "/editTags.view"})
 public class EditTagsController {
 
     @Autowired

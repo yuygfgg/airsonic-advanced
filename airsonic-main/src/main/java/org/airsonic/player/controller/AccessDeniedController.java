@@ -14,7 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * Spring MVC Controller that serves the login page.
  */
 @Controller
-@RequestMapping("/accessDenied")
+@RequestMapping({"/accessDenied", "/accessDenied.view"})
 public class AccessDeniedController {
 
     private static final Logger LOG = LoggerFactory.getLogger(AccessDeniedController.class);

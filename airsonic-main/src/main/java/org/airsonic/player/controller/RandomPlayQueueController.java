@@ -46,7 +46,7 @@ import java.util.*;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/randomPlayQueue.view")
+@RequestMapping({"/randomPlayQueue.view", "/randomPlayQueue"})
 public class RandomPlayQueueController {
 
     @Autowired

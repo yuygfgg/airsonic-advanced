@@ -8,7 +8,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "starred_media_file", uniqueConstraints = @UniqueConstraint(columnNames = { "media_file_id",
-        "username" }))
+    "username" }))
 public class StarredMediaFile {
 
     @Id

@@ -45,7 +45,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/personalSettings")
+@RequestMapping({"/personalSettings", "/personalSettings.view"})
 public class PersonalSettingsController {
 
     @Autowired

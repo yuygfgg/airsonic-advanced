@@ -13,7 +13,7 @@ import java.security.Principal;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/bookmarks")
+@RequestMapping({"/bookmarks", "/bookmarks.view"})
 public class BookmarksController {
     @Autowired
     private PersonalSettingsService personalSettingsService;

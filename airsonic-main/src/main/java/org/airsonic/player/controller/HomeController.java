@@ -51,7 +51,7 @@ import static org.springframework.web.bind.ServletRequestUtils.getStringParamete
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/home")
+@RequestMapping({"/home", "/home.view"})
 public class HomeController {
 
     private static final int LIST_SIZE = 40;

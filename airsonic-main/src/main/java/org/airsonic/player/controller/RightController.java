@@ -42,7 +42,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/right")
+@RequestMapping({"/right", "/right.view"})
 public class RightController {
 
     @Autowired

@@ -40,7 +40,7 @@ import java.nio.file.Path;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/avatar")
+@RequestMapping({"/avatar", "/avatar.view"})
 public class AvatarController {
 
     @Autowired

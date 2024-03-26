@@ -67,7 +67,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @Controller
-@RequestMapping("/databaseSettings")
+@RequestMapping({"/databaseSettings", "/databaseSettings.view"})
 public class DatabaseSettingsController {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseSettingsController.class);
 

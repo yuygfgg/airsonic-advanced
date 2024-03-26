@@ -46,7 +46,7 @@ import static java.util.stream.Collectors.toSet;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/main")
+@RequestMapping({"/main", "/main.view"})
 public class MainController {
 
     @Autowired

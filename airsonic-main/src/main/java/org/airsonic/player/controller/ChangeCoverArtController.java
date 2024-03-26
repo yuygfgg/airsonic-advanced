@@ -41,7 +41,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/changeCoverArt")
+@RequestMapping({"/changeCoverArt", "/changeCoverArt.view"})
 public class ChangeCoverArtController {
 
     @Autowired

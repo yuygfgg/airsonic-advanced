@@ -36,7 +36,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/lyrics")
+@RequestMapping({"/lyrics", "/lyrics.view"})
 public class LyricsController {
 
     @GetMapping

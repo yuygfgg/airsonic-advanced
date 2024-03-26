@@ -45,7 +45,7 @@ import static org.springframework.http.HttpStatus.OK;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/proxy")
+@RequestMapping({"/proxy", "/proxy.view"})
 public class ProxyController {
 
     @GetMapping

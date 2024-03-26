@@ -12,7 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * Spring MVC Controller that serves the login page.
  */
 @Controller
-@RequestMapping("/notFound")
+@RequestMapping({"/notFound", "/notFound.view"})
 public class NotFoundController {
 
     @GetMapping

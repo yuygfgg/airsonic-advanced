@@ -57,7 +57,7 @@ import static java.util.stream.Collectors.toSet;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/search")
+@RequestMapping({"/search", "/search.view"})
 public class SearchController {
 
     @Autowired

@@ -39,7 +39,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/playlists")
+@RequestMapping({"/playlists", "/playlists.view"})
 public class PlaylistsController {
 
     @Autowired

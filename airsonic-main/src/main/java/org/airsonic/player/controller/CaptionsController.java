@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Controller
-@RequestMapping({ "/captions", "/ext/captions" })
+@RequestMapping({ "/captions", "/ext/captions", "/captions.view", "/ext/captions.view" })
 public class CaptionsController {
     private static final Logger LOG = LoggerFactory.getLogger(CaptionsController.class);
 

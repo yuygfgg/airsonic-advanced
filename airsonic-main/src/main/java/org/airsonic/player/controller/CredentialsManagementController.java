@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toMap;
 
 @Controller
-@RequestMapping("/credentialsSettings")
+@RequestMapping({"/credentialsSettings", "/credentialsSettings.view"})
 public class CredentialsManagementController {
 
     @Autowired

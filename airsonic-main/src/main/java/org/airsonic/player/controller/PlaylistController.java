@@ -47,7 +47,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/playlist")
+@RequestMapping({"/playlist", "/playlist.view"})
 public class PlaylistController {
 
     @Autowired

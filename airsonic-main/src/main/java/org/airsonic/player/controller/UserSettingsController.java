@@ -68,7 +68,7 @@ import static java.util.stream.Collectors.toSet;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/userSettings")
+@RequestMapping({"/userSettings", "/userSettings.view"})
 public class UserSettingsController {
 
     @Autowired

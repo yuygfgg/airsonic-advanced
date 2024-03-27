@@ -44,7 +44,7 @@ import java.util.*;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/createShare")
+@RequestMapping({"/createShare", "createShare.view"})
 public class ShareManagementController {
 
     @Autowired

@@ -41,7 +41,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/top")
+@RequestMapping({"/top", "/top.view"})
 public class TopController {
 
     @Autowired

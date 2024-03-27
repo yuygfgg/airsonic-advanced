@@ -44,7 +44,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/sonoslink")
+@RequestMapping({"/sonoslink", "/sonoslink.view"})
 public class SonosLinkController {
 
     @Autowired

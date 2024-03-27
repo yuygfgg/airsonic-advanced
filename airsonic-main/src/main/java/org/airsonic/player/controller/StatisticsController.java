@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/statistics")
+@RequestMapping({"/statistics", "/statistics.view"})
 public class StatisticsController {
 
     @Autowired

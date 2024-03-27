@@ -49,7 +49,7 @@ import java.util.*;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/shareSettings")
+@RequestMapping({"/shareSettings", "/shareSettings.view"})
 public class ShareSettingsController {
 
     @Autowired

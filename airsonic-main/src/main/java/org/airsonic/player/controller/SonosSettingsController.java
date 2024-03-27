@@ -43,7 +43,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/sonosSettings")
+@RequestMapping({"/sonosSettings", "/sonosSettings.view"})
 public class SonosSettingsController {
 
     @Autowired

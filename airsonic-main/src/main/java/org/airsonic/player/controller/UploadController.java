@@ -82,7 +82,7 @@ import java.util.function.Consumer;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/upload")
+@RequestMapping({"/upload", "/upload.view"})
 public class UploadController {
 
     private static final Logger LOG = LoggerFactory.getLogger(UploadController.class);

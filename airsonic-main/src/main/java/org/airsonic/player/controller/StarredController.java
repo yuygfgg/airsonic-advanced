@@ -45,7 +45,7 @@ import java.util.Map;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/starred")
+@RequestMapping({"/starred", "/starred.view"})
 public class StarredController {
 
     @Autowired

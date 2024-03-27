@@ -39,7 +39,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/setRating")
+@RequestMapping({"/setRating", "/setRating.view"})
 public class SetRatingController {
 
     @Autowired

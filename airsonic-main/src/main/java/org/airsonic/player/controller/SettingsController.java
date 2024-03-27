@@ -36,7 +36,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/settings")
+@RequestMapping({"/settings", "/settings.view"})
 public class SettingsController {
 
     @Autowired

@@ -60,7 +60,7 @@ import java.util.stream.Stream;
  * @author Sindre Mehus
  */
 @Controller
-@RequestMapping("/videoPlayer")
+@RequestMapping({"/videoPlayer", "/videoPlayer.view"})
 public class VideoPlayerController {
 
     public static final int DEFAULT_BIT_RATE = 1500;

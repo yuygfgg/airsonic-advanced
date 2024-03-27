@@ -11,8 +11,6 @@ import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 import javax.xml.namespace.QName;
 
-import java.util.Map;
-
 
 
 @Component
@@ -21,17 +19,15 @@ public class SonosUtilComponent {
     private Unmarshaller unmarshaller = createUnmarshaller();
 
     private Unmarshaller createUnmarshaller() {
-        Class<?>[] classes = {Credentials.class};
-        Map<String, Object> properties = Map.of(JAXBContext.JAXB_CONTEXT_FACTORY, "org.eclipse.persistence.jaxb.JAXBContextFactory");
         try {
-            return JAXBContext.newInstance(classes, properties).createUnmarshaller();
+            return JAXBContext.newInstance("com.sonos.services._1").createUnmarshaller();
         } catch (JAXBException e) {
             throw new AssertionError(e);
         }
     }
 
     public Credentials getCredentials(SoapMessage message) throws JAXBException {
-        QName credentialQName = new QName("http://www.sonos.com/Services/0.1", "credentials");
+        QName credentialQName = new QName("http://www.sonos.com/Services/1.1", "credentials");
 
         for (Header header : message.getHeaders()) {
             if (credentialQName.equals(header.getName())) {

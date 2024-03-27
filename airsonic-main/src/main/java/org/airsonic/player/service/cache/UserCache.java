@@ -2,7 +2,6 @@ package org.airsonic.player.service.cache;
 
 import org.airsonic.player.domain.User;
 import org.airsonic.player.spring.CacheConfiguration;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Nullable;
@@ -11,8 +10,12 @@ import javax.cache.CacheManager;
 @Component
 public class UserCache {
 
-    @Autowired
-    private CacheManager cacheManager;
+    private final CacheManager cacheManager;
+
+    public UserCache(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+        this.cacheManager.enableStatistics(CacheConfiguration.USER_CACHE, true);
+    }
 
     public void clear() {
         cacheManager.getCache(CacheConfiguration.USER_CACHE).clear();

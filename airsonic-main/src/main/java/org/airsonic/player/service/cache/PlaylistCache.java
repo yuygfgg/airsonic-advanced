@@ -2,7 +2,6 @@ package org.airsonic.player.service.cache;
 
 import org.airsonic.player.domain.Playlist;
 import org.airsonic.player.spring.CacheConfiguration;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Nonnull;
@@ -16,8 +15,13 @@ import java.util.List;
 @Component
 public class PlaylistCache {
 
-    @Autowired
-    private CacheManager cacheManager;
+    private final CacheManager cacheManager;
+
+    public PlaylistCache(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+        this.cacheManager.enableStatistics(CacheConfiguration.PLAYLIST_CACHE, true);
+        this.cacheManager.enableStatistics(CacheConfiguration.PLAYLIST_USERS_CACHE, true);
+    }
 
     public void clear() {
         cacheManager.getCache(CacheConfiguration.PLAYLIST_CACHE).clear();

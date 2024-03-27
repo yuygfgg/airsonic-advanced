@@ -2,16 +2,20 @@ package org.airsonic.player.service.cache;
 
 import org.airsonic.player.domain.CoverArt;
 import org.airsonic.player.spring.CacheConfiguration;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.Nonnull;
 import javax.cache.CacheManager;
 
 @Component
 public class CoverArtCache {
 
-    @Autowired
-    private CacheManager cacheManager;
+    private final CacheManager cacheManager;
+
+    public CoverArtCache(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+        this.cacheManager.enableStatistics(CacheConfiguration.COVER_ART_CACHE, true);
+    }
 
     public void clear() {
         cacheManager.getCache(CacheConfiguration.COVER_ART_CACHE).clear();
@@ -22,23 +26,23 @@ public class CoverArtCache {
             return null;
         }
         return cacheManager.getCache(CacheConfiguration.COVER_ART_CACHE, String.class, CoverArt.class)
-                .get(entityType.toString().concat("-").concat(entityId.toString()));
+                .get(generateKey(entityType, entityId));
     }
 
     public void putCoverArt(CoverArt art) {
-        if (art == null || art.getEntityType() == null || art.getEntityId() == null) {
+        if (art == null || art.equals(CoverArt.NULL_ART) || art.getEntityType() == null || art.getEntityId() == null) {
             return;
         }
         cacheManager.getCache(CacheConfiguration.COVER_ART_CACHE, String.class, CoverArt.class)
-                .put(art.getEntityType().toString().concat("-").concat(art.getEntityId().toString()), art);
+                .put(generateKey(art.getEntityType(), art.getEntityId()), art);
     }
 
     public void removeCoverArt(CoverArt art) {
-        if (art == null || art.getEntityType() == null || art.getEntityId() == null) {
+        if (art == null || art.equals(CoverArt.NULL_ART) || art.getEntityType() == null || art.getEntityId() == null) {
             return;
         }
         cacheManager.getCache(CacheConfiguration.COVER_ART_CACHE, String.class, CoverArt.class)
-                .remove(art.getEntityType().toString().concat("-").concat(art.getEntityId().toString()));
+                .remove(generateKey(art.getEntityType(), art.getEntityId()));
     }
 
     public void removeCoverArt(CoverArt.EntityType entityType, Integer entityId) {
@@ -46,7 +50,11 @@ public class CoverArtCache {
             return;
         }
         cacheManager.getCache(CacheConfiguration.COVER_ART_CACHE, String.class, CoverArt.class)
-                .remove(entityType.toString().concat("-").concat(entityId.toString()));
+                .remove(generateKey(entityType, entityId));
+    }
+
+    private String generateKey(@Nonnull CoverArt.EntityType entityType, @Nonnull Integer entityId) {
+        return entityType.toString().concat("-").concat(entityId.toString());
     }
 
 }

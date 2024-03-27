@@ -3,7 +3,6 @@ package org.airsonic.player.service.cache;
 import org.airsonic.player.domain.MediaFile;
 import org.airsonic.player.domain.MusicFolder;
 import org.airsonic.player.spring.CacheConfiguration;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Nonnull;
@@ -16,8 +15,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 public class MediaFileCache {
 
-    @Autowired
-    private CacheManager cacheManager;
+    private final CacheManager cacheManager;
+
+    public MediaFileCache(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+        this.cacheManager.enableStatistics(CacheConfiguration.MEDIA_FILE_PATH_CACHE, true);
+        this.cacheManager.enableStatistics(CacheConfiguration.MEDIA_FILE_ID_CACHE, true);
+    }
 
     private final AtomicBoolean enabled = new AtomicBoolean(true);
 
@@ -71,8 +75,10 @@ public class MediaFileCache {
         }
         cacheManager.getCache(CacheConfiguration.MEDIA_FILE_PATH_CACHE, String.class, MediaFile.class)
                 .remove(generatePathKey(mediaFile.getRelativePath(), mediaFile.getFolder(), mediaFile.getStartPosition()));
-        cacheManager.getCache(CacheConfiguration.MEDIA_FILE_ID_CACHE, Integer.class, MediaFile.class)
+        if (mediaFile.getId() != null) {
+            cacheManager.getCache(CacheConfiguration.MEDIA_FILE_ID_CACHE, Integer.class, MediaFile.class)
                 .remove(mediaFile.getId());
+        }
     }
 
     public void setEnabled(boolean enabled) {

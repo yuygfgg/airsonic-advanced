@@ -23,7 +23,7 @@ public class JWTSecurityServiceTest {
 
     @ParameterizedTest
     @CsvSource({ "http://localhost:8080/airsonic/stream?id=4, /airsonic/stream?id=4",
-            "/airsonic/stream?id=4, /airsonic/stream?id=4" })
+        "/airsonic/stream?id=4, /airsonic/stream?id=4" })
     public void addJWTToken(String uriString, String expectedClaimString) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(uriString);
         String actualUri = service.addJWTToken("xyz", builder).build().toUriString();

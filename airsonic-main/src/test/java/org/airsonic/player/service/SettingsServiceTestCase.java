@@ -59,8 +59,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(SpringExtension.class)
 @EnableConfigurationProperties({AirsonicHomeConfig.class, AirsonicDefaultFolderConfig.class, AirsonicCueConfig.class})
 @TestPropertySource(properties = {
-        "airsonic.cue.enabled=true",
-        "airsonic.cue.hide-indexed-files=true"
+    "airsonic.cue.enabled=true",
+    "airsonic.cue.hide-indexed-files=true"
 })
 public class SettingsServiceTestCase {
 

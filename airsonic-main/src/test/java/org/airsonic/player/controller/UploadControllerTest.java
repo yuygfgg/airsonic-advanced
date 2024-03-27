@@ -127,9 +127,9 @@ class UploadControllerTest {
 
     @ParameterizedTest
     @CsvSource({
-            "true, false",
-            "true, true",
-            "false, true"
+        "true, false",
+        "true, true",
+        "false, true"
     })
     @WithMockUser(username = "user")
     @MockitoSettings(strictness = Strictness.LENIENT)
@@ -236,9 +236,9 @@ class UploadControllerTest {
     @WithMockUser(username = "user")
     @MockitoSettings(strictness = Strictness.LENIENT)
     @CsvSource({
-            "false, test",
-            "false, ../test_airsonic",
-            "true, ../../test_airsonic"
+        "false, test",
+        "false, ../test_airsonic",
+        "true, ../../test_airsonic"
     })
     void testHandleRequestInternalIfFolderIsNotAllowedToUpload(boolean isAdmin, String uploadFolder) throws Exception {
 

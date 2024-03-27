@@ -1,5 +1,6 @@
 package org.airsonic.player.spring;
 
+import org.airsonic.player.util.NetworkUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,6 +51,9 @@ import java.util.function.Supplier;
 @EnableWebSocketMessageBroker
 public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer {
     public static final String UNDERLYING_SERVLET_REQUEST = "servletRequest";
+    public static final String USER_AGENT = "userAgent";
+    public static final String UNDERLYING_HTTP_SESSION = "httpSession";
+    public static final String BASE_URL = "baseUrl";
 
     private TaskScheduler messageBrokerTaskScheduler;
     private String contextPath;
@@ -96,11 +100,14 @@ public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer 
         @Override
         public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                 WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-
             // Set servlet request attribute to WebSocket session
-            if (request instanceof ServletServerHttpRequest) {
+            if (request instanceof ServletServerHttpRequest sshr) {
                 attributes.put(UNDERLYING_SERVLET_REQUEST,
-                        new WebsocketInterceptedServletRequest((ServletServerHttpRequest) request, contextPath));
+                        new WebsocketInterceptedServletRequest(sshr, contextPath));
+                attributes.put(USER_AGENT, request.getHeaders().getFirst("User-Agent"));
+                attributes.put(UNDERLYING_HTTP_SESSION,
+                        ((ServletServerHttpRequest) request).getServletRequest().getSession(false));
+                attributes.put(BASE_URL, NetworkUtil.getBaseUrl(sshr.getServletRequest()));
             }
 
             return true;

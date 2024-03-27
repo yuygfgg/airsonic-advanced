@@ -6,7 +6,6 @@ import org.airsonic.player.service.PlayQueueService;
 import org.airsonic.player.service.PlayerService;
 import org.airsonic.player.service.SecurityService;
 import org.airsonic.player.spring.WebsocketConfiguration;
-import org.airsonic.player.util.NetworkUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -33,7 +32,7 @@ public class PlayQueueWSController {
     @SubscribeMapping("/get")
     public PlayQueueInfo getPlayQueue(@DestinationVariable("playerId") Integer playerId, SimpMessageHeaderAccessor headers) throws Exception {
         Player player = getPlayer(playerId, headers);
-        String baseUrl = NetworkUtil.getBaseUrl(headers);
+        String baseUrl = (String)headers.getSessionAttributes().get(WebsocketConfiguration.BASE_URL);
         return playQueueService.getPlayQueueInfo(player, baseUrl);
     }
 

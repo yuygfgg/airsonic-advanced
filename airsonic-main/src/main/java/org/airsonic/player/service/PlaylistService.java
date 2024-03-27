@@ -122,7 +122,7 @@ public class PlaylistService {
     public Playlist getPlaylist(Integer id) {
         Playlist playlist = playlistCache.getPlaylistById(id);
         if (playlist == null) {
-            playlistRepository.findById(id).orElse(null);
+            playlist = playlistRepository.findById(id).orElse(null);
             playlistCache.putPlaylistById(id, playlist);
         }
         return playlist;

@@ -21,7 +21,6 @@
         <logback.version>1.4.14</logback.version>
         <mockito.version>5.10.0</mockito.version>
         <mariadb.version>3.3.2</mariadb.version>
-        <maven.compiler.parameters>true</maven.compiler.parameters>
     </properties>
 
     <dependencies>

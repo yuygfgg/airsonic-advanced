@@ -33,7 +33,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
@@ -58,10 +57,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @ExtendWith(SpringExtension.class)
 @EnableConfigurationProperties({AirsonicHomeConfig.class, AirsonicDefaultFolderConfig.class, AirsonicCueConfig.class})
-@TestPropertySource(properties = {
-    "airsonic.cue.enabled=true",
-    "airsonic.cue.hide-indexed-files=true"
-})
 public class SettingsServiceTestCase {
 
     @TempDir
@@ -70,18 +65,20 @@ public class SettingsServiceTestCase {
     private SettingsService settingsService;
 
     @Autowired
-    StandardEnvironment env;
+    private StandardEnvironment env;
 
     @Autowired
-    AirsonicDefaultFolderConfig defaultFolderConfig;
+    private AirsonicDefaultFolderConfig defaultFolderConfig;
 
     @Autowired
-    AirsonicCueConfig cueConfig;
+    private AirsonicCueConfig cueConfig;
 
     @BeforeEach
     public void setUpEach() throws IOException {
         TestCaseUtils.cleanAirsonicHomeForTest();
         ConfigurationPropertiesService.reset();
+        cueConfig.setEnabled(true);
+        cueConfig.setHideIndexedFiles(true);
         settingsService = newSettingsService();
     }
 

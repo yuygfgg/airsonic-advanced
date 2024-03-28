@@ -14,6 +14,7 @@
  You should have received a copy of the GNU General Public License
  along with Airsonic.  If not, see <http://www.gnu.org/licenses/>.
 
+ Copyright 2024 (C) Y.Tory
  Copyright 2016 (C) Airsonic Authors
  Based upon Subsonic, Copyright 2009 (C) Sindre Mehus
  */
@@ -25,17 +26,18 @@ import org.airsonic.player.config.AirsonicCueConfig;
 import org.airsonic.player.config.AirsonicDefaultFolderConfig;
 import org.airsonic.player.config.AirsonicHomeConfig;
 import org.apache.commons.configuration2.spring.ConfigurationPropertySource;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,12 +57,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author Sindre Mehus
  */
-@ExtendWith(SpringExtension.class)
-@EnableConfigurationProperties({AirsonicHomeConfig.class, AirsonicDefaultFolderConfig.class, AirsonicCueConfig.class})
+@SpringBootTest
 public class SettingsServiceTestCase {
 
     @TempDir
-    private Path airsonicHome;
+    private static Path airsonicHome;
 
     private SettingsService settingsService;
 
@@ -73,9 +74,16 @@ public class SettingsServiceTestCase {
     @Autowired
     private AirsonicCueConfig cueConfig;
 
+    @BeforeAll
+    public static void setup() {
+        System.setProperty("airsonic.home", airsonicHome.toString());
+    }
+
     @BeforeEach
     public void setUpEach() throws IOException {
         TestCaseUtils.cleanAirsonicHomeForTest();
+        FileUtils.deleteDirectory(airsonicHome.toFile());
+        Files.createDirectories(airsonicHome);
         ConfigurationPropertiesService.reset();
         cueConfig.setEnabled(true);
         cueConfig.setHideIndexedFiles(true);

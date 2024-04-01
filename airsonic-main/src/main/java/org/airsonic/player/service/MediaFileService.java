@@ -20,6 +20,7 @@
  */
 package org.airsonic.player.service;
 
+import com.google.common.math.DoubleMath;
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;
 import org.airsonic.player.ajax.MediaFileEntry;
@@ -38,6 +39,8 @@ import org.airsonic.player.repository.MusicFileInfoRepository;
 import org.airsonic.player.repository.OffsetBasedPageRequest;
 import org.airsonic.player.repository.StarredMediaFileRepository;
 import org.airsonic.player.service.cache.MediaFileCache;
+import org.airsonic.player.service.metadata.Chapter;
+import org.airsonic.player.service.metadata.FFmpegParser;
 import org.airsonic.player.service.metadata.JaudiotaggerParser;
 import org.airsonic.player.service.metadata.MetaData;
 import org.airsonic.player.service.metadata.MetaDataParser;
@@ -122,6 +125,10 @@ public class MediaFileService {
     private GenreRepository genreRepository;
     @Autowired
     private MediaFileCache mediaFileCache;
+    @Autowired
+    private FFmpegParser ffmpegParser;
+
+    private final double DURATION_EPSILON = 1e-2;
 
     public MediaFile getMediaFile(String pathName) {
         return getMediaFile(Paths.get(pathName));
@@ -737,8 +744,11 @@ public class MediaFileService {
 
         boolean isEnableCueIndexing = settingsService.getEnableCueIndexing();
 
+        // cue sheets
         Map<String, CueSheet> cueSheets = new ConcurrentHashMap<>();
+        // media files that are not indexed
         Map<String, MediaFile> bareFiles = new ConcurrentHashMap<>();
+        // m4b files are treated as audio books
         Map<String, MediaFile> audioBooks = new ConcurrentHashMap<>();
 
         // Collect all children.
@@ -759,8 +769,8 @@ public class MediaFileService {
                         }
                         // Add children that are not already stored.
                         if (mediaFile != null) {
-                            if (mediaFile.getMediaType() == MediaType.AUDIOBOOK) {
-                                audioBooks.put(FilenameUtils.getName(mediaFile.getPath()), mediaFile);
+                            if ("m4b".equals(mediaFile.getFormat())) {
+                                audioBooks.put(relativePath.toString(), mediaFile);
                             } else {
                                 bareFiles.put(FilenameUtils.getName(mediaFile.getPath()), mediaFile);
                             }
@@ -783,6 +793,7 @@ public class MediaFileService {
         // collect indexed tracks, if any
         List<MediaFile> result = new ArrayList<>();
 
+        // cue tracks
         if (isEnableCueIndexing) {
             List<MediaFile> indexedTracks = cueSheets.entrySet().parallelStream().flatMap(e -> {
                 String indexPath = e.getKey();
@@ -809,6 +820,21 @@ public class MediaFileService {
             }).collect(Collectors.toList());
             result.addAll(indexedTracks);
         }
+
+        // m4b audio books
+        List<MediaFile> audioBookTracks = audioBooks.entrySet().parallelStream().flatMap(e -> {
+            String basePath = e.getKey();
+            MediaFile base = e.getValue();
+            List<MediaFile> tracks = createAudioBookTracks(base);
+            if (!CollectionUtils.isEmpty(tracks)) {
+                base.setIndexPath(basePath); // update indexPath in mediaFile
+                updateMediaFile(base);
+            }
+            tracks.forEach(t -> storedChildrenMap.remove(Pair.of(t.getPath(), t.getStartPosition())));
+            tracks.add(base);
+            return tracks.stream();
+        }).collect(Collectors.toList());
+        result.addAll(audioBookTracks);
 
         // remove indexPath for deleted cuesheets, if any
         List<MediaFile> nonIndexedTracks = bareFiles.values().stream().parallel()
@@ -1021,6 +1047,100 @@ public class MediaFileService {
 
         return mediaFile;
 
+    }
+
+    /**
+     * Returns m4b audio book tracks from the given audio book file.
+     *
+     * @param base The audio book file.
+     * @return The audio book tracks.
+     */
+    @Nonnull
+    private List<MediaFile> createAudioBookTracks(@Nonnull MediaFile base) {
+        List<MediaFile> children = new ArrayList<>();
+        Path audioFile = base.getFullPath();
+        Map<Long, MediaFile> storedChildrenMap = new ConcurrentHashMap<>();
+
+        try {
+            List<Chapter> chapters = ffmpegParser.getMetaData(audioFile).getChapters();
+            if (CollectionUtils.isEmpty(chapters)) {
+                return children;
+            }
+            // get existing children
+            MusicFolder baseFolder = base.getFolder();
+            String basePath = base.getPath();
+            storedChildrenMap = mediaFileRepository.findByFolderAndPath(baseFolder, basePath).parallelStream()
+                    .filter(MediaFile::isIndexedTrack)
+                    .collect(Collectors.toConcurrentMap(i -> Math.round(i.getStartPosition() * 10), i -> i));
+
+            boolean update = needsUpdate(base, settingsService.isFastCacheEnabled());
+
+            // get base properties
+            Instant lastModified = FileUtil.lastModified(audioFile);
+            Instant childrenLastUpdated = Instant.now().plusSeconds(100 * 365 * 24 * 60 * 60); // now + 100 years,
+                                                                                               // tracks do not have
+                                                                                               // children
+
+            for (Chapter chapter : chapters) {
+                if (chapter.getStartTimeSeconds() == null || chapter.getEndTimeSeconds() == null) {
+                    continue;
+                }
+                Double duration = chapter.getEndTimeSeconds() - chapter.getStartTimeSeconds();
+                MediaFile existingFile = storedChildrenMap.remove(Math.round(chapter.getStartTimeSeconds() * 10));
+                if (existingFile != null
+                        && !DoubleMath.fuzzyEquals(existingFile.getDuration(), duration, DURATION_EPSILON)) {
+                    existingFile = null;
+                }
+                MediaFile track = existingFile;
+                if (update || existingFile == null) {
+                    track = existingFile != null ? existingFile : new MediaFile();
+                    track.setPath(basePath);
+                    track.setAlbumArtist(base.getAlbumArtist());
+                    track.setAlbumName(base.getAlbumName());
+                    track.setTitle(chapter.getTitle());
+                    track.setArtist(base.getArtist());
+                    track.setParentPath(base.getParentPath());
+                    track.setFolder(baseFolder);
+                    track.setChanged(lastModified);
+                    track.setLastScanned(Instant.now());
+                    track.setChildrenLastUpdated(childrenLastUpdated);
+                    track.setCreated(lastModified);
+                    track.setPresent(true);
+                    track.setStartPosition(chapter.getStartTimeSeconds());
+                    track.setDuration(duration);
+                    track.setTrackNumber(chapter.getId());
+                    track.setDiscNumber(base.getDiscNumber());
+                    track.setGenre(base.getGenre());
+                    track.setYear(base.getYear());
+                    track.setBitRate(base.getBitRate());
+                    track.setVariableBitRate(base.isVariableBitRate());
+                    track.setHeight(base.getHeight());
+                    track.setWidth(base.getWidth());
+                    track.setFormat(base.getFormat());
+                    track.setMusicBrainzRecordingId(base.getMusicBrainzRecordingId());
+                    track.setMusicBrainzReleaseId(base.getMusicBrainzReleaseId());
+                    long estimatedSize = (long) (duration / base.getDuration() * Files.size(audioFile));
+                    if (estimatedSize > 0 && estimatedSize < Files.size(audioFile)) {
+                        track.setFileSize(estimatedSize);
+                    } else {
+                        track.setFileSize(Files.size(audioFile) / chapters.size());
+                    }
+                    track.setPlayCount((existingFile == null) ? 0 : existingFile.getPlayCount());
+                    track.setLastPlayed((existingFile == null) ? null : existingFile.getLastPlayed());
+                    track.setComment((existingFile == null) ? null : existingFile.getComment());
+                    track.setMediaType(base.getMediaType());
+
+                    updateMediaFile(track);
+                }
+                children.add(track);
+            }
+            return children;
+        } catch (Exception e) {
+            LOG.warn("Could not retrieve chapters for {}.", audioFile.toString(), e);
+            return new ArrayList<>();
+        } finally {
+            storedChildrenMap.values().forEach(this::delete);
+        }
     }
 
     private List<MediaFile> createIndexedTracks(MediaFile base, CueSheet cueSheet) {

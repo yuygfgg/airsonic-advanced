@@ -42,8 +42,6 @@
             <artifactId>snakeyaml</artifactId>
             <version>2.2</version>
         </dependency>
-
-
         <!-- Metrics
              Metrics is a cool framework used here
              to compute musures and statistics during automated testing

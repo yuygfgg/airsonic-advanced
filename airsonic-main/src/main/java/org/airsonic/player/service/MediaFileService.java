@@ -1451,10 +1451,7 @@ public class MediaFileService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void updateMediaFile(MediaFile mediaFile) {
-        if (mediaFile == null) {
-            throw new IllegalArgumentException("mediaFile must not be null");
-        }
+    public void updateMediaFile(@Nonnull MediaFile mediaFile) {
         mediaFileCache.removeMediaFile(mediaFile);
         if (mediaFile.getId() != null && mediaFileRepository.existsById(mediaFile.getId())) {
             mediaFileRepository.save(mediaFile);

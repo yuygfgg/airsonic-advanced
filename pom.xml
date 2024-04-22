@@ -387,9 +387,6 @@
                                 <ignoredUnusedDeclaredDependency>org.apache.cxf:cxf-tools-wsdlto-databinding-jaxb</ignoredUnusedDeclaredDependency>
                                 <ignoredUsedUndeclaredDependency>org.glassfish.jaxb:jaxb-runtime</ignoredUsedUndeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
-    <ignoredNonTestScopedDependencies>
-<ignoredNonTestScopedDependency> org.springframework:spring-aspects</ignoredNonTestScopedDependency>
-                            </ignoredNonTestScopedDependencies>
                         </configuration>
                     </execution>
                 </executions>

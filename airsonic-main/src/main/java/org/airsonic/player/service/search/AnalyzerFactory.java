@@ -70,9 +70,9 @@ public final class AnalyzerFactory {
      */
     private void addTokenFilterForUnderscoreRemovalAroundToken(Builder builder) throws IOException {
         builder
-            .addTokenFilter(PatternReplaceFilterFactory.class,
+            .addTokenFilter(PatternReplaceFilterFactory.NAME,
                     "pattern", "^\\_", "replacement", "", "replace", "all")
-            .addTokenFilter(PatternReplaceFilterFactory.class,
+            .addTokenFilter(PatternReplaceFilterFactory.NAME,
                     "pattern", "\\_$", "replacement", "", "replace", "all");
     }
 
@@ -92,15 +92,15 @@ public final class AnalyzerFactory {
      */
     private void addTokenFilterForTokenToDomainValue(Builder builder) throws IOException {
         builder
-            .addTokenFilter(PatternReplaceFilterFactory.class,
+            .addTokenFilter(PatternReplaceFilterFactory.NAME,
                     "pattern", "\\(", "replacement", "", "replace", "all")
-            .addTokenFilter(PatternReplaceFilterFactory.class,
+            .addTokenFilter(PatternReplaceFilterFactory.NAME,
                     "pattern", "\\)$", "replacement", "", "replace", "all")
-            .addTokenFilter(PatternReplaceFilterFactory.class,
+            .addTokenFilter(PatternReplaceFilterFactory.NAME,
                     "pattern", "\\)", "replacement", " ", "replace", "all")
-            .addTokenFilter(PatternReplaceFilterFactory.class,
+            .addTokenFilter(PatternReplaceFilterFactory.NAME,
                     "pattern", "\\{\\}", "replacement", "\\{ \\}", "replace", "all")
-            .addTokenFilter(PatternReplaceFilterFactory.class,
+            .addTokenFilter(PatternReplaceFilterFactory.NAME,
                     "pattern", "\\[\\]", "replacement", "\\[ \\]", "replace", "all");
     }
 
@@ -130,7 +130,7 @@ public final class AnalyzerFactory {
 
     private Builder createKeywordAnalyzerBuilder() throws IOException {
         return CustomAnalyzer.builder()
-                .withTokenizer(KeywordTokenizerFactory.class);
+                .withTokenizer(KeywordTokenizerFactory.NAME);
     }
 
     private Builder createGenreAnalyzerBuilder() throws IOException {

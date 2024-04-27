@@ -27,6 +27,7 @@
         <java.version>17</java.version>
         <cxf.version>4.0.4</cxf.version>
         <snakeyaml.version>2.2</snakeyaml.version>
+        <lucene.version>9.10.0</lucene.version>
         <docker.container.repo>ghcr.io/kagemomiji/airsonic-advanced</docker.container.repo>
     </properties>
 
@@ -174,7 +175,12 @@
             <dependency>
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
-                <version>9.10.0</version>
+                <version>${lucene.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-analysis-common</artifactId>
+                <version>${lucene.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

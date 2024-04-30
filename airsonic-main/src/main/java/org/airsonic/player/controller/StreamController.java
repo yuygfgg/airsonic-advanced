@@ -382,6 +382,8 @@ public class StreamController {
                     + "source is corrupted or has grown larger", threshold);
         }
 
+        private static byte[] zeros = new byte[4096];
+
         @Override
         public int read() throws IOException {
             int read = super.read();
@@ -395,8 +397,6 @@ public class StreamController {
 
             return read;
         }
-
-        private static byte[] zeros = new byte[4096];
 
         @Override
         public int read(byte b[], int off, int len) throws IOException {

@@ -460,7 +460,7 @@
         <profile>
             <id>default-java</id>
             <activation>
-                <jdk>21</jdk>
+                <jdk>[21,)</jdk>
             </activation>
             <properties>
                 <java.version>21</java.version>

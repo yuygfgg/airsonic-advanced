@@ -131,6 +131,8 @@ public class MediaFileService {
 
     private final double DURATION_EPSILON = 1e-2;
 
+    private final Set<String> CUE_EXTENSIONS = Set.of("cue", "flac");
+
     private final Map<Integer, Pair<Integer, Instant>> lastPlayed = new ConcurrentHashMap<>();
 
     public MediaFile getMediaFile(String pathName) {
@@ -241,9 +243,19 @@ public class MediaFileService {
                 && !mediaFile.isIndexedTrack() // ignore virtual track
                 && (mediaFile.getVersion() < MediaFile.VERSION
                     || settingsService.getFullScan()
-                    || mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullPath()).truncatedTo(ChronoUnit.MICROS)) < 0
+                    || isFileUpdated(mediaFile)
                     || (mediaFile.hasIndex() && mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath()).truncatedTo(ChronoUnit.MICROS)) < 0)
                 );
+    }
+
+    /**
+     * Check if the media file is updated.
+     *
+     * @param mediaFile The media file.
+     * @return
+     */
+    private boolean isFileUpdated(@Nonnull MediaFile mediaFile) {
+        return Files.exists(mediaFile.getFullPath()) && mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullPath()).truncatedTo(ChronoUnit.MICROS)) < 0;
     }
 
     /**
@@ -737,7 +749,7 @@ public class MediaFileService {
     private List<MediaFile> updateChildren(@Nonnull MediaFile parent) {
 
         // Check timestamps.
-        if (parent.getChildrenLastUpdated().compareTo(parent.getChanged()) >= 0) {
+        if (parent.getChildrenLastUpdated().compareTo(parent.getChanged()) > 0) {
             return null;
         }
 
@@ -778,14 +790,13 @@ public class MediaFileService {
                                 bareFiles.put(FilenameUtils.getName(mediaFile.getPath()), mediaFile);
                             }
                         }
-                        return;
-                    } else if (isEnableCueIndexing) {
+                    }
+                    if (isEnableCueIndexing && includeCueSheetByPath(x)) {
                         LOG.debug("Cue indexing enabled");
                         CueSheet cueSheet = getCueSheet(x);
                         if (cueSheet != null) {
                             cueSheets.put(relativePath.toString(), cueSheet);
                         }
-                        return;
                     }
                 });
         } catch (IOException e) {
@@ -880,6 +891,11 @@ public class MediaFileService {
         return (!isExcluded(candidate) && (Files.isDirectory(candidate) || isAudioFile(suffix) || isVideoFile(suffix)));
     }
 
+    private boolean includeCueSheetByPath(Path candidate) {
+        String suffix = FilenameUtils.getExtension(candidate.toString()).toLowerCase();
+        return CUE_EXTENSIONS.contains(suffix);
+    }
+
     private boolean isAudioFile(String suffix) {
         return settingsService.getMusicFileTypesSet().contains(suffix.toLowerCase());
     }
@@ -916,7 +932,7 @@ public class MediaFileService {
      * @param folder      music folder
      * @return media file reflected from file system
      */
-    private MediaFile createMediaFileByFile(Path relativePath, MusicFolder folder) {
+    private @Nullable MediaFile createMediaFileByFile(Path relativePath, MusicFolder folder) {
         MediaFile mediaFile = new MediaFile();
         mediaFile.setPath(relativePath.toString());
         mediaFile.setFolder(folder);
@@ -1323,7 +1339,7 @@ public class MediaFileService {
      * @param cueFile absolute path of cue or embedded flac file
      * @return if parse success return cue sheet, otherwise null
      */
-    private CueSheet getCueSheet(Path cueFile) {
+    private CueSheet getCueSheet(@Nonnull Path cueFile) {
         try {
             CueSheet cueSheet = null;
             switch (FilenameUtils.getExtension(cueFile.toString()).toLowerCase()) {

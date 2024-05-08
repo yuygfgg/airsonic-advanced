@@ -229,7 +229,15 @@ public class MediaFileService {
         return getParentOf(mediaFile, settingsService.isFastCacheEnabled());
     }
 
-    public MediaFile getParentOf(MediaFile mediaFile, boolean minimizeDiskAccess) {
+    /**
+     * Returns the parent of the given media file.
+     *
+     * @param mediaFile The media file. Must not be {@code null}.
+     * @param minimizeDiskAccess Whether to refrain from checking for new or changed files
+     * @return The parent of the given media file. May be {@code null}.
+     */
+    @Nullable
+    public MediaFile getParentOf(@Nonnull MediaFile mediaFile, boolean minimizeDiskAccess) {
         if (mediaFile.getParentPath() == null) {
             return null;
         }
@@ -241,7 +249,7 @@ public class MediaFileService {
                 && !mediaFile.isIndexedTrack() // ignore virtual track
                 && (mediaFile.getVersion() < MediaFile.VERSION
                     || settingsService.getFullScan()
-                    || mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullPath()).truncatedTo(ChronoUnit.MICROS)) < 0
+                    || mediaFile.isChanged()
                     || (mediaFile.hasIndex() && mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath()).truncatedTo(ChronoUnit.MICROS)) < 0)
                 );
     }
@@ -1658,6 +1666,7 @@ public class MediaFileService {
         file.setPresent(false);
         file.setChildrenLastUpdated(Instant.ofEpochMilli(1));
         mediaFileRepository.save(file);
+        coverArtService.delete(EntityType.MEDIA_FILE, file.getId());
         return file;
     }
 

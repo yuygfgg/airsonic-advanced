@@ -303,6 +303,7 @@ public class CoverArtCreateService {
      * audio file,
      * the embedded album art is returned.
      */
+    @Nullable
     private InputStream getImageInputStream(CoverArt art) throws IOException {
         return getImageInputStreamWithType(art.getFullPath()).getLeft();
     }
@@ -313,21 +314,21 @@ public class CoverArtCreateService {
      * the embedded album art is returned. In addition returns the mime type
      */
     public Pair<InputStream, String> getImageInputStreamWithType(Path file) throws IOException {
-        if (JaudiotaggerParser.isImageAvailable(file)) {
-            LOG.trace("Using Jaudio Tagger for reading artwork from {}", file);
-            try {
-                LOG.trace("Reading artwork from file {}", file);
+        try {
+            if (JaudiotaggerParser.isImageAvailable(file)) {
+                LOG.trace("Using Jaudio Tagger for reading artwork from {}", file);
                 Artwork artwork = JaudiotaggerParser.getArtwork(file);
                 return Pair.of(new ByteArrayInputStream(artwork.getBinaryData()), artwork.getMimeType());
-            } catch (Exception e) {
-                LOG.debug("Could not read artwork from file {}", file);
-                throw new RuntimeException(e);
+            } else {
+                LOG.trace("Reading artwork from file {}", file);
+                return Pair.of(
+                    new BufferedInputStream(Files.newInputStream(file)),
+                    StringUtil.getMimeType(FilenameUtils.getExtension(file.toString()))
+                );
             }
-        } else {
-            return Pair.of(
-                new BufferedInputStream(Files.newInputStream(file)),
-                StringUtil.getMimeType(FilenameUtils.getExtension(file.toString()))
-            );
+        } catch (Exception e) {
+            LOG.debug("Could not read artwork from file {}", file);
+            return Pair.of(null, null);
         }
     }
 

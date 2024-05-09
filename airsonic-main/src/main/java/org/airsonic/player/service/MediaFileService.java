@@ -1163,7 +1163,8 @@ public class MediaFileService {
         }
     }
 
-    private List<MediaFile> createIndexedTracks(MediaFile base, CueSheet cueSheet) {
+    @Nonnull
+    private List<MediaFile> createIndexedTracks(@Nonnull MediaFile base, @Nullable CueSheet cueSheet) {
 
         Map<Pair<String, Double>, MediaFile> storedChildrenMap = mediaFileRepository.findByFolderAndPath(base.getFolder(), base.getPath()).parallelStream()
             .filter(MediaFile::isIndexedTrack).collect(Collectors.toConcurrentMap(i -> Pair.of(i.getPath(), i.getStartPosition()), i -> i));
@@ -1178,18 +1179,9 @@ public class MediaFileService {
             }
 
             Path audioFile = base.getFullPath();
-            MetaData metaData = null;
-            MetaDataParser parser = metaDataParserFactory.getParser(audioFile);
-            if (parser != null) {
-                metaData = parser.getMetaData(audioFile);
-            }
             long wholeFileSize = Files.size(audioFile);
-            double wholeFileLength = 0.0; //todo: find sound length without metadata
-            if (metaData != null && metaData.getDuration() != null) {
-                wholeFileLength = metaData.getDuration();
-            }
+            double wholeFileLength = base.getDuration();
 
-            String format = StringUtils.trimToNull(StringUtils.lowerCase(FilenameUtils.getExtension(audioFile.toString())));
             String basePath = base.getPath();
             String file = cueSheet.getFileData().get(0).getFile();
             LOG.info(file);
@@ -1251,18 +1243,14 @@ public class MediaFileService {
                     track.setCreated(lastModified);
                     track.setPresent(true);
                     track.setTrackNumber(trackData.getNumber());
-
-                    if (metaData != null) {
-                        track.setDiscNumber(metaData.getDiscNumber());
-                        track.setGenre(metaData.getGenre());
-                        track.setYear(metaData.getYear());
-                        track.setBitRate(metaData.getBitRate());
-                        track.setVariableBitRate(metaData.getVariableBitRate());
-                        track.setHeight(metaData.getHeight());
-                        track.setWidth(metaData.getWidth());
-                    }
-
-                    track.setFormat(format);
+                    track.setDiscNumber(base.getDiscNumber());
+                    track.setGenre(base.getGenre());
+                    track.setYear(base.getYear());
+                    track.setBitRate(base.getBitRate());
+                    track.setVariableBitRate(base.isVariableBitRate());
+                    track.setHeight(base.getHeight());
+                    track.setWidth(base.getWidth());
+                    track.setFormat(base.getFormat());
                     track.setStartPosition(currentStart);
                     track.setDuration(duration);
                     // estimate file size based on duration and whole file size

@@ -22,6 +22,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -66,6 +68,9 @@ public class CoverArtService {
                 upsert(mediaFileArt);
             }
             mediaFile.setArt(null);
+        } else {
+            // If the media file has no cover art, remove any existing cover art.
+            delete(EntityType.MEDIA_FILE, mediaFile.getId());
         }
     }
 
@@ -84,6 +89,9 @@ public class CoverArtService {
                 upsert(albumArt);
             }
             album.setArt(null);
+        } else {
+            // If the album has no cover art, remove any existing cover art.
+            delete(EntityType.ALBUM, album.getId());
         }
     }
 
@@ -102,6 +110,9 @@ public class CoverArtService {
                 upsert(artistArt);
             }
             artist.setArt(null);
+        } else {
+            // If the artist has no cover art, remove any existing cover art.
+            delete(EntityType.ARTIST, artist.getId());
         }
     }
 
@@ -135,24 +146,17 @@ public class CoverArtService {
         return art;
     }
 
+    @Nullable
     public Path getMediaFileArtPath(int id) {
         CoverArt art = getMediaFileArt(id);
         return getFullPath(art);
     }
 
-    public Path getFullPath(CoverArt art) {
+    @Nullable
+    public Path getFullPath(@Nullable CoverArt art) {
         if (art != null && !CoverArt.NULL_ART.equals(art)) {
-            if (art.getFolder() == null) {
-                // null folder ids mean absolute paths
-                return art.getRelativePath();
-            } else {
-                MusicFolder folder = art.getFolder();
-                if (folder != null) {
-                    return art.getFullPath(folder.getPath());
-                }
-            }
+            return art.getFullPath();
         }
-
         return null;
     }
 
@@ -169,7 +173,7 @@ public class CoverArtService {
             .filter(art ->
                 (art.getEntityType() == EntityType.ALBUM && art.getAlbum() == null) ||
                 (art.getEntityType() == EntityType.ARTIST && art.getArtist() == null) ||
-                (art.getEntityType() == EntityType.MEDIA_FILE && art.getMediaFile() == null))
+                (art.getEntityType() == EntityType.MEDIA_FILE && (art.getMediaFile() == null || !art.getMediaFile().isPresent())))
             .collect(Collectors.toList());
         coverArtRepository.deleteAll(expungeCoverArts);
     }

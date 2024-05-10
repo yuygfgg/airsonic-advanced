@@ -145,11 +145,12 @@ public class CoverArtServiceTest {
                 new CoverArt(1, EntityType.ALBUM, "path/to/image.jpg", null, false),
                 new CoverArt(2, EntityType.ARTIST, "path/to/image.jpg", null, false),
                 new CoverArt(3, EntityType.MEDIA_FILE, "path/to/image.jpg", null, false),
-                new CoverArt(4, EntityType.ALBUM, "path/to/image.jpg", null, false),
-                new CoverArt(5, EntityType.ARTIST, "path/to/image.jpg", null, false),
-                new CoverArt(6, EntityType.MEDIA_FILE, "path/to/image.jpg", null, false)
+                new CoverArt(4, EntityType.MEDIA_FILE, "path/to/image.jpg", null, false),
+                new CoverArt(5, EntityType.ALBUM, "path/to/image.jpg", null, false),
+                new CoverArt(6, EntityType.ARTIST, "path/to/image.jpg", null, false),
+                new CoverArt(7, EntityType.MEDIA_FILE, "path/to/image.jpg", null, false)
         ).map(art -> {
-            if (art.getEntityId() < 4) {
+            if (art.getEntityId() < 5) {
                 switch (art.getEntityType()) {
                     case ALBUM:
                         art.setAlbum(new Album());
@@ -158,7 +159,9 @@ public class CoverArtServiceTest {
                         art.setArtist(new Artist());
                         break;
                     case MEDIA_FILE:
-                        art.setMediaFile(new MediaFile());
+                        MediaFile mediaFile = new MediaFile();
+                        mediaFile.setPresent(art.getEntityId() == 3); // only media file with id 3 has a media file present
+                        art.setMediaFile(mediaFile);
                         break;
                     case NONE:
                         break;
@@ -171,7 +174,7 @@ public class CoverArtServiceTest {
         coverArtService.expunge();
         verify(coverArtRepository, times(1)).deleteAll(coverArtListCaptor.capture());
         List<CoverArt> deletedCoverArt = coverArtListCaptor.getValue();
-        assertEquals(3, deletedCoverArt.size());
+        assertEquals(4, deletedCoverArt.size());
         assertTrue(deletedCoverArt.stream().allMatch(art -> art.getEntityId() > 3));
     }
 

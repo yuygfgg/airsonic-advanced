@@ -68,9 +68,6 @@ public class CoverArtService {
                 upsert(mediaFileArt);
             }
             mediaFile.setArt(null);
-        } else {
-            // If the media file has no cover art, remove any existing cover art.
-            delete(EntityType.MEDIA_FILE, mediaFile.getId());
         }
     }
 
@@ -89,9 +86,6 @@ public class CoverArtService {
                 upsert(albumArt);
             }
             album.setArt(null);
-        } else {
-            // If the album has no cover art, remove any existing cover art.
-            delete(EntityType.ALBUM, album.getId());
         }
     }
 
@@ -110,9 +104,6 @@ public class CoverArtService {
                 upsert(artistArt);
             }
             artist.setArt(null);
-        } else {
-            // If the artist has no cover art, remove any existing cover art.
-            delete(EntityType.ARTIST, artist.getId());
         }
     }
 

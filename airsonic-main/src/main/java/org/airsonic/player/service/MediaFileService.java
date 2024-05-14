@@ -61,7 +61,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -213,9 +212,20 @@ public class MediaFileService {
      * @param id The media file id.
      * @return mediafile for the given id.
      */
-    public MediaFile getMediaFile(@Param("id") Integer id) {
+    public MediaFile getMediaFile(Integer id) {
+        return getMediaFile(id, false);
+    }
+
+    /**
+     * Returns the media file for checking last modified.
+     *
+     * @param id The media file id.
+     * @param ignoreCache Whether to ignore the cache
+     * @return mediafile for the given id.
+     */
+    public MediaFile getMediaFile(Integer id, boolean ignoreCache) {
         if (Objects.isNull(id)) return null;
-        MediaFile result = mediaFileCache.getMediaFileById(id);
+        MediaFile result = ignoreCache ? null : mediaFileCache.getMediaFileById(id);
         if (result == null) {
             result = mediaFileRepository.findById(id).map(mediaFile -> checkLastModified(mediaFile, settingsService.isFastCacheEnabled())).orElse(null);
             mediaFileCache.putMediaFileById(id, result);

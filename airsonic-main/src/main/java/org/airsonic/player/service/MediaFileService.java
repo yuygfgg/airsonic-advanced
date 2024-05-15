@@ -61,7 +61,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -213,9 +212,20 @@ public class MediaFileService {
      * @param id The media file id.
      * @return mediafile for the given id.
      */
-    public MediaFile getMediaFile(@Param("id") Integer id) {
+    public MediaFile getMediaFile(Integer id) {
+        return getMediaFile(id, false);
+    }
+
+    /**
+     * Returns the media file for checking last modified.
+     *
+     * @param id The media file id.
+     * @param ignoreCache Whether to ignore the cache
+     * @return mediafile for the given id.
+     */
+    public MediaFile getMediaFile(Integer id, boolean ignoreCache) {
         if (Objects.isNull(id)) return null;
-        MediaFile result = mediaFileCache.getMediaFileById(id);
+        MediaFile result = ignoreCache ? null : mediaFileCache.getMediaFileById(id);
         if (result == null) {
             result = mediaFileRepository.findById(id).map(mediaFile -> checkLastModified(mediaFile, settingsService.isFastCacheEnabled())).orElse(null);
             mediaFileCache.putMediaFileById(id, result);
@@ -231,7 +241,15 @@ public class MediaFileService {
         return getParentOf(mediaFile, settingsService.isFastCacheEnabled());
     }
 
-    public MediaFile getParentOf(MediaFile mediaFile, boolean minimizeDiskAccess) {
+    /**
+     * Returns the parent of the given media file.
+     *
+     * @param mediaFile The media file. Must not be {@code null}.
+     * @param minimizeDiskAccess Whether to refrain from checking for new or changed files
+     * @return The parent of the given media file. May be {@code null}.
+     */
+    @Nullable
+    public MediaFile getParentOf(@Nonnull MediaFile mediaFile, boolean minimizeDiskAccess) {
         if (mediaFile.getParentPath() == null) {
             return null;
         }
@@ -243,19 +261,9 @@ public class MediaFileService {
                 && !mediaFile.isIndexedTrack() // ignore virtual track
                 && (mediaFile.getVersion() < MediaFile.VERSION
                     || settingsService.getFullScan()
-                    || isFileUpdated(mediaFile)
+                    || mediaFile.isChanged()
                     || (mediaFile.hasIndex() && mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullIndexPath()).truncatedTo(ChronoUnit.MICROS)) < 0)
                 );
-    }
-
-    /**
-     * Check if the media file is updated.
-     *
-     * @param mediaFile The media file.
-     * @return
-     */
-    private boolean isFileUpdated(@Nonnull MediaFile mediaFile) {
-        return Files.exists(mediaFile.getFullPath()) && mediaFile.getChanged().truncatedTo(ChronoUnit.MICROS).compareTo(FileUtil.lastModified(mediaFile.getFullPath()).truncatedTo(ChronoUnit.MICROS)) < 0;
     }
 
     /**
@@ -1662,6 +1670,7 @@ public class MediaFileService {
         file.setPresent(false);
         file.setChildrenLastUpdated(Instant.ofEpochMilli(1));
         mediaFileRepository.save(file);
+        coverArtService.delete(EntityType.MEDIA_FILE, file.getId());
         return file;
     }
 

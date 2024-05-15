@@ -135,14 +135,14 @@ public class MusicFolderSettingsController {
         }
 
         LOG.debug("Cleaning database...");
+        LOG.debug("Deleting non-present cover art...");
+        coverArtService.expunge();
         LOG.debug("Deleting non-present artists...");
         artistService.expunge();
         LOG.debug("Deleting non-present albums...");
         albumService.expunge();
         LOG.debug("Deleting non-present media files...");
         mediaFileService.expunge();
-        LOG.debug("Deleting non-present cover art...");
-        coverArtService.expunge();
         LOG.debug("Deleting non-present media folders...");
         mediaFolderService.expunge();
         LOG.debug("Refreshing playlist stats...");

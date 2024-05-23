@@ -679,4 +679,36 @@ public class PodcastPersistenceService {
             .sorted(Comparator.comparing(PodcastEpisode::getPublishDate, Comparator.nullsLast(Comparator.reverseOrder())))
             .collect(Collectors.toList());
     }
+
+    /**
+     * Lock episode
+     *
+     * @param episodeId episode id to lock
+     */
+    @Transactional
+    public void lockEpisode(int episodeId) {
+        LOG.info("Locking episode with id {}", episodeId);
+        podcastEpisodeRepository.findById(episodeId).ifPresentOrElse(episode -> {
+            episode.setLocked(true);
+            podcastEpisodeRepository.save(episode);
+        }, () -> {
+            LOG.warn("Podcast episode with id {} not found", episodeId);
+        });
+    }
+
+    /**
+     * Unlock episode
+     *
+     * @param episodeId episode id to unlock
+     */
+    @Transactional
+    public void unlockEpisode(int episodeId) {
+        LOG.info("Unlocking episode with id {}", episodeId);
+        podcastEpisodeRepository.findById(episodeId).ifPresentOrElse(episode -> {
+            episode.setLocked(false);
+            podcastEpisodeRepository.save(episode);
+        }, () -> {
+            LOG.warn("Podcast episode with id {} not found", episodeId);
+        });
+    }
 }

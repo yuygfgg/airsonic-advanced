@@ -91,7 +91,7 @@ public class PodcastDownloadClient {
         }
 
         PodcastEpisode episode = podcastPersistenceService.prepareDownloadEpisode(episodeId);
-        if (episode != null) {
+        if (episode != null && episode.getUrl() != null) {
             LOG.info("Starting to download Podcast from {}", episode.getUrl());
 
             PodcastChannel channel = episode.getChannel();

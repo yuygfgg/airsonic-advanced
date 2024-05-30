@@ -17,7 +17,8 @@ A few settings should be tweaked via Spring Boot or Tomcat configuration:
 
 - Set the context path if needed (the rest of this guide assumes `/airsonic`, the default value is `/`)
 - Set the correct address to listen to (the rest of this guide assumes `127.0.0.1`)
-- Set the correct port to listen to (the rest of this guide assumes `8080`)
+- Set the correct port to listen to (the rest of this guide assumes `4040`)
+  - If you see `airsonic.github.io`, its guide assumes `8080` as the default port
 
 To change this, please use one of the guide below according to your installation:
 

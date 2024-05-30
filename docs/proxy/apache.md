@@ -4,6 +4,12 @@ The following configurations works for HTTPS (with an HTTP redirection).
 
 > NOTE: Make sure you follow the [prerequisites](./README.md).
 
+### Airsonic Advanced configuration
+
+You will need to make sure Airsonic Advanced uses the correct headers for redirects, by setting the `server.forward-headers-strategy` property to `native` or `framework`.
+
+`framework` is the recommended value, but you can set it to `native` if you want to use the Apache headers.
+
 ### Apache configuration
 
 Create a new virtual host file:

@@ -170,8 +170,9 @@ public class PodcastPersistenceService {
      * @param element element to update from
      * @return updated channel or original channel if element is null
      */
+    @Nullable
     @Transactional
-    public PodcastChannel updateChannelByElement(PodcastChannel channel, Element element) {
+    public PodcastChannel updateChannelByElement(@Nonnull PodcastChannel channel, @Nullable Element element) {
         if (element == null) {
             return channel;
         }

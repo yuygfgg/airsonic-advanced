@@ -28,13 +28,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PostMapping;
 
 /**
  * Controller for the "Podcast episodes"
- * 
+ *
  * @author Y.Tory
  */
 @Controller
@@ -51,15 +51,15 @@ public class PodcastEpisodesControler {
 
     @PostMapping(params = "download")
     public String downloadEpisode(
-        @RequestParam(name = "episodeId", required = true) Integer episodeId) throws Exception {
+            @RequestParam(name = "episodeId", required = true) Integer episodeId) throws Exception {
 
         PodcastEpisode episode = podcastService.getEpisode(episodeId, false);
         if (episode == null) {
             LOG.warn("Episode {} not found", episodeId);
-            return "redirect:notFound";
+            return "redirect:/notFound";
         }
 
-        LOG.info("Downloading episode {}" , episodeId);
+        LOG.info("Downloading episode {}", episodeId);
         Integer channelId = episode.getChannel().getId();
         podcastDownloadClient.downloadEpisode(episodeId);
 
@@ -75,15 +75,15 @@ public class PodcastEpisodesControler {
      */
     @PostMapping(params = "init")
     public String initializeEpisode(
-        @RequestParam(name = "episodeId", required = true) Integer episodeId) throws Exception {
+            @RequestParam(name = "episodeId", required = true) Integer episodeId) throws Exception {
 
         PodcastEpisode episode = podcastService.getEpisode(episodeId, true);
         if (episode == null) {
             LOG.warn("Episode {} not found", episodeId);
-            return "redirect:notFound";
+            return "redirect:/notFound";
         }
 
-        LOG.info("Initializing episode {}" , episodeId);
+        LOG.info("Initializing episode {}", episodeId);
         Integer channelId = episode.getChannel().getId();
         podcastService.resetEpisode(episodeId);
 
@@ -99,21 +99,21 @@ public class PodcastEpisodesControler {
      */
     @PostMapping(params = "lock")
     public String lockEpisode(
-        @RequestParam(name = "episodeId", required = true) Integer episodeId) throws Exception {
+            @RequestParam(name = "episodeId", required = true) Integer episodeId) throws Exception {
 
         PodcastEpisode episode = podcastService.getEpisode(episodeId, true);
         if (episode == null) {
             LOG.warn("Episode {} not found", episodeId);
-            return "redirect:notFound";
+            return "redirect:/notFound";
         }
 
-        LOG.info("Lock episode {}" , episodeId);
+        LOG.info("Lock episode {}", episodeId);
         Integer channelId = episode.getChannel().getId();
         podcastService.lockEpisode(episodeId);
 
         return "redirect:/podcastChannel?id=" + channelId;
     }
- 
+
     /**
      * unlock episode
      *
@@ -123,20 +123,19 @@ public class PodcastEpisodesControler {
      */
     @PostMapping(params = "unlock")
     public String unlockEpisode(
-        @RequestParam(name = "episodeId", required = true) Integer episodeId) throws Exception {
+            @RequestParam(name = "episodeId", required = true) Integer episodeId) throws Exception {
 
         PodcastEpisode episode = podcastService.getEpisode(episodeId, true);
         if (episode == null) {
             LOG.warn("Episode {} not found", episodeId);
-            return "redirect:notFound";
+            return "redirect:/notFound";
         }
 
-        LOG.info("Unlock episode {}" , episodeId);
+        LOG.info("Unlock episode {}", episodeId);
         Integer channelId = episode.getChannel().getId();
         podcastService.unlockEpisode(episodeId);
 
         return "redirect:/podcastChannel?id=" + channelId;
     }
-    
-    
+
 }

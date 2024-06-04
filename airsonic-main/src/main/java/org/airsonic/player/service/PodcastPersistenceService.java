@@ -717,9 +717,9 @@ public class PodcastPersistenceService {
     @Transactional
     public void resetEpisode(Integer episodeId) {
         podcastEpisodeRepository.findById(episodeId).ifPresentOrElse(episode -> {
-            switch(episode.getStatus()) {
+            switch (episode.getStatus()) {
                 case DELETED:
-                    episode.setLocked(true); //prevent to be deleted again
+                    episode.setLocked(true); // prevent to be deleted again
                     episode.setStatus(PodcastStatus.NEW);
                     episode.setErrorMessage(null);
                     podcastEpisodeRepository.save(episode);

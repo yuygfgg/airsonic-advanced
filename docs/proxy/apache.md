@@ -9,7 +9,8 @@ The following configurations works for HTTPS (with an HTTP redirection).
 You will need to make sure Airsonic Advanced uses the correct headers for redirects, by setting the `server.forward-headers-strategy` property to `native` or `framework`.
 
 `framework` is the recommended value, but you can set it to `native` if you want to use the Apache headers.
-Note that in case you opt for using `native` it might be necessary to also set `X-Forwarded-Host` and/or `X-Forwarded-Port` as stated in [prerequisites](./README.md)
+
+Note that in case you opt for using `native` it might be necessary to also set `X-Forwarded-Host` and/or `X-Forwarded-Port` as stated in [prerequisites](./README.md).
 
 ### Apache configuration
 

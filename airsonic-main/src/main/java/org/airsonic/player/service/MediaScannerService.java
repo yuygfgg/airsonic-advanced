@@ -541,7 +541,7 @@ public class MediaScannerService {
             CoverArt art = coverArtService.getMediaFileArt(grandParent.getId());
             if (!CoverArt.NULL_ART.equals(art)) {
                 artist.setArt(new CoverArt(-1, EntityType.ARTIST, art.getPath(), art.getFolder(), false));
-                LOG.info("Artist {} has no art, using grandparent's art", artist.getId());
+                LOG.debug("Artist {} has no art, using grandparent's art", artist.getId());
             }
         }
     }

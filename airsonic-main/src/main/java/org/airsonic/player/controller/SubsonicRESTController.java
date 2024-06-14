@@ -1485,13 +1485,12 @@ public class SubsonicRESTController {
             }
         }
         for (int artistId : getIntParameters(request, "artistId")) {
-            if (artistService.starOrUnstar(artistId, username, star)) {
-                writeEmptyResponse(request, response);
-            } else {
+            if (!artistService.starOrUnstar(artistId, username, star)) {
                 error(request, response, ErrorCode.NOT_FOUND, "Artist not found: " + artistId);
                 return;
             }
         }
+        writeEmptyResponse(request, response);
     }
 
     @RequestMapping({"/getStarred", "/getStarred.view"})

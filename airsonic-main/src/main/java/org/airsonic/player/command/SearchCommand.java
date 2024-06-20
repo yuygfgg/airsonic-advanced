@@ -38,7 +38,9 @@ public class SearchCommand {
 
     private String query;
     private Map<String, Set<Integer>> artists;
+    private Map<String, Set<Integer>> artistsFromTag;
     private Map<Pair<String, String>, Set<Integer>> albums;
+    private Map<Pair<String, String>, Set<Integer>> albumsFromTag;
     private List<MediaFile> songs;
     private boolean isIndexBeingCreated;
     private User user;
@@ -69,12 +71,28 @@ public class SearchCommand {
         this.artists = artists;
     }
 
+    public Map<String, Set<Integer>> getArtistsFromTag() {
+        return artistsFromTag;
+    }
+
+    public void setArtistsFromTag(Map<String, Set<Integer>> artistsFromTag) {
+        this.artistsFromTag = artistsFromTag;
+    }
+
     public Map<Pair<String, String>, Set<Integer>> getAlbums() {
         return albums;
     }
 
     public void setAlbums(Map<Pair<String, String>, Set<Integer>> albums) {
         this.albums = albums;
+    }
+
+    public Map<Pair<String, String>, Set<Integer>> getAlbumsFromTag() {
+        return albumsFromTag;
+    }
+
+    public void setAlbumsFromTag(Map<Pair<String, String>, Set<Integer>> albumsFromTag) {
+        this.albumsFromTag = albumsFromTag;
     }
 
     public List<MediaFile> getSongs() {

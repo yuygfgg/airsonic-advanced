@@ -9,10 +9,16 @@
             $('.artistRow').show(); $('#moreArtists').hide();
         }
 
+        function showMoreArtistsFromTag() {
+            $('.artistFromTagRow').show(); $('#moreArtistsFromTag').hide();
+        }
         function showMoreAlbums() {
             $('.albumRow').show(); $('#moreAlbums').hide();
         }
 
+        function showMoreAlbumsFromTag() {
+            $('.albumFromTagRow').show(); $('#moreAlbumsFromTag').hide();
+        }
         function showMoreSongs() {
             $('.songRow').show();$('#moreSongs').hide();
         }
@@ -29,7 +35,9 @@
 <p th:if="${command.indexBeingCreated}" class="warning" th:text="#{search.index}"></p>
 
 <p th:if="${!command.indexBeingCreated and #lists.isEmpty(command.artists) and #lists.isEmpty(command.albums) and #lists.isEmpty(command.songs)}" class="warning" th:text="#{search.hits.none}"></p>
-
+<h2 th:if="${!#lists.isEmpty(command.artists) or !#lists.isEmpty(command.albums) or !#lists.isEmpty(command.songs)}">
+    <span style="vertical-align: middle" th:text="#{search.folder}"></span>
+</h2>
 <th:block th:if="${!#lists.isEmpty(command.artists)}">
     <h2><b th:text="#{search.hits.artists}"></b></h2>
     <table class="music indent">
@@ -96,4 +104,47 @@
         <a href="javascript:showMoreSongs()" th:text="#{search.hits.more}"></a></div>
 </th:block>
 
+<h2 th:if="${!#lists.isEmpty(command.artistsFromTag)}">
+    <span style="vertical-align: middle" th:text="#{search.tag}"></span>
+</h2>
+<th:block th:if="${!#lists.isEmpty(command.artistsFromTag)}">
+    <h2><b th:text="#{search.hits.artists}"></b></h2>
+    <table class="music indent">
+        <th:block th:each="match, loopStatus:${command.artistsFromTag}">
+
+            <tr class="artistFromTagRow" th:stayle="${loopStatus.count > 5 ? 'display:none' : ''}">
+                <th:block th:replace="~{playButtons :: buttons(id=${match.value}, playEnabled=${command.user.streamRole and !command.partyModeEnabled},
+                    addEnabled=${command.user.downloadRole and !command.partyModeEnabled}, asTable=true)}" />
+                <td class="truncate"><a th:href="@{/main.view(id=${match.value})}" th:text="${match.key}"></a></td>
+            </tr>
+
+            </th:block>
+    </table>
+    <div th:if="${#lists.size(command.artistsFromTag) gt 5}" id="moreArtistsFromTag" class="forward">
+        <a href="javascript:showMoreArtistsFromTag()" th:text="#{search.hits.more}"></a>
+    </div>
+</th:block>
+
+<th:block th:if="${!#lists.isEmpty(command.albumsFromTag)}">
+    <h2><b th:text="#{search.hits.albums}"></b></h2>
+    <table class="music indent">
+        <th:block th:each="match,loopStatus:${command.albumsFromTag}">
+
+            <tr class="albumFromTagRow" th:style="${loopStatus.count > 5 ? 'display:none' : ''}" >
+                <th:block th:replace="~{playButtons :: buttons(
+                        id=${match.value},
+                        playEnabled=${command.user.streamRole and !command.partyModeEnabled},
+                        addEnabled=${command.user.downloadRole and !command.partyModeEnabled},
+                        asTable=true)}" />
+
+                <td class="truncate"><a th:href="@{/main.view(id=${match.value})}" th:text="${match.key.key}"></a></td>
+                <td class="truncate"><span class="detail" th:text="${match.key.value}"></span></td>
+            </tr>
+
+            </th:block>
+    </table>
+    <th:block th:if="${#lists.size(command.albumsFromTag) gt 5}">
+        <div id="moreAlbumsFromTag" class="forward"><a href="javascript:showMoreAlbumsFromTag()" th:text="#{search.hits.more}"></a></div>
+    </th:block>
+</th:block>
 </body></html>

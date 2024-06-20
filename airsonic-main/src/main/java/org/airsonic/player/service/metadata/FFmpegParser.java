@@ -103,9 +103,26 @@ public class FFmpegParser extends MetaDataParser {
             metaData.setGenre(getData(result, "genre"));
             metaData.setTitle(getData(result, "title"));
             String data = getData(result, "track");
-            data = data.replaceFirst("^[\\s\\p{C}]*0+(?!$)", "");
-            if (NumberUtils.isCreatable(data)) {
-                metaData.setTrackNumber(NumberUtils.createInteger(data));
+            if (data != null) {
+                data = data.replaceFirst("^[\\s\\p{C}]*0+(?!$)", "");
+                if (NumberUtils.isCreatable(data)) {
+                    metaData.setTrackNumber(NumberUtils.createInteger(data));
+                }
+            }
+            data = getData(result, "disc");
+            if (data != null) {
+                data = data.replaceFirst("^[\\s\\p{C}]*0+(?!$)", "");
+                if (NumberUtils.isCreatable(data)) {
+                    metaData.setDiscNumber(NumberUtils.createInteger(data));
+                }
+            }
+
+            data = getData(result, "discnumber");
+            if (data != null) {
+                data = data.replaceFirst("^[\\s\\p{C}]*0+(?!$)", "");
+                if (NumberUtils.isCreatable(data)) {
+                    metaData.setDiscNumber(NumberUtils.createInteger(data));
+                }
             }
             data = getData(result, "date");
             if (NumberUtils.isCreatable(data)) {

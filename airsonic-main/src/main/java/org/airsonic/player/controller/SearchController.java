@@ -211,7 +211,9 @@ public class SearchController {
                         return;
                     }
                     String album = a.getName();
-                    String artist = a.getArtist();
+                    String artist = Optional.ofNullable(mediaFile.getArtist())
+                            .or(() -> Optional.ofNullable(mediaFile.getAlbumArtist()))
+                            .orElse(a.getArtist());
                     SearchResultAlbum albumResult = albumId3Map.computeIfAbsent(
                             Triple.of(album, artist, a.getFolder().getId()),
                             k -> new SearchResultAlbum(album, artist, a.getFolder()));

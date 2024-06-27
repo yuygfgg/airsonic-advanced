@@ -416,6 +416,7 @@
                                 <ignoredUnusedDeclaredDependency>org.eclipse.persistence:org.eclipse.persistence.moxy</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.cxf:cxf-tools-wsdlto-databinding-jaxb</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.lucene:lucene-backward-codecs</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>com.twelvemonkeys.imageio:imageio-webp</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>

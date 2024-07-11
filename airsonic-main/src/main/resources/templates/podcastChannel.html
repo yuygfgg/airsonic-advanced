@@ -105,11 +105,6 @@
             }
         }
 
-        function changePageSize(size) {
-            var baseUrl = /*"[(@{/podcastChannel.view(page=0, id=${command.channel.id}})]"*/ "podcastChannel.view?page=0&id=0";
-            location.href =  baseUrl + "&size=" + size;
-        }
-
     </script>
     <style type="text/css">
       .music .center {
@@ -205,8 +200,8 @@
 <div class="dataTables_wrapper">
     <div name="table_length" th:if="${pages.totalPages gt 1}" class="dataTables_length">
         <label>Show </label>
-        <select name="table_length" aria-controls="table" class="custom-select custom-select-sm form-control form-control-sm" onchange="changePageSize(this.options[this.selectedIndex].value)">
-            <option th:each="size: ${ {5, 10, 25, 50, 100} }" th:value="${size}" th:selected="${pages.size eq size}" th:text="${size}"></option>
+        <select name="table_length" aria-controls="table" class="custom-select custom-select-sm form-control form-control-sm" onchange="javascript:location.href=this.options[this.selectedIndex].value">
+            <option th:each="size: ${ {5, 10, 25, 50, 100} }" th:value="@{/podcastChannel.view(page=0, id=${command.channel.id}, size=${size})}" th:selected="${pages.size eq size}" th:text="${size}"></option>
         </select>
         <label> entities</label>
     </div>

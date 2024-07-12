@@ -24,6 +24,7 @@
     <th:block th:replace="~{jquery}" />
     <th:block th:replace="~{table}" />
     <script type="text/javascript" th:src="@{/script/utils.js}"></script>
+    <script type="text/javascript" th:src="@{/script/purify-3.1.6.min.js}"></script>
     <script type="text/javascript" th:inline="javascript">
         function init() {
             $("#dialog-delete").dialog({resizable: false, height: 170, autoOpen: false,
@@ -106,11 +107,9 @@
         }
 
         function changePageSize(path) {
-            if (path && path.startsWith('/') ) {
-                location.href = path;
-            } else {
-                console.error('Invalid url: ' + path);
-            }
+            var url = DOMPurify.sanitize(path);
+            console.log(url);
+            location.href = url;
         }
 
     </script>

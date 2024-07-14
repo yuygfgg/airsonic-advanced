@@ -430,6 +430,9 @@ public class MediaScannerService {
                         albumsInDb.add(dbAlbum.getId());
                         dbAlbum.setDuration(0);
                         dbAlbum.setSongCount(0);
+                        if (dbAlbum.getPath() != file.getParentPath()) {
+                            dbAlbum.setPath(file.getParentPath());
+                        }
                     }
                     return dbAlbum;
                 }).orElse(null);

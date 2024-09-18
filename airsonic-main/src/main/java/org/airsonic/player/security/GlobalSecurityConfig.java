@@ -134,7 +134,7 @@ public class GlobalSecurityConfig {
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
 
         RESTRequestParameterProcessingFilter restAuthenticationFilter = new RESTRequestParameterProcessingFilter();
-        // restAuthenticationFilter.setAuthenticationManager(authenticationManager);
+        restAuthenticationFilter.setAuthenticationManager(authenticationManager);
 
         // Try to load the 'remember me' key.
         //

@@ -1,7 +1,7 @@
 package org.airsonic.player.domain;
 
-import org.airsonic.player.security.PasswordEncoderConfig;
 import org.airsonic.player.security.PasswordDecoder;
+import org.airsonic.player.security.PasswordEncoderConfig;
 import org.springframework.util.StringUtils;
 
 import jakarta.persistence.Column;
